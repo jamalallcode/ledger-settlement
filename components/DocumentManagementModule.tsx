@@ -186,7 +186,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       entityAndAuditYear: defaultEntityAndAuditYear,
       paraNo: defaultParaNo,
       titleAndDetails: defaultTitleAndDetails,
-      entityReplyText: "আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:",
+      entityReplyText: "",
       hasTable: false, // Initially user can click button or AI detects table
       tableColumns: [...DEFAULT_TABLE_COLUMNS],
       tableRows: [
@@ -194,35 +194,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           id: "row-1",
           cells: {
             sl: "১",
-            borrowerName: "ফেরদৌসী বেগম",
-            involvedAmount: "১৪৫০৬",
-            principal: "৬৮০০",
-            interest: "৭৭০৬",
+            borrowerName: "",
+            involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০",
+            principal: "০",
+            interest: "০",
             others: "-",
-            totalRecovered: "১৪৫০৬",
-            adjustmentDate: "২০-০২-১৭",
-          },
-          cellColors: {},
-        },
-        {
-          id: "row-2",
-          cells: {
-            sl: "২",
-            borrowerName: "শারমিন আক্তার",
-            involvedAmount: "১৪৫০৬",
-            principal: "৬৮০০",
-            interest: "৭৭০৬",
-            others: "-",
-            totalRecovered: "১৪৫০৬",
-            adjustmentDate: "২২-১০-১৭",
+            totalRecovered: "০",
+            adjustmentDate: "-",
           },
           cellColors: {},
         },
       ],
-      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      presenterCommentText: "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।",
-      status: "পূর্ণাঙ্গ নিষ্পত্তি",
+      branchRequestText: "",
+      headOfficeCommentText: "",
+      presenterCommentText: "",
+      status: "মন্তব্য বিচারাধীন",
     },
   ]);
 
@@ -232,9 +218,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   );
 
   // Approval & Status
-  const [settlementStatus, setSettlementStatus] = useState<string>("পূর্ণাঙ্গ নিষ্পত্তি");
+  const [settlementStatus, setSettlementStatus] = useState<string>("মন্তব্য বিচারাধীন");
   const [isNoteApproved, setIsNoteApproved] = useState<boolean>(false);
   const [selectedCellColor, setSelectedCellColor] = useState<string>("#ecfdf5");
+  const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
   // Document Validation, Confirmation & Toast States
   const [validationErrorModal, setValidationErrorModal] = useState<{
@@ -307,11 +294,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       id: "j-row-1",
       cells: {
         col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_2: { text: `১০, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_2: { text: `${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
         col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_4: { text: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_4: { text: `অনুচ্ছেদ নং ${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}`, align: "justify", colSpan: 1, rowSpan: 1 },
         col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_6: { text: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+        col_6: { text: "", align: "justify", colSpan: 1, rowSpan: 1 }
       }
     }
   ]);
@@ -325,70 +312,25 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Bottom Memo & Date
   const [jaripatraBottomMemoNo, setJaripatraBottomMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>(() => getTodayBengaliDateFormatted());
+  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>("       /      /২০২৬ খ্রি:");
 
-  // Onulipi
-  const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
+  // Onulipi (Distribution) State
+  const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("অনুলিপি জ্ঞাতার্থ ও কার্যার্থে প্রেরণ করা হলো:");
   const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>([
-    `১. উপমহাব্যবস্থাপক, ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
-    "২. পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কাযায়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
-    "৩. অফিস কপি।"
+    "১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।",
+    "২। মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, প্রধান কার্যালয়, ঢাকা।",
+    "৩। উপ-মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, আঞ্চলিক কার্যালয়, চুয়াডাঙ্গা।",
+    "৪। অফিস কপি।"
   ]);
-  const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
-  // Automatically scroll to top when switching to Jaripatra view
-  useEffect(() => {
-    if (showJaripatraView) {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      const mainContainer = document.getElementById("official-jaripatra-container");
-      if (mainContainer) {
-        mainContainer.scrollIntoView({ behavior: "instant", block: "start" });
-      }
-    }
-  }, [showJaripatraView]);
-
-  // Hook into the main back button so that when in Jaripatra view, it returns to Note Sheet, and from Note Sheet back to Register
-  useEffect(() => {
-    if (onRegisterBackHandler) {
-      if (showJaripatraView) {
-        onRegisterBackHandler(() => {
-          setShowJaripatraView(false);
-          return true;
-        });
-      } else {
-        onRegisterBackHandler(() => {
-          onBack();
-          return true;
-        });
-      }
-    }
-    return () => {
-      if (onRegisterBackHandler) {
-        onRegisterBackHandler(null);
-      }
-    };
-  }, [showJaripatraView, onRegisterBackHandler, onBack]);
-
-  // Synchronize Jaripatra summary rows directly from the note sheet paragraphs
-  const handleSyncJaripatraFromParagraphs = () => {
-    if (paragraphs.length === 0) return;
+  const handleSyncParagraphsToJaripatra = () => {
     const newGridRows: JaripatraGridRowItem[] = paragraphs.map((para, idx) => {
       const col1Text = toBengaliDigits(idx + 1);
-      const col2Text = `${para.paraNo || "১০"}, ${entry.auditYear || "২০১১-১৪"}`;
-      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
-      const col4Text = para.titleAndDetails 
-        ? para.titleAndDetails.split("\n")[0].replace(/^শিরোনাম:\s*/, "") 
-        : `মাইক্রো ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।`;
-      
-      let totalAmt = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "-";
-      if (para.hasTable) {
-        const recovered = calculateParagraphTotal(para, "আদায়");
-        const involved = calculateParagraphTotal(para, "জড়িত");
-        if (recovered > 0) totalAmt = toBengaliDigits(recovered);
-        else if (involved > 0) totalAmt = toBengaliDigits(involved);
-      }
-      const col5Text = totalAmt;
-      const col6Text = para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।";
+      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}, ${entry.auditYear || "২০১১-১৪"}`;
+      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
+      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}`;
+      const col5Text = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
+      const col6Text = para.presenterCommentText || "";
 
       return {
         id: `j-row-sync-${para.id}-${Date.now()}`,
@@ -461,8 +403,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       sl: nextSl,
       entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${entry.branchName ? `,\n${entry.branchName}` : ''}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
       paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "10") + paragraphs.length),
-      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
-      entityReplyText: "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
+      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ",
+      entityReplyText: "",
       hasTable: false,
       tableColumns: [...DEFAULT_TABLE_COLUMNS],
       tableRows: [
@@ -481,10 +423,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           cellColors: {},
         },
       ],
-      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      presenterCommentText: "দাখিলকৃত প্রমাণক সঠিক থাকায় অনুচ্ছেদটি নিষ্পত্তি করা যেতে পারে।",
-      status: "পূর্ণাঙ্গ নিষ্পত্তি",
+      branchRequestText: "",
+      headOfficeCommentText: "",
+      presenterCommentText: "",
+      status: "মন্তব্য বিচারাধীন",
     };
 
     setParagraphs((prev) => [...prev, newPara]);
