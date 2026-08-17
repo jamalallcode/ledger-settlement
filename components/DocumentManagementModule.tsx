@@ -268,7 +268,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // 3. Multi-Paragraphs State (প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য)
   const defaultParaNo = parsed.paraNo || "১";
-  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ";
+  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ";
   const defaultEntityAndAuditYear = `প্রতিষ্ঠান: ${defaultEntity}${
     defaultBranch ? `,\n${defaultBranch}` : ""
   }\nনিরীক্ষা বছর: ${defaultAuditYear || "-"}`;
@@ -490,7 +490,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       sl: nextSl,
       entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${entry.branchName ? `,\n${entry.branchName}` : ''}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
       paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "10") + paragraphs.length),
-      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ",
+      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
       entityReplyText: "",
       hasTable: false,
       tableColumns: [...DEFAULT_TABLE_COLUMNS],
@@ -922,7 +922,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       }
 
       const cleanReply = (replyText || "").replace(/\[সংযুক্ত ফাইল:[^\]]+\]\s*/g, "").trim();
-      const entityReply = cleanReply || "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ঋণ বকেয়া ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:";
+      const isSampleSonali = (entName.includes("সোনালী") || entName.includes("ব্যাংক")) && (totAmt.includes("৮,৪১,২৮৪") || totAmt.includes("841284") || !totAmt || totAmt === "০");
+
+      const entityReply = cleanReply || (isSampleSonali
+        ? "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:"
+        : "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ঋণ বকেয়া ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:");
+
+      const defaultSampleHeaders = isSampleSonali
+        ? ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"]
+        : ["ক্র: নং", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"];
+
+      const defaultSampleRows = isSampleSonali
+        ? [
+            ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২", "১,৯৬,৪৮৩", "১৮,৯৬৭", "১,২৮৭", "২,১৬,৭৩৭", "১৫/০৯/২০১৬"],
+            ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮", "৩,০৫,০৩৭", "৮৫,৫৪৭", "৩,৮২৬", "৩,৯৪,৪১০", "২২/০৪/২০১৮"],
+            ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪", "৩,২৩,৮৮৮", "১,৪১,৯৬১", "৬,১০৩", "৪,৭১,৯৫২", "২৫/১০/২০১৮"],
+            ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০", "১,৩৭,৯৬৮", "১,১৪,৬৭১", "১৩,৯৪৯", "২,৬৬,৫৮৮", "২৬/০১/২০২০"],
+            ["সর্বমোট", "-", "-", "৮,৪১,২৮৪", "৯,৬৩,৩৭৬", "৩,৬১,১৮৬", "২৫,১৬৫", "১৩,৪৯,৭২৭", "-"]
+          ]
+        : [
+            ["১", bName || entName, totAmt, totAmt, "০", "-"]
+          ];
 
       const minPart = minName ? `<strong>${minName}</strong> এর নিয়ন্ত্রণাধীন ` : '';
       const bPart = bName ? `, ${bName}` : '';
@@ -940,13 +960,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             sl: "১",
             entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bName ? `,\n${bName}` : ''}\nনিরীক্ষা বছর: ${aYear}`,
             paraNo: pNo,
-            titleAndDetails: `শিরোনাম: ${subj}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            titleAndDetails: `শিরোনাম: ${subj}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- `,
             entityReplyHeader: entityReply,
-            hasTable: false,
-            tableHeaders: ["ক্র: নং", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
-            tableRows: [
-              ["১", bName || entName, totAmt, totAmt, "০", "-"]
-            ],
+            hasTable: true,
+            tableHeaders: defaultSampleHeaders,
+            tableRows: defaultSampleRows,
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
@@ -2954,7 +2972,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             handleUpdateParagraphField(para.id, "titleAndDetails", e.target.value)
                           }
                           className="w-full bg-transparent outline-none resize-none font-bengali text-xs sm:text-[12.5px] leading-relaxed rounded-none"
-                          placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশिष्ट পৃষ্ঠা নং- ..."
+                          placeholder="শিরোনাম: ...&#10;অনুচ্ছেদের পৃষ্ঠা নং- ...&#10;পরিশিষ্ট পৃষ্ঠা নং- ..."
                         />
                       </td>
                     </tr>

@@ -444,6 +444,23 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
   return toBengaliDigits(result);
 };
 
+const getSafeMime = (fileObj: any): string => {
+  if (!fileObj) return "image/jpeg";
+  const mime = fileObj.mimeType || fileObj.type || "";
+  if (mime.includes("pdf")) return "application/pdf";
+  if (mime.includes("png")) return "image/png";
+  if (mime.includes("webp")) return "image/webp";
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "image/jpeg";
+  if (fileObj.name) {
+    const ext = fileObj.name.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'application/pdf';
+    if (ext === 'png') return 'image/png';
+    if (ext === 'webp') return 'image/webp';
+    if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  }
+  return mime || "image/jpeg";
+};
+
 // AI Document Management Analysis Endpoint (Multi-Paragraph & Per-Paragraph Table Support with Strict Audit Validation & Intelligent Fallback)
   app.post("/api/document-management/analyze-note", async (req, res) => {
     try {
@@ -616,7 +633,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
    - **কঠোর নিষেধাজ্ঞা (STRICTLY FORBIDDEN)**: কখনোই শিরোনামের স্থানে ব্যাংক বা শাখার নাম (যেমন: "${entity}, ${branchName || 'বারোবাজার শাখা'}") বা কোনো কারখানার নাম বসাবেন না। প্রতিষ্ঠানের নাম ও শাখা শুধুমাত্র কলাম (২) "প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর" এ বসবে। কলাম (৪) এর "শিরোনাম:" এবং জারিপত্রের "paraTitle" এ অবশ্যই শুধুমাত্র আপত্তির প্রকৃত শিরোনাম বসবে।
    - শিরোনামের ভেতর কোনো টাকার অংকের শেষে '/-' বা '.-' বা '/' চিহ্ন দেবেন না, দক্ষিণ এশীয় প্রমিত কমা দিয়ে লিখুন (যেমন: ৮,৪১,২৮৪)।
    - নোটশিটের কলাম (৪) এর ফরম্যাট সবসময় হবে:
-     "শিরোনাম: [আপত্তির শিরোনাম]\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- " (বানান অবশ্যই "পরিশिष्ट" হবে)।
+     "শিরোনাম: [আপত্তির শিরোনাম]\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- " (বানান অবশ্যই "পরিশিষ্ট" হবে)।
 
 ৪. **অতীব গুরুত্বপূর্ণ: স্থানীয় প্রতিষ্ঠানের জবাব (Local Institution's Reply) OCR ও সরাসরি স্থাপন (CRITICAL OCR EXTRACTION RULE)**:
    - আপলোডকৃত ব্রডশীট জবাব, চিঠি বা নথির পাতা থেকে স্থানীয় প্রতিষ্ঠান বা শাখা কর্তৃক প্রদত্ত যে জবাব/ব্যাখ্যা লেখা রয়েছে, তা হুবহু ওসিআর (OCR) করে পাঠোদ্ধার করুন।
@@ -690,7 +707,7 @@ ${cleanEvidenceText ? `ইউজার ইনপুট প্রমাণক ট
       "sl": "১",
       "entityAndAuditYear": "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\\nনিরীক্ষা বছর: ${auditYear}",
       "paraNo": "${letterMetadata?.paraNo || '১০'}",
-      "titleAndDetails": "শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশिष्ट পৃষ্ঠা নং- ",
+      "titleAndDetails": "শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশিষ্ট পৃষ্ঠা নং- ",
       "entityReplyHeader": "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
       "hasTable": true,
       "tableHeaders": ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
@@ -895,7 +912,7 @@ ${cleanEvidenceText ? `ইউজার ইনপুট প্রমাণক ট
               sl: "১",
               entityAndAuditYear: `প্রতিষ্ঠান: ${req.body?.letterMetadata?.entityName || 'সংশ্লিষ্ট প্রতিষ্ঠান'}\nনিরীক্ষা বছর: ${req.body?.letterMetadata?.auditYear || '২০১১-১২'}`,
               paraNo: req.body?.letterMetadata?.paraNo ? String(req.body.letterMetadata.paraNo) : "১০",
-              titleAndDetails: `শিরোনাম: ${req.body?.letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+              titleAndDetails: `শিরোনাম: ${req.body?.letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- `,
               entityReplyHeader: req.body?.entityReplyText || "প্রতিষ্ঠানের প্রেরিত জবাব সংযুক্ত রয়েছে।",
               hasTable: false,
               tableHeaders: ["ক্রমিক", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
