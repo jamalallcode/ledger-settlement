@@ -731,17 +731,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     const isConfirmed = confirmedProceed === true;
 
     // 1. Initial local emptiness check
-    const hasObjection = !!(objectionText.trim() || objectionFile);
     const hasReply = !!(replyText.trim() || replyFile);
     const hasEvidence = !!(evidenceText.trim() || evidenceFile);
 
-    if (!hasObjection && !hasReply && !hasEvidence) {
+    if (!hasReply && !hasEvidence) {
       setValidationErrorModal({
         open: true,
-        message: "আপনি কোনো অডিট ডকুমেন্ট বা জবাব প্রদান করেননি।",
+        message: "আপনি কোনো ফরওয়ার্ডিং পত্র, জবাব বা প্রমাণক প্রদান করেননি।",
         details: [
-          "অনুগ্রহ করে ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ অথবা খ. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং অথবা গ. প্রমাণকসমূহ সংযুক্ত করুন বা লিখুন।",
-          "নথিতে প্রতিষ্ঠান, নিরীক্ষা বছর ও অনুচ্ছেদ নম্বর সংক্রান্ত তথ্য থাকা আবশ্যক।"
+          "অনুগ্রহ করে ক. ফরওয়ার্ডিং ও জবাব অথবা খ. প্রমাণকসমূহ সংযুক্ত করুন বা লিখুন।",
+          "নথিতে প্রতিষ্ঠান, স্মারক নং, নিরীক্ষা বছর ও অনুচ্ছেদ নম্বর সংক্রান্ত তথ্য থাকা আবশ্যক।"
         ]
       });
       return;
@@ -2381,41 +2380,13 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           </button>
         </div>
 
-        {/* Upload Inputs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {/* Box A: Original Objection */}
-          <div className="p-3 bg-blue-50/40 rounded-2xl border border-blue-200/80 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11.5px] font-black text-blue-950 flex items-center gap-1">
-                <FileText size={12} className="text-blue-600" /> ক. মূল আপত্তি / অনুচ্ছেদ
-              </span>
-              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-[10px] font-black border border-blue-200 shadow-2xs flex items-center gap-1">
-                <Upload size={10} /> {objectionFile ? "পরিবর্তন" : "আপলোড"}
-                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "objection")} />
-              </label>
-            </div>
-            {objectionFile && (
-              <div className="px-2 py-1 bg-blue-100/70 text-blue-900 rounded-md text-[10px] font-bold flex items-center justify-between">
-                <span className="truncate">সংযুক্ত: {objectionFile.name}</span>
-                <button type="button" onClick={() => setObjectionFile(null)} className="text-rose-500 hover:text-rose-700">
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            )}
-            <textarea
-              rows={2}
-              placeholder="মূল আপত্তির অনুচ্ছেদসমূহ লিখুন বা পেস্ট করুন..."
-              className="w-full p-2 bg-white border border-blue-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500"
-              value={objectionText}
-              onChange={(e) => setObjectionText(e.target.value)}
-            />
-          </div>
-
-          {/* Box B: Entity Reply & Forwarding */}
+        {/* Upload Inputs Grid - 2 Columns (Forwarding & Reply, Evidence) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {/* Box A: Entity Reply & Forwarding */}
           <div className="p-3 bg-emerald-50/40 rounded-2xl border border-emerald-200/80 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11.5px] font-black text-emerald-950 flex items-center gap-1">
-                <FileText size={12} className="text-emerald-600" /> খ. ফরওয়ার্ডিং ও জবাব
+                <FileText size={12} className="text-emerald-600" /> ক. ফরওয়ার্ডিং ও জবাব
               </span>
               <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black border border-emerald-200 shadow-2xs flex items-center gap-1">
                 <Upload size={10} /> {replyFile ? "পরিবর্তন" : "আপলোড"}
@@ -2431,19 +2402,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
             )}
             <textarea
-              rows={2}
-              placeholder="প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পেস্ট করুন..."
-              className="w-full p-2 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-emerald-500"
+              rows={3}
+              placeholder="প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র পেস্ট করুন বা ফাইল আপলোড করুন..."
+              className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-emerald-500"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
             />
           </div>
 
-          {/* Box C: Evidence Upload */}
+          {/* Box B: Evidence Upload */}
           <div className="p-3 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11.5px] font-black text-amber-950 flex items-center gap-1">
-                <FileText size={12} className="text-amber-600" /> গ. প্রমাণকসমূহ (চালান/ভাউচার)
+                <FileText size={12} className="text-amber-600" /> খ. প্রমাণকসমূহ (চালান/ভাউচার)
               </span>
               <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-amber-50 text-amber-700 rounded-lg text-[10px] font-black border border-amber-200 shadow-2xs flex items-center gap-1">
                 <Upload size={10} /> {evidenceFile ? "পরিবর্তন" : "আপলোড"}
@@ -2459,9 +2430,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
             )}
             <textarea
-              rows={2}
-              placeholder="প্রমাণক থাকলে পেস্ট/আপলোড করুন (মন্তব্যের জন্য)..."
-              className="w-full p-2 bg-white border border-amber-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500"
+              rows={3}
+              placeholder="প্রমাণক থাকলে পেস্ট/আপলোড করুন (মন্তব্য স্বয়ংক্রিয় লেখার জন্য)..."
+              className="w-full p-2.5 bg-white border border-amber-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500"
               value={evidenceText}
               onChange={(e) => setEvidenceText(e.target.value)}
             />
