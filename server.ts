@@ -508,25 +508,18 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 
       const fallbackNote = {
         isValidAuditDocument: true,
+        validationErrors: [],
         auditVerification: ruleAuditVerification,
-        needsClarification: false,
-        clarificationQuestions: [],
-        diaryHeader: `ডায়েরি নং- ${diaryNo || "২৩৯"}, তারিখ: ${diaryDate || "৩০/০৭/২০২৬"} খ্রি:`,
-        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entity}, প্রধান কার্যালয়ের স্মারক নং- ${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${letterDate || "২৭/০৭/২০২৬"} খ্রি: পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministry}-এর নিয়ন্ত্রণাধীন ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} নিরীক্ষা বছরের ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
-        conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
-        proposedStatus: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন",
-        paragraphs: [
+        noteSheet: [
           {
             sl: "১",
-            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১১-১২'}`,
-            paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
-            titleAndDetails: `শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totalAmount || '৮,৪১,২৮৪'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: cleanReplyText || "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ঋণ বকেয়া ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
+            entityAndYear: `${entity}${branchName ? `, ${branchName}` : ''}।\n${auditYear}`,
+            auditDetails: `অনুচ্ছেদ নং- ${letterMetadata?.paraNo || '১০'}\nটাকা ${totalAmount || '৮,৪১,২৮৪'}`,
+            paraTitle: `শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totalAmount || '৮,৪১,২৮৪'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- `,
             hasTable: false,
-            tableHeaders: ["ক্রমিক", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
-            tableRows: [
-              ["১", branchName || entity, totalAmount || "০", totalAmount || "০", "০", "-"]
-            ],
+            entityReplyHeader: `উক্ত আপত্তির বিষয়ে স্থানীয় প্রতিষ্ঠান কর্তৃক দাখিলকৃত জবাবটি প্রমিত ও সমন্বিত করা হয়েছে।`,
+            tableHeaders: [],
+            tableRows: [],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
@@ -541,21 +534,21 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
           recipient: {
             designation: "ব্যবস্থাপনা পরিচালক",
             entityName: entity || "সোনালী ব্যাংক পিএলসি",
-            address: "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
-            city: "ঢাকা – ১০০০"
+            address: "প্রধান কার্যালয়, ঢাকা",
+            city: "ঢাকা"
           },
-          subject: `বিষয়: ${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `, ${branchName}` : ''} এর ${auditYear || '২০১১-১৪'} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর মন্তব্য প্রেরণ।`,
-          reference: `সূত্র: ${entity || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${letterDate || "২৭/০৭/২০২৬"}`,
-          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `, ${branchName}` : ''} এর ${auditYear || '২০১১-২০১৪'} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
+          subject: `বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর মন্তব্য প্রেরণ।`,
+          reference: `সূত্র: ${entity} এর পত্র নং ${letterNo}, তারিখ: ${letterDate}`,
+          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
           tableRows: [
             {
               sl: "১",
-              paraAndYear: `${letterMetadata?.paraNo || '১০'}, ${auditYear || '২০১১-১৪'}`,
-              entityName: `${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `,\n${branchName}` : ''}।`,
+              paraAndYear: `${letterMetadata?.paraNo || '১০'}, ${auditYear}`,
+              entityName: `${entity}${branchName ? `, ${branchName}` : ''}।`,
               paraTitle: `ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totalAmount || '৮,৪১,২৮৪'}`,
-              involvedAmount: `${totalAmount || '০'}`,
+              involvedAmount: `${totalAmount || '৮,৪১,২৮৪'}`,
               officeComment: hasEvidence
-                ? `আপত্তিকৃত টাকার সমুদয় অংশ আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+                ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
                 : ``
             }
           ],
@@ -563,26 +556,12 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
           signatoryTitle: "উপ-পরিচালক",
           signatoryPhone: "ফোন: ০২৪৭৭৭২২৬৫৬",
           onulipiList: [
-            `উপমহাব্যবস্থাপক, ${entity || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
-            `পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কার্যালয়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।`,
-            `অফিস কপি।`
+            `১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।`,
+            `২। মহাব্যবস্থাপক, ${entity}, প্রধান কার্যালয়, ঢাকা।`,
+            `৩। উপ-মহাব্যবস্থাপক, ${entity}, আঞ্চলিক কার্যালয়${branchName ? `, ${branchName}` : ''}।`,
+            `৪। অফিস কপি।`
           ]
         }
-      };
-
-      const getSafeMime = (fileObj: any) => {
-        if (!fileObj) return "application/pdf";
-        const rawType = (fileObj.mimeType || fileObj.type || "").toLowerCase();
-        if (rawType.startsWith("image/")) {
-          if (rawType.includes("png")) return "image/png";
-          if (rawType.includes("webp")) return "image/webp";
-          return "image/jpeg";
-        }
-        if (rawType === "application/pdf" || rawType.includes("pdf")) return "application/pdf";
-        if (fileObj.name && /\.(png)$/i.test(fileObj.name)) return "image/png";
-        if (fileObj.name && /\.(jpg|jpeg)$/i.test(fileObj.name)) return "image/jpeg";
-        if (fileObj.name && /\.(webp)$/i.test(fileObj.name)) return "image/webp";
-        return "application/pdf";
       };
 
       if (apiKey) {
@@ -590,9 +569,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
           const ai = new GoogleGenAI({ apiKey });
 
           const promptText = `
-আপনি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের বাণিজ্যিক অডিট অধিদপ্তরের একজন অত্যন্ত অভিজ্ঞ সিনিয়র অডিট অফিসার ও অডিট নিষ্পত্তি বিশেষজ্ঞ।
-
-ইনপুট হিসেবে নিচের সংযুক্ত ফাইল (PDF বা ছবি) ও টেক্সটসমূহ গভীরভাবে ওসিআর (OCR) ও স্ক্যান করে বিশ্লেষণ করুন:
+আপনি একজন অত্যন্ত অভিজ্ঞ অডিট ও নথি ব্যবস্থাপনা কর্মকর্তা। আপনার সামনে সংযুক্ত ইমেজ/পিডিএফ এবং টেক্সটসমূহ গভীরভাবে ওসিআর (OCR) ও স্ক্যান করে বিশ্লেষণ করুন:
 ১. মূল অডিট আপত্তি / ফরওয়ার্ডিং পত্র ও ব্রডশীট জবাব (Forwarding letter, Broad-sheet Reply & Table)
 ২. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
 
@@ -629,7 +606,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
    - **কঠোর নিষেধাজ্ঞা (STRICTLY FORBIDDEN)**: কখনোই শিরোনামের স্থানে ব্যাংক বা শাখার নাম (যেমন: "${entity}, ${branchName || 'বারোবাজার শাখা'}") বা কোনো কারখানার নাম বসাবেন না। প্রতিষ্ঠানের নাম ও শাখা শুধুমাত্র কলাম (২) "প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর" এ বসবে। কলাম (৪) এর "শিরোনাম:" এবং জারিপত্রের "paraTitle" এ অবশ্যই শুধুমাত্র আপত্তির প্রকৃত শিরোনাম বসবে।
    - শিরোনামের ভেতর কোনো টাকার অংকের শেষে '/-' বা '.-' বা '/' চিহ্ন দেবেন না, দক্ষিণ এশীয় প্রমিত কমা দিয়ে লিখুন (যেমন: ৮,৪১,২৮৪)।
    - নোটশিটের কলাম (৪) এর ফরম্যাট সবসময় হবে:
-     "শিরোনাম: [আপত্তির শিরোনাম]\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশিষ্ট পৃষ্ঠা নং- " (বানান অবশ্যই "পরিশিষ্ট" হবে)।
+     "শিরোনাম: [আপত্তির শিরোনাম]\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- " (বানান অবশ্যই "পরিশिष्ट" হবে)।
 
 ৪. **অতীব গুরুত্বপূর্ণ: স্থানীয় প্রতিষ্ঠানের জবাব (Local Institution's Reply) প্রমিতকরণ ও সুন্দরভাবে স্থাপন**:
    - মূল নথির ২য় পাতা বা ব্রডশীট জবাব অংশে স্থানীয় প্রতিষ্ঠান বা শাখা কর্তৃক প্রদত্ত যে জবাব লেখা আছে, তা অত্যন্ত সতর্কতার সাথে পাঠোদ্ধার (OCR) করুন।
@@ -639,7 +616,8 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 
 ৫. **জবাবের টেবিল/ছক সম্পূর্ণ ও সতর্কতার সাথে এক্সট্র্যাকশন (CRITICAL TABLE EXTRACTION RULES)**:
    - মূল নথিতে প্রতিষ্ঠান কর্তৃক জবাবে যে টেবিল বা হিসাব বিবরণী দেওয়া হয়েছে, তার কলাম ও সারির তথ্য অত্যন্ত সতর্কতার সহিত বুঝে-শুনে হুবহু তুলুন।
-   - **কলাম বিন্যাস (Table Headers)**: ক্র: নং, ঋণগ্রহীতার নাম, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি যা যা থাকবে তা প্রমিতভাবে তুলুন।
+   - যদি জবাবে কোনো ছক বা টেবিল থাকে, তবে "hasTable": true দিন।
+   - **কলাম বিন্যাস (Table Headers)**: ক্র: নং, ঋণগ্রহীতার নাম/বিবরণ, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি যা যা থাকবে তা প্রমিতভাবে তুলুন।
    - **টাকার ফিগার বিন্যাস (STRICT AMOUNT FORMATTING RULE)**:
      * প্রতিটি টাকার অংকের জন্য ভারতীয়/দক্ষিণ এশীয় প্রমিত কমা (comma) ব্যবহার করুন (যেমন: ৫২,৭৬২, ১,৯৬,৪৮৩, ৮,৪১,২৮৪, ১৩,৪৯,৭২৭)।
      * কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না (যেমন: "৫২,৭৬২/-" এর স্থলে "৫২,৭৬২" লিখুন)।
