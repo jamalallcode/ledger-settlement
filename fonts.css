@@ -1,0 +1,164 @@
+/* Hind Siliguri - Local & Web Font Fallback */
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Explicitly map 800 and 900 weights to Bold.ttf to prevent browser synthetic faux-bold stroke expansion */
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Bold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hind Siliguri';
+  src: url('./assets/fonts/HindSiliguri-Bold.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Noto Sans Bengali - Local Fonts */
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('./assets/fonts/NotoSansBengali-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-bengali: 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  font-family: var(--font-bengali) !important;
+  font-synthesis: none !important;
+  -webkit-font-synthesis: none !important;
+}
+
+body {
+  font-family: var(--font-bengali) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  font-synthesis: none !important;
+  -webkit-font-synthesis: none !important;
+}
+
+input, button, select, textarea, optgroup, option {
+  font-family: var(--font-bengali) !important;
+  font-synthesis: none !important;
+  -webkit-font-synthesis: none !important;
+}
+
+/* Specific weights for Bengali text without synthetic inflation */
+.font-black { font-weight: 900 !important; }
+.font-extrabold { font-weight: 800 !important; }
+.font-bold { font-weight: 700 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-normal { font-weight: 400 !important; }
+.font-light { font-weight: 300 !important; }

@@ -1,0 +1,146 @@
+
+/**
+ * Converts English digits in a string or number to Bengali digits, preserving dots and spaces.
+ */
+export const toBengaliDigits = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  const bengaliDigits: { [key: string]: string } = {
+    '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+    '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
+  };
+  return input.toString().replace(/[0-9]/g, (digit) => bengaliDigits[digit]);
+};
+
+/**
+ * Converts Bengali digits in a string back to English digits.
+ */
+export const toEnglishDigits = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  const str = input.toString();
+  const englishDigits: { [key: string]: string } = {
+    '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+    '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+  };
+  return str.replace(/[০-৯]/g, (digit) => englishDigits[digit]);
+};
+
+/**
+ * Parses a string that may contain Bengali or English digits into a number.
+ */
+export const parseBengaliNumber = (input: string | number | undefined | null): number => {
+  if (input === undefined || input === null || input === '') return 0;
+  const englishString = toEnglishDigits(input).replace(/[^0-9.]/g, '');
+  const parsed = parseFloat(englishString);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+/**
+ * Formats a number with commas and converts to Bengali digits for display only.
+ */
+export const formatBengaliAmount = (num: number): string => {
+  if (num === 0) return '০.০০';
+  const formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return toBengaliDigits(formatted);
+};
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) to Bengali DD/MM/YYYY format.
+ */
+export const formatDateBN = (iso: string | undefined | null): string => {
+  if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  
+  // If it's a full ISO string or contains time info
+  if (iso.includes('T') || iso.includes(':')) {
+    try {
+      const date = new Date(iso);
+      if (!isNaN(date.getTime())) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+        return toBengaliDigits(`${d}/${m}/${y}`);
+      }
+    } catch (e) {}
+  }
+
+  // If it's already in DD/MM/YYYY format (contains /), just convert digits
+  if (iso.includes('/')) return toBengaliDigits(iso);
+  
+  // If it's ISO YYYY-MM-DD
+  const parts = iso.split('-');
+  if (parts.length === 3) {
+    const day = parts[2].split('T')[0].split(' ')[0];
+    return toBengaliDigits(`${day}/${parts[1]}/${parts[0]}`);
+  }
+  return toBengaliDigits(iso);
+};
+
+/**
+ * Searches a string and converts any date format (YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY)
+ * and all digits into pure Bengali standard date (DD/MM/YYYY) and Bengali numerals.
+ */
+export const convertAllDatesToBengali = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // 1. Convert YYYY-MM-DD or YYYY/MM/DD to DD/MM/YYYY
+  let result = text.replace(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/g, (_match, y, m, d) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 2. Convert DD-MM-YYYY to DD/MM/YYYY
+  result = result.replace(/\b(\d{1,2})-(\d{1,2})-(20\d{2})\b/g, (_match, d, m, y) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 3. Convert all English digits to Bengali numerals
+  return toBengaliDigits(result);
+};
+
+/**
+ * Cleans monetary/amount string:
+ * - Removes trailing '/-', '/_', '.-', '/', or '-' suffixes
+ * - Formats valid numbers with Indian/South Asian style commas
+ * - Converts English digits to Bengali digits
+ */
+export const cleanAndFormatBengaliAmount = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  let str = input.toString().trim();
+  if (!str || str === '-' || str === '০') return str;
+
+  // Check if string contains estimation tag like * or [অনুমান]
+  const isEstimated = str.includes('*');
+  
+  // Remove trailing /- or /_ or /- or / or \- or ৳
+  str = str.replace(/[\/\\\.\-_]+$/g, '').replace(/৳/g, '').trim();
+  // Strip '/-' from inside or end
+  str = str.replace(/\s*\/\-\s*/g, '').trim();
+
+  // If it's a date format like DD/MM/YYYY, do not treat as plain money amount
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(toEnglishDigits(str)) || /^[০-৯]{1,2}\/[০-৯]{1,2}\/[০-৯]{4}$/.test(str)) {
+    return convertAllDatesToBengali(str);
+  }
+
+  // Parse pure number if it looks like a financial amount
+  const num = parseBengaliNumber(str);
+  if (!isNaN(num) && num > 0 && /^[০-৯0-9,.\s*]+$/.test(str)) {
+    const formattedEn = num.toLocaleString('en-IN');
+    let formattedBn = toBengaliDigits(formattedEn);
+    if (isEstimated && !formattedBn.includes('*')) {
+      formattedBn += '*';
+    }
+    return formattedBn;
+  }
+
+  return toBengaliDigits(str);
+};
+
+/**
+ * Cleans text to remove '/-' from amounts in full paragraphs or titles while ensuring commas
+ */
+export const stripAmountSlashInText = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // Replace patterns like "৮,৪১,২৮৪/-" or "৮৪১২৮৪/-" with "৮,৪১,২৮৪"
+  return text.replace(/([০-৯0-9,]+)\s*(?:\/-|\/|\.-)/g, (_match, numPart) => {
+    return cleanAndFormatBengaliAmount(numPart);
+  });
+};
