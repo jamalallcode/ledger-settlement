@@ -727,7 +727,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   };
 
   // AI Run Analysis with Validation & Auto-placement
-  const handleRunAiAnalysis = async (confirmedProceed: boolean = false) => {
+  const handleRunAiAnalysis = async (confirmedProceed: boolean | any = false) => {
+    const isConfirmed = confirmedProceed === true;
+
     // 1. Initial local emptiness check
     const hasObjection = !!(objectionText.trim() || objectionFile);
     const hasReply = !!(replyText.trim() || replyFile);
@@ -750,18 +752,18 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
     try {
       setTimeout(() => {
-        setAiAnalysisStep("অনুচ্ছেদ নং, নিরীক্ষা সাল ও প্রতিষ্ঠান যাচাই চলছে...");
-      }, 700);
+        setAiAnalysisStep("ফরওয়ার্ডিং ও জবাবের সাথে রেজিস্ট্রি তথ্যের মিল যাচাই চলছে...");
+      }, 600);
 
       setTimeout(() => {
         setAiAnalysisStep("যাচাইকরণ শেষ করে সংশ্লিষ্ট ঘরে তথ্য সাজানো হচ্ছে...");
-      }, 1500);
+      }, 1400);
 
       const response = await fetch("/api/document-management/analyze-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userConfirmedProceed: confirmedProceed,
+          userConfirmedProceed: isConfirmed,
           originalObjectionText: objectionText,
           originalObjectionFile: objectionFile,
           entityReplyText: replyText,
@@ -2362,7 +2364,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
           <button
             type="button"
-            onClick={handleRunAiAnalysis}
+            onClick={() => handleRunAiAnalysis(false)}
             disabled={isAnalyzing}
             className="px-5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-none text-xs font-black flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50 border border-indigo-700"
           >
@@ -3072,13 +3074,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   </ul>
                 </div>
               )}
-
-              <div className="bg-slate-50 p-3 border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                <p className="font-bold text-slate-700">সঠিক অডিট ডকুমেন্টের জন্য যা প্রয়োজন:</p>
-                <p>১. নির্দিষ্ট অডিট আপত্তি বা অনুচ্ছেদ নম্বর (যেমন: অনুচ্ছেদ নং- ১০, ১৫)</p>
-                <p>২. নিরীক্ষা সাল ও অডিটকৃত প্রতিষ্ঠানের নাম</p>
-                <p>৩. আদায় বা সমন্বয়ের স্বপক্ষে চালানের বিবরণ ও জবাবের সফটকপি</p>
-              </div>
             </div>
 
             {/* Footer */}
