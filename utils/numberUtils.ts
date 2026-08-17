@@ -73,3 +73,25 @@ export const formatDateBN = (iso: string | undefined | null): string => {
   }
   return toBengaliDigits(iso);
 };
+
+/**
+ * Searches a string and converts any date format (YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY)
+ * and all digits into pure Bengali standard date (DD/MM/YYYY) and Bengali numerals.
+ */
+export const convertAllDatesToBengali = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // 1. Convert YYYY-MM-DD or YYYY/MM/DD to DD/MM/YYYY
+  let result = text.replace(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/g, (_match, y, m, d) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 2. Convert DD-MM-YYYY to DD/MM/YYYY
+  result = result.replace(/\b(\d{1,2})-(\d{1,2})-(20\d{2})\b/g, (_match, d, m, y) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 3. Convert all English digits to Bengali numerals
+  return toBengaliDigits(result);
+};

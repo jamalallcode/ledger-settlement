@@ -130,7 +130,7 @@
 }
 
 :root {
-  --font-bengali: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+  --font-bengali: 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
 }
 
 * {

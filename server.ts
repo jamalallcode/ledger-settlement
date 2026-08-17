@@ -345,7 +345,56 @@ async function startServer() {
     }
   });
 
-  // AI Document Management Analysis Endpoint (Multi-Paragraph & Per-Paragraph Table Support with Strict Audit Validation & Intelligent Fallback)
+  // Bengali Digit and Date Utilities
+const toBengaliDigits = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  const bengaliDigits: { [key: string]: string } = {
+    '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+    '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
+  };
+  return input.toString().replace(/[0-9]/g, (digit) => bengaliDigits[digit]);
+};
+
+const formatDateBN = (iso: string | undefined | null): string => {
+  if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  if (iso.includes('T') || iso.includes(':')) {
+    try {
+      const date = new Date(iso);
+      if (!isNaN(date.getTime())) {
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+        return toBengaliDigits(`${d}/${m}/${y}`);
+      }
+    } catch (e) {}
+  }
+  if (iso.includes('/')) return toBengaliDigits(iso);
+  const parts = iso.split('-');
+  if (parts.length === 3) {
+    const day = parts[2].split('T')[0].split(' ')[0];
+    return toBengaliDigits(`${day}/${parts[1]}/${parts[0]}`);
+  }
+  return toBengaliDigits(iso);
+};
+
+const convertAllDatesToBengali = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // 1. Convert YYYY-MM-DD or YYYY/MM/DD to DD/MM/YYYY
+  let result = text.replace(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/g, (_match, y, m, d) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 2. Convert DD-MM-YYYY to DD/MM/YYYY
+  result = result.replace(/\b(\d{1,2})-(\d{1,2})-(20\d{2})\b/g, (_match, d, m, y) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  return toBengaliDigits(result);
+};
+
+// AI Document Management Analysis Endpoint (Multi-Paragraph & Per-Paragraph Table Support with Strict Audit Validation & Intelligent Fallback)
   app.post("/api/document-management/analyze-note", async (req, res) => {
     try {
       const {
@@ -365,13 +414,13 @@ async function startServer() {
       // Extract information from metadata safely
       const entity = letterMetadata?.entityName || "সংশ্লিষ্ট প্রতিষ্ঠান";
       const ministry = letterMetadata?.ministryName || "সংশ্লিষ্ট মন্ত্রণালয়";
-      const diaryNo = letterMetadata?.diaryNo || "-";
-      const diaryDate = letterMetadata?.diaryDate || "";
-      const letterNo = letterMetadata?.letterNo || "-";
-      const letterDate = letterMetadata?.letterDate || "";
+      const diaryNo = toBengaliDigits(letterMetadata?.diaryNo || "-");
+      const diaryDate = formatDateBN(letterMetadata?.diaryDate) || "৩০/০৭/২০২৬";
+      const letterNo = toBengaliDigits(letterMetadata?.letterNo || "-");
+      const letterDate = formatDateBN(letterMetadata?.letterDate) || "২৭/০৭/২০২৬";
       const branchName = letterMetadata?.branchName || "";
-      const auditYear = letterMetadata?.auditYear || "";
-      const totalAmount = letterMetadata?.totalAmount || letterMetadata?.involvedAmount || "";
+      const auditYear = toBengaliDigits(letterMetadata?.auditYear || "");
+      const totalAmount = toBengaliDigits(letterMetadata?.totalAmount || letterMetadata?.involvedAmount || "");
 
       const rawCombined = `${originalObjectionText} ${entityReplyText} ${evidenceText}`.trim();
       const hasFiles = !!(originalObjectionFile || entityReplyFile || evidenceFile);
@@ -699,6 +748,26 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
                 errorMessage: parsedData.errorMessage || "আপনি সঠিক অডিট ডকুমেন্ট দেননি।",
                 validationErrors: parsedData.validationErrors || ["প্রদত্ত নথিতে কোনো বৈধ অডিট তথ্য পাওয়া যায়নি।"]
               });
+            }
+
+            if (parsedData.diaryHeader) {
+              parsedData.diaryHeader = convertAllDatesToBengali(parsedData.diaryHeader);
+            }
+            if (parsedData.noteTikaText) {
+              parsedData.noteTikaText = convertAllDatesToBengali(parsedData.noteTikaText);
+            }
+            if (Array.isArray(parsedData.paragraphs)) {
+              parsedData.paragraphs = parsedData.paragraphs.map((p: any) => ({
+                ...p,
+                sl: toBengaliDigits(p.sl),
+                paraNo: toBengaliDigits(p.paraNo),
+                entityAndAuditYear: convertAllDatesToBengali(p.entityAndAuditYear),
+                titleAndDetails: convertAllDatesToBengali(p.titleAndDetails),
+                entityReplyHeader: convertAllDatesToBengali(p.entityReplyHeader || p.entityReplyText),
+                tableRows: Array.isArray(p.tableRows)
+                  ? p.tableRows.map((r: any[]) => Array.isArray(r) ? r.map(c => convertAllDatesToBengali(String(c))) : r)
+                  : p.tableRows
+              }));
             }
 
             const verification = parsedData.auditVerification || ruleAuditVerification;
