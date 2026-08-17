@@ -2287,14 +2287,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
           <button
             type="button"
-            onClick={handlePrintNoteSheet}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Printer size={14} /> নোট শিট প্রিন্ট
-          </button>
-
-          <button
-            type="button"
             onClick={() => setShowJaripatraView(true)}
             className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             title="সরকারি জারিপত্রের নির্ধারিত ছক ও ফরম্যাট দেখুন ও প্রিন্ট করুন"
@@ -2397,7 +2389,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </>
             ) : (
               <>
-                <Sparkles size={14} /> এআই দিয়ে খসড়া নোট তৈরি করুন
+                <Sparkles size={14} /> খসড়া তৈরি করুন
               </>
             )}
           </button>
