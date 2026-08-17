@@ -380,15 +380,13 @@ async function startServer() {
       if (apiKey) {
         try {
           const ai = new GoogleGenAI({ apiKey });
-          const promptParts: any[] = [];
 
           const promptText = `
 আপনি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের বাণিজ্যিক অডিট অধিদপ্তরের একজন অত্যন্ত অভিজ্ঞ সিনিয়র অডিট অফিসার ও অডিট নিষ্পত্তি বিশেষজ্ঞ।
 
-ইনপুট হিসেবে নিচের ৩টি পৃথক সেকশন বিবেচনা করুন:
-১. ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ (Original Objection)
-২. খ. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Entity Reply & Forwarding)
-৩. গ. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
+ইনপুট হিসেবে নিচের ২টি সেকশন বিবেচনা করুন:
+১. ক. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Entity Reply & Forwarding)
+২. খ. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
 
 আপনার দায়িত্ব ও মূল নীতিমালা (Strict Operational Rules):
 
@@ -419,7 +417,7 @@ async function startServer() {
 
 ৩. **প্রমাণক ভিত্তিক মন্তব্য লেখার শর্ত (CRITICAL COMMENT LOGIC)**:
    - **শর্ত ১ (যদি প্রমাণক সংযুক্ত না থাকে - hasEvidence = false)**:
-     ব্যবহারকারী কেবল মূল অনুচ্ছেদ ও ফরওয়ার্ডিং/জবাব আপলোড করেছেন। এক্ষেত্রে এআই প্রতিটি অনুচ্ছেদ অনুযায়ী অনুচ্ছেদ নং, শিরোনাম, স্থানীয় অফিসের জবাব ("entityReplyHeader" / ছক) এবং প্রধান/নিয়ন্ত্রণকারী অফিসের জবাব ও সুপারিশ ("conclusionHeadOffice", "conclusionBranch") পুঙ্খানুপুঙ্খভাবে তৈরি করে বসিয়ে দেবে।
+     ব্যবহারকারী কেবল ফরওয়ার্ডিং/জবাব আপলোড করেছেন। এক্ষেত্রে এআই প্রতিটি অনুচ্ছেদ অনুযায়ী অনুচ্ছেদ নং, শিরোনাম, স্থানীয় অফিসের জবাব ("entityReplyHeader" / ছক) এবং প্রধান/নিয়ন্ত্রণকারী অফিসের জবাব ও সুপারিশ ("conclusionHeadOffice", "conclusionBranch") পুঙ্খানুপুঙ্খভাবে তৈরি করে বসিয়ে দেবে।
      **কিন্তু "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) অবশ্যই সম্পূর্ণ ফাঁকা ("") রাখতে হবে**। কোনো কাল্পনিক মন্তব্য লেখা যাবে না, কারণ প্রমাণক আপলোড না থাকলে মন্তব্য ব্যবহারকারী নিজে যাচাই করে লিখবেন।
    - **শর্ত ২ (যদি প্রমাণক সংযুক্ত থাকে - hasEvidence = true)**:
      ব্যবহারকারী চালান, জমা রসিদ বা ভাউচারের প্রমাণক আপলোড করেছেন। এক্ষেত্রে এআই প্রমাণক গভীরভাবে বিশ্লেষণ করে "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) পূর্ণাঙ্গ ও প্রমিত সরকারি ভাষায় লিখে দেবে এবং আপত্তি নিষ্পত্তির যৌক্তিক সুপারিশ ও স্ট্যাটাস ("পূর্ণাঙ্গ নিষ্পত্তি" / "আংশিক নিষ্পত্তি" / "অনিষ্পন্ন") উল্লেখ করবে।
@@ -433,9 +431,8 @@ async function startServer() {
 - স্মারক নং: ${letterNo}, তারিখ: ${letterDate}
 - জড়িত টাকার পরিমাণ: ${totalAmount} টাকা
 
-${originalObjectionText ? `ক. মূল আপত্তি/অনুচ্ছেদের সারসংক্ষেপ বা টেক্সট:\n${originalObjectionText}\n` : ''}
-${entityReplyText ? `খ. প্রতিষ্ঠানের প্রেরিত ফরওয়ার্ডিং ও জবাব টেক্সট:\n${entityReplyText}\n` : ''}
-${evidenceText ? `গ. আপলোডকৃত প্রমাণকের বিবরণ/টেক্সট:\n${evidenceText}\n` : ''}
+${entityReplyText ? `ক. প্রতিষ্ঠানের প্রেরিত ফরওয়ার্ডিং ও জবাব টেক্সট:\n${entityReplyText}\n` : ''}
+${evidenceText ? `খ. আপলোডকৃত প্রমাণকের বিবরণ/টেক্সট:\n${evidenceText}\n` : ''}
 
 ${userClarifications && userClarifications.length > 0 ? `ব্যবহারকারীর প্রদানকৃত পূর্ববর্তী স্পষ্টীকরণ (Clarifications from user):\n${JSON.stringify(userClarifications, null, 2)}\n` : ''}
 ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যবহারকারী ইতিমধ্যে নিশ্চিত করেছেন যে এটিই সঠিক ডকুমেন্ট। অতএব কোনো ফিল্ড মিসিং থাকলেও রেজিস্ট্রি মেটাডাটা বা যৌক্তিক খসড়া দিয়ে চূড়ান্ত নোট শিট প্রস্তুত করুন।\n` : ''}
@@ -553,7 +550,8 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
 }
 `;
 
-          promptParts.push(promptText);
+          const promptParts: any[] = [];
+          promptParts.push({ text: promptText });
 
           // Helper to check if MIME type is supported by Gemini inlineData
           const isSupportedInlineMime = (mime: string) => {
@@ -568,21 +566,6 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
             );
           };
 
-          // If images/files were attached as base64
-          if (originalObjectionFile && originalObjectionFile.base64) {
-            const mime = originalObjectionFile.mimeType || "application/pdf";
-            if (isSupportedInlineMime(mime)) {
-              promptParts.push({
-                inlineData: {
-                  data: originalObjectionFile.base64.replace(/^data:[^;]+;base64,/, ""),
-                  mimeType: mime
-                }
-              });
-            } else {
-              promptParts.push(`[সংযুক্ত ফাইল: ${originalObjectionFile.name || 'আপত্তি ফাইল'}]`);
-            }
-          }
-
           if (entityReplyFile && entityReplyFile.base64) {
             const mime = entityReplyFile.mimeType || "application/pdf";
             if (isSupportedInlineMime(mime)) {
@@ -593,7 +576,7 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
                 }
               });
             } else {
-              promptParts.push(`[সংযুক্ত ফাইল: ${entityReplyFile.name || 'জবাব ফাইল'}]`);
+              promptParts.push({ text: `[সংযুক্ত ফাইল: ${entityReplyFile.name || 'জবাব ফাইল'}]` });
             }
           }
 
@@ -607,12 +590,12 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
                 }
               });
             } else {
-              promptParts.push(`[সংযুক্ত ফাইল: ${evidenceFile.name || 'প্রমাণক ফাইল'}]`);
+              promptParts.push({ text: `[সংযুক্ত ফাইল: ${evidenceFile.name || 'প্রমাণক ফাইল'}]` });
             }
           }
 
           const response = await ai.models.generateContent({
-            model: "gemini-3.7-flash",
+            model: "gemini-2.5-flash",
             contents: promptParts,
             config: {
               responseMimeType: "application/json"
