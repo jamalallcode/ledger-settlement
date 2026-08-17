@@ -345,7 +345,7 @@ async function startServer() {
     }
   });
 
-  // Bengali Digit and Date Utilities
+  // Bengali Digit, Date and Amount Utilities
 const toBengaliDigits = (input: string | number | undefined | null): string => {
   if (input === undefined || input === null) return '';
   const bengaliDigits: { [key: string]: string } = {
@@ -353,6 +353,56 @@ const toBengaliDigits = (input: string | number | undefined | null): string => {
     '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
   };
   return input.toString().replace(/[0-9]/g, (digit) => bengaliDigits[digit]);
+};
+
+const toEnglishDigits = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  const str = input.toString();
+  const englishDigits: { [key: string]: string } = {
+    '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+    '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+  };
+  return str.replace(/[০-৯]/g, (digit) => englishDigits[digit]);
+};
+
+const parseBengaliNumber = (input: string | number | undefined | null): number => {
+  if (input === undefined || input === null || input === '') return 0;
+  const englishString = toEnglishDigits(input).replace(/[^0-9.]/g, '');
+  const parsed = parseFloat(englishString);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+const cleanAndFormatBengaliAmount = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  let str = input.toString().trim();
+  if (!str || str === '-' || str === '০') return str;
+
+  const isEstimated = str.includes('*');
+  str = str.replace(/[\/\\\.\-_]+$/g, '').replace(/৳/g, '').trim();
+  str = str.replace(/\s*\/\-\s*/g, '').trim();
+
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(toEnglishDigits(str)) || /^[০-৯]{1,2}\/[০-৯]{1,2}\/[০-৯]{4}$/.test(str)) {
+    return convertAllDatesToBengali(str);
+  }
+
+  const num = parseBengaliNumber(str);
+  if (!isNaN(num) && num > 0 && /^[০-৯0-9,.\s*]+$/.test(str)) {
+    const formattedEn = num.toLocaleString('en-IN');
+    let formattedBn = toBengaliDigits(formattedEn);
+    if (isEstimated && !formattedBn.includes('*')) {
+      formattedBn += '*';
+    }
+    return formattedBn;
+  }
+
+  return toBengaliDigits(str);
+};
+
+const stripAmountSlashInText = (text: string | undefined | null): string => {
+  if (!text) return '';
+  return text.replace(/([০-৯0-9,]+)\s*(?:\/-|\/|\.-)/g, (_match, numPart) => {
+    return cleanAndFormatBengaliAmount(numPart);
+  });
 };
 
 const formatDateBN = (iso: string | undefined | null): string => {
@@ -564,13 +614,16 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
      * সম্পূর্ণ নোটশিট ও জারিপত্র প্রস্তুত করুন।
 
 ৩. **শিরোনাম ও স্থানীয় প্রতিষ্ঠানের জবাব এক্সট্র্যাকশন ও প্রমিতকরণ (TITLE, REPLY & EXACT TABLE EXTRACTION)**:
-   - **শিরোনাম (Title)**: মূল নথিতে আপত্তির যে শিরোনাম লেখা আছে (যেমন: "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-"), তা নির্ভুলভাবে titleAndDetails এবং জারিপত্রের paraTitle এ বসান। অপ্রয়োজনীয় বাহুল্য পরিহার করে মূল কথা ঠিক রাখুন এবং বানান শুদ্ধ করুন।
+   - **শিরোনাম (Title)**: মূল নথিতে আপত্তির যে শিরোনাম লেখা আছে (যেমন: "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪"), তা নির্ভুলভাবে titleAndDetails এবং জারিপত্রের paraTitle এ বসান। কোনো টাকার অংকের শেষে '/-' বা '.-' দিবেন না, কমা দিয়ে প্রমিতভাবে লিখুন। অপ্রয়োজনীয় বাহুল্য পরিহার করে মূল কথা ঠিক রাখুন এবং বানান শুদ্ধ করুন।
    - **স্থানীয় প্রতিষ্ঠানের জবাব (entityReplyHeader)**: মূল নথির ২য় পাতায় "শাখার জবাব" অংশে যে মূল বক্তব্য লেখা আছে, অপ্রয়োজনীয় কথা বাদ দিয়ে মূল কথাটি তুলে আনুন এবং বানান ভুল থাকলে শুদ্ধ করুন (যেমন: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:")।
    - **জবাবের টেবিল/ছক হুবহু গঠন ও এক্সট্র্যাকশন (CRITICAL TABLE EXTRACTION RULES)**:
      * মূল নথিতে প্রতিষ্ঠান কর্তৃক জবাবে যে টেবিলটি দেওয়া হয়েছে তার কলাম ও সারির তথ্য হুবহু তুলুন।
-     * **কলাম বিন্যাস**: ক্র: নং, ঋণগ্রহীতার নাম ও প্রকৃতি, হিসাব নং, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি।
+     * **কলাম বিন্যাস**: ক্র: নং, ঋণগ্রহীতার নাম, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি।
+     * **টাকার ফিগার বিন্যাস (STRICT AMOUNT FORMATTING RULE)**:
+       - প্রতিটি টাকার অংকের জন্য ভারতীয়/দক্ষিণ এশীয় প্রমিত কমা (comma) ব্যবহার করুন (যেমন: ৫২,৭৬২, ১,৯৬,৪৮৩, ৮,৪১,২৮৪, ১৩,৪৯,৭২৭)।
+       - কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না (যেমন: "৫২,৭৬২/-" এর স্থলে "৫২,৭৬২" লিখুন)।
      * **সারির তথ্য (Rows)**: প্রতিটি ঋণগ্রহীতার নামের সাথে তাদের হিসাবের টাকাগুলো নির্ভুলভাবে বসান। কোনো অবস্থাতেই সারির মধ্যে 'সর্বমোট' পুনরাবৃত্তি করে ডাবল করবেন না। শেষ সারিতে একবারই সর্বমোটের সংখ্যা বসান।
-     * **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা/অস্পষ্ট থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে এবং নিচে বা ছকের ঘরে ছোট করে উল্লেখ করতে হবে (যেমন: "৮৫,৫৪৭/-* [অনুমান]") যাতে ব্যবহারকারী তা যাচাই করতে পারেন।
+     * **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা/অস্পষ্ট থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে এবং নিচে বা ছকের ঘরে ছোট করে উল্লেখ করতে হবে (যেমন: "৮৫,৫৪৭* [অনুমান]") যাতে ব্যবহারকারী তা যাচাই করতে পারেন।
    - **শাখা ও প্রধান কার্যালয়ের সুপারিশ**:
      * "conclusionBranch": যেমন- "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
      * "conclusionHeadOffice": যেমন- "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
@@ -624,16 +677,16 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
       "sl": "১",
       "entityAndAuditYear": "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\\nনিরীক্ষা বছর: ${auditYear}",
       "paraNo": "${letterMetadata?.paraNo || '০৪'}",
-      "titleAndDetails": "শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশिष्ट পৃষ্ঠা নং- ",
+      "titleAndDetails": "শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশिष्ट পৃষ্ঠা নং- ",
       "entityReplyHeader": "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
       "hasTable": true,
       "tableHeaders": ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
       "tableRows": [
-        ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২/-", "১,৯৬,৪৮৩/-", "১৮,৯৬৭/-", "১,২৮৭/-", "২,১৬,৭৩৭/-", "১৫/০৯/২০১৬"],
-        ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮/-", "৩,০৫,০৩৭/-", "৮৫,৫৪৭/-", "৩,৮২৬/-", "৩,৯৪,৪১০/-", "২২/০৪/২০১৮"],
-        ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪/-", "৩,২৩,৮৮৮/-", "১,৪১,৯৬১/-", "৬,১০৩/-", "৪,৭১,৯৫২/-", "২৫/১০/২০১৮"],
-        ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০/-", "১,৩৭,৯৬৮/-", "১,১৪,৬৭১/-", "১৩,৯৪৯/-", "২,৬৬,৫৮৮/-", "২৬/০১/২০২০"],
-        ["সর্বমোট", "-", "-", "৮,৪১,২৮৪/-", "৯,৬৩,৩৭৬/-", "৩,৬১,১৮৬/-", "২৫,১৬৫/-", "১৩,৪৯,৭২৭/-", "-"]
+        ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২", "১,৯৬,৪৮৩", "১৮,৯৬৭", "১,২৮৭", "২,১৬,৭৩৭", "১৫/০৯/২০১৬"],
+        ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮", "৩,০৫,০৩৭", "৮৫,৫৪৭", "৩,৮২৬", "৩,৯৪,৪১০", "২২/০৪/২০১৮"],
+        ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪", "৩,২৩,৮৮৮", "১,৪১,৯৬১", "৬,১০৩", "৪,৭১,৯৫২", "২৫/১০/২০১৮"],
+        ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০", "১,৩৭,৯৬৮", "১,১৪,৬৭১", "১৩,৯৪৯", "২,৬৬,৫৮৮", "২৬/০১/২০২০"],
+        ["সর্বমোট", "-", "-", "৮,৪১,২৮৪", "৯,৬৩,৩৭৬", "৩,৬১,১৮৬", "২৫,১৬৫", "১৩,৪৯,৭২৭", "-"]
       ],
       "conclusionBranch": "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
       "conclusionHeadOffice": "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
@@ -658,8 +711,8 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
         "sl": "১",
         "paraAndYear": "${letterMetadata?.paraNo || '০৪'}, ${auditYear}",
         "entityName": "${entity}${branchName ? `, ${branchName}` : ''}।",
-        "paraTitle": "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-",
-        "involvedAmount": "${totalAmount || '৮,৪১,২৮৪/-'}",
+        "paraTitle": "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪",
+        "involvedAmount": "${totalAmount || '৮,৪১,২৮৪'}",
         "officeComment": ${hasEvidence ? '"আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"' : '""'}
       }
     ],
@@ -751,10 +804,10 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
             }
 
             if (parsedData.diaryHeader) {
-              parsedData.diaryHeader = convertAllDatesToBengali(parsedData.diaryHeader);
+              parsedData.diaryHeader = convertAllDatesToBengali(stripAmountSlashInText(parsedData.diaryHeader));
             }
             if (parsedData.noteTikaText) {
-              parsedData.noteTikaText = convertAllDatesToBengali(parsedData.noteTikaText);
+              parsedData.noteTikaText = convertAllDatesToBengali(stripAmountSlashInText(parsedData.noteTikaText));
             }
             if (Array.isArray(parsedData.paragraphs)) {
               parsedData.paragraphs = parsedData.paragraphs.map((p: any) => ({
@@ -762,11 +815,23 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
                 sl: toBengaliDigits(p.sl),
                 paraNo: toBengaliDigits(p.paraNo),
                 entityAndAuditYear: convertAllDatesToBengali(p.entityAndAuditYear),
-                titleAndDetails: convertAllDatesToBengali(p.titleAndDetails),
-                entityReplyHeader: convertAllDatesToBengali(p.entityReplyHeader || p.entityReplyText),
+                titleAndDetails: convertAllDatesToBengali(stripAmountSlashInText(p.titleAndDetails)),
+                entityReplyHeader: convertAllDatesToBengali(stripAmountSlashInText(p.entityReplyHeader || p.entityReplyText)),
                 tableRows: Array.isArray(p.tableRows)
-                  ? p.tableRows.map((r: any[]) => Array.isArray(r) ? r.map(c => convertAllDatesToBengali(String(c))) : r)
+                  ? p.tableRows.map((r: any[]) =>
+                      Array.isArray(r)
+                        ? r.map(c => cleanAndFormatBengaliAmount(convertAllDatesToBengali(String(c))))
+                        : r
+                    )
                   : p.tableRows
+              }));
+            }
+            if (parsedData.suggestedIssueLetter && Array.isArray(parsedData.suggestedIssueLetter.tableRows)) {
+              parsedData.suggestedIssueLetter.tableRows = parsedData.suggestedIssueLetter.tableRows.map((r: any) => ({
+                ...r,
+                sl: toBengaliDigits(r.sl),
+                paraTitle: convertAllDatesToBengali(stripAmountSlashInText(r.paraTitle)),
+                involvedAmount: cleanAndFormatBengaliAmount(r.involvedAmount)
               }));
             }
 

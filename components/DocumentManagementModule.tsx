@@ -43,7 +43,15 @@ import {
   Layers,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
-import { toBengaliDigits, formatDateBN, toEnglishDigits, parseBengaliNumber, convertAllDatesToBengali } from "../utils/numberUtils";
+import {
+  toBengaliDigits,
+  formatDateBN,
+  toEnglishDigits,
+  parseBengaliNumber,
+  convertAllDatesToBengali,
+  cleanAndFormatBengaliAmount,
+  stripAmountSlashInText
+} from "../utils/numberUtils";
 import { OFFICE_HEADER } from "../constants";
 
 interface DocumentManagementModuleProps {
@@ -675,7 +683,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 const cells: Record<string, string> = {};
                 cols.forEach((col, cIdx) => {
                   const rawVal = r[cIdx] || "";
-                  cells[col.id] = convertAllDatesToBengali(toBengaliDigits(rawVal));
+                  const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
+                  const isSerial = cIdx === 0 || col.label.includes("ক্রমিক") || col.label.includes("ক্র:") || col.id === "sl";
+                  const isName = col.label.includes("নাম") || col.id === "borrowerName" || col.label.includes("বিবরণ");
+                  const isAccount = col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
+
+                  if (isDate) {
+                    cells[col.id] = convertAllDatesToBengali(toBengaliDigits(rawVal));
+                  } else if (isSerial) {
+                    cells[col.id] = toBengaliDigits(rawVal || String(rIdx + 1));
+                  } else if (isName || isAccount) {
+                    cells[col.id] = stripAmountSlashInText(toBengaliDigits(rawVal));
+                  } else {
+                    cells[col.id] = cleanAndFormatBengaliAmount(rawVal);
+                  }
                 });
                 return { id: `row-${pIdx}-${rIdx + 1}`, cells, cellColors: {} };
               })
@@ -686,8 +707,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             sl: pItem.sl ? toBengaliDigits(pItem.sl) : toBengaliDigits(pIdx + 1),
             entityAndAuditYear: convertAllDatesToBengali(pItem.entityAndAuditYear || defaultEntityAndAuditYear),
             paraNo: pItem.paraNo ? toBengaliDigits(pItem.paraNo) : toBengaliDigits(10 + pIdx),
-            titleAndDetails: convertAllDatesToBengali(pItem.titleAndDetails || defaultTitleAndDetails),
-            entityReplyText: convertAllDatesToBengali((pItem.entityReplyHeader || pItem.entityReplyText || "").replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, '')),
+            titleAndDetails: convertAllDatesToBengali(stripAmountSlashInText(pItem.titleAndDetails || defaultTitleAndDetails)),
+            entityReplyText: convertAllDatesToBengali(stripAmountSlashInText((pItem.entityReplyHeader || pItem.entityReplyText || "").replace(/^স্থানীয় প্রতিষ্ঠানের জবাব:\s*/, ''))),
             hasTable: !!pItem.hasTable && rows.length > 0,
             tableColumns: cols,
             tableRows: rows.length > 0 ? rows : [
@@ -697,9 +718,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 cellColors: {}
               }
             ],
-            branchRequestText: typeof pItem.conclusionBranch === "string" ? convertAllDatesToBengali(pItem.conclusionBranch) : "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-            headOfficeCommentText: typeof pItem.conclusionHeadOffice === "string" ? convertAllDatesToBengali(pItem.conclusionHeadOffice.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, '')) : "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-            presenterCommentText: typeof pItem.conclusionPresenter === "string" ? convertAllDatesToBengali(pItem.conclusionPresenter.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, '')) : "",
+            branchRequestText: typeof pItem.conclusionBranch === "string" ? convertAllDatesToBengali(stripAmountSlashInText(pItem.conclusionBranch)) : "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+            headOfficeCommentText: typeof pItem.conclusionHeadOffice === "string" ? convertAllDatesToBengali(stripAmountSlashInText(pItem.conclusionHeadOffice.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''))) : "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
+            presenterCommentText: typeof pItem.conclusionPresenter === "string" ? convertAllDatesToBengali(stripAmountSlashInText(pItem.conclusionPresenter.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''))) : "",
             status: pItem.status || (pItem.conclusionPresenter ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"),
           };
         });
@@ -708,7 +729,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         // Auto-generate Jaripatra rows from parsed paragraphs
         const jRows: JaripatraGridRowItem[] = parsedParas.map((para, idx) => {
           let title = para.titleAndDetails.split("\n")[0] || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।";
-          title = title.replace(/^শিরোনাম:\s*/, '');
+          title = stripAmountSlashInText(title.replace(/^শিরোনাম:\s*/, ''));
           return {
             id: `j-row-ai-${idx + 1}`,
             cells: {
@@ -716,7 +737,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               col_2: { text: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
               col_4: { text: title, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_5: { text: entry.totalAmount ? cleanAndFormatBengaliAmount(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_6: { text: para.presenterCommentText || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           };
@@ -2889,12 +2910,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             const isAccount = col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
                             const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
                             
-                            let colWidth = "min-w-[80px]";
-                            if (isSerial) colWidth = "w-[5%] min-w-[40px]";
-                            else if (isName) colWidth = "w-[24%] min-w-[170px]";
-                            else if (isAccount) colWidth = "w-[15%] min-w-[110px]";
-                            else if (isDate) colWidth = "w-[12%] min-w-[95px]";
-                            else colWidth = "min-w-[85px]";
+                            let colWidth = "min-w-[70px]";
+                            if (isSerial) colWidth = "w-[4%] min-w-[36px]";
+                            else if (isName) colWidth = "w-[14%] min-w-[110px]";
+                            else if (isAccount) colWidth = "w-[12%] min-w-[85px]";
+                            else if (isDate) colWidth = "w-[10%] min-w-[80px]";
+                            else colWidth = "min-w-[70px]";
 
                             return (
                               <th key={col.id} className={`border border-slate-800 p-2 text-center relative group ${colWidth}`}>
@@ -2961,6 +2982,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                       onChange={(e) =>
                                         handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
                                       }
+                                      onBlur={(e) =>
+                                        handleUpdateParagraphTableCell(para.id, row.id, col.id, stripAmountSlashInText(e.target.value))
+                                      }
                                       className={`w-full bg-transparent outline-none font-bold text-slate-950 px-1.5 py-0.5 rounded-none text-xs sm:text-[13px] leading-snug break-words whitespace-pre-wrap resize-none block ${
                                         isName ? "text-left" : "text-center"
                                       }`}
@@ -2973,6 +2997,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                       onChange={(e) =>
                                         handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
                                       }
+                                      onBlur={(e) => {
+                                        if (isAmount) {
+                                          handleUpdateParagraphTableCell(
+                                            para.id,
+                                            row.id,
+                                            col.id,
+                                            cleanAndFormatBengaliAmount(e.target.value)
+                                          );
+                                        }
+                                      }}
                                       className={`w-full bg-transparent outline-none font-bold text-slate-950 px-1 py-0.5 rounded-none text-xs sm:text-[13px] tracking-normal ${
                                         isAmount ? "text-right pr-2" : "text-center"
                                       }`}
