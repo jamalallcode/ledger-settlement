@@ -2057,7 +2057,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
                     {/* Table Body */}
                     <tbody>
-                      {jaripatraGridRows.map((row) => (
+                      {(jaripatraGridRows.filter(row => jaripatraColumns.some(col => (row.cells[col.id]?.text || '').trim() !== '')).length > 0 
+                        ? jaripatraGridRows.filter(row => jaripatraColumns.some(col => (row.cells[col.id]?.text || '').trim() !== '')) 
+                        : jaripatraGridRows.slice(0, 1)
+                      ).map((row) => (
                         <tr key={row.id} className="align-top hover:bg-slate-50/40">
                           {jaripatraColumns.map((col, cIdx) => {
                             const cell = row.cells[col.id];
@@ -2083,20 +2086,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                 key={`${row.id}-${col.id}`}
                                 colSpan={cell.colSpan || 1}
                                 rowSpan={cell.rowSpan || 1}
-                                className="border border-black p-2 align-top text-black"
+                                className="border border-black p-1.5 sm:p-2 align-top text-black"
                               >
                                 <textarea
                                   rows={
                                     isSerialCol
                                       ? 1
                                       : Math.max(
-                                          2,
-                                          Math.ceil(((cell.text || '').length || 1) / (cell.colSpan && cell.colSpan > 1 ? 45 : 25)),
+                                          1,
+                                          Math.ceil(((cell.text || '').length || 1) / (cell.colSpan && cell.colSpan > 1 ? 45 : 28)),
                                           (cell.text || '').split('\n').length
                                         )
                                   }
                                   readOnly={!isJaripatraEditable}
-                                  className={`w-full bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${alignClass} ${
+                                  className={`w-full bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal ${alignClass} ${
                                     cell.isBold ? "font-bold" : "font-normal"
                                   } ${
                                     isJaripatraEditable
@@ -2122,7 +2125,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
 
               {/* 7. Signatory Block (Right Aligned) */}
-              <div className="pt-10 flex justify-end">
+              <div className="pt-4 sm:pt-6 flex justify-end">
                 <div className="text-center space-y-0.5 w-60 sm:w-64">
                   <div className="w-40 border-b border-black mx-auto mb-2" />
                   <input
