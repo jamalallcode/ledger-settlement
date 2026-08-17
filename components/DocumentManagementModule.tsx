@@ -144,6 +144,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [objectionText, setObjectionText] = useState<string>("");
   const [replyFile, setReplyFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
   const [replyText, setReplyText] = useState<string>("");
+  const [evidenceFile, setEvidenceFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
+  const [evidenceText, setEvidenceText] = useState<string>("");
   const [, setIsFilesPurged] = useState<boolean>(false);
 
   // AI State
@@ -184,7 +186,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       entityAndAuditYear: defaultEntityAndAuditYear,
       paraNo: defaultParaNo,
       titleAndDetails: defaultTitleAndDetails,
-      entityReplyText: "আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:",
+      entityReplyText: "",
       hasTable: false, // Initially user can click button or AI detects table
       tableColumns: [...DEFAULT_TABLE_COLUMNS],
       tableRows: [
@@ -192,35 +194,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           id: "row-1",
           cells: {
             sl: "১",
-            borrowerName: "ফেরদৌসী বেগম",
-            involvedAmount: "১৪৫০৬",
-            principal: "৬৮০০",
-            interest: "৭৭০৬",
+            borrowerName: "",
+            involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০",
+            principal: "০",
+            interest: "০",
             others: "-",
-            totalRecovered: "১৪৫০৬",
-            adjustmentDate: "২০-০২-১৭",
-          },
-          cellColors: {},
-        },
-        {
-          id: "row-2",
-          cells: {
-            sl: "২",
-            borrowerName: "শারমিন আক্তার",
-            involvedAmount: "১৪৫০৬",
-            principal: "৬৮০০",
-            interest: "৭৭০৬",
-            others: "-",
-            totalRecovered: "১৪৫০৬",
-            adjustmentDate: "২২-১০-১৭",
+            totalRecovered: "০",
+            adjustmentDate: "-",
           },
           cellColors: {},
         },
       ],
-      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      presenterCommentText: "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।",
-      status: "পূর্ণাঙ্গ নিষ্পত্তি",
+      branchRequestText: "",
+      headOfficeCommentText: "",
+      presenterCommentText: "",
+      status: "মন্তব্য বিচারাধীন",
     },
   ]);
 
@@ -230,9 +218,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   );
 
   // Approval & Status
-  const [settlementStatus, setSettlementStatus] = useState<string>("পূর্ণাঙ্গ নিষ্পত্তি");
+  const [settlementStatus, setSettlementStatus] = useState<string>("মন্তব্য বিচারাধীন");
   const [isNoteApproved, setIsNoteApproved] = useState<boolean>(false);
   const [selectedCellColor, setSelectedCellColor] = useState<string>("#ecfdf5");
+  const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
   // Document Validation, Confirmation & Toast States
   const [validationErrorModal, setValidationErrorModal] = useState<{
@@ -305,11 +294,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       id: "j-row-1",
       cells: {
         col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_2: { text: `১০, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_2: { text: `${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
         col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_4: { text: `মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫"} টাকা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_4: { text: `অনুচ্ছেদ নং ${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}`, align: "justify", colSpan: 1, rowSpan: 1 },
         col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_6: { text: "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+        col_6: { text: "", align: "justify", colSpan: 1, rowSpan: 1 }
       }
     }
   ]);
@@ -323,70 +312,25 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Bottom Memo & Date
   const [jaripatraBottomMemoNo, setJaripatraBottomMemoNo] = useState<string>("৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬");
-  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>(() => getTodayBengaliDateFormatted());
+  const [jaripatraBottomDate, setJaripatraBottomDate] = useState<string>("       /      /২০২৬ খ্রি:");
 
-  // Onulipi
-  const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুলিপি প্রেরণ করা হলো: (জ্যেষ্ঠতার ভিত্তিতে নয়)");
+  // Onulipi (Distribution) State
+  const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("অনুলিপি জ্ঞাতার্থ ও কার্যার্থে প্রেরণ করা হলো:");
   const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>([
-    `১. উপমহাব্যবস্থাপক, ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
-    "২. পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কাযায়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
-    "৩. অফিস কপি।"
+    "১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।",
+    "২। মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, প্রধান কার্যালয়, ঢাকা।",
+    "৩। উপ-মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, আঞ্চলিক কার্যালয়, চুয়াডাঙ্গা।",
+    "৪। অফিস কপি।"
   ]);
-  const [newlyAddedParaId, setNewlyAddedParaId] = useState<string | null>(null);
 
-  // Automatically scroll to top when switching to Jaripatra view
-  useEffect(() => {
-    if (showJaripatraView) {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      const mainContainer = document.getElementById("official-jaripatra-container");
-      if (mainContainer) {
-        mainContainer.scrollIntoView({ behavior: "instant", block: "start" });
-      }
-    }
-  }, [showJaripatraView]);
-
-  // Hook into the main back button so that when in Jaripatra view, it returns to Note Sheet, and from Note Sheet back to Register
-  useEffect(() => {
-    if (onRegisterBackHandler) {
-      if (showJaripatraView) {
-        onRegisterBackHandler(() => {
-          setShowJaripatraView(false);
-          return true;
-        });
-      } else {
-        onRegisterBackHandler(() => {
-          onBack();
-          return true;
-        });
-      }
-    }
-    return () => {
-      if (onRegisterBackHandler) {
-        onRegisterBackHandler(null);
-      }
-    };
-  }, [showJaripatraView, onRegisterBackHandler, onBack]);
-
-  // Synchronize Jaripatra summary rows directly from the note sheet paragraphs
-  const handleSyncJaripatraFromParagraphs = () => {
-    if (paragraphs.length === 0) return;
+  const handleSyncParagraphsToJaripatra = () => {
     const newGridRows: JaripatraGridRowItem[] = paragraphs.map((para, idx) => {
       const col1Text = toBengaliDigits(idx + 1);
-      const col2Text = `${para.paraNo || "১০"}, ${entry.auditYear || "২০১১-১৪"}`;
-      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
-      const col4Text = para.titleAndDetails 
-        ? para.titleAndDetails.split("\n")[0].replace(/^শিরোনাম:\s*/, "") 
-        : `মাইক্রো ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।`;
-      
-      let totalAmt = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "-";
-      if (para.hasTable) {
-        const recovered = calculateParagraphTotal(para, "আদায়");
-        const involved = calculateParagraphTotal(para, "জড়িত");
-        if (recovered > 0) totalAmt = toBengaliDigits(recovered);
-        else if (involved > 0) totalAmt = toBengaliDigits(involved);
-      }
-      const col5Text = totalAmt;
-      const col6Text = para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।";
+      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}, ${entry.auditYear || "২০১১-১৪"}`;
+      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
+      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}`;
+      const col5Text = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
+      const col6Text = para.presenterCommentText || "";
 
       return {
         id: `j-row-sync-${para.id}-${Date.now()}`,
@@ -415,7 +359,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   };
 
   // Convert File to Base64
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "objection" | "reply") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "objection" | "reply" | "evidence") => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -434,10 +378,15 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         if (!objectionText) {
           setObjectionText(`[সংযুক্ত ফাইল: ${file.name}] মূল আপত্তির রেকর্ডপত্র।`);
         }
-      } else {
+      } else if (type === "reply") {
         setReplyFile(fileData);
         if (!replyText) {
-          setReplyText(`[সংযুক্ত ফাইল: ${file.name}] প্রতিষ্ঠানের জবাব ও প্রমাণক।`);
+          setReplyText(`[সংযুক্ত ফাইল: ${file.name}] প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং।`);
+        }
+      } else if (type === "evidence") {
+        setEvidenceFile(fileData);
+        if (!evidenceText) {
+          setEvidenceText(`[সংযুক্ত ফাইল: ${file.name}] আদায়ের চালান/ভাউচার সংক্রান্ত প্রমাণক।`);
         }
       }
       setIsFilesPurged(false);
@@ -454,8 +403,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       sl: nextSl,
       entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${entry.branchName ? `,\n${entry.branchName}` : ''}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
       paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "10") + paragraphs.length),
-      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ",
-      entityReplyText: "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
+      titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ",
+      entityReplyText: "",
       hasTable: false,
       tableColumns: [...DEFAULT_TABLE_COLUMNS],
       tableRows: [
@@ -474,10 +423,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           cellColors: {},
         },
       ],
-      branchRequestText: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-      headOfficeCommentText: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      presenterCommentText: "দাখিলকৃত প্রমাণক সঠিক থাকায় অনুচ্ছেদটি নিষ্পত্তি করা যেতে পারে।",
-      status: "পূর্ণাঙ্গ নিষ্পত্তি",
+      branchRequestText: "",
+      headOfficeCommentText: "",
+      presenterCommentText: "",
+      status: "মন্তব্য বিচারাধীন",
     };
 
     setParagraphs((prev) => [...prev, newPara]);
@@ -699,10 +648,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 cellColors: {}
               }
             ],
-            branchRequestText: pItem.conclusionBranch || "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
-            headOfficeCommentText: (pItem.conclusionHeadOffice || "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।").replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, ''),
-            presenterCommentText: (pItem.conclusionPresenter || "আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।").replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, ''),
-            status: pItem.status || "পূর্ণাঙ্গ নিষ্পত্তি",
+            branchRequestText: typeof pItem.conclusionBranch === "string" ? pItem.conclusionBranch : "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
+            headOfficeCommentText: typeof pItem.conclusionHeadOffice === "string" ? pItem.conclusionHeadOffice.replace(/^প্রধান কার্যালয়ের মন্তব্য:\s*/, '') : "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
+            presenterCommentText: typeof pItem.conclusionPresenter === "string" ? pItem.conclusionPresenter.replace(/^উপস্থাপনকারীর মন্তব্য:\s*/, '') : "",
+            status: pItem.status || (pItem.conclusionPresenter ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"),
           };
         });
         setParagraphs(parsedParas);
@@ -719,7 +668,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
               col_4: { text: title, align: "justify", colSpan: 1, rowSpan: 1 },
               col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_6: { text: para.presenterCommentText || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+              col_6: { text: para.presenterCommentText || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           };
         });
@@ -752,7 +701,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               col_3: { text: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`, align: "justify", colSpan: 1, rowSpan: 1 },
               col_4: { text: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।", align: "justify", colSpan: 1, rowSpan: 1 },
               col_5: { text: r.involvedAmount || "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_6: { text: r.officeComment || "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।", align: "justify", colSpan: 1, rowSpan: 1 }
+              col_6: { text: r.officeComment || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           })));
         }
@@ -782,13 +731,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     // 1. Initial local emptiness check
     const hasObjection = !!(objectionText.trim() || objectionFile);
     const hasReply = !!(replyText.trim() || replyFile);
+    const hasEvidence = !!(evidenceText.trim() || evidenceFile);
 
-    if (!hasObjection && !hasReply) {
+    if (!hasObjection && !hasReply && !hasEvidence) {
       setValidationErrorModal({
         open: true,
         message: "আপনি কোনো অডিট ডকুমেন্ট বা জবাব প্রদান করেননি।",
         details: [
-          "অনুগ্রহ করে ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ অথবা খ. প্রতিষ্ঠানের জবাব ও প্রমাণক সংযুক্ত করুন বা লিখুন।",
+          "অনুগ্রহ করে ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ অথবা খ. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং অথবা গ. প্রমাণকসমূহ সংযুক্ত করুন বা লিখুন।",
           "নথিতে প্রতিষ্ঠান, নিরীক্ষা বছর ও অনুচ্ছেদ নম্বর সংক্রান্ত তথ্য থাকা আবশ্যক।"
         ]
       });
@@ -816,6 +766,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           originalObjectionFile: objectionFile,
           entityReplyText: replyText,
           entityReplyFile: replyFile,
+          evidenceText: evidenceText,
+          evidenceFile: evidenceFile,
           letterMetadata: {
             diaryNo: entry.diaryNo,
             diaryDate: entry.diaryDate,
@@ -883,6 +835,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     setIsNoteApproved(true);
     setObjectionFile(null);
     setReplyFile(null);
+    setEvidenceFile(null);
     setIsFilesPurged(true);
   };
 
@@ -2413,15 +2366,15 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         </div>
 
         {/* Upload Inputs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {/* Box A: Original Objection */}
-          <div className="p-3.5 bg-blue-50/40 rounded-2xl border border-blue-200/80 space-y-2">
+          <div className="p-3 bg-blue-50/40 rounded-2xl border border-blue-200/80 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
-                <FileText size={13} className="text-blue-600" /> ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ
+              <span className="text-[11.5px] font-black text-blue-950 flex items-center gap-1">
+                <FileText size={12} className="text-blue-600" /> ক. মূল আপত্তি / অনুচ্ছেদ
               </span>
-              <label className="cursor-pointer px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-[10.5px] font-black border border-blue-200 shadow-2xs flex items-center gap-1">
-                <Upload size={11} /> {objectionFile ? "ফাইল পরিবর্তন" : "সফটকপি আপলোড"}
+              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-[10px] font-black border border-blue-200 shadow-2xs flex items-center gap-1">
+                <Upload size={10} /> {objectionFile ? "পরিবর্তন" : "আপলোড"}
                 <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "objection")} />
               </label>
             </div>
@@ -2435,21 +2388,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             )}
             <textarea
               rows={2}
-              placeholder="অথবা মূল আপত্তির অনুচ্ছেদসমূহ এখানে লিখুন বা পেস্ট করুন..."
+              placeholder="মূল আপত্তির অনুচ্ছেদসমূহ লিখুন বা পেস্ট করুন..."
               className="w-full p-2 bg-white border border-blue-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-500"
               value={objectionText}
               onChange={(e) => setObjectionText(e.target.value)}
             />
           </div>
 
-          {/* Box B: Entity Reply */}
-          <div className="p-3.5 bg-emerald-50/40 rounded-2xl border border-emerald-200/80 space-y-2">
+          {/* Box B: Entity Reply & Forwarding */}
+          <div className="p-3 bg-emerald-50/40 rounded-2xl border border-emerald-200/80 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
-                <FileText size={13} className="text-emerald-600" /> খ. প্রতিষ্ঠানের জবাব ও চালানের প্রমাণক
+              <span className="text-[11.5px] font-black text-emerald-950 flex items-center gap-1">
+                <FileText size={12} className="text-emerald-600" /> খ. ফরওয়ার্ডিং ও জবাব
               </span>
-              <label className="cursor-pointer px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-700 rounded-lg text-[10.5px] font-black border border-emerald-200 shadow-2xs flex items-center gap-1">
-                <Upload size={11} /> {replyFile ? "ফাইল পরিবর্তন" : "সফটকপি আপলোড"}
+              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black border border-emerald-200 shadow-2xs flex items-center gap-1">
+                <Upload size={10} /> {replyFile ? "পরিবর্তন" : "আপলোড"}
                 <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "reply")} />
               </label>
             </div>
@@ -2463,10 +2416,38 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             )}
             <textarea
               rows={2}
-              placeholder="অথবা প্রতিষ্ঠানের জবাব ও চালানের বিবরণ এখানে সরাসরি পেস্ট করুন..."
+              placeholder="প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পেস্ট করুন..."
               className="w-full p-2 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-emerald-500"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
+            />
+          </div>
+
+          {/* Box C: Evidence Upload */}
+          <div className="p-3 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11.5px] font-black text-amber-950 flex items-center gap-1">
+                <FileText size={12} className="text-amber-600" /> গ. প্রমাণকসমূহ (চালান/ভাউচার)
+              </span>
+              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-amber-50 text-amber-700 rounded-lg text-[10px] font-black border border-amber-200 shadow-2xs flex items-center gap-1">
+                <Upload size={10} /> {evidenceFile ? "পরিবর্তন" : "আপলোড"}
+                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "evidence")} />
+              </label>
+            </div>
+            {evidenceFile && (
+              <div className="px-2 py-1 bg-amber-100/70 text-amber-900 rounded-md text-[10px] font-bold flex items-center justify-between">
+                <span className="truncate">সংযুক্ত: {evidenceFile.name}</span>
+                <button type="button" onClick={() => setEvidenceFile(null)} className="text-rose-500 hover:text-rose-700">
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            )}
+            <textarea
+              rows={2}
+              placeholder="প্রমাণক থাকলে পেস্ট/আপলোড করুন (মন্তব্যের জন্য)..."
+              className="w-full p-2 bg-white border border-amber-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500"
+              value={evidenceText}
+              onChange={(e) => setEvidenceText(e.target.value)}
             />
           </div>
         </div>

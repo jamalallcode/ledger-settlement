@@ -353,6 +353,8 @@ async function startServer() {
         originalObjectionFile = null, // { base64, mimeType, name }
         entityReplyText = "",
         entityReplyFile = null, // { base64, mimeType, name }
+        evidenceText = "",
+        evidenceFile = null, // { base64, mimeType, name }
         letterMetadata = {},
         userClarifications = [],
         userConfirmedProceed = false // When true, user has confirmed to proceed even if some fields were missing
@@ -371,8 +373,9 @@ async function startServer() {
       const auditYear = letterMetadata.auditYear || "";
       const totalAmount = letterMetadata.totalAmount || letterMetadata.involvedAmount || "";
 
-      const rawCombined = `${originalObjectionText} ${entityReplyText}`.trim();
-      const hasFiles = !!(originalObjectionFile || entityReplyFile);
+      const rawCombined = `${originalObjectionText} ${entityReplyText} ${evidenceText}`.trim();
+      const hasFiles = !!(originalObjectionFile || entityReplyFile || evidenceFile);
+      const hasEvidence = !!(evidenceFile || (evidenceText && evidenceText.trim().length > 0));
 
       if (apiKey) {
         try {
@@ -382,28 +385,39 @@ async function startServer() {
           const promptText = `
 আপনি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের বাণিজ্যিক অডিট অধিদপ্তরের একজন অত্যন্ত অভিজ্ঞ সিনিয়র অডিট অফিসার ও অডিট নিষ্পত্তি বিশেষজ্ঞ।
 
-আপনার প্রথম এবং প্রধান দায়িত্ব হলো ইনপুট হিসেবে দেওয়া ডকুমেন্টটি গভীরভাবে যাচাই (Audit Document 4-Point Validation) করা:
+ইনপুট হিসেবে নিচের ৩টি পৃথক সেকশন বিবেচনা করুন:
+১. ক. মূল অডিট আপত্তি / অনুচ্ছেদসমূহ (Original Objection)
+২. খ. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Entity Reply & Forwarding)
+৩. গ. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
+
+আপনার দায়িত্ব ও মূল নীতিমালা (Strict Operational Rules):
 
 ১. **ডকুমেন্ট অডিট-তথ্য যাচাইকরণ (Audit Information Validation Step)**:
-   প্রেরিত টেক্সট বা ফাইলের বিষয়বস্তুতে নিচের ৪টি মূল তথ্য আছে কিনা তা পৃথকভাবে অত্যন্ত সতর্কতার সাথে পরীক্ষা করুন:
-   ক. **অনুচ্ছেদ নং (Paragraph No / paraNo)**: নির্দিষ্ট অনুচ্ছেদ নম্বর (যেমন: অনুচ্ছেদ নং- ১০, ১২, ১৫ ইত্যাদি)।
-   খ. **নিরীক্ষা বছর (Audit Year / auditYear)**: নিরীক্ষা সাল (যেমন: ২০২২-২৩, ২০১৯-২০ ইত্যাদি)।
-   গ. **অডিটকৃত প্রতিষ্ঠান (Audited Entity / entityName)**: অডিটকৃত প্রতিষ্ঠান, সংস্থা বা ব্যাংকের নাম/শাখা।
-   ঘ. **চালান ও আদায়ের তথ্য (Challan / Recovery / Adjustment Info)**: চালানের নম্বর, তারিখ, আদায়ের টাকার পরিমাণ, ভাউচার বা সমন্বয়ের তথ্য।
+   প্রেরিত বিষয়বস্তুতে নিচের মূল তথ্য আছে কিনা পরীক্ষা করুন:
+   ক. **অনুচ্ছেদ নং (Paragraph No / paraNo)**
+   খ. **নিরীক্ষা বছর (Audit Year / auditYear)**
+   গ. **অডিটকৃত প্রতিষ্ঠান (Audited Entity / entityName)**
+   ঘ. **চালান/আদায় সংক্রান্ত তথ্য (Challan / Recovery Info)**
 
 ২. **যাচাইকরণের সিদ্ধান্ত গ্রহণ (Decision Matrix)**:
-   - **যদি প্রেরিত টেক্সট বা ফাইলটি সম্পূর্ণ অপ্রাসঙ্গিক, ভুলভাল/এলোমেলো (Random/Gibberish), সাধারণ চিঠি বা অডিট আপত্তির সাথে বিন্দুমাত্র সম্পর্কহীন কোনো লেখা হয়**:
+   - **যদি টেক্সট বা ফাইলটি সম্পূর্ণ অপ্রাসঙ্গিক বা এলোমেলো (Gibberish) হয়**:
      - "isValidAuditDocument": false
      - "errorMessage": "আপনি সঠিক অডিট ডকুমেন্ট দেননি। অনুচ্ছেদ নং, নিরীক্ষা বছর ও প্রতিষ্ঠান সম্বলিত সঠিক ডকুমেন্ট প্রদান করে পুনরায় চেষ্টা করুন।"
-   - **যদি ডকুমেন্টটি অডিট সংক্রান্ত হয় কিন্তু উপরোক্ত ৪টি তথ্যের মধ্যে এক বা একাধিক তথ্য (যেমন: নিরীক্ষা বছর বা চালানের তথ্য বা অনুচ্ছেদ নং) অনুপস্থিত বা অস্পষ্ট থাকে**:
+   - **যদি অডিট সংক্রান্ত হয় কিন্তু কোনো তথ্য অনুপস্থিত থাকে**:
      - "isValidAuditDocument": true
      - "hasMissingInfo": true
-     - "missingFields": অনুপস্থিত তথ্যগুলোর বাংলা নামের তালিকা (যেমন: ["নিরীক্ষা বছর", "চালানের তথ্য"])
-     - "confirmationMessage": "প্রদত্ত ডকুমেন্টে [অনুপস্থিত তথ্যের নামসমূহ] সরাসরি পাওয়া যাচ্ছে না বা মিলছে না। এটিই কি আপনার কাঙ্ক্ষিত সঠিক অডিট ডকুমেন্ট?"
-   - **যদি সবগুলো তথ্য স্পষ্টভাবে থাকে**:
+     - "missingFields": অনুপস্থিত তথ্যগুলোর তালিকা (যেমন: ["নিরীক্ষা বছর"])
+   - **যদি তথ্যসমূহ স্পষ্টভাবে থাকে**:
      - "isValidAuditDocument": true
      - "hasMissingInfo": false
      - "missingFields": []
+
+৩. **প্রমাণক ভিত্তিক মন্তব্য লেখার শর্ত (CRITICAL COMMENT LOGIC)**:
+   - **শর্ত ১ (যদি প্রমাণক সংযুক্ত না থাকে - hasEvidence = false)**:
+     ব্যবহারকারী কেবল মূল অনুচ্ছেদ ও ফরওয়ার্ডিং/জবাব আপলোড করেছেন। এক্ষেত্রে এআই প্রতিটি অনুচ্ছেদ অনুযায়ী অনুচ্ছেদ নং, শিরোনাম, স্থানীয় অফিসের জবাব ("entityReplyHeader" / ছক) এবং প্রধান/নিয়ন্ত্রণকারী অফিসের জবাব ও সুপারিশ ("conclusionHeadOffice", "conclusionBranch") পুঙ্খানুপুঙ্খভাবে তৈরি করে বসিয়ে দেবে।
+     **কিন্তু "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) অবশ্যই সম্পূর্ণ ফাঁকা ("") রাখতে হবে**। কোনো কাল্পনিক মন্তব্য লেখা যাবে না, কারণ প্রমাণক আপলোড না থাকলে মন্তব্য ব্যবহারকারী নিজে যাচাই করে লিখবেন।
+   - **শর্ত ২ (যদি প্রমাণক সংযুক্ত থাকে - hasEvidence = true)**:
+     ব্যবহারকারী চালান, জমা রসিদ বা ভাউচারের প্রমাণক আপলোড করেছেন। এক্ষেত্রে এআই প্রমাণক গভীরভাবে বিশ্লেষণ করে "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) পূর্ণাঙ্গ ও প্রমিত সরকারি ভাষায় লিখে দেবে এবং আপত্তি নিষ্পত্তির যৌক্তিক সুপারিশ ও স্ট্যাটাস ("পূর্ণাঙ্গ নিষ্পত্তি" / "আংশিক নিষ্পত্তি" / "অনিষ্পন্ন") উল্লেখ করবে।
 
 চিঠির রেজিস্ট্রি মেটাডাটা (রেফারেন্সের জন্য):
 - মন্ত্রণালয়: ${ministry}
@@ -414,13 +428,14 @@ async function startServer() {
 - স্মারক নং: ${letterNo}, তারিখ: ${letterDate}
 - জড়িত টাকার পরিমাণ: ${totalAmount} টাকা
 
-${originalObjectionText ? `মূল আপত্তি/অনুচ্ছেদের সারসংক্ষেপ বা টেক্সট:\n${originalObjectionText}\n` : ''}
-${entityReplyText ? `প্রতিষ্ঠানের প্রেরিত জবাব ও প্রমাণক টেক্সট:\n${entityReplyText}\n` : ''}
+${originalObjectionText ? `ক. মূল আপত্তি/অনুচ্ছেদের সারসংক্ষেপ বা টেক্সট:\n${originalObjectionText}\n` : ''}
+${entityReplyText ? `খ. প্রতিষ্ঠানের প্রেরিত ফরওয়ার্ডিং ও জবাব টেক্সট:\n${entityReplyText}\n` : ''}
+${evidenceText ? `গ. আপলোডকৃত প্রমাণকের বিবরণ/টেক্সট:\n${evidenceText}\n` : ''}
 
 ${userClarifications && userClarifications.length > 0 ? `ব্যবহারকারীর প্রদানকৃত পূর্ববর্তী স্পষ্টীকরণ (Clarifications from user):\n${JSON.stringify(userClarifications, null, 2)}\n` : ''}
 ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যবহারকারী ইতিমধ্যে নিশ্চিত করেছেন যে এটিই সঠিক ডকুমেন্ট। অতএব কোনো ফিল্ড মিসিং থাকলেও রেজিস্ট্রি মেটাডাটা বা যৌক্তিক খসড়া দিয়ে চূড়ান্ত নোট শিট প্রস্তুত করুন।\n` : ''}
 
-বৈধ ডকুমেন্টের ক্ষেত্রে বহু-অনুচ্ছেদ (Multi-Paragraphs) কাঠামো ও ফিল্ডে বসানোর নিয়ম:
+বহু-অনুচ্ছেদ (Multi-Paragraphs) কাঠামো ও ফিল্ডের নিয়ম:
 ১. ডায়েরি হেডার ("diaryHeader"): "ডায়েরি নং- ${diaryNo}, তারিখ: ${diaryDate} খ্রি:" (নোটের শীর্ষে মাঝখানে)।
 ২. টোকা নং- ১১ ("noteTikaText"): <p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${letterNo}</strong>, তারিখ: <strong>${letterDate} খ্রি:</strong> পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${ministry}</strong> এর নিয়ন্ত্রণাধীন <strong>${entity}</strong>${branchName ? `, ${branchName}` : ''} এর <strong>${auditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>
 
@@ -428,19 +443,15 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
   ক. sl: "১", "২", ...
   খ. entityAndAuditYear: "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear}"
   গ. paraNo: অনুচ্ছেদের নম্বর (যেমন: "১০", "১১" ইত্যাদি - প্রাপ্ত ডকুমেন্ট অনুযায়ী)
-  ঘ. titleAndDetails: মূল আপত্তি/অনুচ্ছেদের সারসংক্ষেপ বা ডকুমেন্টের সাথে যদি প্রেরিত জবাবের অনুচ্ছেদ নং ও শিরোনামের মিল থাকে, তবে সঠিক শিরোনামটি এখানে বসিয়ে দিন (ফরম্যাট: "শিরোনাম: [সঠিক শিরোনাম]\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ")। পৃষ্ঠা নম্বর দুটি ফাঁকা থাকবে যা ব্যবহারকারী নিজ দায়িত্বে পূরণ করবেন।
-  ঙ. entityReplyHeader: প্রতিষ্ঠানের প্রেরিত জবাব প্রমিত বাংলায়
-  চ. আদায়ের ছক ("hasTable", "tableHeaders", "tableRows"):
-     - যদি হিসাবে/জবাবে একাধিক ব্যক্তি বা চালানের টাকা আদায়ের ব্রেকডাউন থাকে তবে hasTable: true এবং বিস্তারিত টেবিল দিন। না থাকলে hasTable: false
+  ঘ. titleAndDetails: "শিরোনাম: [সঠিক শিরোনাম]\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- "
+  ঙ. entityReplyHeader: প্রতিষ্ঠানের স্থানীয় জবাব
+  চ. আদায়ের ছক ("hasTable", "tableHeaders", "tableRows"): আদায়ের বিস্তারিত ছক যদি থাকে
   ছ. conclusionBranch: "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
   জ. conclusionHeadOffice: "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
-  ঝ. conclusionPresenter: আপত্তির প্রমাণক অনুযায়ী অডিট মূল্যায়ন ও মতামত (যেমন: সমুদয় টাকা আদায় হওয়ায় আপত্তিটি নিষ্পত্তির সুপারিশ)।
-  ঞ. status: "পূর্ণাঙ্গ নিষ্পত্তি" অথবা "আংশিক নিষ্পত্তি" অথবা "অনিষ্পন্ন / আপত্তি বহাল"
+  ঝ. conclusionPresenter: ${hasEvidence ? 'আপত্তির স্বপক্ষে প্রমাণক যাচাই করে অডিট মন্তব্য ও নিষ্পত্তির সুপারিশ' : '"" (প্রমাণক না থাকায় খালি স্ট্রিং থাকবে)'}
+  ঞ. status: ${hasEvidence ? '"পূর্ণাঙ্গ নিষ্পত্তি" অথবা "আংশিক নিষ্পত্তি" অথবা "অনিষ্পন্ন / আপত্তি বহাল"' : '"মন্তব্য বিচারাধীন"'}
 
-৪. নোটের সমাপনী ("conclusionFinal"): "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।"
-
-৫. জারিপত্র ("suggestedIssueLetter"):
-   হুবহু বাণিজ্যিক অডিট অধিদপ্তরের সরকারি জারিপত্রের ফরম্যাট অনুযায়ী তৈরি করুন:
+৪. জারিপত্র ("suggestedIssueLetter"):
    - memoNo: "৮২.১০.০০০০.৬০৩.৩৩.০০৫.১৬" বা ডায়েরি/স্মারক ভিত্তিক নম্বর
    - date: "       /      /২০২৬ খ্রি:"
    - recipient:
@@ -448,10 +459,11 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
        - entityName: "${entity}"
        - address: "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ"
        - city: "ঢাকা – ১০০০"
-   - subject: "${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।"
-   - reference: "${entity} এর পত্র নং ${letterNo}, তারিখ: ${letterDate}"
-   - introText: "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:"
+   - subject: "বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।"
+   - reference: "সূত্র: ${entity} এর পত্র নং ${letterNo}, তারিখ: ${letterDate}"
+   - introText: "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:"
    - tableRows: ৬ কলামের ছক (১. ক্রমিক নং, ২. অনু: নং ও নিরীক্ষা বছর, ৩. প্রতিষ্ঠানের নাম, ৪. অনুচ্ছেদের শিরোনাম, ৫. জড়িত টাকা, ৬. এ কার্যালয়ের মন্তব্য)
+     - officeComment: ${hasEvidence ? 'প্রমাণক যাচাইয়ের আলোকে বিস্তারিত মন্তব্য' : '"" (প্রমাণক না থাকায় ফাঁকা থাকবে)'}
    - signatoryName: "নাসিফ কবির"
    - signatoryTitle: "উপ-পরিচালক"
    - signatoryPhone: "ফোন: ০২৪৭৭৭২২৬৫৬"
@@ -472,9 +484,9 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
     "detectedParaNo": "১০",
     "detectedAuditYear": "${auditYear}",
     "detectedEntityName": "${entity}",
-    "detectedChallanInfo": "চালান নং ১২৩, ৫০,০০০ টাকা আদায়",
+    "detectedChallanInfo": "চালান তথ্য",
     "missingFields": [],
-    "summary": "ডকুমেন্টে অনুচ্ছেদ নং, নিরীক্ষা বছর, প্রতিষ্ঠান ও আদায়ের তথ্য পাওয়া গেছে।"
+    "summary": "ডকুমেন্টে অনুচ্ছেদ নং, নিরীক্ষা বছর ও প্রতিষ্ঠান পাওয়া গেছে।"
   },
   "validationErrors": [],
   "errorMessage": "",
@@ -483,7 +495,7 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
   "diaryHeader": "ডায়েরি নং- ${diaryNo}, তারিখ: ${diaryDate} খ্রি:",
   "noteTikaText": "...",
   "conclusionFinal": "সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।",
-  "proposedStatus": "পূর্ণাঙ্গ নিষ্পত্তি",
+  "proposedStatus": "${hasEvidence ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'মন্তব্য বিচারাধীন'}",
   "paragraphs": [
     {
       "sl": "১",
@@ -498,8 +510,8 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
       ],
       "conclusionBranch": "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
       "conclusionHeadOffice": "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      "conclusionPresenter": "...",
-      "status": "পূর্ণাঙ্গ নিষ্পত্তি"
+      "conclusionPresenter": ${hasEvidence ? '"আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।"' : '""'},
+      "status": "${hasEvidence ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'মন্তব্য বিচারাধীন'}"
     }
   ],
   "suggestedIssueLetter": {
@@ -511,17 +523,17 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
       "address": "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
       "city": "ঢাকা – ১০০০"
     },
-    "subject": "বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।",
+    "subject": "বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।",
     "reference": "সূত্র: ${entity} এর পত্র নং ${letterNo}, তারিখ: ${letterDate}",
-    "introText": "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:",
+    "introText": "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:",
     "tableRows": [
       {
         "sl": "১",
         "paraAndYear": "১০, ${auditYear}",
         "entityName": "${entity}${branchName ? `, ${branchName}` : ''}।",
-        "paraTitle": "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ${totalAmount || '৫৭,৮২৫'} টাকা।",
+        "paraTitle": "মাইক্রো ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।",
         "involvedAmount": "${totalAmount || '৫৭,৮২৫'}",
-        "officeComment": "আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"
+        "officeComment": ${hasEvidence ? '"আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"' : '""'}
       }
     ],
     "signatoryName": "নাসিফ কবির",
@@ -529,7 +541,7 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
     "signatoryPhone": "ফোন: ০২৪৭৭৭২২৬৫৬",
     "onulipiList": [
       "উপমহাব্যবস্থাপক, ${entity}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)",
-      "পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কাযায়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
+      "পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কার্যালয়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।",
       "অফিস কপি।"
     ]
   }
@@ -553,6 +565,15 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
               inlineData: {
                 data: entityReplyFile.base64.replace(/^data:[^;]+;base64,/, ""),
                 mimeType: entityReplyFile.mimeType
+              }
+            });
+          }
+
+          if (evidenceFile && evidenceFile.base64 && evidenceFile.mimeType) {
+            promptParts.push({
+              inlineData: {
+                data: evidenceFile.base64.replace(/^data:[^;]+;base64,/, ""),
+                mimeType: evidenceFile.mimeType
               }
             });
           }
@@ -715,8 +736,10 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
-            conclusionPresenter: `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।`,
-            status: "পূর্ণাঙ্গ নিষ্পত্তি"
+            conclusionPresenter: hasEvidence
+              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।`
+              : ``,
+            status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }
         ],
         suggestedIssueLetter: {
@@ -738,7 +761,9 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
               entityName: `${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `,\n${branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`,
               paraTitle: `মাইক্রো ক্রেডিট (উন্মেষ)\nঋণের মেয়াদোত্তীর্ণ\nঅনাদায়ী ${totalAmount || '৫৭,৮২৫'}\nটাকা।`,
               involvedAmount: `${totalAmount || '৫৭,৮২৫'}`,
-              officeComment: `আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+              officeComment: hasEvidence
+                ? `আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+                : ``
             }
           ],
           signatoryName: "নাসিফ কবির",
