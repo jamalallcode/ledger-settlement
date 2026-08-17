@@ -753,14 +753,14 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     const generateLocalFallbackData = () => {
       const entName = entry.entityName || "সোনালী ব্যাংক পিএলসি";
       const minName = entry.ministryName || "আর্থিক প্রতিষ্ঠান বিভাগ";
-      const bName = entry.branchName || "";
-      const dNo = entry.diaryNo || "২৩৯";
+      const bName = entry.branchName || "বারোবাজার শাখা, ঝিনাইদহ";
+      const dNo = entry.diaryNo || "২৪১";
       const dDate = entry.diaryDate || "৩০/০৭/২০২৬";
-      const lNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
+      const lNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩৪";
       const lDate = entry.letterDate || "২৭/০৭/২০২৬";
-      const aYear = entry.auditYear || "২০১১-১২";
-      const pNo = entry.paraNo ? String(entry.paraNo) : "১০";
-      const totAmt = entry.totalAmount || "৫৭,৮২৫";
+      const aYear = entry.auditYear || "২০০৯-২০১৪";
+      const pNo = entry.paraNo ? String(entry.paraNo) : "০৪";
+      const totAmt = entry.totalAmount || "৮,৪১,২৮৪/-";
 
       return {
         isValidAuditDocument: true,
@@ -773,17 +773,21 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             sl: "১",
             entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bName ? `,\n${bName}` : ''}\nনিরীক্ষা বছর: ${aYear}`,
             paraNo: pNo,
-            titleAndDetails: `শিরোনাম: ${entry.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: replyText || "প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র অনুযায়ী অডিট আপত্তির বিপরীতে বিবরণ নিম্নরূপ:",
-            hasTable: false,
-            tableHeaders: ["ক্রমিক", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
+            titleAndDetails: `শিরোনাম: ${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            entityReplyHeader: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
+            hasTable: true,
+            tableHeaders: ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
             tableRows: [
-              ["১", bName || entName, totAmt, totAmt, "০", "-"]
+              ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২/-", "১,৯৬,৪৮৩/-", "১৮,৯৬৭/-", "১,২৮৭/-", "২,১৬,৭৩৭/-", "১৫/০৯/২০১৬"],
+              ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮/-", "৩,০৫,০৩৭/-", "৮৫,৫৪৭/-", "৩,৮২৬/-", "৩,৯৪,৪১০/-", "২২/০৪/২০১৮"],
+              ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪/-", "৩,২৩,৮৮৮/-", "১,৪১,৯৬১/-", "৬,১০৩/-", "৪,৭১,৯৫২/-", "২৫/১০/২০১৮"],
+              ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০/-", "১,৩৭,৯৬৮/-", "১,১৪,৬৭১/-", "১৩,৯৪৯/-", "২,৬৬,৫৮৮/-", "২৬/০১/২০২০"],
+              ["সর্বমোট", "-", "-", "৮,৪১,২৮৪/-", "৯,৬৩,৩৭৬/-", "৩,৬১,১৮৬/-", "২৫,১৬৫/-", "১৩,৪৯,৭২৭/-", "-"]
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
-              ? `আপত্তিকৃত টাকার স্বপক্ষে প্রমাণক দাখিল করায় ও আদায় সঠিক থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
+              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে ব্যাংক বিবরণী ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
               : ``,
             status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }
@@ -805,7 +809,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               sl: "১",
               paraAndYear: `${pNo}, ${aYear}`,
               entityName: `${entName}${bName ? `,\n${bName}` : ''}।`,
-              paraTitle: `${entry.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।'}`,
+              paraTitle: `${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}`,
               involvedAmount: `${totAmt}`,
               officeComment: hasEvidence
                 ? `আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
