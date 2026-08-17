@@ -450,14 +450,16 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
       const {
         originalObjectionText = "",
         originalObjectionFile = null,
-        originalAppendixText = "",
-        originalAppendixFile = null,
+        mainParagraphText = "",
+        mainParagraphFile = null,
+        mainAppendixText = "",
+        mainAppendixFile = null,
+        includeMainDocumentsInAnalysis = false,
         entityReplyText = "",
         entityReplyFile = null,
         evidenceText = "",
         evidenceFile = null,
         letterMetadata = {},
-        verifyAgainstOriginalObjectionAndAppendix = true,
         userClarifications = [],
         userConfirmedProceed = false
       } = req.body || {};
@@ -475,11 +477,11 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
       const auditYear = toBengaliDigits(letterMetadata?.auditYear || "");
       const totalAmount = toBengaliDigits(letterMetadata?.totalAmount || letterMetadata?.involvedAmount || "");
 
-      const rawCombined = `${originalObjectionText} ${originalAppendixText} ${entityReplyText} ${evidenceText}`.trim();
-      const hasFiles = !!(originalObjectionFile || originalAppendixFile || entityReplyFile || evidenceFile);
+      const rawCombined = `${originalObjectionText} ${mainParagraphText} ${mainAppendixText} ${entityReplyText} ${evidenceText}`.trim();
+      const hasFiles = !!(originalObjectionFile || entityReplyFile || evidenceFile || mainParagraphFile || mainAppendixFile);
       const hasEvidence = !!(evidenceFile || (evidenceText && evidenceText.trim().length > 0));
-      const hasOriginalObjection = !!(originalObjectionFile || (originalObjectionText && originalObjectionText.trim().length > 0));
-      const hasOriginalAppendix = !!(originalAppendixFile || (originalAppendixText && originalAppendixText.trim().length > 0));
+      const hasMainDocs = !!(mainParagraphFile || mainParagraphText || mainAppendixFile || mainAppendixText);
+      const isMainDocsAllowed = includeMainDocumentsInAnalysis === true && hasMainDocs;
 
       // Rule-based audit verification metrics
       const hasParaNo = /অনুচ্ছেদ|para|নং/i.test(rawCombined) || !!(letterMetadata?.paraNo);
@@ -498,30 +500,46 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
         hasAuditYear,
         hasEntityName,
         hasChallanInfo,
-        hasOriginalObjection,
-        hasOriginalAppendix,
         detectedParaNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
         detectedAuditYear: auditYear || "",
         detectedEntityName: entity || "",
         detectedChallanInfo: hasEvidence ? (totalAmount ? `${totalAmount} টাকা` : "আদায়/চালান সংক্রান্ত তথ্য") : "",
         missingFields: missingRuleFields,
-        summary: "নথিতে রেজিস্ট্রি, মূল অনুচ্ছেদ, পরিশিষ্ট ও জবাবের তথ্য স্ক্যান করা হয়েছে।"
+        summary: isMainDocsAllowed 
+          ? "মূল অনুচ্ছেদ, পরিশিষ্ট, জবাব ও প্রমাণক সফলভাবে ক্রস-ভেরিফাই করা হয়েছে।"
+          : "নথিতে রেজিস্ট্রি ও জবাবের তথ্য পাওয়া গেছে।"
       };
+
+      const fallbackPresenterComment = isMainDocsAllowed
+        ? (hasEvidence 
+            ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে দাখিলকৃত জবাব ও প্রমাণক পর্যালোচনা করা হলো। আপত্তিতে উল্লেখিত অনিয়ম নিরসনপূর্বক প্রয়োজনীয় প্রমাণক সংযুক্ত থাকায় এবং দাবিকৃত অর্থ আদায়/সমন্বয় হওয়ায় জবাবটি সন্তোষজনক বিবেচিত হলো। বিধায় আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তির সুপারিশ করা হলো।`
+            : `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে প্রতিষ্ঠানের জবাব পর্যালোচনা করা হলো। তবে দাবিকৃত অর্থের স্বপক্ষে পর্যাপ্ত প্রমাণক দাখিল না করায় আপত্তিটি নিষ্পত্তির সুযোগ নেই। বিধায় প্রয়োজনীয় প্রমাণক চেয়ে আপত্তিটি বহাল রাখার সুপারিশ করা হলো।`)
+        : (hasEvidence
+            ? `আপত্তিকৃত টাকার স্বপক্ষে প্রমাণক দাখিল করায় ও আদায় সঠিক থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
+            : ``);
+
+      const fallbackOfficeComment = isMainDocsAllowed
+        ? (hasEvidence 
+            ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে প্রতিষ্ঠান কর্তৃক দাখিলকৃত জবাব ও প্রমাণক পর্যালোচনা করা হলো। অনিয়ম নিরসন ও দাবিকৃত অর্থ আদায় সঠিক থাকায় আপত্তিটি নিষ্পত্তি করা হলো।`
+            : `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়ম নিরসনের স্বপক্ষে প্রয়োজনীয় প্রমাণক দাখিল না করায় আপত্তিটি নিষ্পত্তির সুযোগ নেই। প্রমাণক দাখিলের অনুরোধসহ আপত্তিটি বহাল রাখা হলো।`)
+        : (hasEvidence
+            ? `আপত্তিকৃত টাকার সমুদয় অংশ আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+            : ``);
 
       const fallbackNote = {
         isValidAuditDocument: true,
         auditVerification: ruleAuditVerification,
         needsClarification: false,
         clarificationQuestions: [],
-        diaryHeader: `ডায়েরি নং- ${diaryNo || "২৩৯"}, তারিখ: ${diaryDate || "৩০/০৭/২০২৬"} খ্রি:`,
-        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}</strong>, তারিখ: <strong>${letterDate || "২৭/০৭/২০২৬"} খ্রি:</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${ministry}</strong> এর নিয়ন্ত্রণাধীন <strong>${entity}</strong>${branchName ? `, ${branchName}` : ''} এর <strong>${auditYear || '২০১১-১২'}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
+        diaryHeader: `ডায়েরি নং- ${diaryNo || "-"}, তারিখ: ${diaryDate || "-"} খ্রি:`,
+        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা ${entity}, প্রধান কার্যালয়ের স্মারক নং- ${letterNo || "-"}, তারিখ: ${letterDate || "-"} খ্রি: পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে ${ministry}-এর নিয়ন্ত্রণাধীন ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear || ''} নিরীক্ষা বছরের ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
         conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
         proposedStatus: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন",
         paragraphs: [
           {
             sl: "১",
-            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১১-১২'}`,
-            paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
+            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '-'}`,
+            paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১",
             titleAndDetails: `শিরোনাম: ${letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
             entityReplyHeader: entityReplyText || "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
             hasTable: false,
@@ -531,20 +549,8 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
-            conclusionPresenter: hasEvidence
-              ? (hasOriginalObjection || hasOriginalAppendix)
-                ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে প্রতিষ্ঠান কর্তৃক দাখিলকৃত ব্রডশীট জবাব ও সংশ্লিষ্ট প্রমাণক পুঙ্খানুপুঙ্খ পর্যালোচনায় দেখা যায় যে, আপত্তিকৃত সমুদয় টাকা যথাযথভাবে আদায়পূর্বক সমন্বয় করা হয়েছে। অতএব, আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তি করা যেতে পারে।`
-                : `আপত্তিকৃত টাকার স্বপক্ষে প্রমাণক দাখিল করায় ও আদায় সঠিক থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
-              : ``,
-            status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন",
-            crossVerification: {
-              objectionSummary: "মূল অনুচ্ছেদ ও পরিশিষ্টের অনিয়মসমূহ পর্যালোচনা করা হয়েছে।",
-              appendixSummary: "পরিশিষ্টে উল্লেখিত তালিকা ও হিসাবের সাথে জবাবের মিল পাওয়া গেছে।",
-              replyAdequacy: "জবাব ও প্রমাণক সন্তোষজনক।",
-              isFullyAddressed: true,
-              unresolvedPoints: [],
-              recommendation: "আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তিযোগ্য।"
-            }
+            conclusionPresenter: fallbackPresenterComment,
+            status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }
         ],
         suggestedIssueLetter: {
@@ -552,34 +558,31 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
           date: "       /      /২০২৬ খ্রি:",
           recipient: {
             designation: "ব্যবস্থাপনা পরিচালক",
-            entityName: entity || "সোনালী ব্যাংক পিএলসি",
-            address: "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
-            city: "ঢাকা – ১০০০"
+            entityName: entity || "সংশ্লিষ্ট প্রতিষ্ঠান",
+            address: entity && entity.includes("ব্যাংক") ? "প্রধান কার্যালয়, মতিঝিল বা/এ" : "প্রধান কার্যালয়",
+            city: "ঢাকা"
           },
-          subject: `বিষয়: ${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `, ${branchName}` : ''} এর ${auditYear || '২০১১-১৪'} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর মন্তব্য প্রেরণ।`,
-          reference: `সূত্র: ${entity || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২"}, তারিখ: ${letterDate || "২৭/০৭/২০২৬"}`,
-          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `, ${branchName}` : ''} এর ${auditYear || '২০১১-২০১৪'} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
+          subject: `বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear ? `${auditYear} সালের ` : ''}বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১'} এর জবাবের উপর মন্তব্য প্রেরণ।`,
+          reference: `সূত্র: ${entity} এর পত্র নং ${letterNo || "-"}, তারিখ: ${letterDate || "-"}`,
+          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear ? `${auditYear} সালের ` : ''}নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
           tableRows: [
             {
               sl: "১",
-              paraAndYear: `${letterMetadata?.paraNo || '১০'}, ${auditYear || '২০১১-১৪'}`,
-              entityName: `${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `,\n${branchName}` : ''}।`,
+              paraAndYear: `${letterMetadata?.paraNo || '১'}${auditYear ? `, ${auditYear}` : ''}`,
+              entityName: `${entity}${branchName ? `,\n${branchName}` : ''}।`,
               paraTitle: `${letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}`,
               involvedAmount: `${totalAmount || '০'}`,
-              officeComment: hasEvidence
-                ? (hasOriginalObjection || hasOriginalAppendix)
-                  ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে দাখিলকৃত জবাব ও প্রমাণক সন্তোষজনক হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।`
-                  : `আপত্তিকৃত টাকার সমুদয় অংশ আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
-                : ``
+              officeComment: fallbackOfficeComment
             }
           ],
           signatoryName: "নাসিফ কবির",
           signatoryTitle: "উপ-পরিচালক",
           signatoryPhone: "ফোন: ০২৪৭৭৭২২৬৫৬",
           onulipiList: [
-            `উপমহাব্যবস্থাপক, ${entity || "সোনালী ব্যাংক পিএলসি"}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
-            `পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কার্যালয়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।`,
-            `অফিস কপি।`
+            `১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।`,
+            `২। ব্যবস্থাপনা পরিচালক / প্রধান নির্বাহী কর্মকর্তা, ${entity}, প্রধান কার্যালয়, ঢাকা।`,
+            branchName ? `৩। শাখা ব্যবস্থাপক / আঞ্চলিক কার্যালয়, ${entity}, ${branchName}।` : `৩। সংশ্লিষ্ট আঞ্চলিক কার্যালয়, ${entity}।`,
+            `৪। অফিস কপি।`
           ]
         }
       };
@@ -601,12 +604,9 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 আপনি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের বাণিজ্যিক অডিট অধিদপ্তরের একজন অত্যন্ত অভিজ্ঞ সিনিয়র অডিট অফিসার ও অডিট নিষ্পত্তি বিশেষজ্ঞ।
 
 ইনপুট হিসেবে নিচের সংযুক্ত ফাইল (PDF বা ছবি) ও টেক্সটসমূহ গভীরভাবে ওসিআর (OCR) ও স্ক্যান করে বিশ্লেষণ করুন:
-১. মূল অনুচ্ছেদ (Original Paragraph/Objection): ${hasOriginalObjection ? 'সংযুক্ত আছে (ORIGINAL OBJECTION PROVIDED)' : 'সংযুক্ত নেই'}
-২. মূল পরিশিষ্ট (Original Appendix/Annexure): ${hasOriginalAppendix ? 'সংযুক্ত আছে (ORIGINAL APPENDIX PROVIDED)' : 'সংযুক্ত নেই'}
-৩. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Forwarding letter, Broad-sheet Reply & Table)
-৪. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
-
-ক্রস-ভেরিফিকেশন নির্দেশনা (Verify against Original Objection & Appendix): ${verifyAgainstOriginalObjectionAndAppendix ? 'হ্যাঁ - সক্রিয় (STRICT CROSS-EXAMINATION ON)' : 'না'}
+১. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Forwarding letter, Broad-sheet Reply & Table)
+২. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
+${isMainDocsAllowed ? `৩. মূল অডিট অনুচ্ছেদ ও মূল পরিশিষ্ট (Main Audit Paragraph & Appendix) - [অনুমতি সক্রিয়: হ্যাঁ]: মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত সুনির্দিষ্ট অনিয়ম (Irregularities), শর্ত লঙ্ঘন, ব্যক্তি/প্রতিষ্ঠানের নাম এবং দাবিকৃত টাকার সাথে প্রতিষ্ঠানের দাখিলকৃত জবাব ও প্রমাণক পুঙ্খানুপুঙ্খ মিলিয়ে মূল্যায়ন করুন।` : `৩. [সতর্কবার্তা]: মূল অনুচ্ছেদ/পরিশিষ্টের ব্যবহারে অনুমতি দেওয়া হয়নি বা আপলোড নেই। এআই এগুলো বিবেচনায় নেবে না।`}
 
 আপনার দায়িত্ব ও মূল নীতিমালা (Strict Operational & Verification Rules):
 
@@ -636,27 +636,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
      * "validationErrors": []
      * সম্পূর্ণ নোটশিট ও জারিপত্র প্রস্তুত করুন।
 
-৩. **মূল অনুচ্ছেদ ও পরিশিষ্ট বনাম জবাব ও প্রমাণকের গভীর নিরীক্ষা পর্যালোচনা (CRITICAL CROSS-CHECK & COMMENT WRITING)**:
-   ${(hasOriginalObjection || hasOriginalAppendix) && verifyAgainstOriginalObjectionAndAppendix ? `
-   - **বিশেষ নির্দেশনা**: ব্যবহারকারী মূল অনুচ্ছেদ ও পরিশিষ্ট প্রদান করেছেন এবং "হ্যাঁ" বলেছেন। 
-   - আপনাকে অবশ্যই মূল অনুচ্ছেদ এবং পরিশিষ্টে বর্ণিত নির্দিষ্ট অনিয়মসমূহ (যেমন: কোন কোন হিসাব বা ঋণগ্রহীতার বিপরীতে কত টাকা অনাদায়ী/অবৈধ ছিল, কী বিধি লংঘন হয়েছিল) পুঙ্খানুপুঙ্খ স্ক্যান করতে হবে।
-   - এরপর প্রতিষ্ঠানের দাখিলকৃত ব্রডশীট জবাব এবং প্রমাণক (ব্যাংক রসিদ, চালান, ভাউচার) এর সাথে প্রতিটি অনিয়মের দফা বা হিসাব পয়েন্ট-টু-পয়েন্ট মিলিয়ে দেখতে হবে:
-     * প্রতিষ্ঠান কি পরিশিষ্টে বর্ণিত সকল অনিয়ম ও সকল হিসাবের বিপরীতে যথাযথ জবাব ও প্রমাণক দিয়েছে?
-     * সমুদয় জড়িত অর্থ আদায়/সমন্বয় হয়েছে কিনা?
-   - **নিরীক্ষা মন্তব্য (conclusionPresenter & officeComment)**:
-     * যদি শতভাগ অনিয়ম ও অর্থ আদায়/সমন্বয় যথাযথ প্রমাণিত হয়:
-       - conclusionPresenter: "মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে প্রতিষ্ঠান কর্তৃক দাখিলকৃত ব্রডশীট জবাব ও সংযুক্ত প্রমাণক (চালান/জমা ভাউচার) পুঙ্খানুপুঙ্খ পর্যালোচনায় দেখা যায় যে, আপত্তিকৃত সমুদয় টাকা যথাযথভাবে আদায়পূর্বক সমন্বয় করা হয়েছে এবং পরিশিষ্টের সকল হিসাবের প্রমাণক সন্তোষজনক। অতএব, আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তি করা যেতে পারে।"
-       - officeComment: "মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে দাখিলকৃত জবাব ও সংশ্লিষ্ট প্রমাণক সন্তোষজনক হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।"
-     * যদি আংশিক আদায় বা কিছু হিসাবের জবাব সন্তোষজনক না হয়:
-       - conclusionPresenter ও officeComment এ সুনির্দিষ্টভাবে উল্লেখ করুন কোন কোন হিসাবের টাকা আদায় হয়েছে এবং পরিশিষ্টের কোন কোন হিসাবের বিপরীতে এখনো প্রমাণক অপূর্ণ রয়েছে (যেমন: "পরিশিষ্টের ক্রমিক ১, ২ ও ৩ এর ... টাকা আদায় হওয়ায় আংশিক নিষ্পত্তিযোগ্য এবং অবশিষ্ট ... টাকার জন্য আপত্তি বহাল রাখার সুপারিশ করা হলো")।
-     * যদি জবাব সন্তোষজনক না হয় বা প্রমাণক ভুয়া/অসম্পূর্ণ হয়:
-       - "মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে দাখিলকৃত জবাব তথ্যভিত্তিক নয় এবং প্রয়োজনীয় প্রমাণক দাখিল না করায় জবাব গ্রহণযোগ্য নয় এবং আপত্তি বহাল রাখা হলো।"
-   ` : `
-   - যদি প্রমাণক সংযুক্ত থাকে (hasEvidence = true): প্রমাণক বিশ্লেষণ করে প্রমিত সরকারি ভাষায় "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) লিখে দিন।
-   - যদি প্রমাণক সংযুক্ত না থাকে (hasEvidence = false): conclusionPresenter এবং জারিপত্রের officeComment অবশ্যই সম্পূর্ণ ফাঁকা ("") রাখুন।
-   `}
-
-৪. **শিরোনাম ও স্থানীয় প্রতিষ্ঠানের জবাব এক্সট্র্যাকশন ও প্রমিতকরণ (TITLE, REPLY & EXACT TABLE EXTRACTION)**:
+৩. **শিরোনাম ও স্থানীয় প্রতিষ্ঠানের জবাব এক্সট্র্যাকশন ও প্রমিতকরণ (TITLE, REPLY & EXACT TABLE EXTRACTION)**:
    - **শিরোনাম (Title)**: মূল নথিতে আপত্তির যে শিরোনাম লেখা আছে (যেমন: "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪"), তা নির্ভুলভাবে titleAndDetails এবং জারিপত্রের paraTitle এ বসান। কোনো টাকার অংকের শেষে '/-' বা '.-' দিবেন না, কমা দিয়ে প্রমিতভাবে লিখুন। অপ্রয়োজনীয় বাহুল্য পরিহার করে মূল কথা ঠিক রাখুন এবং বানান শুদ্ধ করুন।
    - **স্থানীয় প্রতিষ্ঠানের জবাব (entityReplyHeader)**: মূল নথির ২য় পাতায় "শাখার জবাব" অংশে যে মূল বক্তব্য লেখা আছে, অপ্রয়োজনীয় কথা বাদ দিয়ে মূল কথাটি তুলে আনুন এবং বানান ভুল থাকলে শুদ্ধ করুন।
    - **জবাবের টেবিল/ছক হুবহু গঠন ও এক্সট্র্যাকশন (CRITICAL TABLE EXTRACTION RULES)**:
@@ -664,12 +644,31 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
      * **কলাম বিন্যাস**: ক্র: নং, ঋণগ্রহীতার নাম, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি।
      * **টাকার ফিগার বিন্যাস (STRICT AMOUNT FORMATTING RULE)**:
        - প্রতিটি টাকার অংকের জন্য ভারতীয়/দক্ষিণ এশীয় প্রমিত কমা (comma) ব্যবহার করুন (যেমন: ৫২,৭৬২, ১,৯৬,৪৮৩, ৮,৪১,২৮৪, ১৩,৪৯,৭২৭)।
-       - কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না।
-     * **সারির তথ্য (Rows)**: প্রতিটি ঋণগ্রহীতার নামের সাথে তাদের হিসাবের টাকাগুলো নির্ভুলভাবে বসান। কোনো অবস্থাতেই সারির মধ্যে 'সর্বমোট' পুনরাবৃত্তি করবেন না। শেষ সারিতে একবারই সর্বমোটের সংখ্যা বসান।
-     * **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে (যেমন: "৮৫,৫৪৭* [অনুমান]")।
+       - কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না (যেমন: "৫২,৭৬২/-" এর স্থলে "৫২,৭৬২" লিখুন)।
+     * **সারির তথ্য (Rows)**: প্রতিটি ঋণগ্রহীতার নামের সাথে তাদের হিসাবের টাকাগুলো নির্ভুলভাবে বসান। কোনো অবস্থাতেই সারির মধ্যে 'সর্বমোট' পুনরাবৃত্তি করে ডাবল করবেন না। শেষ সারিতে একবারই সর্বমোটের সংখ্যা বসান।
+     * **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা/অস্পষ্ট থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে।
    - **শাখা ও প্রধান কার্যালয়ের সুপারিশ**:
      * "conclusionBranch": যেমন- "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
      * "conclusionHeadOffice": যেমন- "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
+
+৪. **মূল অনুচ্ছেদ ও মূল পরিশিষ্টের আলোকে জবাবের পুঙ্খানুপুঙ্খ পর্যালোচনা (MAIN PARAGRAPH & APPENDIX REVIEW - CRITICAL MANDATE)**:
+   ${isMainDocsAllowed ? `
+   - ব্যবহারকারী মূল অনুচ্ছেদ ও পরিশিষ্ট বিশ্লেষণের অনুমতি প্রদান করেছেন (includeMainDocumentsInAnalysis: true)।
+   - **পর্যালোচনার কর্মপদ্ধতি**:
+     ক. মূল অনুচ্ছেদ (Main Paragraph) ও মূল পরিশিষ্টে (Main Appendix) কী কী সুনির্দিষ্ট অনিয়ম (যেমন: অননুমোদিত সুবিধা, অপর্যাপ্ত জামানত, ঋণের টাকা অপব্যবহার, ভ্যাট/ট্যাক্স জমা না দেওয়া, ইত্যাদি), মোট জড়িত টাকা এবং ব্যক্তি/প্রতিষ্ঠানের নাম রয়েছে তা বের করুন।
+     খ. প্রতিষ্ঠান দাখিলকৃত ব্রডশীট জবাবে (Entity Reply) এবং প্রমাণকে (Evidence) সেই মূল অনিয়মগুলোর প্রতিটির সুস্পষ্ট, যুক্তিসংগত ও বিধি মোতাবেক জবাব দিয়েছে কিনা তা মিলিয়ে দেখুন।
+     গ. **মন্তব্য লেখার সিদ্ধান্ত (Review Conclusion Logic)**:
+        - **যদি প্রতিষ্ঠানের জবাব ও দাখিলকৃত প্রমাণক মূল অনুচ্ছেদ ও পরিশিষ্টের প্রতিটি অনিয়ম ও দাবিকৃত টাকার সাথে পুরোপুরি সংগতিপূর্ণ হয় এবং সমুদয় দাবিকৃত অর্থ আদায়/সমন্বয় হয়েছে প্রমাণিত হয়**:
+          "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment)-এ স্পষ্টভাবে লিখুন: "মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে প্রতিষ্ঠান কর্তৃক দাখিলকৃত জবাব ও প্রমাণক পর্যালোচনা করা হলো। আপত্তিতে উল্লিখিত অনিয়মের বিপরীতে দাবিকৃত অর্থ যথাযথভাবে আদায়/সমন্বয়পূর্বক ট্রেজারি চালান/প্রমাণক দাখিল করায় জবাবটি সন্তোষজনক। বিধায় আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তির সুপারিশ করা হলো।"
+        - **যদি জবাব আংশিক সঠিক হয় বা কিছু অনিয়ম/পরিশিষ্টের অংশের ব্যাখ্যা বা প্রমাণক অনুপস্থিত থাকে**:
+          "এ কার্যালয়ের মন্তব্য"-এ সুনির্দিষ্টভাবে অমিল বা অসম্পূর্ণতা উল্লেখ করে লিখুন: "মূল অনুচ্ছেদ ও পরিশিষ্টের প্রেক্ষিতে দাখিলকৃত জবাব পর্যালোচনা করা হলো। পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে সন্তোষজনক প্রমাণক/ব্যাখ্যা দাখিল না করায় আপত্তিটি নিষ্পত্তিযোগ্য নয়। বিধায় অবশিষ্ট অনিয়ম নিরসন ও প্রমাণক দাখিলের অনুরোধসহ আপত্তিটি বহাল রাখার সুপারিশ করা হলো।"
+   ` : `
+   - **শর্ত ১ (যদি প্রমাণক সংযুক্ত না থাকে - hasEvidence = false)**:
+     এআই প্রতিটি অনুচ্ছেদ অনুযায়ী অনুচ্ছেদ নং, শিরোনাম, স্থানীয় অফিসের জবাব ("entityReplyHeader"), ছক ও প্রধান কার্যালয়ের সুপারিশ প্রস্তুত করবে।
+     **কিন্তু "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) অবশ্যই সম্পূর্ণ ফাঁকা ("") রাখতে হবে**।
+   - **শর্ত ২ (যদি প্রমাণক সংযুক্ত থাকে - hasEvidence = true)**:
+     এআই প্রমাণক (চালান, রসিদ, ভাউচার) বিশ্লেষণ করে "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) পূর্ণাঙ্গ সরকারি প্রমিত ভাষায় লিখে দেবে এবং আপত্তি নিষ্পত্তির যৌক্তিক সুপারিশ করবে।
+   `}
 
 চিঠির রেজিস্ট্রি মেটাডাটা:
 - মন্ত্রণালয়: ${ministry}
@@ -680,8 +679,8 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 - স্মারক নং: ${letterNo}, তারিখ: ${letterDate}
 - জড়িত টাকার পরিমাণ: ${totalAmount} টাকা
 
-${originalObjectionText ? `মূল অনুচ্ছেদ টেক্সট ইনপুট:\n${originalObjectionText}\n` : ''}
-${originalAppendixText ? `মূল পরিশিষ্ট টেক্সট ইনপুট:\n${originalAppendixText}\n` : ''}
+${isMainDocsAllowed && mainParagraphText ? `মূল অনুচ্ছেদ টেক্সট:\n${mainParagraphText}\n` : ''}
+${isMainDocsAllowed && mainAppendixText ? `মূল পরিশিষ্ট টেক্সট:\n${mainAppendixText}\n` : ''}
 ${entityReplyText ? `ইউজার ইনপুট জবাব টেক্সট:\n${entityReplyText}\n` : ''}
 ${evidenceText ? `ইউজার ইনপুট প্রমাণক টেক্সট:\n${evidenceText}\n` : ''}
 
@@ -693,8 +692,6 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
     "hasAuditYear": true,
     "hasEntityName": true,
     "hasChallanInfo": ${hasEvidence},
-    "hasOriginalObjection": ${hasOriginalObjection},
-    "hasOriginalAppendix": ${hasOriginalAppendix},
     "detectedParaNo": "${letterMetadata?.paraNo || '০৪'}",
     "detectedAuditYear": "${auditYear}",
     "detectedEntityName": "${entity}${branchName ? `, ${branchName}` : ''}",
@@ -730,16 +727,8 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
       ],
       "conclusionBranch": "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।",
       "conclusionHeadOffice": "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।",
-      "conclusionPresenter": ${hasEvidence ? '"মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে দাখিলকৃত জবাব ও প্রমাণক পুঙ্খানুপুঙ্খ পর্যালোচনায় সঠিক পাওয়ায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।"' : '""'},
-      "status": "${hasEvidence ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'মন্তব্য বিচারাধীন'}",
-      "crossVerification": {
-        "objectionSummary": "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা সংক্রান্ত আপত্তি।",
-        "appendixSummary": "পরিশিষ্টে ৪টি ঋণ হিসাবের তালিকা ও জড়িত টাকা ৮,৪১,২৮৪ উল্লেখ ছিল।",
-        "replyAdequacy": "সকল ৪টি ঋণগ্রহীতার হিসাব সুদআসলে সমন্বয়পূর্বক মোট ১৩,৪৯,৭২৭ টাকা আদায়ের প্রমাণক দেওয়া হয়েছে।",
-        "isFullyAddressed": true,
-        "unresolvedPoints": [],
-        "recommendation": "আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তিযোগ্য।"
-      }
+      "conclusionPresenter": ${hasEvidence ? '"আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।"' : '""'},
+      "status": "${hasEvidence ? 'পূর্ণাঙ্গ নিষ্পত্তি' : 'মন্তব্য বিচারাধীন'}"
     }
   ],
   "suggestedIssueLetter": {
@@ -761,7 +750,7 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
         "entityName": "${entity}${branchName ? `, ${branchName}` : ''}।",
         "paraTitle": "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪",
         "involvedAmount": "${totalAmount || '৮,৪১,২৮৪'}",
-        "officeComment": ${hasEvidence ? '"মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে দাখিলকৃত জবাব ও প্রমাণক সন্তোষজনক হওয়ায় আপত্তিটি নিষ্পত্তি করা হলো।"' : '""'}
+        "officeComment": ${hasEvidence ? '"আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।"' : '""'}
       }
     ],
     "signatoryName": "নাসিফ কবির",
@@ -779,12 +768,22 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
           const promptParts: any[] = [];
           promptParts.push({ text: promptText });
 
-          // Helper to push file parts safely
-          const pushFileToParts = (fileObj: any, label: string) => {
-            if (fileObj && fileObj.base64 && typeof fileObj.base64 === "string") {
-              const cleanB64 = fileObj.base64.replace(/^data:[^;]+;base64,/, "");
+          // Helper to check if MIME type is supported by Gemini inlineData
+          const getSafeMime = (fileObj: any) => {
+            if (!fileObj) return "application/pdf";
+            const rawType = (fileObj.mimeType || fileObj.type || "").toLowerCase();
+            if (rawType.startsWith("image/")) return rawType;
+            if (rawType === "application/pdf") return "application/pdf";
+            if (fileObj.name && /\.(png|jpg|jpeg|webp)$/i.test(fileObj.name)) return "image/jpeg";
+            return "application/pdf";
+          };
+
+          // If main docs are allowed, include main paragraph and main appendix files in inline data
+          if (isMainDocsAllowed) {
+            if (mainParagraphFile && mainParagraphFile.base64 && typeof mainParagraphFile.base64 === "string") {
+              const cleanB64 = mainParagraphFile.base64.replace(/^data:[^;]+;base64,/, "");
               if (cleanB64.length > 0 && cleanB64.length < 15000000) {
-                const mime = getSafeMime(fileObj);
+                const mime = getSafeMime(mainParagraphFile);
                 promptParts.push({
                   inlineData: {
                     data: cleanB64,
@@ -792,19 +791,58 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
                   }
                 });
               } else {
-                promptParts.push({ text: `[সংযুক্ত ${label} ফাইল: ${fileObj.name || label}]` });
+                promptParts.push({ text: `[সংযুক্ত মূল অনুচ্ছেদ ফাইল: ${mainParagraphFile.name || 'মূল অনুচ্ছেদ'}]` });
               }
             }
-          };
 
-          // Push all files in logical sequence
-          pushFileToParts(originalObjectionFile, "মূল অনুচ্ছেদ");
-          pushFileToParts(originalAppendixFile, "মূল পরিশিষ্ট");
-          pushFileToParts(entityReplyFile, "প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং");
-          pushFileToParts(evidenceFile, "প্রমাণক");
+            if (mainAppendixFile && mainAppendixFile.base64 && typeof mainAppendixFile.base64 === "string") {
+              const cleanB64 = mainAppendixFile.base64.replace(/^data:[^;]+;base64,/, "");
+              if (cleanB64.length > 0 && cleanB64.length < 15000000) {
+                const mime = getSafeMime(mainAppendixFile);
+                promptParts.push({
+                  inlineData: {
+                    data: cleanB64,
+                    mimeType: mime
+                  }
+                });
+              } else {
+                promptParts.push({ text: `[সংযুক্ত মূল পরিশিষ্ট ফাইল: ${mainAppendixFile.name || 'মূল পরিশিষ্ট'}]` });
+              }
+            }
+          }
+
+          if (entityReplyFile && entityReplyFile.base64 && typeof entityReplyFile.base64 === "string") {
+            const cleanB64 = entityReplyFile.base64.replace(/^data:[^;]+;base64,/, "");
+            if (cleanB64.length > 0 && cleanB64.length < 15000000) {
+              const mime = getSafeMime(entityReplyFile);
+              promptParts.push({
+                inlineData: {
+                  data: cleanB64,
+                  mimeType: mime
+                }
+              });
+            } else {
+              promptParts.push({ text: `[সংযুক্ত ফাইল: ${entityReplyFile.name || 'জবাব ফাইল'}]` });
+            }
+          }
+
+          if (evidenceFile && evidenceFile.base64 && typeof evidenceFile.base64 === "string") {
+            const cleanB64 = evidenceFile.base64.replace(/^data:[^;]+;base64,/, "");
+            if (cleanB64.length > 0 && cleanB64.length < 15000000) {
+              const mime = getSafeMime(evidenceFile);
+              promptParts.push({
+                inlineData: {
+                  data: cleanB64,
+                  mimeType: mime
+                }
+              });
+            } else {
+              promptParts.push({ text: `[সংযুক্ত ফাইল: ${evidenceFile.name || 'প্রমাণক ফাইল'}]` });
+            }
+          }
 
           const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.7-flash",
             contents: promptParts,
             config: {
               responseMimeType: "application/json"
