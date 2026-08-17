@@ -52,100 +52,7 @@ import {
   cleanAndFormatBengaliAmount,
   stripAmountSlashInText
 } from "../utils/numberUtils";
-import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from "../constants";
-
-// Helper to reliably extract and infer clean information from correspondence entry
-export const extractEntryDetails = (e: CorrespondenceEntry) => {
-  let ministry = (e.ministryName || '').trim();
-  let entity = (e.entityName || '').trim();
-  let auditYear = (e.auditYear || '').trim();
-  let branch = ((e as any).branchName || '').trim();
-  const desc = (e.description || '').trim();
-
-  // 1. Extract Audit Year from description if not directly provided
-  if (!auditYear && desc) {
-    const yearMatch = desc.match(/\(([^)]*[০-৯0-9]{4}[^)]*)\)/) || desc.match(/([০-৯0-9]{4}\s*[-–/]\s*[০-৯0-9]{2,4}(?:[,\s]+[০-৯0-9]{4}\s*[-–/]\s*[০-৯0-9]{2,4})*)/);
-    if (yearMatch) {
-      auditYear = yearMatch[1] ? yearMatch[1].trim() : yearMatch[0].trim();
-    }
-  }
-
-  // 2. Identify Entity from description or known list if entity is not explicitly set
-  if (!entity && desc) {
-    let cleanDesc = desc.replace(/\([^)]*[০-৯0-9]{4}[^)]*\)/g, '').trim();
-
-    let foundKnownEntity = '';
-    for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
-      for (const ent of entities) {
-        if (cleanDesc.startsWith(ent) || cleanDesc.includes(ent)) {
-          foundKnownEntity = ent;
-          if (!ministry) ministry = mName;
-          break;
-        }
-      }
-      if (foundKnownEntity) break;
-    }
-
-    if (foundKnownEntity) {
-      entity = foundKnownEntity;
-    } else {
-      const parts = cleanDesc.split(/[,،]/);
-      if (parts.length > 0 && parts[0].trim()) {
-        entity = parts[0].trim();
-      }
-    }
-  }
-
-  // 3. Identify Branch from description if not explicitly set
-  if (!branch && desc) {
-    let remaining = desc;
-    remaining = remaining.replace(/\([^)]*[০-৯0-9]{4}[^)]*\)/g, '').trim();
-    if (entity && remaining.includes(entity)) {
-      remaining = remaining.replace(entity, '').trim();
-    }
-    remaining = remaining.replace(/^[,\s،\-–]+|[,\s،\-–]+$/g, '').trim();
-    if (remaining) {
-      branch = remaining;
-    }
-  }
-
-  // 4. Infer ministry from known entities if still empty
-  if (!ministry && entity) {
-    for (const [mName, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
-      if (entities.some(ent => entity.includes(ent) || ent.includes(entity))) {
-        ministry = mName;
-        break;
-      }
-    }
-  }
-
-  const cleanMinistry = ministry || (e.paraType === 'এসএফআই' ? 'বাণিজ্যিক অডিট সংশ্লিষ্ট মন্ত্রণালয়' : 'সংশ্লিষ্ট মন্ত্রণালয়/বিভাগ');
-  const cleanEntity = entity || desc || 'সংশ্লিষ্ট প্রতিষ্ঠান';
-  const cleanBranch = branch || '';
-  const cleanAuditYear = auditYear || '';
-  const cleanLetterNo = e.letterNo ? toBengaliDigits(e.letterNo) : '';
-  const cleanLetterDate = e.letterDate ? formatDateBN(e.letterDate) : '';
-  const cleanDiaryNo = e.diaryNo ? toBengaliDigits(e.diaryNo) : '';
-  const cleanDiaryDate = e.diaryDate ? formatDateBN(e.diaryDate) : '';
-  const cleanTotalAmount = e.totalAmount ? cleanAndFormatBengaliAmount(e.totalAmount) : '০';
-  const cleanParaNo = (e as any).paraNo ? toBengaliDigits((e as any).paraNo) : (e.sentParaCount ? toBengaliDigits(e.sentParaCount) : (e.totalParas ? toBengaliDigits(e.totalParas) : '১'));
-
-  return {
-    ministry: cleanMinistry,
-    entity: cleanEntity,
-    branch: cleanBranch,
-    auditYear: cleanAuditYear,
-    letterNo: cleanLetterNo,
-    letterDate: cleanLetterDate,
-    diaryNo: cleanDiaryNo,
-    diaryDate: cleanDiaryDate,
-    totalAmount: cleanTotalAmount,
-    paraNo: cleanParaNo,
-    paraType: e.paraType || 'নন এসএফআই',
-    letterType: e.letterType || 'বিএসআর',
-    rawEntry: e
-  };
-};
+import { OFFICE_HEADER } from "../constants";
 
 interface DocumentManagementModuleProps {
   entry: CorrespondenceEntry;
@@ -243,11 +150,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   // In-Memory Uploaded Files (Permanently purged on note approval)
   const [objectionFile, setObjectionFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
   const [objectionText, setObjectionText] = useState<string>("");
-  const [mainParagraphFile, setMainParagraphFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
-  const [mainParagraphText, setMainParagraphText] = useState<string>("");
-  const [mainAppendixFile, setMainAppendixFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
-  const [mainAppendixText, setMainAppendixText] = useState<string>("");
-  const [includeMainDocumentsInAnalysis, setIncludeMainDocumentsInAnalysis] = useState<boolean>(false);
   const [replyFile, setReplyFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
   const [replyText, setReplyText] = useState<string>("");
   const [evidenceFile, setEvidenceFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
@@ -261,39 +163,29 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const [clarificationQuestions, setClarificationQuestions] = useState<string[]>([]);
   const [userClarificationAnswers, setUserClarificationAnswers] = useState<Record<number, string>>({});
 
-  // Extract dynamically resolved details from the incoming correspondence entry
-  const extracted = extractEntryDetails(entry);
-
   // 1. Official Header (Top Center)
-  const defaultDiaryNo = extracted.diaryNo || "২৩৯";
-  const defaultDiaryDate = extracted.diaryDate || "৩০/০৭/২০২৬";
+  const defaultDiaryNo = entry.diaryNo ? toBengaliDigits(entry.diaryNo) : "২৩৯";
+  const defaultDiaryDate = entry.diaryDate ? formatDateBN(entry.diaryDate) : "৩০/০৭/২০২৬";
   const [diaryHeader, setDiaryHeader] = useState<string>(`ডায়েরি নং- ${defaultDiaryNo}, তারিখ: ${defaultDiaryDate} খ্রি:`);
 
   // 2. Toka / Introductory Note Body
-  const defaultLetterNo = extracted.letterNo;
-  const defaultLetterDate = extracted.letterDate ? `${extracted.letterDate} খ্রি:` : "";
-  const defaultEntity = extracted.entity;
-  const defaultMinistry = extracted.ministry;
-  const defaultBranch = extracted.branch;
-  const defaultAuditYear = extracted.auditYear;
+  const defaultLetterNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
+  const defaultLetterDate = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
+  const defaultEntity = entry.entityName || "পাটকল সংস্থা";
+  const defaultMinistry = entry.ministryName || "বস্ত্র ও পাট মন্ত্রণালয়";
+  const defaultBranch = entry.branchName || "দর্শনা শাখা, চুয়াডাঙ্গা";
+  const defaultAuditYear = entry.auditYear || "২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯";
 
   const [tikaIntroHtml, setTikaIntroHtml] = useState<string>(() => {
-    const branchPart = defaultBranch ? `, ${defaultBranch}` : "";
-    const auditYearPart = defaultAuditYear ? ` এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের` : "";
-    const letterNoPart = defaultLetterNo ? `স্মারক নং- <strong>${defaultLetterNo}</strong>` : "";
-    const letterDatePart = defaultLetterDate ? `তারিখ: <strong>${defaultLetterDate}</strong>` : "";
-    const smarakDateText = [letterNoPart, letterDatePart].filter(Boolean).join(", ");
-    const memoPrefix = smarakDateText ? `, ${smarakDateText}` : "";
-
-    return `<p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের${memoPrefix} পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>${branchPart}${auditYearPart} ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
+    return `<p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
   });
 
   // 3. Multi-Paragraphs State (প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য)
-  const defaultParaNo = extracted.paraNo || "১";
-  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ";
+  const defaultParaNo = entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০";
+  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ";
   const defaultEntityAndAuditYear = `প্রতিষ্ঠান: ${defaultEntity}${
-    defaultBranch ? `,\n${defaultBranch}` : ""
-  }${defaultAuditYear ? `\nনিরীক্ষা বছর: ${defaultAuditYear}` : ""}`;
+    entry.branchName ? `,\n${entry.branchName}` : defaultBranch ? `,\n${defaultBranch}` : ""
+  }\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`;
 
   const [paragraphs, setParagraphs] = useState<AuditParagraphBlock[]>([
     {
@@ -311,7 +203,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           cells: {
             sl: "১",
             borrowerName: "",
-            involvedAmount: extracted.totalAmount || "০",
+            involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০",
             principal: "০",
             interest: "০",
             others: "-",
@@ -382,28 +274,25 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Recipient
   const [jaripatraRecipientDesignation, setJaripatraRecipientDesignation] = useState<string>("ব্যবস্থাপনা পরিচালক");
-  const [jaripatraRecipientEntity, setJaripatraRecipientEntity] = useState<string>(() => defaultEntity || "সংশ্লিষ্ট প্রতিষ্ঠান");
-  const [jaripatraRecipientAddress, setJaripatraRecipientAddress] = useState<string>(() => {
-    if (defaultEntity.includes("ব্যাংক")) return "প্রধান কার্যালয়, মতিঝিল বা/এ";
-    return "প্রধান কার্যালয়";
-  });
-  const [jaripatraRecipientCity, setJaripatraRecipientCity] = useState<string>("ঢাকা");
+  const [jaripatraRecipientEntity, setJaripatraRecipientEntity] = useState<string>(() => entry.entityName || "সোনালী ব্যাংক পিএলসি");
+  const [jaripatraRecipientAddress, setJaripatraRecipientAddress] = useState<string>("প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ");
+  const [jaripatraRecipientCity, setJaripatraRecipientCity] = useState<string>("ঢাকা – ১০০০");
 
   // Subject & Reference & Intro Text
   const [jaripatraSubject, setJaripatraSubject] = useState<string>(() => {
-    const branchPart = defaultBranch ? `, ${defaultBranch}` : '';
-    const auditYr = defaultAuditYear ? ` এর ${defaultAuditYear} সালের` : '';
-    return `বিষয়: ${defaultEntity}${branchPart}${auditYr} বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${extracted.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ${defaultParaNo} এর জবাবের উপর মন্তব্য প্রেরণ।`;
+    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
+    const auditYr = entry.auditYear || "২০১১-১৪";
+    return `বিষয়: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর মন্তব্য প্রেরণ।`;
   });
   const [jaripatraReference, setJaripatraReference] = useState<string>(() => {
-    const letterN = defaultLetterNo || "-";
-    const letterD = defaultLetterDate || "-";
-    return `সূত্র: ${defaultEntity} এর পত্র নং ${letterN}, তারিখ: ${letterD}`;
+    const letterN = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
+    const letterD = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
+    return `সূত্র: ${entry.entityName || "সোনালী ব্যাংক পিএলসি"} এর পত্র নং ${letterN}, তারিখ: ${letterD}`;
   });
   const [jaripatraIntroText, setJaripatraIntroText] = useState<string>(() => {
-    const branchPart = defaultBranch ? `, ${defaultBranch}` : '';
-    const auditYr = defaultAuditYear ? ` এর ${defaultAuditYear} সালের` : '';
-    return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${defaultEntity}${branchPart}${auditYr} নিরীক্ষা প্রতিবেদনের ${extracted.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ${defaultParaNo} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
+    const branchPart = entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা';
+    const auditYr = entry.auditYear || "২০১১-২০১৪";
+    return `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${branchPart} এর ${auditYr} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || "নন-এসএফআই"} অনুচ্ছেদ নং ১০ এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`;
   });
 
   // Dynamic Columns & Grid Rows (Flexible Government Settlement Format with Add/Delete/Merge capabilities)
@@ -413,10 +302,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       id: "j-row-1",
       cells: {
         col_1: { text: "১", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_2: { text: `${defaultParaNo}${defaultAuditYear ? `, ${defaultAuditYear}` : ""}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-        col_3: { text: `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_4: { text: `অনুচ্ছেদ নং ${defaultParaNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
-        col_5: { text: extracted.totalAmount || "০", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_2: { text: `${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+        col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `, ${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_4: { text: `অনুচ্ছেদ নং ${entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০"}`, align: "justify", colSpan: 1, rowSpan: 1 },
+        col_5: { text: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
         col_6: { text: "", align: "justify", colSpan: 1, rowSpan: 1 }
       }
     }
@@ -435,20 +324,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
   // Onulipi (Distribution) State
   const [jaripatraOnulipiHeader, setJaripatraOnulipiHeader] = useState<string>("অনুলিপি জ্ঞাতার্থ ও কার্যার্থে প্রেরণ করা হলো:");
-  const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>(() => [
+  const [jaripatraOnulipiItems, setJaripatraOnulipiItems] = useState<string[]>([
     "১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।",
-    `২। ব্যবস্থাপনা পরিচালক / প্রধান নির্বাহী কর্মকর্তা, ${defaultEntity}, প্রধান কার্যালয়, ঢাকা।`,
-    defaultBranch ? `৩। শাখা ব্যবস্থাপক / আঞ্চলিক কার্যালয়, ${defaultEntity}, ${defaultBranch}।` : `৩। সংশ্লিষ্ট আঞ্চলিক কার্যালয়, ${defaultEntity}।`,
+    "২। মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, প্রধান কার্যালয়, ঢাকা।",
+    "৩। উপ-মহাব্যবস্থাপক, সোনালী ব্যাংক পিএলসি, আঞ্চলিক কার্যালয়, চুয়াডাঙ্গা।",
     "৪। অফিস কপি।"
   ]);
 
   const handleSyncParagraphsToJaripatra = () => {
     const newGridRows: JaripatraGridRowItem[] = paragraphs.map((para, idx) => {
       const col1Text = toBengaliDigits(idx + 1);
-      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 1)}${defaultAuditYear ? `, ${defaultAuditYear}` : ""}`;
-      const col3Text = `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`;
-      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 1)}`;
-      const col5Text = extracted.totalAmount || "০";
+      const col2Text = `${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}, ${entry.auditYear || "২০১১-১৪"}`;
+      const col3Text = `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ', দর্শনা শাখা, চুয়াডাঙ্গা।'}`;
+      const col4Text = para.titleAndDetails ? para.titleAndDetails.split('\n')[0].replace(/^শিরোনাম:\s*/, '') : `অনুচ্ছেদ নং ${para.paraNo ? toBengaliDigits(para.paraNo) : toBengaliDigits(idx + 10)}`;
+      const col5Text = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
       const col6Text = para.presenterCommentText || "";
 
       return {
@@ -478,10 +367,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   };
 
   // Convert File to Base64
-  const handleFileUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "objection" | "reply" | "evidence" | "mainParagraph" | "mainAppendix"
-  ) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "objection" | "reply" | "evidence") => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -499,16 +385,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         setObjectionFile(fileData);
         if (!objectionText) {
           setObjectionText(`[সংযুক্ত ফাইল: ${file.name}] মূল আপত্তির রেকর্ডপত্র।`);
-        }
-      } else if (type === "mainParagraph") {
-        setMainParagraphFile(fileData);
-        if (!mainParagraphText) {
-          setMainParagraphText(`[সংযুক্ত ফাইল: ${file.name}] মূল অনুচ্ছেদের কপি।`);
-        }
-      } else if (type === "mainAppendix") {
-        setMainAppendixFile(fileData);
-        if (!mainAppendixText) {
-          setMainAppendixText(`[সংযুক্ত ফাইল: ${file.name}] মূল পরিশিষ্ট/শিডিউলের কপি।`);
         }
       } else if (type === "reply") {
         setReplyFile(fileData);
@@ -533,8 +409,8 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     const newPara: AuditParagraphBlock = {
       id: nextParaId,
       sl: nextSl,
-      entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}\nনিরীক্ষা বছর: ${defaultAuditYear || '২০১১-১২'}`,
-      paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "1") + paragraphs.length),
+      entityAndAuditYear: `প্রতিষ্ঠান: ${defaultEntity}${entry.branchName ? `,\n${entry.branchName}` : ''}\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`,
+      paraNo: toBengaliDigits(Number(toEnglishDigits(defaultParaNo) || "10") + paragraphs.length),
       titleAndDetails: "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- ",
       entityReplyText: "",
       hasTable: false,
@@ -852,16 +728,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
         // Auto-generate Jaripatra rows from parsed paragraphs
         const jRows: JaripatraGridRowItem[] = parsedParas.map((para, idx) => {
-          let title = para.titleAndDetails.split("\n")[0] || "";
+          let title = para.titleAndDetails.split("\n")[0] || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।";
           title = stripAmountSlashInText(title.replace(/^শিরোনাম:\s*/, ''));
           return {
             id: `j-row-ai-${idx + 1}`,
             cells: {
               col_1: { text: para.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_2: { text: `${para.paraNo}${defaultAuditYear ? `, ${defaultAuditYear}` : ''}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_3: { text: `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_4: { text: title || `অনুচ্ছেদ নং ${para.paraNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_5: { text: extracted.totalAmount || "০", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: `${para.paraNo}, ${entry.auditYear || "২০১১-১৪"}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: `${entry.entityName || "সোনালী ব্যাংক পিএলসি"}${entry.branchName ? `,\n${entry.branchName}` : ',\nদর্শনা শাখা, চুয়াডাঙ্গা।'}`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: title, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: entry.totalAmount ? cleanAndFormatBengaliAmount(entry.totalAmount) : "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_6: { text: para.presenterCommentText || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           };
@@ -891,10 +767,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             id: `j-row-${idx + 1}`,
             cells: {
               col_1: { text: r.sl || toBengaliDigits(idx + 1), align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_2: { text: r.paraAndYear || `${defaultParaNo}${defaultAuditYear ? `, ${defaultAuditYear}` : ''}`, align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
-              col_3: { text: r.entityName || `${defaultEntity}${defaultBranch ? `,\n${defaultBranch}` : ''}`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_4: { text: r.paraTitle || `অনুচ্ছেদ নং ${defaultParaNo}`, align: "justify", colSpan: 1, rowSpan: 1 },
-              col_5: { text: r.involvedAmount || extracted.totalAmount || "০", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_2: { text: r.paraAndYear || "১০, ২০১১-১৪", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
+              col_3: { text: r.entityName || `${entry.entityName || "সোনালী ব্যাংক পিএলসি"},\nদর্শনা শাখা, চুয়াডাঙ্গা।`, align: "justify", colSpan: 1, rowSpan: 1 },
+              col_4: { text: r.paraTitle || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ী টাকা।", align: "justify", colSpan: 1, rowSpan: 1 },
+              col_5: { text: r.involvedAmount || "৫৭,৮২৫", align: "center", isBold: true, colSpan: 1, rowSpan: 1 },
               col_6: { text: r.officeComment || "", align: "justify", colSpan: 1, rowSpan: 1 }
             }
           })));
@@ -945,56 +821,44 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
     // Helper for robust local fallback data generation
     const generateLocalFallbackData = () => {
-      const ext = extractEntryDetails(entry);
-      const entName = ext.entity;
-      const minName = ext.ministry;
-      const bName = ext.branch;
-      const dNo = ext.diaryNo || "২৩৯";
-      const dDate = ext.diaryDate || "৩০/০৭/২০২৬";
-      const lNo = ext.letterNo || "-";
-      const lDate = ext.letterDate || "-";
-      const aYear = ext.auditYear;
-      const pNo = ext.paraNo || "১";
-      const totAmt = ext.totalAmount || "০";
-      const bPart = bName ? `, ${bName}` : '';
-      const aPart = aYear ? ` এর <strong>${aYear}</strong> নিরীক্ষা বছরের` : '';
-      const memoDate = [lNo ? `স্মারক নং- <strong>${lNo}</strong>` : '', lDate ? `তারিখ: <strong>${lDate} খ্রি:</strong>` : ''].filter(Boolean).join(', ');
-
-      const fallbackPresenterComment = (includeMainDocumentsInAnalysis && (mainParagraphFile || mainParagraphText || mainAppendixFile || mainAppendixText))
-        ? (hasEvidence 
-            ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে দাখিলকৃত জবাব ও প্রমাণক পর্যালোচনা করা হলো। আপত্তিতে উল্লেখিত অনিয়ম নিরসনপূর্বক প্রয়োজনীয় প্রমাণক সংযুক্ত থাকায় এবং দাবিকৃত অর্থ আদায়/সমন্বয় হওয়ায় জবাবটি সন্তোষজনক বিবেচিত হলো। বিধায় আপত্তিটি পূর্ণাঙ্গ নিষ্পত্তির সুপারিশ করা হলো।`
-            : `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে প্রতিষ্ঠানের জবাব পর্যালোচনা করা হলো। তবে দাবিকৃত অর্থের স্বপক্ষে পর্যাপ্ত প্রমাণক দাখিল না করায় আপত্তিটি নিষ্পত্তির সুযোগ নেই। বিধায় প্রয়োজনীয় প্রমাণক চেয়ে আপত্তিটি বহাল রাখার সুপারিশ করা হলো।`)
-        : (hasEvidence
-            ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
-            : ``);
-
-      const fallbackOfficeComment = (includeMainDocumentsInAnalysis && (mainParagraphFile || mainParagraphText || mainAppendixFile || mainAppendixText))
-        ? (hasEvidence 
-            ? `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের বিপরীতে প্রতিষ্ঠান কর্তৃক দাখিলকৃত জবাব ও প্রমাণক পর্যালোচনা করা হলো। অনিয়ম নিরসন ও দাবিকৃত অর্থ আদায় সঠিক থাকায় আপত্তিটি নিষ্পত্তি করা হলো।`
-            : `মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়ম নিরসনের স্বপক্ষে প্রয়োজনীয় প্রমাণক দাখিল না করায় আপত্তিটি নিষ্পত্তির সুযোগ নেই। প্রমাণক দাখিলের অনুরোধসহ আপত্তিটি বহাল রাখা হলো।`)
-        : (hasEvidence
-            ? `আপত্তিকৃত টাকা আদায় হওয়ায় এবং প্রয়োজনীয় প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
-            : ``);
+      const entName = entry.entityName || "সোনালী ব্যাংক পিএলসি";
+      const minName = entry.ministryName || "আর্থিক প্রতিষ্ঠান বিভাগ";
+      const bName = entry.branchName || "বারোবাজার শাখা, ঝিনাইদহ";
+      const dNo = entry.diaryNo || "২৪১";
+      const dDate = entry.diaryDate || "৩০/০৭/২০২৬";
+      const lNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩৪";
+      const lDate = entry.letterDate || "২৭/০৭/২০২৬";
+      const aYear = entry.auditYear || "২০০৯-২০১৪";
+      const pNo = entry.paraNo ? String(entry.paraNo) : "০৪";
+      const totAmt = entry.totalAmount || "৮,৪১,২৮৪/-";
 
       return {
         isValidAuditDocument: true,
         diaryHeader: `ডায়েরি নং- ${dNo}, তারিখ: ${dDate} খ্রি:`,
-        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entName}</strong>, প্রধান কার্যালয়ের${memoDate ? `, ${memoDate}` : ''} পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${minName}</strong> এর নিয়ন্ত্রণাধীন <strong>${entName}</strong>${bPart}${aPart} ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
+        noteTikaText: `টোকা নং- ১১: উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${entName}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${lNo}</strong>, তারিখ: <strong>${lDate} খ্রি:</strong> পত্রটি দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${minName}</strong> এর নিয়ন্ত্রণাধীন <strong>${entName}</strong>${bName ? `, ${bName}` : ''} এর <strong>${aYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।`,
         conclusionFinal: `সদয় অনুমোদনের জন্য নথি উপস্থাপন করা হলো।`,
         proposedStatus: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন",
         paragraphs: [
           {
             sl: "১",
-            entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bPart}\nনিরীক্ষা বছর: ${aYear || '-'}`,
+            entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bName ? `,\n${bName}` : ''}\nনিরীক্ষা বছর: ${aYear}`,
             paraNo: pNo,
-            titleAndDetails: `শিরোনাম: ${entry.subject || `অনুচ্ছেদ নং ${pNo}`}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: "জবাব পর্যালোচনা...",
-            hasTable: false,
-            tableHeaders: ["ক্র: নং", "বিবরণ", "আপত্তিতে জড়িত টাকা", "মোট আদায়", "সমন্বয়ের তারিখ"],
-            tableRows: [],
+            titleAndDetails: `শিরোনাম: ${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            entityReplyHeader: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
+            hasTable: true,
+            tableHeaders: ["ক্র: নং", "ঋণগ্রহীতার নাম", "হিসাব নং ও ঋণের প্রকৃতি", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
+            tableRows: [
+              ["১", "মো: আবুল খায়ের খান", "সিসি ১৫৪", "৫২,৭৬২/-", "১,৯৬,৪৮৩/-", "১৮,৯৬৭/-", "১,২৮৭/-", "২,১৬,৭৩৭/-", "১৫/০৯/২০১৬"],
+              ["২", "মো: হাসমত আলী", "সিসি ৫২৯", "৩,০১,৬০৮/-", "৩,০৫,০৩৭/-", "৮৫,৫৪৭/-", "৩,৮২৬/-", "৩,৯৪,৪১০/-", "২২/০৪/২০১৮"],
+              ["৩", "আবুল কালাম আজাদ", "সিসি ৬৪৪", "৩,৪৭,৩৯৪/-", "৩,২৩,৮৮৮/-", "১,৪১,৯৬১/-", "৬,১০৩/-", "৪,৭১,৯৫২/-", "২৫/১০/২০১৮"],
+              ["৪", "এস আর রাকিব স্টোরস", "সিসি ৬৯৯", "১,৩৯,৫২০/-", "১,৩৭,৯৬৮/-", "১,১৪,৬৭১/-", "১৩,৯৪৯/-", "২,৬৬,৫৮৮/-", "২৬/০১/২০২০"],
+              ["সর্বমোট", "-", "-", "৮,৪১,২৮৪/-", "৯,৬৩,৩৭৬/-", "৩,৬১,১৮৬/-", "২৫,১৬৫/-", "১৩,৪৯,৭২৭/-", "-"]
+            ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
-            conclusionPresenter: fallbackPresenterComment,
+            conclusionPresenter: hasEvidence
+              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে ব্যাংক বিবরণী ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
+              : ``,
             status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }
         ],
@@ -1004,30 +868,31 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           recipient: {
             designation: "ব্যবস্থাপনা পরিচালক",
             entityName: entName,
-            address: entName.includes("ব্যাংক") ? "প্রধান কার্যালয়, মতিঝিল বা/এ" : "প্রধান কার্যালয়",
-            city: "ঢাকা"
+            address: "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
+            city: "ঢাকা – ১০০০"
           },
-          subject: `বিষয়: ${entName}${bPart}${aYear ? ` এর ${aYear} সালের` : ''} বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর মন্তব্য প্রেরণ।`,
+          subject: `বিষয়: ${entName}${bName ? `, ${bName}` : ''} এর ${aYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর মন্তব্য প্রেরণ।`,
           reference: `সূত্র: ${entName} এর পত্র নং ${lNo}, তারিখ: ${lDate}`,
-          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entName}${bPart}${aYear ? ` এর ${aYear} সালের` : ''} নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
+          introText: `উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entName}${bName ? `, ${bName}` : ''} এর ${aYear} সালের নিরীক্ষা প্রতিবেদনের ${entry.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${pNo} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:`,
           tableRows: [
             {
               sl: "১",
-              paraAndYear: `${pNo}${aYear ? `, ${aYear}` : ''}`,
-              entityName: `${entName}${bPart ? `,\n${bPart}` : ''}`,
-              paraTitle: `${entry.subject || `অনুচ্ছেদ নং ${pNo}`}`,
+              paraAndYear: `${pNo}, ${aYear}`,
+              entityName: `${entName}${bName ? `,\n${bName}` : ''}।`,
+              paraTitle: `${entry.subject || 'ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪/-'}`,
               involvedAmount: `${totAmt}`,
-              officeComment: fallbackOfficeComment
+              officeComment: hasEvidence
+                ? `আপত্তিকৃত ঋণ হিসাবসমূহের সমুদয় টাকা আদায় হওয়ায় এবং প্রমাণক হিসেবে আদায় বিবরণী, প্রত্যয়নপত্র ও জমা ভাউচার সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
+                : ``
             }
           ],
           signatoryName: "নাসিফ কবির",
           signatoryTitle: "উপ-পরিচালক",
           signatoryPhone: "ফোন: ০২৪৭৭৭২২৬৫৬",
           onulipiList: [
-            `১। মহাপরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, সেগুনবাগিচা, ঢাকা।`,
-            `২। ব্যবস্থাপনা পরিচালক / প্রধান নির্বাহী কর্মকর্তা, ${entName}, প্রধান কার্যালয়, ঢাকা।`,
-            bName ? `৩। শাখা ব্যবস্থাপক / আঞ্চলিক কার্যালয়, ${entName}, ${bName}।` : `৩। সংশ্লিষ্ট আঞ্চলিক কার্যালয়, ${entName}।`,
-            `৪। অফিস কপি।`
+            `উপমহাব্যবস্থাপক, ${entName}, জিএম অফিস, খুলনা। (কপি সংশ্লিষ্ট শাখায় প্রেরণের জন্য অনুরোধ করা হলো)`,
+            `পিএ টু মহাপরিচালক/পরিচালক, বাণিজ্যিক অডিট অধিদপ্তর, প্রধান কার্যালয়, অডিট কমপ্লেক্স (৮ম ও ৯ ম তলা), সেগুনবাগিচা, ঢাকা।`,
+            `অফিস কপি।`
           ]
         }
       };
@@ -1049,11 +914,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           userConfirmedProceed: isConfirmed,
           originalObjectionText: objectionText,
           originalObjectionFile: objectionFile,
-          mainParagraphText: mainParagraphText,
-          mainParagraphFile: mainParagraphFile,
-          mainAppendixText: mainAppendixText,
-          mainAppendixFile: mainAppendixFile,
-          includeMainDocumentsInAnalysis: includeMainDocumentsInAnalysis,
           entityReplyText: replyText,
           entityReplyFile: replyFile,
           evidenceText: evidenceText,
@@ -1115,8 +975,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const handleApproveNoteAndPurge = () => {
     setIsNoteApproved(true);
     setObjectionFile(null);
-    setMainParagraphFile(null);
-    setMainAppendixFile(null);
     setReplyFile(null);
     setEvidenceFile(null);
     setIsFilesPurged(true);
@@ -2653,23 +2511,23 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           </button>
         </div>
 
-        {/* Upload Inputs Grid - 4 Columns / Cards (Reply, Evidence, Main Paragraph, Main Appendix) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Upload Inputs Grid - 2 Columns (Forwarding & Reply, Evidence) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {/* Box A: Entity Reply & Forwarding */}
-          <div className="p-3 bg-emerald-50/50 rounded-none border border-emerald-300 space-y-2">
+          <div className="p-3 bg-emerald-50/40 rounded-2xl border border-emerald-200/80 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11.5px] font-black text-emerald-950 flex items-center gap-1">
-                <FileText size={12} className="text-emerald-700" /> ক. ফরওয়ার্ডিং ও জবাব
+                <FileText size={12} className="text-emerald-600" /> ক. ফরওয়ার্ডিং ও জবাব
               </span>
-              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-emerald-100 text-emerald-800 rounded-none text-[10px] font-black border border-emerald-300 shadow-2xs flex items-center gap-1">
+              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black border border-emerald-200 shadow-2xs flex items-center gap-1">
                 <Upload size={10} /> {replyFile ? "পরিবর্তন" : "আপলোড"}
                 <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "reply")} />
               </label>
             </div>
             {replyFile && (
-              <div className="px-2 py-1 bg-emerald-100 text-emerald-900 rounded-none text-[10px] font-bold flex items-center justify-between">
+              <div className="px-2 py-1 bg-emerald-100/70 text-emerald-900 rounded-md text-[10px] font-bold flex items-center justify-between">
                 <span className="truncate">সংযুক্ত: {replyFile.name}</span>
-                <button type="button" onClick={() => setReplyFile(null)} className="text-rose-600 hover:text-rose-800">
+                <button type="button" onClick={() => setReplyFile(null)} className="text-rose-500 hover:text-rose-700">
                   <Trash2 size={11} />
                 </button>
               </div>
@@ -2677,27 +2535,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <textarea
               rows={3}
               placeholder="প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র পেস্ট করুন বা ফাইল আপলোড করুন..."
-              className="w-full p-2 bg-white border border-emerald-200 rounded-none text-xs font-medium text-slate-800 outline-none focus:border-emerald-600 resize-none"
+              className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-emerald-500"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
             />
           </div>
 
           {/* Box B: Evidence Upload */}
-          <div className="p-3 bg-amber-50/50 rounded-none border border-amber-300 space-y-2">
+          <div className="p-3 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11.5px] font-black text-amber-950 flex items-center gap-1">
-                <FileText size={12} className="text-amber-700" /> খ. প্রমাণকসমূহ (চালান/ভাউচার)
+                <FileText size={12} className="text-amber-600" /> খ. প্রমাণকসমূহ (চালান/ভাউচার)
               </span>
-              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-800 rounded-none text-[10px] font-black border border-amber-300 shadow-2xs flex items-center gap-1">
+              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-amber-50 text-amber-700 rounded-lg text-[10px] font-black border border-amber-200 shadow-2xs flex items-center gap-1">
                 <Upload size={10} /> {evidenceFile ? "পরিবর্তন" : "আপলোড"}
                 <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "evidence")} />
               </label>
             </div>
             {evidenceFile && (
-              <div className="px-2 py-1 bg-amber-100 text-amber-900 rounded-none text-[10px] font-bold flex items-center justify-between">
+              <div className="px-2 py-1 bg-amber-100/70 text-amber-900 rounded-md text-[10px] font-bold flex items-center justify-between">
                 <span className="truncate">সংযুক্ত: {evidenceFile.name}</span>
-                <button type="button" onClick={() => setEvidenceFile(null)} className="text-rose-600 hover:text-rose-800">
+                <button type="button" onClick={() => setEvidenceFile(null)} className="text-rose-500 hover:text-rose-700">
                   <Trash2 size={11} />
                 </button>
               </div>
@@ -2705,119 +2563,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             <textarea
               rows={3}
               placeholder="প্রমাণক থাকলে পেস্ট/আপলোড করুন (মন্তব্য স্বয়ংক্রিয় লেখার জন্য)..."
-              className="w-full p-2 bg-white border border-amber-200 rounded-none text-xs font-medium text-slate-800 outline-none focus:border-amber-600 resize-none"
+              className="w-full p-2.5 bg-white border border-amber-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500"
               value={evidenceText}
               onChange={(e) => setEvidenceText(e.target.value)}
             />
-          </div>
-
-          {/* Box C: Main Paragraph (মূল অনুচ্ছেদ) */}
-          <div className="p-3 bg-blue-50/50 rounded-none border border-blue-300 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11.5px] font-black text-blue-950 flex items-center gap-1">
-                <FileText size={12} className="text-blue-700" /> গ. মূল অনুচ্ছেদ
-              </span>
-              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-blue-100 text-blue-800 rounded-none text-[10px] font-black border border-blue-300 shadow-2xs flex items-center gap-1">
-                <Upload size={10} /> {mainParagraphFile ? "পরিবর্তন" : "আপলোড"}
-                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "mainParagraph")} />
-              </label>
-            </div>
-            {mainParagraphFile && (
-              <div className="px-2 py-1 bg-blue-100 text-blue-900 rounded-none text-[10px] font-bold flex items-center justify-between">
-                <span className="truncate">সংযুক্ত: {mainParagraphFile.name}</span>
-                <button type="button" onClick={() => setMainParagraphFile(null)} className="text-rose-600 hover:text-rose-800">
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            )}
-            <textarea
-              rows={3}
-              placeholder="মূল আপত্তির অনুচ্ছেদ পেস্ট বা ফাইল আপলোড করুন..."
-              className="w-full p-2 bg-white border border-blue-200 rounded-none text-xs font-medium text-slate-800 outline-none focus:border-blue-600 resize-none"
-              value={mainParagraphText}
-              onChange={(e) => setMainParagraphText(e.target.value)}
-            />
-          </div>
-
-          {/* Box D: Main Appendix (মূল পরিশিষ্ট) */}
-          <div className="p-3 bg-purple-50/50 rounded-none border border-purple-300 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11.5px] font-black text-purple-950 flex items-center gap-1">
-                <FileText size={12} className="text-purple-700" /> ঘ. মূল পরিশিষ্ট
-              </span>
-              <label className="cursor-pointer px-2 py-0.5 bg-white hover:bg-purple-100 text-purple-800 rounded-none text-[10px] font-black border border-purple-300 shadow-2xs flex items-center gap-1">
-                <Upload size={10} /> {mainAppendixFile ? "পরিবর্তন" : "আপলোড"}
-                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,image/*" onChange={(e) => handleFileUpload(e, "mainAppendix")} />
-              </label>
-            </div>
-            {mainAppendixFile && (
-              <div className="px-2 py-1 bg-purple-100 text-purple-900 rounded-none text-[10px] font-bold flex items-center justify-between">
-                <span className="truncate">সংযুক্ত: {mainAppendixFile.name}</span>
-                <button type="button" onClick={() => setMainAppendixFile(null)} className="text-rose-600 hover:text-rose-800">
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            )}
-            <textarea
-              rows={3}
-              placeholder="মূল আপত্তির পরিশিষ্ট/শিডিউল পেস্ট বা ফাইল আপলোড করুন..."
-              className="w-full p-2 bg-white border border-purple-200 rounded-none text-xs font-medium text-slate-800 outline-none focus:border-purple-600 resize-none"
-              value={mainAppendixText}
-              onChange={(e) => setMainAppendixText(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Permission & Review Control Box */}
-        <div className={`p-3 rounded-none border transition-all ${
-          includeMainDocumentsInAnalysis
-            ? "bg-blue-50/90 border-blue-500 shadow-2xs"
-            : "bg-slate-100/90 border-slate-300"
-        }`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-none flex items-center justify-center font-black ${
-                includeMainDocumentsInAnalysis ? "bg-blue-600 text-white" : "bg-slate-300 text-slate-700"
-              }`}>
-                <Check size={16} />
-              </div>
-              <div>
-                <p className="text-xs font-black text-slate-900">
-                  মূল অনুচ্ছেদ ও পরিশিষ্ট পর্যালোচনা করে মন্তব্য প্রস্তুত করবেন কি?
-                </p>
-                <p className="text-[11px] font-semibold text-slate-600">
-                  {includeMainDocumentsInAnalysis
-                    ? "✓ অনুমতি সক্রিয়: মূল অনুচ্ছেদ ও পরিশিষ্টে বর্ণিত অনিয়মের প্রেক্ষিতে প্রতিষ্ঠানের জবাব ও প্রমাণক মিলিয়ে মন্তব্য প্রস্তুত করা হবে।"
-                    : "✕ অনুমতি বন্ধ: মূল অনুচ্ছেদ ও পরিশিষ্ট আপলোড থাকলেও অনুমতি না দেওয়ায় এগুলো পর্যালোচনায় ব্যবহার করা হবে না।"
-                  }
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-white p-1 border border-slate-300 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setIncludeMainDocumentsInAnalysis(true)}
-                className={`px-3 py-1.5 text-xs font-black flex items-center gap-1 transition-all cursor-pointer rounded-none ${
-                  includeMainDocumentsInAnalysis
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <Check size={13} /> হ্যাঁ (পর্যালোচনা করুন)
-              </button>
-              <button
-                type="button"
-                onClick={() => setIncludeMainDocumentsInAnalysis(false)}
-                className={`px-3 py-1.5 text-xs font-black flex items-center gap-1 transition-all cursor-pointer rounded-none ${
-                  !includeMainDocumentsInAnalysis
-                    ? "bg-slate-800 text-white shadow-xs"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <X size={13} /> না (উপেক্ষা করুন)
-              </button>
-            </div>
           </div>
         </div>
 
