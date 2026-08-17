@@ -550,36 +550,64 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
 
           promptParts.push(promptText);
 
+          // Helper to check if MIME type is supported by Gemini inlineData
+          const isSupportedInlineMime = (mime: string) => {
+            if (!mime) return false;
+            const m = mime.toLowerCase();
+            return (
+              m.startsWith("image/") ||
+              m === "application/pdf" ||
+              m.startsWith("text/") ||
+              m.startsWith("audio/") ||
+              m.startsWith("video/")
+            );
+          };
+
           // If images/files were attached as base64
-          if (originalObjectionFile && originalObjectionFile.base64 && originalObjectionFile.mimeType) {
-            promptParts.push({
-              inlineData: {
-                data: originalObjectionFile.base64.replace(/^data:[^;]+;base64,/, ""),
-                mimeType: originalObjectionFile.mimeType
-              }
-            });
+          if (originalObjectionFile && originalObjectionFile.base64) {
+            const mime = originalObjectionFile.mimeType || "application/pdf";
+            if (isSupportedInlineMime(mime)) {
+              promptParts.push({
+                inlineData: {
+                  data: originalObjectionFile.base64.replace(/^data:[^;]+;base64,/, ""),
+                  mimeType: mime
+                }
+              });
+            } else {
+              promptParts.push(`[সংযুক্ত ফাইল: ${originalObjectionFile.name || 'আপত্তি ফাইল'}]`);
+            }
           }
 
-          if (entityReplyFile && entityReplyFile.base64 && entityReplyFile.mimeType) {
-            promptParts.push({
-              inlineData: {
-                data: entityReplyFile.base64.replace(/^data:[^;]+;base64,/, ""),
-                mimeType: entityReplyFile.mimeType
-              }
-            });
+          if (entityReplyFile && entityReplyFile.base64) {
+            const mime = entityReplyFile.mimeType || "application/pdf";
+            if (isSupportedInlineMime(mime)) {
+              promptParts.push({
+                inlineData: {
+                  data: entityReplyFile.base64.replace(/^data:[^;]+;base64,/, ""),
+                  mimeType: mime
+                }
+              });
+            } else {
+              promptParts.push(`[সংযুক্ত ফাইল: ${entityReplyFile.name || 'জবাব ফাইল'}]`);
+            }
           }
 
-          if (evidenceFile && evidenceFile.base64 && evidenceFile.mimeType) {
-            promptParts.push({
-              inlineData: {
-                data: evidenceFile.base64.replace(/^data:[^;]+;base64,/, ""),
-                mimeType: evidenceFile.mimeType
-              }
-            });
+          if (evidenceFile && evidenceFile.base64) {
+            const mime = evidenceFile.mimeType || "application/pdf";
+            if (isSupportedInlineMime(mime)) {
+              promptParts.push({
+                inlineData: {
+                  data: evidenceFile.base64.replace(/^data:[^;]+;base64,/, ""),
+                  mimeType: mime
+                }
+              });
+            } else {
+              promptParts.push(`[সংযুক্ত ফাইল: ${evidenceFile.name || 'প্রমাণক ফাইল'}]`);
+            }
           }
 
           const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.7-flash",
             contents: promptParts,
             config: {
               responseMimeType: "application/json"
@@ -722,22 +750,21 @@ ${userConfirmedProceed ? `[গুরুত্বপূর্ণ]: ব্যব�
         paragraphs: [
           {
             sl: "১",
-            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯'}`,
+            entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১১-১২'}`,
             paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
-            titleAndDetails: `শিরোনাম: ${letterMetadata?.subject || 'মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ' + (totalAmount || '৫৭,৮২৫') + ' টাকা।'}\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশिष्ट পৃষ্ঠা নং- ২৯০`,
-            entityReplyHeader: `আপত্তিতে উল্লেখিত ৪ টি মাইক্রো ক্রেডিট “জাগো নারী” ঋণ আসল ও সুদসহ আদায় করা হয়েছে (প্রমাণক সংযুক্ত) যা নিচে উপস্থাপন করা হলো:`,
-            hasTable: true,
-            tableHeaders: ["ক্রমিক", "ঋণগ্রহীতার নাম", "আপত্তিতে জড়িত টাকা", "আসল", "সুদ", "অন্যান্য", "মোট আদায়", "সমন্বয়ের তারিখ"],
+            titleAndDetails: originalObjectionText 
+              ? (originalObjectionText.length > 120 ? originalObjectionText.substring(0, 120) + "..." : originalObjectionText)
+              : `শিরোনাম: ${letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            entityReplyHeader: entityReplyText || "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
+            hasTable: false,
+            tableHeaders: ["ক্রমিক", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
             tableRows: [
-              ["১", "ফেরদৌসী বেগম", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "২০-০২-১৭"],
-              ["২", "শারমিন আক্তার", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "২২-১০-১৭"],
-              ["৩", "মুরশিদা বেগম", "১৪,৫০৬", "৬,৮০০", "৭,৭০৬", "-", "১৪,৫০৬", "০৯-০৮-১৬"],
-              ["৪", "মো: সাঈদ হোসেন", "১৪,৩০৭", "৩,০০০", "১১,৩০৭", "-", "১৪,৩০৭", "২২-০৯-১৫"]
+              ["১", branchName || entity, totalAmount || "০", totalAmount || "০", "০", "-"]
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
             conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
-              ? `আপত্তিকৃত সমুদয় টাকা আদায় হওয়ায় ও আদায়ের স্বপক্ষে প্রমাণক (২৬৮-২৮৮) সংযুক্ত থাকায় আপত্তিটি নিষ্পত্তি করা যেতে পারে।`
+              ? `আপত্তিকৃত টাকার স্বপক্ষে প্রমাণক দাখিল করায় ও আদায় সঠিক থাকায় আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
               : ``,
             status: hasEvidence ? "পূর্ণাঙ্গ নিষ্পত্তি" : "মন্তব্য বিচারাধীন"
           }

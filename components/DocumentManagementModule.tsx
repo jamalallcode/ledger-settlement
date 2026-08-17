@@ -788,7 +788,17 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
         }),
       });
 
-      const resJson = await response.json();
+      let resJson: any;
+      if (!response.ok) {
+        let errMessage = "সার্ভার থেকে বিশ্লেষণ প্রক্রিয়ায় সমস্যা হয়েছে।";
+        try {
+          const errData = await response.json();
+          if (errData?.error) errMessage = errData.error;
+        } catch (_) {}
+        throw new Error(errMessage);
+      } else {
+        resJson = await response.json();
+      }
 
       // Check if document was marked invalid by AI
       if (resJson.isValid === false || resJson.data?.isValidAuditDocument === false) {
@@ -817,12 +827,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       if (resJson.success && resJson.data) {
         applyParsedDataToNote(resJson.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Analysis error:", err);
       setValidationErrorModal({
         open: true,
         message: "ডকুমেন্ট বিশ্লেষণ ও যাচাইকরণে ত্রুটি দেখা দিয়েছে।",
-        details: ["দয়া করে নেটওয়ার্ক সংযোগ চেক করুন অথবা ফাইল ফরম্যাটটি পরিবর্তন করে পুনরায় চেষ্টা করুন।"]
+        details: [
+          err?.message && !err.message.includes("fetch") 
+            ? err.message 
+            : "দয়া করে ফাইল সাইজ (PDF, ছবি বা টেক্সট) চেক করে পুনরায় চেষ্টা করুন। সিস্টেম এখন অফলাইন অ্যালগরিদম ও জেমিনি ৩.৭ উভয়ের সহায়তায় প্রস্তুত।"
+        ]
       });
     } finally {
       setIsAnalyzing(false);
