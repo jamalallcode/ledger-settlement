@@ -51,6 +51,7 @@ interface DocumentManagementModuleProps {
   onBack: () => void;
   isAdmin?: boolean;
   onSaveJaripatra?: (entry: CorrespondenceEntry, jaripatraData: any) => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 export interface JaripatraTableRowItem {
@@ -136,6 +137,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   entry,
   onBack,
   onSaveJaripatra,
+  onRegisterBackHandler,
 }) => {
   // In-Memory Uploaded Files (Permanently purged on note approval)
   const [objectionFile, setObjectionFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
@@ -156,7 +158,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const defaultDiaryDate = entry.diaryDate ? formatDateBN(entry.diaryDate) : "৩০/০৭/২০২৬";
   const [diaryHeader, setDiaryHeader] = useState<string>(`ডায়েরি নং- ${defaultDiaryNo}, তারিখ: ${defaultDiaryDate} খ্রি:`);
 
-  // 2. Tika / Introductory Note Body
+  // 2. Toka / Introductory Note Body
   const defaultLetterNo = entry.letterNo || "এসবি/প্রকা/ইএসসিডি/সবানি/১৩২";
   const defaultLetterDate = entry.letterDate ? formatDateBN(entry.letterDate) : "২৭/০৭/২০২৬";
   const defaultEntity = entry.entityName || "পাটকল সংস্থা";
@@ -165,14 +167,12 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   const defaultAuditYear = entry.auditYear || "২০১০-১১, ২০১৪-১৫, ২০১৫-১৬, ২০১৮-১৯";
 
   const [tikaIntroHtml, setTikaIntroHtml] = useState<string>(() => {
-    return `<p><strong>টীকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি (পৃষ্ঠা নং- ২৯২) দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের (পৃষ্ঠা নং- ২৬৮-২৯২) ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
+    return `<p><strong>টোকা নং- ১১:</strong> উপর্যুক্ত ডায়েরিভুক্ত ও সূত্রস্থ পত্রখানা <strong>${defaultEntity}</strong>, প্রধান কার্যালয়ের স্মারক নং- <strong>${defaultLetterNo}</strong>, তারিখ: <strong>${defaultLetterDate} খ্রি:</strong> পত্রটি <strong>(পৃষ্ঠা নং- )</strong> দেখতে সদয় মর্জি হয়। উক্ত পত্রের মাধ্যমে <strong>${defaultMinistry}</strong> এর নিয়ন্ত্রণাধীন <strong>${defaultEntity}</strong>, ${defaultBranch} এর <strong>${defaultAuditYear}</strong> নিরীক্ষা বছরের ব্রডশীট জবাবের <strong>(পৃষ্ঠা নং- )</strong> ওপর প্রেরিত প্রমাণক যাচাই করে এ কার্যালয়ের মন্তব্য নিম্নে উপস্থাপন করা হলো।</p>`;
   });
 
   // 3. Multi-Paragraphs State (প্রতিটি অনুচ্ছেদের জন্য পৃথক ছক, জবাব, টেবিল ও মন্তব্য)
   const defaultParaNo = entry.paraNo ? toBengaliDigits(entry.paraNo) : "১০";
-  const defaultTitleAndDetails = `শিরোনাম: ${
-    entry.subject || "মাইক্রো ক্রেডিট (উন্মেষ) ঋণের মেয়াদোত্তীর্ণ অনাদায়ি ৫৭,৮২৫ টাকা।"
-  }\nঅনুচ্ছেদের পৃষ্ঠা নং- ২৯১\nপরিশিষ্ট পৃষ্ঠা নং- ২৯০`;
+  const defaultTitleAndDetails = "শিরোনাম: \nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশিষ্ট পৃষ্ঠা নং- ";
   const defaultEntityAndAuditYear = `প্রতিষ্ঠান: ${defaultEntity}${
     entry.branchName ? `,\n${entry.branchName}` : defaultBranch ? `,\n${defaultBranch}` : ""
   }\nনিরীক্ষা বছর: ${entry.auditYear || defaultAuditYear}`;
@@ -344,6 +344,28 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       }
     }
   }, [showJaripatraView]);
+
+  // Hook into the main back button so that when in Jaripatra view, it returns to Note Sheet, and from Note Sheet back to Register
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      if (showJaripatraView) {
+        onRegisterBackHandler(() => {
+          setShowJaripatraView(false);
+          return true;
+        });
+      } else {
+        onRegisterBackHandler(() => {
+          onBack();
+          return true;
+        });
+      }
+    }
+    return () => {
+      if (onRegisterBackHandler) {
+        onRegisterBackHandler(null);
+      }
+    };
+  }, [showJaripatraView, onRegisterBackHandler, onBack]);
 
   // Synchronize Jaripatra summary rows directly from the note sheet paragraphs
   const handleSyncJaripatraFromParagraphs = () => {
@@ -1715,16 +1737,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           {/* Jaripatra Top Action Header Bar - Sticky Top, Compact, Rounded-none, Rectangular */}
           <div className="sticky top-0 z-40 bg-slate-900 text-white rounded-none border border-slate-700 shadow-md px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 no-print">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowJaripatraView(false)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-none transition-all flex items-center gap-1 text-[11px] font-bold border border-slate-700 cursor-pointer"
-                title="নোট শিটে ফিরে যান"
-              >
-                <ArrowLeft size={13} />
-                <span>নোট শিটে ফিরুন</span>
-              </button>
-              <div className="h-4 w-[1px] bg-slate-700 hidden sm:block" />
               <div className="flex items-center gap-1.5">
                 <div className="w-6 h-6 rounded-none bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
                   <Flame size={14} />
@@ -2045,7 +2057,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
                     {/* Table Body */}
                     <tbody>
-                      {jaripatraGridRows.map((row) => (
+                      {(jaripatraGridRows.filter(row => jaripatraColumns.some(col => (row.cells[col.id]?.text || '').trim() !== '')).length > 0 
+                        ? jaripatraGridRows.filter(row => jaripatraColumns.some(col => (row.cells[col.id]?.text || '').trim() !== '')) 
+                        : jaripatraGridRows.slice(0, 1)
+                      ).map((row) => (
                         <tr key={row.id} className="align-top hover:bg-slate-50/40">
                           {jaripatraColumns.map((col, cIdx) => {
                             const cell = row.cells[col.id];
@@ -2071,20 +2086,20 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                                 key={`${row.id}-${col.id}`}
                                 colSpan={cell.colSpan || 1}
                                 rowSpan={cell.rowSpan || 1}
-                                className="border border-black p-2 align-top text-black"
+                                className="border border-black p-1.5 sm:p-2 align-top text-black"
                               >
                                 <textarea
                                   rows={
                                     isSerialCol
                                       ? 1
                                       : Math.max(
-                                          2,
-                                          Math.ceil(((cell.text || '').length || 1) / (cell.colSpan && cell.colSpan > 1 ? 45 : 25)),
+                                          1,
+                                          Math.ceil(((cell.text || '').length || 1) / (cell.colSpan && cell.colSpan > 1 ? 45 : 28)),
                                           (cell.text || '').split('\n').length
                                         )
                                   }
                                   readOnly={!isJaripatraEditable}
-                                  className={`w-full bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-relaxed ${alignClass} ${
+                                  className={`w-full bg-transparent outline-none text-black resize-none overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden leading-normal ${alignClass} ${
                                     cell.isBold ? "font-bold" : "font-normal"
                                   } ${
                                     isJaripatraEditable
@@ -2110,7 +2125,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </div>
 
               {/* 7. Signatory Block (Right Aligned) */}
-              <div className="pt-10 flex justify-end">
+              <div className="pt-4 sm:pt-6 flex justify-end">
                 <div className="text-center space-y-0.5 w-60 sm:w-64">
                   <div className="w-40 border-b border-black mx-auto mb-2" />
                   <input
@@ -2289,14 +2304,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
           <button
             type="button"
-            onClick={handlePrintNoteSheet}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Printer size={14} /> নোট শিট প্রিন্ট
-          </button>
-
-          <button
-            type="button"
             onClick={() => setShowJaripatraView(true)}
             className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             title="সরকারি জারিপত্রের নির্ধারিত ছক ও ফরম্যাট দেখুন ও প্রিন্ট করুন"
@@ -2399,7 +2406,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               </>
             ) : (
               <>
-                <Sparkles size={14} /> এআই দিয়ে খসড়া নোট তৈরি করুন
+                <Sparkles size={14} /> খসড়া তৈরি করুন
               </>
             )}
           </button>
@@ -2625,10 +2632,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       >
         {/* 1. Official Diary Header Exactly at the Top Center */}
         <div className="text-center pb-4 border-b border-slate-300">
-          <div className="inline-block px-4 py-1.5 bg-slate-50 border border-slate-400 rounded-none shadow-2xs print:border-none print:bg-transparent">
+          <div className="inline-block px-6 py-2 bg-slate-50 border border-slate-400 rounded-none shadow-2xs print:border-none print:bg-transparent max-w-full">
             <input
               type="text"
-              className="text-center text-sm sm:text-base font-black text-slate-900 bg-transparent outline-none w-full max-w-lg tracking-wide border-b border-transparent focus:border-blue-500"
+              className="text-center text-sm sm:text-base font-black text-slate-900 bg-transparent outline-none w-auto min-w-[340px] sm:min-w-[480px] max-w-full tracking-wide border-b border-transparent focus:border-blue-500"
               value={diaryHeader}
               onChange={(e) => setDiaryHeader(e.target.value)}
               title="ডায়েরি নং ও তারিখ"
@@ -2636,7 +2643,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           </div>
         </div>
 
-        {/* 2. Main Note Body: Tika No. 11 & Official Introduction */}
+        {/* 2. Main Note Body: Toka No. 11 & Official Introduction */}
         <div className="space-y-3">
           <div
             ref={tikaEditorRef}
