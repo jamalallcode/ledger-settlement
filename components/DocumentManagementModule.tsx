@@ -662,8 +662,16 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             ? pItem.tableHeaders.map((h: string, i: number) => ({ id: `col-${i}`, label: convertAllDatesToBengali(h) }))
             : [...DEFAULT_TABLE_COLUMNS];
 
-          const rows: TableRow[] = Array.isArray(pItem.tableRows) && pItem.tableRows.length > 0
-            ? pItem.tableRows.map((r: string[], rIdx: number) => {
+          const rawRows = Array.isArray(pItem.tableRows) ? pItem.tableRows : [];
+          // Filter out any summary/total rows from tableRows since total is calculated dynamically
+          const filteredRawRows = rawRows.filter((r: any) => {
+            if (!Array.isArray(r)) return false;
+            const joined = r.join(" ");
+            return !(joined.includes("সর্বমোট") || joined.trim() === "মোট" || joined.toLowerCase().includes("total"));
+          });
+
+          const rows: TableRow[] = filteredRawRows.length > 0
+            ? filteredRawRows.map((r: string[], rIdx: number) => {
                 const cells: Record<string, string> = {};
                 cols.forEach((col, cIdx) => {
                   const rawVal = r[cIdx] || "";
@@ -2872,26 +2880,40 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
               {para.hasTable && (
                 <div className="space-y-2 pt-1">
                   <div className="overflow-x-auto rounded-none border border-slate-800 shadow-2xs">
-                    <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-800 bg-white rounded-none">
+                    <table className="w-full text-xs sm:text-[12.5px] border-collapse border border-slate-800 bg-white rounded-none table-auto">
                       <thead>
                         <tr className="bg-slate-100 text-slate-900 font-black text-center border-b border-slate-800">
-                          {para.tableColumns.map((col) => (
-                            <th key={col.id} className="border border-slate-800 p-2 text-center relative group">
-                              <div className="flex items-center justify-center gap-1">
-                                <span>{col.label}</span>
-                                {para.tableColumns.length > 2 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteParagraphTableCol(para.id, col.id)}
-                                    className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity rounded-none"
-                                    title="কলাম মুছুন"
-                                  >
-                                    <X size={10} />
-                                  </button>
-                                )}
-                              </div>
-                            </th>
-                          ))}
+                          {para.tableColumns.map((col, cIdx) => {
+                            const isSerial = cIdx === 0 || col.label.includes("ক্রমিক") || col.label.includes("ক্র:") || col.id === "sl";
+                            const isName = col.label.includes("নাম") || col.id === "borrowerName" || col.label.includes("বিবরণ");
+                            const isAccount = col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
+                            const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
+                            
+                            let colWidth = "min-w-[80px]";
+                            if (isSerial) colWidth = "w-[5%] min-w-[40px]";
+                            else if (isName) colWidth = "w-[24%] min-w-[170px]";
+                            else if (isAccount) colWidth = "w-[15%] min-w-[110px]";
+                            else if (isDate) colWidth = "w-[12%] min-w-[95px]";
+                            else colWidth = "min-w-[85px]";
+
+                            return (
+                              <th key={col.id} className={`border border-slate-800 p-2 text-center relative group ${colWidth}`}>
+                                <div className="flex items-center justify-center gap-1">
+                                  <span>{col.label}</span>
+                                  {para.tableColumns.length > 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteParagraphTableCol(para.id, col.id)}
+                                      className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 no-print transition-opacity rounded-none"
+                                      title="কলাম মুছুন"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  )}
+                                </div>
+                              </th>
+                            );
+                          })}
                           <th className="p-1 text-center w-8 no-print border border-slate-800">মুছুন</th>
                         </tr>
                         {/* ক্রমিক রো (Serial / Index Row under table header) */}
@@ -2905,24 +2927,57 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         </tr>
                       </thead>
                       <tbody>
-                        {para.tableRows.map((row) => (
+                        {para.tableRows
+                          .filter((r) => {
+                            const isTotal = Object.values(r.cells).some(
+                              (v) => typeof v === "string" && (v.trim() === "সর্বমোট" || v.trim() === "মোট" || v.toLowerCase().includes("total"))
+                            );
+                            return !isTotal;
+                          })
+                          .map((row) => (
                           <tr key={row.id} className="text-center hover:bg-slate-50 transition-colors">
-                            {para.tableColumns.map((col) => {
+                            {para.tableColumns.map((col, cIdx) => {
                               const cellColor = (row.cellColors || {})[col.id];
+                              const isSerial = cIdx === 0 || col.label.includes("ক্রমিক") || col.label.includes("ক্র:") || col.id === "sl";
+                              const isName = col.label.includes("নাম") || col.id === "borrowerName" || col.label.includes("বিবরণ");
+                              const isAccount = col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
+                              const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
+                              const isAmount = !isSerial && !isName && !isAccount && !isDate;
+
+                              const cellValue = row.cells[col.id] || "";
+                              const lineCount = cellValue.split("\n").length;
+                              const estimatedRows = Math.max(1, lineCount, isName && cellValue.length > 15 ? 2 : 1);
+
                               return (
                                 <td
                                   key={col.id}
                                   style={{ backgroundColor: cellColor || undefined }}
-                                  className="border border-slate-800 p-1 relative group/cell"
+                                  className="border border-slate-800 p-1 relative group/cell align-middle"
                                 >
-                                  <input
-                                    type="text"
-                                    value={row.cells[col.id] || ""}
-                                    onChange={(e) =>
-                                      handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
-                                    }
-                                    className="w-full text-center bg-transparent outline-none font-bold text-slate-950 p-1 rounded-none text-xs sm:text-[13px] tracking-normal"
-                                  />
+                                  {isName || isAccount ? (
+                                    <textarea
+                                      rows={estimatedRows}
+                                      value={cellValue}
+                                      onChange={(e) =>
+                                        handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
+                                      }
+                                      className={`w-full bg-transparent outline-none font-bold text-slate-950 px-1.5 py-0.5 rounded-none text-xs sm:text-[13px] leading-snug break-words whitespace-pre-wrap resize-none block ${
+                                        isName ? "text-left" : "text-center"
+                                      }`}
+                                      style={{ height: "auto" }}
+                                    />
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={cellValue}
+                                      onChange={(e) =>
+                                        handleUpdateParagraphTableCell(para.id, row.id, col.id, e.target.value)
+                                      }
+                                      className={`w-full bg-transparent outline-none font-bold text-slate-950 px-1 py-0.5 rounded-none text-xs sm:text-[13px] tracking-normal ${
+                                        isAmount ? "text-right pr-2" : "text-center"
+                                      }`}
+                                    />
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => handleApplyParagraphTableCellColor(para.id, row.id, col.id)}
@@ -2959,11 +3014,11 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
                             if (idx === 0) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">সর্বমোট</td>;
                             if (col.id === "borrowerName" || col.label.includes("নাম")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
-                            if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">{totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"}</td>;
-                            if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">{toBengaliDigits(totalPrincipal || "০")}</td>;
-                            if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">{toBengaliDigits(totalInterest || "০")}</td>;
+                            if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"}</td>;
+                            if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalPrincipal || "০")}</td>;
+                            if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalInterest || "০")}</td>;
                             if (col.id === "others" || col.label.includes("অন্যান্য")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
-                            if (col.id === "totalRecovered" || col.label.includes("আদায়")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-black">{totalRecovered && totalRecovered !== "০" ? toBengaliDigits(totalRecovered) : "-"}</td>;
+                            if (col.id === "totalRecovered" || col.label.includes("আদায়")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{totalRecovered && totalRecovered !== "০" ? toBengaliDigits(totalRecovered) : "-"}</td>;
                             if (col.id === "adjustmentDate" || col.label.includes("তারিখ")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
                             return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
                           })}
