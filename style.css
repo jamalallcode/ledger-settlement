@@ -101,8 +101,27 @@ tbody tr:not(.no-hover-row):hover td {
     box-shadow: none !important;
   }
 
+  #official-jaripatra-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: #000000 !important;
+  }
+
+  #official-jaripatra-container table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  #official-jaripatra-container th,
+  #official-jaripatra-container td {
+    border: 1pt solid #000000 !important;
+  }
+
   body {
     background: white !important;
+    color: #000000 !important;
   }
 
   main {
