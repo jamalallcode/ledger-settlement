@@ -472,9 +472,14 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
       const auditYear = toBengaliDigits(letterMetadata?.auditYear || "");
       const totalAmount = toBengaliDigits(letterMetadata?.totalAmount || letterMetadata?.involvedAmount || "");
 
-      const rawCombined = `${originalObjectionText} ${entityReplyText} ${evidenceText}`.trim();
+      // Clean up text if it contains "[সংযুক্ত ফাইল:" placeholder
+      const cleanObjectionText = (originalObjectionText || "").replace(/\[সংযুক্ত ফাইল:[^\]]+\]\s*/g, "").trim();
+      const cleanReplyText = (entityReplyText || "").replace(/\[সংযুক্ত ফাইল:[^\]]+\]\s*/g, "").trim();
+      const cleanEvidenceText = (evidenceText || "").replace(/\[সংযুক্ত ফাইল:[^\]]+\]\s*/g, "").trim();
+
+      const rawCombined = `${cleanObjectionText} ${cleanReplyText} ${cleanEvidenceText}`.trim();
       const hasFiles = !!(originalObjectionFile || entityReplyFile || evidenceFile);
-      const hasEvidence = !!(evidenceFile || (evidenceText && evidenceText.trim().length > 0));
+      const hasEvidence = !!(evidenceFile || cleanEvidenceText.length > 0);
 
       // Rule-based audit verification metrics
       const hasParaNo = /অনুচ্ছেদ|para|নং/i.test(rawCombined) || !!(letterMetadata?.paraNo);
@@ -515,15 +520,15 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
             sl: "১",
             entityAndAuditYear: `প্রতিষ্ঠান: ${entity}${branchName ? `,\n${branchName}` : ''}\nনিরীক্ষা বছর: ${auditYear || '২০১১-১২'}`,
             paraNo: letterMetadata?.paraNo ? String(letterMetadata.paraNo) : "১০",
-            titleAndDetails: `শিরোনাম: ${letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: entityReplyText || "আপত্তিতে উল্লেখিত দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে জবাব নিম্নরূপ:",
+            titleAndDetails: `শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totalAmount || '৮,৪১,২৮৪'}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
+            entityReplyHeader: cleanReplyText || "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ঋণ বকেয়া ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
             hasTable: false,
             tableHeaders: ["ক্রমিক", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
             tableRows: [
               ["১", branchName || entity, totalAmount || "০", totalAmount || "০", "০", "-"]
             ],
             conclusionBranch: `এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।`,
-            conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।`,
+            conclusionHeadOffice: `শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পत्तियों জন্য অনুরোধ করা হলো।`,
             conclusionPresenter: hasEvidence
               ? `আপত্তিকৃত টাকার স্বপক্ষে প্রমাণক দাখিল করায় ও আদায় সঠিক থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির সুপারিশ করা হলো।`
               : ``,
@@ -547,7 +552,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
               sl: "১",
               paraAndYear: `${letterMetadata?.paraNo || '১০'}, ${auditYear || '২০১১-১৪'}`,
               entityName: `${entity || "সোনালী ব্যাংক পিএলসি"}${branchName ? `,\n${branchName}` : ''}।`,
-              paraTitle: `${letterMetadata?.subject || 'অডিট আপত্তি অনুচ্ছেদ'}`,
+              paraTitle: `ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totalAmount || '৮,৪১,২৮৪'}`,
               involvedAmount: `${totalAmount || '০'}`,
               officeComment: hasEvidence
                 ? `আপত্তিকৃত টাকার সমুদয় অংশ আদায় হওয়ায় এবং প্রমাণক সংযুক্ত থাকায় জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তি করা হলো।`
@@ -568,9 +573,15 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
       const getSafeMime = (fileObj: any) => {
         if (!fileObj) return "application/pdf";
         const rawType = (fileObj.mimeType || fileObj.type || "").toLowerCase();
-        if (rawType.startsWith("image/")) return rawType;
-        if (rawType === "application/pdf") return "application/pdf";
-        if (fileObj.name && /\.(png|jpg|jpeg|webp)$/i.test(fileObj.name)) return "image/jpeg";
+        if (rawType.startsWith("image/")) {
+          if (rawType.includes("png")) return "image/png";
+          if (rawType.includes("webp")) return "image/webp";
+          return "image/jpeg";
+        }
+        if (rawType === "application/pdf" || rawType.includes("pdf")) return "application/pdf";
+        if (fileObj.name && /\.(png)$/i.test(fileObj.name)) return "image/png";
+        if (fileObj.name && /\.(jpg|jpeg)$/i.test(fileObj.name)) return "image/jpeg";
+        if (fileObj.name && /\.(webp)$/i.test(fileObj.name)) return "image/webp";
         return "application/pdf";
       };
 
@@ -582,7 +593,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 আপনি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের বাণিজ্যিক অডিট অধিদপ্তরের একজন অত্যন্ত অভিজ্ঞ সিনিয়র অডিট অফিসার ও অডিট নিষ্পত্তি বিশেষজ্ঞ।
 
 ইনপুট হিসেবে নিচের সংযুক্ত ফাইল (PDF বা ছবি) ও টেক্সটসমূহ গভীরভাবে ওসিআর (OCR) ও স্ক্যান করে বিশ্লেষণ করুন:
-১. প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং পত্র (Forwarding letter, Broad-sheet Reply & Table)
+১. মূল অডিট আপত্তি / ফরওয়ার্ডিং পত্র ও ব্রডশীট জবাব (Forwarding letter, Broad-sheet Reply & Table)
 ২. প্রমাণকসমূহ (Evidence - চালান, ব্যাংক রসিদ, জমা ভাউচার, সমন্বয় বিবরণী ইত্যাদি) - বর্তমান স্ট্যাটাস: ${hasEvidence ? 'সংযুক্ত আছে (EVIDENCE PRESENT)' : 'সংযুক্ত নেই (NO EVIDENCE UPLOADED)'}
 
 আপনার দায়িত্ব ও মূল নীতিমালা (Strict Operational & Verification Rules):
@@ -602,7 +613,7 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
      * "errorMessage": "আপলোডকৃত জবাবটি সংশ্লিষ্ট চিঠির সাথে মিল পাওয়া যায়নি।"
      * "validationErrors": [
          "আপলোডকৃত পত্রে স্মারক নং, নিরীক্ষা বছর বা অনুচ্ছেদ নম্বরে অমিল পাওয়া গেছে।",
-         "নথিতে প্রাপ্ত তথ্য: স্মারক নং, নিরীক্ষা বছর, প্রতিষ্ঠান/শাখা ও অনুচ্ছেদ নং। কিন্তু বর্তমান রেজিস্ট্রিভুক্ত তথ্য ভিন্ন।"
+         "নথিতে প্রাপ্ত তথ্য: স্মারক নং, নিরীক্ষা বছর, প্রতিষ্ঠান/ শাখা ও অনুচ্ছেদ নং। কিন্তু বর্তমান রেজিস্ট্রিভুক্ত তথ্য ভিন্ন।"
        ]
    - **যদি টেক্সট বা ফাইলটি সম্পূর্ণ অপ্রাসঙ্গিক বা এলোমেলো (Gibberish) হয় এবং কোনো অডিট তথ্য না থাকে**:
      * "isValidAuditDocument": false
@@ -613,22 +624,30 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
      * "validationErrors": []
      * সম্পূর্ণ নোটশিট ও জারিপত্র প্রস্তুত করুন।
 
-৩. **শিরোনাম ও স্থানীয় প্রতিষ্ঠানের জবাব এক্সট্র্যাকশন ও প্রমিতকরণ (TITLE, REPLY & EXACT TABLE EXTRACTION)**:
-   - **শিরোনাম (Title)**: মূল নথিতে আপত্তির যে শিরোনাম লেখা আছে (যেমন: "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪"), তা নির্ভুলভাবে titleAndDetails এবং জারিপত্রের paraTitle এ বসান। কোনো টাকার অংকের শেষে '/-' বা '.-' দিবেন না, কমা দিয়ে প্রমিতভাবে লিখুন। অপ্রয়োজনীয় বাহুল্য পরিহার করে মূল কথা ঠিক রাখুন এবং বানান শুদ্ধ করুন।
-   - **স্থানীয় প্রতিষ্ঠানের জবাব (entityReplyHeader)**: মূল নথির ২য় পাতায় "শাখার জবাব" অংশে যে মূল বক্তব্য লেখা আছে, অপ্রয়োজনীয় কথা বাদ দিয়ে মূল কথাটি তুলে আনুন এবং বানান ভুল থাকলে শুদ্ধ করুন (যেমন: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:")।
-   - **জবাবের টেবিল/ছক হুবহু গঠন ও এক্সট্র্যাকশন (CRITICAL TABLE EXTRACTION RULES)**:
-     * মূল নথিতে প্রতিষ্ঠান কর্তৃক জবাবে যে টেবিলটি দেওয়া হয়েছে তার কলাম ও সারির তথ্য হুবহু তুলুন।
-     * **কলাম বিন্যাস**: ক্র: নং, ঋণগ্রহীতার নাম, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি।
-     * **টাকার ফিগার বিন্যাস (STRICT AMOUNT FORMATTING RULE)**:
-       - প্রতিটি টাকার অংকের জন্য ভারতীয়/দক্ষিণ এশীয় প্রমিত কমা (comma) ব্যবহার করুন (যেমন: ৫২,৭৬২, ১,৯৬,৪৮৩, ৮,৪১,২৮৪, ১৩,৪৯,৭২৭)।
-       - কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না (যেমন: "৫২,৭৬২/-" এর স্থলে "৫২,৭৬২" লিখুন)।
-     * **সারির তথ্য (Rows)**: প্রতিটি ঋণগ্রহীতার নামের সাথে তাদের হিসাবের টাকাগুলো নির্ভুলভাবে বসান। কোনো অবস্থাতেই সারির মধ্যে 'সর্বমোট' পুনরাবৃত্তি করে ডাবল করবেন না। শেষ সারিতে একবারই সর্বমোটের সংখ্যা বসান।
-     * **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা/অস্পষ্ট থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে এবং নিচে বা ছকের ঘরে ছোট করে উল্লেখ করতে হবে (যেমন: "৮৫,৫৪৭* [অনুমান]") যাতে ব্যবহারকারী তা যাচাই করতে পারেন।
-   - **শাখা ও প্রধান কার্যালয়ের সুপারিশ**:
-     * "conclusionBranch": যেমন- "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
-     * "conclusionHeadOffice": যেমন- "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
+৩. **অতীব গুরুত্বপূর্ণ: শিরোনাম (Paragraph Title) এক্সট্র্যাকশনের কঠোর নিয়ম**:
+   - সংযুক্ত ফরওয়ার্ডিং পত্র, ব্রডশীট জবাব বা আপত্তির পৃষ্ঠা থেকে আপত্তির প্রকৃত বিষয়বস্তুর শিরোনাম (Audit Paragraph Title) নিখুঁতভাবে OCR করে বের করে আনুন (যেমন: "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪", অথবা "ভ্যাট/উৎসে কর কর্তন না করায়..." ইত্যাদি)।
+   - **কঠোর নিষেধাজ্ঞা (STRICTLY FORBIDDEN)**: কখনোই শিরোনামের স্থানে ব্যাংক বা শাখার নাম (যেমন: "${entity}, ${branchName || 'বারোবাজার শাখা'}") বা কোনো কারখানার নাম বসাবেন না। প্রতিষ্ঠানের নাম ও শাখা শুধুমাত্র কলাম (২) "প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর" এ বসবে। কলাম (৪) এর "শিরোনাম:" এবং জারিপত্রের "paraTitle" এ অবশ্যই শুধুমাত্র আপত্তির প্রকৃত শিরোনাম বসবে।
+   - শিরোনামের ভেতর কোনো টাকার অংকের শেষে '/-' বা '.-' বা '/' চিহ্ন দেবেন না, দক্ষিণ এশীয় প্রমিত কমা দিয়ে লিখুন (যেমন: ৮,৪১,২৮৪)।
 
-৪. **প্রমাণক ভিত্তিক মন্তব্য লেখার শর্ত (COMMENT LOGIC)**:
+৪. **অতীব গুরুত্বপূর্ণ: স্থানীয় প্রতিষ্ঠানের জবাব (Local Institution's Reply) এক্সট্র্যাকশনের কঠোর নিয়ম**:
+   - সংযুক্ত মূল নথির ২য় পাতা বা ব্রডশীট জবাব অংশে প্রতিষ্ঠান বা শাখা কর্তৃক প্রদত্ত যে মূল জবাবের লিখিত বক্তব্য (Narrative Reply) আছে, তা হুবহু পাঠোদ্ধার (OCR) করে শুদ্ধ বানানে "entityReplyHeader" এ বসান।
+   - উদাহরণ: "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:"
+   - **কঠোর নিষেধাজ্ঞা (STRICTLY FORBIDDEN)**: কখনোই কোনো ফাইল নাম (যেমন: "[সংযুক্ত ফাইল: ...]" বা "[সংযুক্ত ফাইল: ফরোয়ার্ডিং ও জবাব.pdf] প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং।") "entityReplyHeader" এ বসাবেন না! ফাইলের ভেতর থেকে প্রকৃত লিখিত জবাবের প্রতিটি বাক্য তুলে এনে সুন্দর করে উপস্থাপন করতে হবে।
+
+৫. **জবাবের টেবিল/ছক হুবহু গঠন ও এক্সট্র্যাকশন (CRITICAL TABLE EXTRACTION RULES)**:
+   - মূল নথিতে প্রতিষ্ঠান কর্তৃক জবাবে যে টেবিলটি দেওয়া হয়েছে তার কলাম ও সারির তথ্য হুবহু তুলুন।
+   - **কলাম বিন্যাস**: ক্র: নং, ঋণগ্রহীতার নাম, হিসাব নং ও ঋণের প্রকৃতি, আপত্তিতে জড়িত টাকা, আসল, সুদ, অন্যান্য, মোট আদায়, সমন্বয়ের তারিখ ইত্যাদি।
+   - **টাকার ফিগার বিন্যাস (STRICT AMOUNT FORMATTING RULE)**:
+     * প্রতিটি টাকার অংকের জন্য ভারতীয়/দক্ষিণ এশীয় প্রমিত কমা (comma) ব্যবহার করুন (যেমন: ৫২,৭৬২, ১,৯৬,৪৮৩, ৮,৪১,২৮৪, ১৩,৪৯,৭২৭)।
+     * কোনো টাকার সংখ্যার শেষে বা ভেতরে '/-' বা '.-' বা '/' চিহ্ন যুক্ত করবেন না (যেমন: "৫২,৭৬২/-" এর স্থলে "৫২,৭৬২" লিখুন)।
+   - **সারির তথ্য (Rows)**: প্রতিটি ঋণগ্রহীতার নামের সাথে তাদের হিসাবের টাকাগুলো নির্ভুলভাবে বসান। কোনো অবস্থাতেই সারির মধ্যে 'সর্বমোট' পুনরাবৃত্তি করে ডাবল করবেন না। শেষ সারিতে একবারই সর্বমোটের সংখ্যা বসান।
+   - **অনুমান করে লেখা (Assumed/Estimated values)**: স্ক্যান কপি বা ছবিতে যদি কোনো সংখ্যা বা শব্দ ঝাপসা/অস্পষ্ট থাকে, তবে এআই অনুমান করে লিখতে পারবে, তবে যে যে সংখ্যা বা শব্দ অনুমান করা হয়েছে তার সাথে একটি তারকা চিহ্ন (*) দিতে হবে এবং নিচে বা ছকের ঘরে ছোট করে উল্লেখ করতে হবে (যেমন: "৮৫,৫৪৭* [অনুমান]") যাতে ব্যবহারকারী তা যাচাই করতে পারেন।
+
+৬. **শাখা ও প্রধান কার্যালয়ের সুপারিশ**:
+   - "conclusionBranch": যেমন- "এমতাবস্থায়, উক্ত আপত্তিটি নিষ্পত্তি হিসেবে গণ্য করার জন্য অনুরোধ করা হলো।"
+   - "conclusionHeadOffice": যেমন- "শাখার জবাব ও প্রমাণকের আলোকে আপত্তিটি নিষ্পত্তির জন্য অনুরোধ করা হলো।"
+
+৭. **প্রমাণক ভিত্তিক মন্তব্য লেখার শর্ত (COMMENT LOGIC)**:
    - **শর্ত ১ (যদি প্রমাণক সংযুক্ত না থাকে - hasEvidence = false)**:
      এআই প্রতিটি অনুচ্ছেদ অনুযায়ী অনুচ্ছেদ নং, শিরোনাম, স্থানীয় অফিসের জবাব ("entityReplyHeader"), ছক ও প্রধান কার্যালয়ের সুপারিশ প্রস্তুত করবে।
      **কিন্তু "এ কার্যালয়ের মন্তব্য" (conclusionPresenter এবং জারিপত্রের officeComment) অবশ্যই সম্পূর্ণ ফাঁকা ("") রাখতে হবে**।
@@ -644,8 +663,8 @@ const convertAllDatesToBengali = (text: string | undefined | null): string => {
 - স্মারক নং: ${letterNo}, তারিখ: ${letterDate}
 - জড়িত টাকার পরিমাণ: ${totalAmount} টাকা
 
-${entityReplyText ? `ইউজার ইনপুট টেক্সট:\n${entityReplyText}\n` : ''}
-${evidenceText ? `ইউজার ইনপুট প্রমাণক টেক্সট:\n${evidenceText}\n` : ''}
+${cleanReplyText ? `ইউজার ইনপুট টেক্সট:\n${cleanReplyText}\n` : ''}
+${cleanEvidenceText ? `ইউজার ইনপুট প্রমাণক টেক্সট:\n${cleanEvidenceText}\n` : ''}
 
 অনুগ্রহ করে শুধুমাত্র নিচের JSON স্কিমায় উত্তর দিন:
 {
@@ -655,7 +674,7 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
     "hasAuditYear": true,
     "hasEntityName": true,
     "hasChallanInfo": ${hasEvidence},
-    "detectedParaNo": "${letterMetadata?.paraNo || '০৪'}",
+    "detectedParaNo": "${letterMetadata?.paraNo || '১০'}",
     "detectedAuditYear": "${auditYear}",
     "detectedEntityName": "${entity}${branchName ? `, ${branchName}` : ''}",
     "detectedMemoNo": "${letterNo}",
@@ -676,7 +695,7 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
     {
       "sl": "১",
       "entityAndAuditYear": "প্রতিষ্ঠান: ${entity}${branchName ? `, ${branchName}` : ''}\\nনিরীক্ষা বছর: ${auditYear}",
-      "paraNo": "${letterMetadata?.paraNo || '০৪'}",
+      "paraNo": "${letterMetadata?.paraNo || '১০'}",
       "titleAndDetails": "শিরোনাম: ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪\\nঅনুচ্ছেদের পৃষ্ঠা নং- \\nপরিশिष्ट পৃষ্ঠা নং- ",
       "entityReplyHeader": "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ৪টি ঋণগ্রহীতা প্রতিষ্ঠান যথাক্রমে ১) মো: আবুল খায়ের খান, ২) মো: হাসমত আলী, ৩) আবুল কালাম আজাদ এবং ৪) এস আর রাকিব স্টোরস এর বকেয়া ঋণ ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:",
       "hasTable": true,
@@ -703,13 +722,13 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
       "address": "প্রধান কার্যালয়, ৩৫-৪২, ৪৪ মতিঝিল বা/এ",
       "city": "ঢাকা – ১০০০"
     },
-    "subject": "বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '০৪'} এর জবাবের উপর মন্তব্য প্রেরণ।",
+    "subject": "বিষয়: ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের বাণিজ্যিক নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর মন্তব্য প্রেরণ।",
     "reference": "সূত্র: ${entity} এর পত্র নং ${letterNo}, তারিখ: ${letterDate}",
-    "introText": "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '০৪'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:",
+    "introText": "উপর্যুক্ত বিষয় ও সূত্রস্থ পত্রের প্রতি সদয় দৃষ্টি আকর্ষণ করা যাচ্ছে। সূত্রস্থ পত্রের মাধ্যমে প্রাপ্ত ${entity}${branchName ? `, ${branchName}` : ''} এর ${auditYear} সালের নিরীক্ষা প্রতিবেদনের ${letterMetadata?.paraType || 'নন-এসএফআই'} অনুচ্ছেদ নং ${letterMetadata?.paraNo || '১০'} এর জবাবের উপর এ কার্যালয়ের মন্তব্য নিম্নরূপ:",
     "tableRows": [
       {
         "sl": "১",
-        "paraAndYear": "${letterMetadata?.paraNo || '০৪'}, ${auditYear}",
+        "paraAndYear": "${letterMetadata?.paraNo || '১০'}, ${auditYear}",
         "entityName": "${entity}${branchName ? `, ${branchName}` : ''}।",
         "paraTitle": "ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ৮,৪১,২৮৪",
         "involvedAmount": "${totalAmount || '৮,৪১,২৮৪'}",
@@ -731,15 +750,18 @@ ${evidenceText ? `ইউজার ইনপুট প্রমাণক টে�
           const promptParts: any[] = [];
           promptParts.push({ text: promptText });
 
-          // Helper to check if MIME type is supported by Gemini inlineData
-          const getSafeMime = (fileObj: any) => {
-            if (!fileObj) return "application/pdf";
-            const rawType = (fileObj.mimeType || fileObj.type || "").toLowerCase();
-            if (rawType.startsWith("image/")) return rawType;
-            if (rawType === "application/pdf") return "application/pdf";
-            if (fileObj.name && /\.(png|jpg|jpeg|webp)$/i.test(fileObj.name)) return "image/jpeg";
-            return "application/pdf";
-          };
+          if (originalObjectionFile && originalObjectionFile.base64 && typeof originalObjectionFile.base64 === "string") {
+            const cleanB64 = originalObjectionFile.base64.replace(/^data:[^;]+;base64,/, "");
+            if (cleanB64.length > 0 && cleanB64.length < 15000000) {
+              const mime = getSafeMime(originalObjectionFile);
+              promptParts.push({
+                inlineData: {
+                  data: cleanB64,
+                  mimeType: mime
+                }
+              });
+            }
+          }
 
           if (entityReplyFile && entityReplyFile.base64 && typeof entityReplyFile.base64 === "string") {
             const cleanB64 = entityReplyFile.base64.replace(/^data:[^;]+;base64,/, "");

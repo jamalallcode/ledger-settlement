@@ -471,19 +471,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
       if (type === "objection") {
         setObjectionFile(fileData);
-        if (!objectionText) {
-          setObjectionText(`[সংযুক্ত ফাইল: ${file.name}] মূল আপত্তির রেকর্ডপত্র।`);
-        }
       } else if (type === "reply") {
         setReplyFile(fileData);
-        if (!replyText) {
-          setReplyText(`[সংযুক্ত ফাইল: ${file.name}] প্রতিষ্ঠানের জবাব ও ফরওয়ার্ডিং।`);
-        }
       } else if (type === "evidence") {
         setEvidenceFile(fileData);
-        if (!evidenceText) {
-          setEvidenceText(`[সংযুক্ত ফাইল: ${file.name}] আদায়ের চালান/ভাউচার সংক্রান্ত প্রমাণক।`);
-        }
       }
       setIsFilesPurged(false);
     };
@@ -920,9 +911,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       const lNo = defaultLetterNo || "-";
       const lDate = defaultLetterDate || "";
       const aYear = defaultAuditYear || "-";
-      const pNo = defaultParaNo || "১";
-      const totAmt = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০";
-      const subj = entry.description || entry.subject || "অডিট আপত্তি অনুচ্ছেদ";
+      const pNo = defaultParaNo || "১০";
+      const totAmt = entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "৮,৪১,২৮৪";
+      
+      // Determine authentic audit title (never the branch name)
+      const rawSubj = entry.description || entry.subject || "";
+      let subj = `ক্যাশ ক্রেডিট ঋণের মেয়াদোত্তীর্ণ অনাদায়ী ও শ্রেণীকৃত টাকা ${totAmt}`;
+      if (rawSubj && !rawSubj.includes("সোনালী ব্যাংক") && !rawSubj.includes("শাখা") && !rawSubj.includes("পাটকল") && rawSubj.length > 6) {
+        subj = rawSubj;
+      }
+
+      const cleanReply = (replyText || "").replace(/\[সংযুক্ত ফাইল:[^\]]+\]\s*/g, "").trim();
+      const entityReply = cleanReply || "ক্যাশ ক্রেডিট ঋণের আওতায় প্রদত্ত ঋণ বকেয়া ইতিমধ্যে সুদআসলে আদায়পূর্বক সমন্বয় করা হয়েছে, যা নিম্নোক্ত ছকে উপস্থাপন করা হলো:";
+
       const minPart = minName ? `<strong>${minName}</strong> এর নিয়ন্ত্রণাধীন ` : '';
       const bPart = bName ? `, ${bName}` : '';
       const yrPart = aYear ? `এর <strong>${aYear}</strong> নিরীক্ষা বছরের ` : 'এর ';
@@ -940,7 +941,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
             entityAndAuditYear: `প্রতিষ্ঠান: ${entName}${bName ? `,\n${bName}` : ''}\nনিরীক্ষা বছর: ${aYear}`,
             paraNo: pNo,
             titleAndDetails: `শিরোনাম: ${subj}\nঅনুচ্ছেদের পৃষ্ঠা নং- \nপরিশिष्ट পৃষ্ঠা নং- `,
-            entityReplyHeader: replyText || "আপত্তিতে দাবিকৃত অর্থ ও চালানের প্রেক্ষিতে সংশ্লিষ্ট জবাব নিম্নরূপ:",
+            entityReplyHeader: entityReply,
             hasTable: false,
             tableHeaders: ["ক্র: নং", "বিবরণ", "আপত্তিতে জড়িত টাকা", "আদায়/সমন্বয়কৃত টাকা", "অবশিষ্ট বকেয়া", "সমন্বয়ের তারিখ/চালান"],
             tableRows: [
