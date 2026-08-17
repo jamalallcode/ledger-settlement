@@ -51,6 +51,7 @@ interface DocumentManagementModuleProps {
   onBack: () => void;
   isAdmin?: boolean;
   onSaveJaripatra?: (entry: CorrespondenceEntry, jaripatraData: any) => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 export interface JaripatraTableRowItem {
@@ -136,6 +137,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
   entry,
   onBack,
   onSaveJaripatra,
+  onRegisterBackHandler,
 }) => {
   // In-Memory Uploaded Files (Permanently purged on note approval)
   const [objectionFile, setObjectionFile] = useState<{ name: string; size: string; base64: string; mimeType: string } | null>(null);
@@ -342,6 +344,28 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       }
     }
   }, [showJaripatraView]);
+
+  // Hook into the main back button so that when in Jaripatra view, it returns to Note Sheet, and from Note Sheet back to Register
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      if (showJaripatraView) {
+        onRegisterBackHandler(() => {
+          setShowJaripatraView(false);
+          return true;
+        });
+      } else {
+        onRegisterBackHandler(() => {
+          onBack();
+          return true;
+        });
+      }
+    }
+    return () => {
+      if (onRegisterBackHandler) {
+        onRegisterBackHandler(null);
+      }
+    };
+  }, [showJaripatraView, onRegisterBackHandler, onBack]);
 
   // Synchronize Jaripatra summary rows directly from the note sheet paragraphs
   const handleSyncJaripatraFromParagraphs = () => {
@@ -1713,16 +1737,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           {/* Jaripatra Top Action Header Bar - Sticky Top, Compact, Rounded-none, Rectangular */}
           <div className="sticky top-0 z-40 bg-slate-900 text-white rounded-none border border-slate-700 shadow-md px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 no-print">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowJaripatraView(false)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-none transition-all flex items-center gap-1 text-[11px] font-bold border border-slate-700 cursor-pointer"
-                title="নোট শিটে ফিরে যান"
-              >
-                <ArrowLeft size={13} />
-                <span>নোট শিটে ফিরুন</span>
-              </button>
-              <div className="h-4 w-[1px] bg-slate-700 hidden sm:block" />
               <div className="flex items-center gap-1.5">
                 <div className="w-6 h-6 rounded-none bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
                   <Flame size={14} />
