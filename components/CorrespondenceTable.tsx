@@ -75,7 +75,6 @@ interface CorrespondenceTableProps {
   setShowFilters: (val: boolean) => void;
   highlightSearch?: string | null;
   onClearHighlight?: () => void;
-  onOpenDocumentManagement?: (entry: CorrespondenceEntry) => void;
 }
 
 /**
@@ -351,7 +350,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   setShowFilters,
   highlightSearch = null,
   onClearHighlight,
-  onOpenDocumentManagement,
 }) => {
   const [pendingChanges, setPendingChanges] = useState<
     Record<string, Partial<CorrespondenceEntry>>
@@ -2153,22 +2151,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 </span>
                               </div>
                             )}
-                            {onOpenDocumentManagement && (
-                              <div className="pt-1 no-print">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onOpenDocumentManagement(entry);
-                                  }}
-                                  className="w-full px-2 py-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-md text-[9.5px] font-black flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer"
-                                  title="নথি ব্যবস্থাপনা, এআই নোট শিট ও জারিপত্র তৈরি"
-                                >
-                                  <FileText size={11} />
-                                  <span>নথি ব্যবস্থাপনা</span>
-                                </button>
-                              </div>
-                            )}
                           </div>
                         </td>
                         <td className={tdCls}>
@@ -2865,19 +2847,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   title="বাতিল করুন"
                                 >
                                   <XCircle size={12} />
-                                </button>
-                              )}
-                              {onOpenDocumentManagement && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onOpenDocumentManagement(entry);
-                                  }}
-                                  className="p-1.5 bg-indigo-600 text-white rounded-md shadow-md hover:bg-indigo-700 transition-colors cursor-pointer"
-                                  title="নথি ব্যবস্থাপনা"
-                                >
-                                  <FileText size={12} />
                                 </button>
                               )}
                               <button

@@ -498,7 +498,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                         </div>
                       </div>
                       <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/40 text-left">
-                        <div className="text-[12px] font-black text-amber-700 mb-1">অবশিষ্ট অমীমাংসিত:</div>
+                        <div className="text-[12px] font-black text-amber-700 mb-1">অবशिष्ट অমীমাংসিত:</div>
                         <div className="text-[14px] font-black text-slate-900">
                           {toBengaliDigits((filteredStatsGrandTotals.pUC + filteredStatsGrandTotals.cRC) - (filteredStatsGrandTotals.pSC + filteredStatsGrandTotals.cSC))} টি
                         </div>

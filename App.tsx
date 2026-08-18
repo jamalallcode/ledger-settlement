@@ -17,7 +17,6 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
-import DocumentManagementModule from './components/DocumentManagementModule';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -198,10 +197,6 @@ const App: React.FC = () => {
   // Register Selection State
   const [registerSubModule, setRegisterSubModule] = useState<'settlement' | 'correspondence' | null>(null);
 
-  // Document Management Module Selection State
-  const [selectedDocumentManagementEntry, setSelectedDocumentManagementEntry] = useState<CorrespondenceEntry | null>(null);
-  const customBackHandlerRef = useRef<(() => boolean) | null>(null);
-
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
   const [showAdminAlert, setShowAdminAlert] = useState(false);
@@ -359,7 +354,6 @@ const App: React.FC = () => {
       showPendingOnly,
       highlightSearch,
       showRegisterFilters,
-      selectedDocumentManagementEntry,
     };
 
     setNavHistory(prev => {
@@ -374,8 +368,7 @@ const App: React.FC = () => {
           top.editingEntry === prevState.editingEntry &&
           top.showPendingOnly === prevState.showPendingOnly &&
           top.highlightSearch === prevState.highlightSearch &&
-          top.showRegisterFilters === prevState.showRegisterFilters &&
-          top.selectedDocumentManagementEntry === prevState.selectedDocumentManagementEntry
+          top.showRegisterFilters === prevState.showRegisterFilters
         ) {
           return prev;
         }
@@ -387,10 +380,6 @@ const App: React.FC = () => {
   };
 
   const goBack = () => {
-    if (customBackHandlerRef.current) {
-      const handled = customBackHandlerRef.current();
-      if (handled) return;
-    }
     if (navHistory.length === 0) return;
     
     // Pop the last state
@@ -398,7 +387,6 @@ const App: React.FC = () => {
     setNavHistory(prev => prev.slice(0, -1));
 
     // Restore the state
-    if (previousState.selectedDocumentManagementEntry !== undefined) setSelectedDocumentManagementEntry(previousState.selectedDocumentManagementEntry);
     if (previousState.activeTab !== undefined) setActiveTab(previousState.activeTab);
     if (previousState.entryModule !== undefined) setEntryModule(previousState.entryModule);
     if (previousState.registerSubModule !== undefined) setRegisterSubModule(previousState.registerSubModule);
@@ -413,7 +401,6 @@ const App: React.FC = () => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
     
     pushHistory();
-    setSelectedDocumentManagementEntry(null);
     setViewSingleEntryId(null);
     
     if (tab === 'moderation') {
@@ -1575,7 +1562,7 @@ const App: React.FC = () => {
               reportType={reportType}
               contactLink={contactLink}
               onGoBack={goBack}
-              hasHistory={navHistory.length > 0 || selectedDocumentManagementEntry !== null}
+              hasHistory={navHistory.length > 0}
             />
           </div>
         )}
@@ -1607,198 +1594,166 @@ const App: React.FC = () => {
           }>
             <div className={`animate-in fade-in duration-500 flex-1 h-full flex flex-col`}>
               
-              {selectedDocumentManagementEntry ? (
-                <DocumentManagementModule 
-                  entry={selectedDocumentManagementEntry}
-                  onBack={() => {
-                    setSelectedDocumentManagementEntry(null);
-                  }}
-                  onRegisterBackHandler={(handler) => {
-                    customBackHandlerRef.current = handler;
-                  }}
-                  isAdmin={isAdmin}
-                  onSaveJaripatra={(entry, jaripatraData) => {
-                    const updated = {
-                      ...entry,
-                      jaripatraMemoNo: jaripatraData.memoNo,
-                      jaripatraDate: jaripatraData.date,
-                      isJaripatraGenerated: true,
-                    };
-                    handleInlineUpdateEntry(updated);
+              {activeTab === 'setup_receivers' && (
+                <ReceiverManagement 
+                  isAdmin={isAdmin} 
+                  onViewEntries={handleViewEntries}
+                  onBack={() => handleTabChange('landing')}
+                  entries={entries}
+                  correspondenceEntries={correspondenceEntries}
+                  onUpdateEntries={(newEntries, newCorrEntries) => {
+                    setEntries(newEntries);
+                    setCorrespondenceEntries(newCorrEntries);
                   }}
                 />
-              ) : (
-                <>
-                  {activeTab === 'setup_receivers' && (
-                    <ReceiverManagement 
-                      isAdmin={isAdmin} 
-                      onViewEntries={handleViewEntries}
-                      onBack={() => handleTabChange('landing')}
-                      entries={entries}
-                      correspondenceEntries={correspondenceEntries}
-                      onUpdateEntries={(newEntries, newCorrEntries) => {
-                        setEntries(newEntries);
-                        setCorrespondenceEntries(newCorrEntries);
-                      }}
-                    />
+              )}
+
+          {activeTab === 'landing' && (
+                <LandingPage 
+                  entries={approvedEntries} 
+                  setActiveTab={handleTabChange} 
+                  cycleLabel={cycleLabelBengali} 
+                  isLockedMode={isLockedMode} 
+                  isAdmin={isAdmin}
+                  pendingCount={totalPendingCount}
+                  onShowPending={() => handleTabChange('moderation')}
+                  moduleVisibility={moduleVisibility}
+                  onOpenSpecialLogin={() => setShowAdminLogin(true)}
+                />
+              )}
+              
+              {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { pushHistory(); setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} allowPriorPeriodSettlement={allowPriorPeriodSettlement} />}
+              
+              {activeTab === 'register' && (
+                <div className="w-full relative">
+                  {!isAdmin && viewSingleEntryId && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between text-emerald-900 text-sm font-bold no-print mb-4 gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                        <span>আপনি সম্প্রতি জমাকৃত এন্ট্রিটি দেখছেন।</span>
+                      </div>
+                      <button 
+                        onClick={() => setViewSingleEntryId(null)}
+                        className="px-4 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 transition-all shadow-sm cursor-pointer"
+                      >
+                        সকল এন্ট্রি দেখুন
+                      </button>
+                    </div>
                   )}
 
-                  {activeTab === 'landing' && (
-                    <LandingPage 
-                      entries={approvedEntries} 
-                      setActiveTab={handleTabChange} 
-                      cycleLabel={cycleLabelBengali} 
-                      isLockedMode={isLockedMode} 
-                      isAdmin={isAdmin}
-                      pendingCount={totalPendingCount}
-                      onShowPending={() => handleTabChange('moderation')}
-                      moduleVisibility={moduleVisibility}
-                      onOpenSpecialLogin={() => setShowAdminLogin(true)}
-                    />
-                  )}
-                  
-                  {activeTab === 'entry' && <SettlementForm key={`entry-reset-${resetKey}`} onAdd={handleAddOrUpdateEntry} onViewRegister={handleViewRegister} nextSl={entries.length + 1} branchSuggestions={branchSuggestions} initialEntry={editingEntry} onCancel={() => { pushHistory(); setEditingEntry(null); setActiveTab('register'); }} isAdmin={isAdmin} userEmail={userEmail} preSelectedModule={entryModule} correspondenceEntries={correspondenceEntries} entries={entries} navigateToEntry={navigateToEntry} moduleVisibility={moduleVisibility} allowPriorPeriodSettlement={allowPriorPeriodSettlement} />}
-                  
-                  {activeTab === 'register' && (
-                    <div className="w-full relative">
-                      {!isAdmin && viewSingleEntryId && (
-                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between text-emerald-900 text-sm font-bold no-print mb-4 gap-3">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 size={18} className="text-emerald-600" />
-                            <span>আপনি সম্প্রতি জমাকৃত এন্ট্রিটি দেখছেন।</span>
+                  {showPendingOnly ? (
+                    <div className="space-y-8 animate-in fade-in duration-700">
+                      <div className="flex items-center justify-between no-print mb-4">
+                      </div>
+
+                      {(displayedPendingEntries.length > 0 || displayedPendingCorrespondence.length > 0) ? (
+                        <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
+                           <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
+                           <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
+                           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
+                              <CheckCircle2 size={36} strokeWidth={2.5} />
+                           </div>
+                           <div className="space-y-1">
+                              <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
+                                <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
+                              </h3>
+                              <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
+                           </div>
+                           <button 
+                             onClick={() => setShowPendingOnly(false)}
+                             className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
+                           >
+                             মূল রেজিস্টারে ফিরে যান
+                           </button>
+                        </div>
+                      )}
+                      
+                      {displayedPendingCorrespondence.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
+                            <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
                           </div>
-                          <button 
-                            onClick={() => setViewSingleEntryId(null)}
-                            className="px-4 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 transition-all shadow-sm cursor-pointer"
-                          >
-                            সকল এন্ট্রি দেখুন
-                          </button>
+                          <CorrespondenceTable 
+                            entries={displayedPendingCorrespondence} 
+                            settlementEntries={entries}
+                            onBack={() => {}}
+                            isAdmin={isAdmin}
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
+                            onDelete={handleDelete}
+                            onApprove={handleApproveEntry}
+                            onReject={handleRejectEntry}
+                            showFilters={false}
+                            setShowFilters={() => {}}
+                          />
                         </div>
                       )}
 
-                      {showPendingOnly ? (
-                        <div className="space-y-8 animate-in fade-in duration-700">
-                          <div className="flex items-center justify-between no-print mb-4">
+                      {displayedPendingEntries.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
+                            <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
+                          </div>
+                          <SettlementTable 
+                            key={`pending-list`} 
+                            entries={displayedPendingEntries} 
+                            onDelete={isAdmin ? handleDelete : undefined} 
+                            onEdit={isAdmin ? e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); } : undefined} 
+                            showFilters={false} 
+                            setShowFilters={setShowRegisterFilters}
+                            isAdminView={isAdmin}
+                            onApprove={isAdmin ? handleApproveEntry : undefined}
+                            onReject={isAdmin ? handleRejectEntry : undefined}
+                            isAdmin={isAdmin}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in duration-700 w-full">
+                      {(registerSubModule === 'settlement') ? (
+                        <div className="w-full">
+                          <div className="flex items-center gap-4 no-print mb-2">
                           </div>
 
-                          {(displayedPendingEntries.length > 0 || displayedPendingCorrespondence.length > 0) ? (
-                            <div className="bg-amber-50/50 border-2 border-dashed border-amber-200 p-8 rounded-[2.5rem] text-center space-y-3">
-                               <h3 className="text-xl font-black text-amber-900">অপেক্ষমাণ এন্ট্রি মডোরেশন</h3>
-                               <p className="text-sm font-bold text-amber-700">নিচের এন্ট্রিগুলো যাচাই করে অনুমোদন দিন। অনুমোদন না পাওয়া পর্যন্ত এগুলো রিপোর্ট বা রেজিস্টারে আসবে না।</p>
-                            </div>
-                          ) : (
-                            <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 p-10 rounded-[3rem] text-center space-y-4 shadow-sm animate-in zoom-in-95 duration-1000">
-                               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-200 animate-in spin-in-1 duration-1000">
-                                  <CheckCircle2 size={36} strokeWidth={2.5} />
-                               </div>
-                               <div className="space-y-1">
-                                  <h3 className="text-2xl font-black text-emerald-900 flex items-center justify-center gap-3">
-                                    <Sparkles size={20} className="text-amber-400" /> সকল তথ্য সফলভাবে মডোরেশন করা হয়েছে!
-                                  </h3>
-                                  <p className="text-sm font-bold text-emerald-700">বর্তমানে আপনার ইনবক্সে কোনো এন্ট্রি অনুমোদনের অপেক্ষায় নেই।</p>
-                               </div>
-                               <button 
-                                 onClick={() => setShowPendingOnly(false)}
-                                 className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-xl active:scale-95 border-b-4 border-emerald-800"
-                               >
-                                 মূল রেজিস্টারে ফিরে যান
-                               </button>
-                            </div>
-                          )}
-                          
-                          {displayedPendingCorrespondence.length > 0 && (
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit font-black text-sm border border-emerald-100">
-                                <Mail size={16} /> প্রাপ্ত চিঠিপত্র অপেক্ষমাণ
-                              </div>
-                              <CorrespondenceTable 
-                                entries={displayedPendingCorrespondence} 
-                                settlementEntries={entries}
-                                onBack={() => {}}
-                                isAdmin={isAdmin}
-                                onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
-                                onInlineUpdate={handleInlineUpdateEntry}
-                                onDelete={handleDelete}
-                                onApprove={handleApproveEntry}
-                                onReject={handleRejectEntry}
-                                showFilters={false}
-                                setShowFilters={() => {}}
-                                onOpenDocumentManagement={(entry) => {
-                                  pushHistory();
-                                  setSelectedDocumentManagementEntry(entry);
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          {displayedPendingEntries.length > 0 && (
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl w-fit font-black text-sm border border-blue-100">
-                                <ClipboardList size={16} /> মীমাংসা রেজিস্টার অপেক্ষমাণ
-                              </div>
-                              <SettlementTable 
-                                key={`pending-list`} 
-                                entries={displayedPendingEntries} 
-                                onDelete={isAdmin ? handleDelete : undefined} 
-                                onEdit={isAdmin ? e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); } : undefined} 
-                                showFilters={false} 
-                                setShowFilters={setShowRegisterFilters}
-                                isAdminView={isAdmin}
-                                onApprove={isAdmin ? handleApproveEntry : undefined}
-                                onReject={isAdmin ? handleRejectEntry : undefined}
-                                isAdmin={isAdmin}
-                              />
-                            </div>
-                          )}
+                          <SettlementTable 
+                            key={`register-reset-${resetKey}`} 
+                            entries={displayedApprovedEntries} 
+                            onDelete={handleDelete} 
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
+                            showFilters={showRegisterFilters} 
+                            setShowFilters={setShowRegisterFilters} 
+                            isAdmin={isAdmin}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
                         </div>
                       ) : (
-                        <div className="animate-in fade-in duration-700 w-full">
-                          {(registerSubModule === 'settlement') ? (
-                            <div className="w-full">
-                              <div className="flex items-center gap-4 no-print mb-2">
-                              </div>
+                        <div className="w-full">
+                          <div className="flex items-center gap-4 no-print mb-2">
+                          </div>
 
-                              <SettlementTable 
-                                key={`register-reset-${resetKey}`} 
-                                entries={displayedApprovedEntries} 
-                                onDelete={handleDelete} 
-                                onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }} 
-                                showFilters={showRegisterFilters} 
-                                setShowFilters={setShowRegisterFilters} 
-                                isAdmin={isAdmin}
-                                highlightSearch={highlightSearch}
-                                onClearHighlight={() => setHighlightSearch(null)}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-full">
-                              <div className="flex items-center gap-4 no-print mb-2">
-                              </div>
-
-                              <CorrespondenceTable 
-                                entries={displayedApprovedCorrespondence} 
-                                settlementEntries={entries}
-                                onBack={() => { pushHistory(); setActiveTab('landing'); }} 
-                                isAdmin={isAdmin}
-                                onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
-                                onInlineUpdate={handleInlineUpdateEntry}
-                                onDelete={handleDelete}
-                                showFilters={showRegisterFilters}
-                                setShowFilters={setShowRegisterFilters}
-                                highlightSearch={highlightSearch}
-                                onClearHighlight={() => setHighlightSearch(null)}
-                                onOpenDocumentManagement={(entry) => {
-                                  pushHistory();
-                                  setSelectedDocumentManagementEntry(entry);
-                                }}
-                              />
-                            </div>
-                          )}
+                          <CorrespondenceTable 
+                            entries={displayedApprovedCorrespondence} 
+                            settlementEntries={entries}
+                            onBack={() => { pushHistory(); setActiveTab('landing'); }} 
+                            isAdmin={isAdmin}
+                            onEdit={e => { pushHistory(); setEditingEntry(e); setActiveTab('entry'); }}
+                            onInlineUpdate={handleInlineUpdateEntry}
+                            onDelete={handleDelete}
+                            showFilters={showRegisterFilters}
+                            setShowFilters={setShowRegisterFilters}
+                            highlightSearch={highlightSearch}
+                            onClearHighlight={() => setHighlightSearch(null)}
+                          />
                         </div>
                       )}
                     </div>
                   )}
-                </>
+                </div>
               )}
               
               {activeTab === 'return' && (
