@@ -1719,12 +1719,12 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   </div>
 
                                   {/* SFI Settled Total Amount (উপরে মোট টাকা) */}
-                                  <div className="w-full md:w-auto md:min-w-[170px] shrink-0 flex items-center justify-between md:justify-start gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
-                                    <div className="flex items-center gap-2">
+                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <div className="flex items-center gap-2 shrink-0">
                                       <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
                                       <span className="text-emerald-900 shrink-0">মোট টাকা:</span>
                                     </div>
-                                    <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0 ml-auto md:ml-0">
+                                    <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
                                       {toBengaliDigits(Math.round(stats.sfiSettledAmount))} টাকা
                                     </span>
                                   </div>
@@ -1771,12 +1771,12 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   </div>
 
                                   {/* Non-SFI Settled Total Amount (নিচে মোট টাকা) */}
-                                  <div className="w-full md:w-auto md:min-w-[170px] shrink-0 flex items-center justify-between md:justify-start gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
-                                    <div className="flex items-center gap-2">
+                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <div className="flex items-center gap-2 shrink-0">
                                       <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
                                       <span className="text-amber-900 shrink-0">মোট টাকা:</span>
                                     </div>
-                                    <span className="text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-amber-200 shrink-0 ml-auto md:ml-0">
+                                    <span className="text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-amber-200 shrink-0">
                                       {toBengaliDigits(Math.round(stats.nonSfiSettledAmount))} টাকা
                                     </span>
                                   </div>
