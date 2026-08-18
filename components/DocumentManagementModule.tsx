@@ -553,12 +553,89 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     );
   };
 
+  const formatParagraphTableAsNarrative = (para: AuditParagraphBlock): string => {
+    if (!para.tableRows || para.tableRows.length === 0) return "";
+    const lines: string[] = [];
+    lines.push("বকেয়া ঋণ আদায় ও সমন্বয়ের বিস্তারিত বিবরণ নিম্নরূপ:");
+
+    para.tableRows.forEach((row, idx) => {
+      const isTotal = Object.values(row.cells).some(
+        (v) => typeof v === "string" && (v.trim() === "সর্বমোট" || v.trim() === "মোট" || v.toLowerCase().includes("total"))
+      );
+      if (isTotal) return;
+
+      const sl = row.cells["col-0"] || row.cells["sl"] || toBengaliDigits(idx + 1);
+      const name = row.cells["col-1"] || row.cells["borrowerName"] || "";
+      const acc = row.cells["col-2"] || row.cells["accountNo"] || "";
+      const inv = row.cells["col-3"] || row.cells["involvedAmount"] || "";
+      const prin = row.cells["col-4"] || row.cells["principal"] || "";
+      const intr = row.cells["col-5"] || row.cells["interest"] || "";
+      const oth = row.cells["col-6"] || row.cells["others"] || "";
+      const tot = row.cells["col-7"] || row.cells["totalRecovered"] || "";
+      const dt = row.cells["col-8"] || row.cells["adjustmentDate"] || "";
+
+      let desc = `• ${sl}. ${name || "ঋণগ্রহীতা"}`;
+      if (acc && acc !== "-" && acc !== "০") desc += ` (হিসাব নং- ${acc})`;
+      if (inv && inv !== "০" && inv !== "-") desc += `: আপত্তিতে জড়িত টাকা ${inv}`;
+      const recoveries: string[] = [];
+      if (prin && prin !== "০" && prin !== "-") recoveries.push(`আসল ${prin}`);
+      if (intr && intr !== "০" && intr !== "-") recoveries.push(`সুদ ${intr}`);
+      if (oth && oth !== "০" && oth !== "-") recoveries.push(`অন্যান্য ${oth}`);
+      if (recoveries.length > 0) desc += `, আদায়: ${recoveries.join(", ")}`;
+      if (tot && tot !== "০" && tot !== "-") desc += `, মোট আদায় ${tot}`;
+      if (dt && dt !== "-") desc += ` (সমন্বয়ের তারিখ: ${dt} খ্রি:)`;
+      lines.push(desc);
+    });
+
+    const totalInv = calculateParagraphColumnTotal(para, para.tableColumns[3] || { id: "involvedAmount", label: "আপত্তিতে জড়িত টাকা" });
+    const totalPrin = calculateParagraphColumnTotal(para, para.tableColumns[4] || { id: "principal", label: "আসল" });
+    const totalIntr = calculateParagraphColumnTotal(para, para.tableColumns[5] || { id: "interest", label: "সুদ" });
+    const totalOth = calculateParagraphColumnTotal(para, para.tableColumns[6] || { id: "others", label: "অন্যান্য" });
+    const totalRec = calculateParagraphColumnTotal(para, para.tableColumns[7] || { id: "totalRecovered", label: "মোট আদায়" });
+
+    const totalParts: string[] = [];
+    if (totalInv !== "-") totalParts.push(`জড়িত টাকা ${totalInv}`);
+    if (totalPrin !== "-") totalParts.push(`আসল ${totalPrin}`);
+    if (totalIntr !== "-") totalParts.push(`সুদ ${totalIntr}`);
+    if (totalOth !== "-") totalParts.push(`অন্যান্য ${totalOth}`);
+    if (totalRec !== "-") totalParts.push(`সর্বমোট আদায় ${totalRec} টাকা`);
+
+    if (totalParts.length > 0) {
+      lines.push(`\n(সর্বমোট হিসাব: ${totalParts.join(", ")})`);
+    }
+
+    return lines.join("\n");
+  };
+
+  const handleSyncTableToNarrative = (paraId: string) => {
+    const targetPara = paragraphs.find((p) => p.id === paraId);
+    if (!targetPara) return;
+    const narrative = formatParagraphTableAsNarrative(targetPara);
+    if (!narrative) return;
+    
+    // Check if the current reply text already contains the borrower details or prefix
+    const existingPrefix = targetPara.entityReplyText.split("বকেয়া ঋণ আদায় ও সমন্বয়ের")[0]?.trim();
+    const newText = existingPrefix ? `${existingPrefix}\n\n${narrative}` : narrative;
+
+    setParagraphs(
+      paragraphs.map((p) => (p.id === paraId ? { ...p, entityReplyText: newText } : p))
+    );
+  };
+
   const handleToggleParagraphTable = (paraId: string, forcedState?: boolean) => {
     setParagraphs(
       paragraphs.map((p) => {
         if (p.id === paraId) {
           const nextState = forcedState !== undefined ? forcedState : !p.hasTable;
-          return { ...p, hasTable: nextState };
+          // If turning table off and entityReplyText is brief, populate structured narrative
+          let updatedText = p.entityReplyText;
+          if (!nextState && (!p.entityReplyText || p.entityReplyText.length < 50)) {
+            const generatedNarrative = formatParagraphTableAsNarrative(p);
+            if (generatedNarrative) {
+              updatedText = p.entityReplyText ? `${p.entityReplyText}\n\n${generatedNarrative}` : generatedNarrative;
+            }
+          }
+          return { ...p, hasTable: nextState, entityReplyText: updatedText };
         }
         return p;
       })
@@ -3011,10 +3088,10 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                 </table>
               </div>
 
-              {/* খ. স্থানীয় প্রতিষ্ঠানের জবাব (Editable Bengali Text) */}
+              {/* খ. স্থানীয় প্রতিষ্ঠানের জবাব (Editable Bengali Text / Structured Narrative) */}
               <div className="space-y-2 pt-1">
                 <div
-                  className="p-1 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors"
+                  className="p-1.5 -ml-1 bg-transparent border border-dashed border-transparent hover:border-slate-300 focus:border-blue-400 rounded-none text-xs sm:text-[13px] leading-relaxed text-justify outline-none transition-colors whitespace-pre-wrap"
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
@@ -3026,18 +3103,27 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                   <span className="font-bold text-slate-900">{para.entityReplyText}</span>
                 </div>
 
-                {/* গ. টেবিল অন/অফ বাটন (চারকোনা বাটন) */}
-                {!para.hasTable && (
-                  <div className="no-print pt-1">
+                {/* গ. টেবিল অন/অফ ও বিবরণী সমন্বয় বাটন */}
+                <div className="no-print pt-1 flex flex-wrap items-center gap-2">
+                  {!para.hasTable ? (
                     <button
                       type="button"
                       onClick={() => handleToggleParagraphTable(para.id, true)}
                       className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-400 rounded-none px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                     >
-                      <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (যদি হিসাবে ছক প্রয়োজন হয়)
+                      <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (প্রয়োজনে)
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSyncTableToNarrative(para.id)}
+                      className="text-[11.5px] font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-dashed border-indigo-300 rounded-none px-2.5 py-1 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                      title="ছকের প্রতিটি ঋণগ্রহীতা ও টাকার তথ্য উপরের টেক্সট বিবরণীতে বুলেট আকারে যোগ করুন"
+                    >
+                      <RefreshCw size={11} /> ছক থেকে টেক্সট বিবরণীতে তথ্য আপডেট করুন
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* ঘ. Embedded Table: Loan Recovery / Breakdown Grid for this Paragraph (Strictly Rectangular) */}
@@ -3234,10 +3320,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleSyncTableToNarrative(para.id)}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-none text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title="ছকের প্রতিটি ঋণগ্রহীতা ও টাকার তথ্য উপরের টেক্সট বিবরণীতে যোগ করুন"
+                    >
+                      <RefreshCw size={11} /> ছক ➔ বিবরণী তৈরি
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleToggleParagraphTable(para.id, false)}
                       className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 rounded-none text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title="ছক বন্ধ করে বিবরণী আকারে প্রদর্শন করুন"
                     >
-                      <Trash2 size={11} /> ছক বন্ধ/মুছুন
+                      <Trash2 size={11} /> ছক বন্ধ (শুধুমাত্র বিবরণী রাখুন)
                     </button>
                   </div>
                 </div>
