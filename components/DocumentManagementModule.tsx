@@ -29,6 +29,7 @@ import {
   X,
   Check,
   Copy,
+  Table,
 } from "lucide-react";
 import { CorrespondenceEntry } from "../types";
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from "../utils/numberUtils";
@@ -387,7 +388,9 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
 
           if (data.proposedStatus) setSettlementStatus(data.proposedStatus);
 
-          if (data.hasTable && data.tableHeaders && data.tableRows) {
+          if (data.hasTable === false) {
+            setHasTable(false);
+          } else if (data.hasTable && data.tableHeaders && data.tableRows && data.tableRows.length > 0) {
             setHasTable(true);
             const cols: TableColumn[] = data.tableHeaders.map((h: string, i: number) => ({
               id: `col-${i}`,
@@ -1200,27 +1203,44 @@ ${finalSubmissionText}`;
           )}
           <button
             type="button"
+            onClick={() => setHasTable(!hasTable)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-colors ${
+              hasTable
+                ? "bg-slate-700 hover:bg-slate-600 text-slate-200"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }`}
+            title={hasTable ? "আদায়ের ছক বন্ধ/হাইড করুন" : "আদায়ের ছক সক্রিয় করুন"}
+          >
+            <Table size={12} />
+            <span>{hasTable ? "আদায় ছক চালু" : "+ আদায় ছক"}</span>
+          </button>
+          <button
+            type="button"
             onClick={handleAddObjectionRow}
             className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
             title="আপত্তি পরিচিতি ছকে নতুন রো যোগ করুন"
           >
             <Plus size={12} /> আপত্তি রো যোগ
           </button>
-          <button
-            type="button"
-            onClick={handleAddTableRow}
-            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-            title="আদায়ের বিবরণী ছকে নতুন রো যোগ করুন"
-          >
-            <Plus size={12} /> আদায় রো যোগ
-          </button>
-          <button
-            type="button"
-            onClick={handleAddTableColumn}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-          >
-            <Plus size={12} /> কলাম যোগ
-          </button>
+          {hasTable && (
+            <>
+              <button
+                type="button"
+                onClick={handleAddTableRow}
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+                title="আদায়ের বিবরণী ছকে নতুন রো যোগ করুন"
+              >
+                <Plus size={12} /> আদায় রো যোগ
+              </button>
+              <button
+                type="button"
+                onClick={handleAddTableColumn}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+              >
+                <Plus size={12} /> কলাম যোগ
+              </button>
+            </>
+          )}
           <div className="flex items-center gap-1 pl-2 border-l border-slate-700">
             <span className="text-[10px] text-slate-400 font-bold">মার্কার:</span>
             {["#ecfdf5", "#fef3c7", "#fee2e2", "#e0e7ff"].map((color) => (
@@ -1373,6 +1393,18 @@ ${finalSubmissionText}`;
             <span className="font-black text-slate-900">স্থানীয় প্রতিষ্ঠানের জবাব: </span>
             <span className="font-bold text-slate-900">{entityReplyText}</span>
           </div>
+
+          {!hasTable && (
+            <div className="no-print pt-1">
+              <button
+                type="button"
+                onClick={() => setHasTable(true)}
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-dashed border-emerald-300 rounded-lg px-3 py-1.5 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              >
+                <Plus size={13} /> আদায়ের বিবরণী ছক যুক্ত করুন (যদি হিসাবে ছক প্রয়োজন হয়)
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 4. Embedded Table: Loan Recovery / Breakdown Grid */}
