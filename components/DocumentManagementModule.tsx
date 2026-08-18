@@ -131,8 +131,9 @@ export interface AuditParagraphBlock {
 }
 
 const DEFAULT_TABLE_COLUMNS: TableColumn[] = [
-  { id: "sl", label: "ক্রমিক" },
+  { id: "sl", label: "ক্র: নং" },
   { id: "borrowerName", label: "ঋণগ্রহীতার নাম" },
+  { id: "accountNo", label: "হিসাব নং ও ঋণের প্রকৃতি" },
   { id: "involvedAmount", label: "আপত্তিতে জড়িত টাকা" },
   { id: "principal", label: "আসল" },
   { id: "interest", label: "সুদ" },
@@ -685,6 +686,38 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
     );
   };
 
+  const calculateParagraphColumnTotal = (para: AuditParagraphBlock, col: TableColumn): string => {
+    if (!para.tableRows || para.tableRows.length === 0) return "-";
+
+    const isDate = col.label.includes("তারিখ") || col.id === "adjustmentDate";
+    const isSerial = col.label.includes("ক্রমিক") || col.label.includes("ক্র:") || col.id === "sl";
+    const isText = col.label.includes("নাম") || col.label.includes("বিবরণ") || col.label.includes("হিসাব") || col.label.includes("প্রকৃতি");
+    if (isDate || isSerial || isText) return "-";
+
+    let sum = 0;
+    let hasValidNumber = false;
+
+    para.tableRows.forEach((r) => {
+      // Ignore total/summary row if present to avoid double counting
+      const isTotalRow = Object.values(r.cells).some(
+        (v) => typeof v === "string" && (v.includes("সর্বমোট") || v.trim() === "মোট" || v.toLowerCase().includes("total"))
+      );
+      if (isTotalRow) return;
+
+      const val = r.cells[col.id];
+      if (val && val !== "-" && val !== "") {
+        const num = parseBengaliNumber(val);
+        if (!isNaN(num) && num > 0) {
+          sum += num;
+          hasValidNumber = true;
+        }
+      }
+    });
+
+    if (!hasValidNumber) return "-";
+    return toBengaliDigits(sum.toLocaleString("en-IN"));
+  };
+
   const calculateParagraphTotal = (para: AuditParagraphBlock, keyWord: string): string => {
     if (!para.tableRows || para.tableRows.length === 0) return "০";
 
@@ -1159,29 +1192,26 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
       )
       .join("");
 
-    const totalInvolved = calculateParagraphTotal(para, "জড়িত");
-    const totalPrincipal = calculateParagraphTotal(para, "আসল");
-    const totalInterest = calculateParagraphTotal(para, "সুদ");
-    const totalRecovered = calculateParagraphTotal(para, "আদায়");
+    const totalCells = para.tableColumns
+      .map((c, idx) => {
+        if (idx === 0) {
+          return `<td colspan="${para.tableColumns.length > 1 ? 2 : 1}" style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; mso-border-alt: solid black .75pt; white-space: nowrap;">সর্বমোট</td>`;
+        }
+        if (idx === 1 && para.tableColumns.length > 1) {
+          return ""; // Merged with column 0
+        }
+        const colTotal = calculateParagraphColumnTotal(para, c);
+        if (colTotal !== "-") {
+          return `<td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; mso-border-alt: solid black .75pt;">${colTotal}</td>`;
+        } else {
+          return `<td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>`;
+        }
+      })
+      .join("");
 
     const totalRow = `
       <tr style="font-weight: bold; background-color: #F1F5F9; page-break-inside: avoid; mso-yfti-irow: 2; mso-yfti-lastrow: yes;">
-        <td colspan="2" style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; mso-border-alt: solid black .75pt; white-space: nowrap;">সর্বমোট</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
-          totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"
-        }</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
-          toBengaliDigits(totalPrincipal || "০")
-        }</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
-          toBengaliDigits(totalInterest || "০")
-        }</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: right; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">${
-          totalRecovered && totalRecovered !== "০" ? toBengaliDigits(totalRecovered) : "-"
-        }</td>
-        <td style="border: 1.0pt solid #000000; padding: 6pt 5pt; text-align: center; vertical-align: middle; font-family: 'SolaimanLipi', 'Kalpurush', 'Nikosh', 'Vrinda', 'Arial', sans-serif; font-size: 10.5pt; mso-border-alt: solid black .75pt;">-</td>
+        ${totalCells}
       </tr>`;
 
     return `
@@ -3152,11 +3182,6 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                         {/* Totals Row with Merged First Two Columns for Single-Line 'সর্বমোট' */}
                         <tr className="font-black bg-slate-100/95 text-center border-t-2 border-slate-900 text-slate-950 text-xs sm:text-[13px]">
                           {para.tableColumns.map((col, idx) => {
-                            const totalInvolved = calculateParagraphTotal(para, "জড়িত");
-                            const totalPrincipal = calculateParagraphTotal(para, "আসল");
-                            const totalInterest = calculateParagraphTotal(para, "সুদ");
-                            const totalRecovered = calculateParagraphTotal(para, "আদায়");
-
                             if (idx === 0) {
                               return (
                                 <td
@@ -3171,14 +3196,19 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
                             if (idx === 1 && para.tableColumns.length > 1) {
                               return null; // Merged with column 0
                             }
-                            if (col.id === "borrowerName" || col.label.includes("নাম")) return null;
-                            if (col.id === "involvedAmount" || col.label.includes("জড়িত")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{totalInvolved && totalInvolved !== "০" ? toBengaliDigits(totalInvolved) : "-"}</td>;
-                            if (col.id === "principal" || col.label.includes("আসল")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalPrincipal || "০")}</td>;
-                            if (col.id === "interest" || col.label.includes("সুদ")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{toBengaliDigits(totalInterest || "০")}</td>;
-                            if (col.id === "others" || col.label.includes("অন্যান্য")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
-                            if (col.id === "totalRecovered" || col.label.includes("আদায়")) return <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">{totalRecovered && totalRecovered !== "০" ? toBengaliDigits(totalRecovered) : "-"}</td>;
-                            if (col.id === "adjustmentDate" || col.label.includes("তারিখ")) return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
-                            return <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">-</td>;
+                            const colTotal = calculateParagraphColumnTotal(para, col);
+                            if (colTotal !== "-") {
+                              return (
+                                <td key={col.id} className="border border-slate-800 p-2 text-right pr-2 font-black">
+                                  {colTotal}
+                                </td>
+                              );
+                            }
+                            return (
+                              <td key={col.id} className="border border-slate-800 p-2 text-center font-bold">
+                                -
+                              </td>
+                            );
                           })}
                         </tr>
                       </tbody>
