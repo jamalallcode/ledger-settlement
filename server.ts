@@ -4,6 +4,10 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const getConfigFile = () => {
   const cwdPath = path.join(process.cwd(), "whatsapp_config.json");
