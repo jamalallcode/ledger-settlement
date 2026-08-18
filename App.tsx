@@ -200,7 +200,6 @@ const App: React.FC = () => {
 
   // Document Management Module Selection State
   const [selectedDocumentManagementEntry, setSelectedDocumentManagementEntry] = useState<CorrespondenceEntry | null>(null);
-  const customBackHandlerRef = useRef<(() => boolean) | null>(null);
 
   // New state for direct report selection from sidebar
   const [reportType, setReportType] = useState<string | null>(null);
@@ -387,10 +386,6 @@ const App: React.FC = () => {
   };
 
   const goBack = () => {
-    if (customBackHandlerRef.current) {
-      const handled = customBackHandlerRef.current();
-      if (handled) return;
-    }
     if (navHistory.length === 0) return;
     
     // Pop the last state
@@ -1575,7 +1570,7 @@ const App: React.FC = () => {
               reportType={reportType}
               contactLink={contactLink}
               onGoBack={goBack}
-              hasHistory={navHistory.length > 0 || selectedDocumentManagementEntry !== null}
+              hasHistory={navHistory.length > 0}
             />
           </div>
         )}
@@ -1612,9 +1607,6 @@ const App: React.FC = () => {
                   entry={selectedDocumentManagementEntry}
                   onBack={() => {
                     setSelectedDocumentManagementEntry(null);
-                  }}
-                  onRegisterBackHandler={(handler) => {
-                    customBackHandlerRef.current = handler;
                   }}
                   isAdmin={isAdmin}
                   onSaveJaripatra={(entry, jaripatraData) => {
