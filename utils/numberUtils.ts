@@ -73,3 +73,74 @@ export const formatDateBN = (iso: string | undefined | null): string => {
   }
   return toBengaliDigits(iso);
 };
+
+/**
+ * Searches a string and converts any date format (YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY)
+ * and all digits into pure Bengali standard date (DD/MM/YYYY) and Bengali numerals.
+ */
+export const convertAllDatesToBengali = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // 1. Convert YYYY-MM-DD or YYYY/MM/DD to DD/MM/YYYY
+  let result = text.replace(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/g, (_match, y, m, d) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 2. Convert DD-MM-YYYY to DD/MM/YYYY
+  result = result.replace(/\b(\d{1,2})-(\d{1,2})-(20\d{2})\b/g, (_match, d, m, y) => {
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    return `${day}/${month}/${y}`;
+  });
+  // 3. Convert all English digits to Bengali numerals
+  return toBengaliDigits(result);
+};
+
+/**
+ * Cleans monetary/amount string:
+ * - Removes trailing '/-', '/_', '.-', '/', or '-' suffixes
+ * - Formats valid numbers with Indian/South Asian style commas
+ * - Converts English digits to Bengali digits
+ */
+export const cleanAndFormatBengaliAmount = (input: string | number | undefined | null): string => {
+  if (input === undefined || input === null) return '';
+  let str = input.toString().trim();
+  if (!str || str === '-' || str === '০') return str;
+
+  // Check if string contains estimation tag like * or [অনুমান]
+  const isEstimated = str.includes('*');
+  
+  // Remove trailing /- or /_ or /- or / or \- or ৳
+  str = str.replace(/[\/\\\.\-_]+$/g, '').replace(/৳/g, '').trim();
+  // Strip '/-' from inside or end
+  str = str.replace(/\s*\/\-\s*/g, '').trim();
+
+  // If it's a date format like DD/MM/YYYY, do not treat as plain money amount
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(toEnglishDigits(str)) || /^[০-৯]{1,2}\/[০-৯]{1,2}\/[০-৯]{4}$/.test(str)) {
+    return convertAllDatesToBengali(str);
+  }
+
+  // Parse pure number if it looks like a financial amount
+  const num = parseBengaliNumber(str);
+  if (!isNaN(num) && num > 0 && /^[০-৯0-9,.\s*]+$/.test(str)) {
+    const formattedEn = num.toLocaleString('en-IN');
+    let formattedBn = toBengaliDigits(formattedEn);
+    if (isEstimated && !formattedBn.includes('*')) {
+      formattedBn += '*';
+    }
+    return formattedBn;
+  }
+
+  return toBengaliDigits(str);
+};
+
+/**
+ * Cleans text to remove '/-' from amounts in full paragraphs or titles while ensuring commas
+ */
+export const stripAmountSlashInText = (text: string | undefined | null): string => {
+  if (!text) return '';
+  // Replace patterns like "৮,৪১,২৮৪/-" or "৮৪১২৮৪/-" with "৮,৪১,২৮৪"
+  return text.replace(/([০-৯0-9,]+)\s*(?:\/-|\/|\.-)/g, (_match, numPart) => {
+    return cleanAndFormatBengaliAmount(numPart);
+  });
+};
