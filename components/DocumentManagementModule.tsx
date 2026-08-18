@@ -290,6 +290,7 @@ export const DocumentManagementModule: React.FC<DocumentManagementModuleProps> =
           cells: {
             sl: "১",
             borrowerName: "",
+            accountNo: "",
             involvedAmount: entry.totalAmount ? toBengaliDigits(entry.totalAmount) : "০",
             principal: "০",
             interest: "০",
