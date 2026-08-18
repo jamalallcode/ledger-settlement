@@ -36,6 +36,7 @@ import {
   Building2,
   Hash,
   Globe,
+  BarChart3,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -1684,20 +1685,17 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
                           {isCycleStatsExpanded && (
                             <div className="bg-white p-4 border-b border-slate-300 shadow-md">
-                              <div className="flex flex-col gap-3">
-                                {/* Row 1: Letters Summary */}
+                              <div className="flex flex-col gap-2.5">
+                                {/* Row 1: SFI Branch Info */}
                                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                                  <div className="w-full md:w-[230px] shrink-0 px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm flex items-center justify-between gap-2 text-slate-800 text-[12px] font-bold">
-                                    <span>মোট চিঠি:</span>
-                                    <span className="text-blue-700 font-black text-[13px] bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100">
-                                      {toBengaliDigits(stats.totalLetters)} টি
-                                    </span>
+                                  <div className="w-full md:w-[140px] shrink-0 h-[42px] px-3.5 bg-emerald-600 text-white rounded-xl shadow-sm flex items-center justify-center gap-1.5 text-[12px] font-black">
+                                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                    <span>এসএফআই শাখা</span>
                                   </div>
 
                                   {/* SFI Letters Card */}
-                                  <div className="group/sfi-letters flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default">
-                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
-                                    <span className="text-emerald-900 font-black text-[12px] shrink-0">এসএফআই:</span>
+                                  <div className="w-full md:w-[260px] shrink-0 h-[42px] flex items-center gap-2 px-3.5 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <span className="text-emerald-900 shrink-0">চিঠি:</span>
                                     <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.sfiEntries.length)} টি
                                     </span>
@@ -1706,46 +1704,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     </span>
                                   </div>
 
-                                  {/* Non-SFI Letters Card */}
-                                  <div className="group/nonsfi-letters flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default">
-                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
-                                    <span className="text-amber-900 font-black text-[12px] shrink-0">নন এসএফআই:</span>
-                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
-                                      {toBengaliDigits(stats.nonSfiEntries.length)} টি
-                                    </span>
-                                    <span className="text-amber-800/80 text-[11px] font-bold truncate">
-                                      (বিএসআর {toBengaliDigits(stats.nonSfiBSR)}, সভা {toBengaliDigits(stats.nonSfiBi)})
-                                    </span>
-                                  </div>
-
-                                  {/* SFI Settled Total Amount (উপরে মোট টাকা) */}
-                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
-                                      <span className="text-emerald-900 shrink-0">মোট টাকা:</span>
-                                    </div>
-                                    <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
-                                      {toBengaliDigits(Math.round(stats.sfiSettledAmount))} টাকা
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Row 2: Settled Paragraphs Summary */}
-                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                                  <div className="w-full md:w-[230px] shrink-0 px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl shadow-sm flex items-center justify-between gap-2 text-[12px] font-bold text-slate-800">
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                                      <span>মোট মীমাংসিত অনুচ্ছেদ:</span>
-                                    </div>
-                                    <span className="text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200">
-                                      {toBengaliDigits(stats.cycleSettledParasCount)} টি
-                                    </span>
-                                  </div>
-
-                                  {/* SFI Settled Card */}
-                                  <div className="group/sfi-settled flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
-                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
-                                    <span className="text-emerald-900 shrink-0">এসএফআই:</span>
+                                  {/* SFI Settled Paragraphs Card */}
+                                  <div className="flex-1 min-w-0 h-[42px] flex items-center gap-2 px-3.5 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
+                                    <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                    <span className="text-emerald-900 shrink-0">মীমাংসিত অনুচ্ছেদ:</span>
                                     <span className="text-white bg-emerald-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.sfiSettled.total)} টি
                                     </span>
@@ -1756,10 +1718,40 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     )}
                                   </div>
 
-                                  {/* Non-SFI Settled Card */}
-                                  <div className="group/nonsfi-settled flex-1 min-w-0 flex items-center gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
-                                    <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
-                                    <span className="text-amber-900 shrink-0">নন এসএফআই:</span>
+                                  {/* SFI Settled Total Amount */}
+                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-emerald-50/70 hover:bg-emerald-50/95 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400 shrink-0"></div>
+                                      <span className="text-emerald-900 shrink-0">মোট টাকা:</span>
+                                    </div>
+                                    <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
+                                      {toBengaliDigits(Math.round(stats.sfiSettledAmount))} টাকা
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Row 2: Non-SFI Branch Info */}
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                                  <div className="w-full md:w-[140px] shrink-0 h-[42px] px-3.5 bg-amber-600 text-white rounded-xl shadow-sm flex items-center justify-center gap-1.5 text-[12px] font-black">
+                                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                    <span>নন এসএফআই শাখা</span>
+                                  </div>
+
+                                  {/* Non-SFI Letters Card */}
+                                  <div className="w-full md:w-[260px] shrink-0 h-[42px] flex items-center gap-2 px-3.5 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <span className="text-amber-900 shrink-0">চিঠি:</span>
+                                    <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
+                                      {toBengaliDigits(stats.nonSfiEntries.length)} টি
+                                    </span>
+                                    <span className="text-amber-800/80 text-[11px] font-bold truncate">
+                                      (বিএসআর {toBengaliDigits(stats.nonSfiBSR)}, সভা {toBengaliDigits(stats.nonSfiBi)})
+                                    </span>
+                                  </div>
+
+                                  {/* Non-SFI Settled Paragraphs Card */}
+                                  <div className="flex-1 min-w-0 h-[42px] flex items-center gap-2 px-3.5 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[11px] font-black">
+                                    <CheckCircle2 size={15} className="text-amber-600 shrink-0" />
+                                    <span className="text-amber-900 shrink-0">মীমাংসিত অনুচ্ছেদ:</span>
                                     <span className="text-white bg-amber-600 px-2 py-0.5 rounded-lg text-[11px] font-black shadow-sm shrink-0">
                                       {toBengaliDigits(stats.nonSfiSettled.total)} টি
                                     </span>
@@ -1770,14 +1762,52 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     )}
                                   </div>
 
-                                  {/* Non-SFI Settled Total Amount (নিচে মোট টাকা) */}
-                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 py-2 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                  {/* Non-SFI Settled Total Amount */}
+                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-amber-50/70 hover:bg-amber-50/95 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
                                     <div className="flex items-center gap-2 shrink-0">
                                       <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400 shrink-0"></div>
                                       <span className="text-amber-900 shrink-0">মোট টাকা:</span>
                                     </div>
                                     <span className="text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-amber-200 shrink-0">
                                       {toBengaliDigits(Math.round(stats.nonSfiSettledAmount))} টাকা
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Row 3: Grand Total Info */}
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-1 border-t border-slate-200/80">
+                                  <div className="w-full md:w-[140px] shrink-0 h-[42px] px-3.5 bg-slate-800 text-white rounded-xl shadow-sm flex items-center justify-center gap-1.5 text-[12px] font-black">
+                                    <BarChart3 size={14} className="text-blue-400 shrink-0" />
+                                    <span>সর্বমোট</span>
+                                  </div>
+
+                                  {/* Total Letters Card */}
+                                  <div className="w-full md:w-[260px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl shadow-sm text-slate-800 text-[12px] font-bold">
+                                    <span>মোট চিঠি:</span>
+                                    <span className="text-blue-700 font-black text-[12px] bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100 shrink-0">
+                                      {toBengaliDigits(stats.totalLetters)} টি
+                                    </span>
+                                  </div>
+
+                                  {/* Total Settled Paragraphs Card */}
+                                  <div className="flex-1 min-w-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl shadow-sm text-[12px] font-bold text-slate-800">
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                      <span>সর্বমোট মীমাংসিত অনুচ্ছেদ:</span>
+                                    </div>
+                                    <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
+                                      {toBengaliDigits(stats.cycleSettledParasCount)} টি
+                                    </span>
+                                  </div>
+
+                                  {/* Grand Total Settled Money */}
+                                  <div className="w-full md:w-[240px] shrink-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-blue-50/80 hover:bg-blue-50 border-2 border-blue-300/80 hover:border-blue-400 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(59,130,246,0.22)] hover:-translate-y-0.5 cursor-default text-[12px] font-black">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-sm shadow-blue-400 shrink-0"></div>
+                                      <span className="text-blue-900 shrink-0">সর্বমোট টাকা:</span>
+                                    </div>
+                                    <span className="text-blue-700 bg-blue-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-blue-200 shrink-0">
+                                      {toBengaliDigits(Math.round(stats.sfiSettledAmount + stats.nonSfiSettledAmount))} টাকা
                                     </span>
                                   </div>
                                 </div>
