@@ -593,7 +593,10 @@ const getSafeMime = (fileObj: any): string => {
 
       if (apiKey) {
         try {
-          const ai = new GoogleGenAI({ apiKey });
+          const ai = new GoogleGenAI({
+            apiKey,
+            httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+          });
 
           const promptText = `
 আপনি একজন অত্যন্ত অভিজ্ঞ অডিট ও নথি ব্যবস্থাপনা কর্মকর্তা। আপনার সামনে সংযুক্ত ইমেজ/পিডিএফ এবং টেক্সটসমূহ গভীরভাবে ওসিআর (OCR) ও স্ক্যান করে বিশ্লেষণ করুন:
@@ -811,7 +814,8 @@ ${cleanEvidenceText ? `ইউজার ইনপুট প্রমাণক ট
             model: "gemini-2.5-flash",
             contents: promptParts,
             config: {
-              responseMimeType: "application/json"
+              responseMimeType: "application/json",
+              temperature: 0.1
             }
           });
 
