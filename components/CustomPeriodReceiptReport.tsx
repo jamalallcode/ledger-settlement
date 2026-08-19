@@ -204,22 +204,38 @@ const getSettlementEntryStats = (entry: any) => {
   let fullParas: string[] = [];
   let partialParas: string[] = [];
   let allParas: string[] = [];
+  let fullParaItems: { no: string | number; amount: number; involvedAmount?: number }[] = [];
+  let partialParaItems: { no: string | number; amount: number; involvedAmount?: number }[] = [];
+  let allParaItems: { no: string | number; amount: number; status?: string; involvedAmount?: number }[] = [];
 
   if (entry.paragraphs && entry.paragraphs.length > 0) {
     entry.paragraphs.forEach((p: any) => {
       const pNum = p.paraNo || p.paragraphNo || p.number || '';
       const rec = (p.recoveredAmount || 0) + (p.adjustedAmount || 0);
+      const inv = p.involvedAmount || p.totalAmount || 0;
       if (p.status === 'পূর্ণাঙ্গ') {
         fullCount++;
         fullAmount += rec;
-        if (pNum) fullParas.push(String(pNum));
+        if (pNum) {
+          fullParas.push(String(pNum));
+          fullParaItems.push({ no: String(pNum), amount: rec, involvedAmount: inv });
+        }
       } else if (p.status === 'আংশিক' || (rec > 0 && p.status !== 'পূর্ণাঙ্গ')) {
         partialCount++;
         partialAmount += rec;
-        if (pNum) partialParas.push(String(pNum));
+        if (pNum) {
+          partialParas.push(String(pNum));
+          partialParaItems.push({ no: String(pNum), amount: rec, involvedAmount: inv });
+        }
       }
       if (pNum && (p.status === 'পূর্ণাঙ্গ' || p.status === 'আংশিক' || rec > 0)) {
         allParas.push(String(pNum));
+        allParaItems.push({
+          no: String(pNum),
+          amount: rec,
+          status: p.status === 'পূর্ণাঙ্গ' ? 'পূর্ণাঙ্গ' : 'আংশিক',
+          involvedAmount: inv
+        });
       }
     });
     settledAmount = fullAmount + partialAmount;
@@ -257,10 +273,36 @@ const getSettlementEntryStats = (entry: any) => {
     const rawParas = String(entry.meetingSettledParas || entry.settledParas || entry.meetingUnsettledParas || '');
     if (rawParas) {
       allParas = rawParas.split(/[,;\s]+/).filter(Boolean);
+      allParas.forEach(p => {
+        allParaItems.push({
+          no: String(p),
+          amount: allParas.length === 1 ? settledAmount : 0,
+          status: fullCount > 0 && partialCount === 0 ? 'পূর্ণাঙ্গ' : 'আংশিক'
+        });
+      });
+      if (fullCount > 0 && partialCount === 0) {
+        fullParas = allParas;
+        fullParaItems = allParaItems;
+      } else if (partialCount > 0 && fullCount === 0) {
+        partialParas = allParas;
+        partialParaItems = allParaItems;
+      }
     }
   }
 
-  return { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas };
+  return {
+    fullCount,
+    partialCount,
+    settledAmount,
+    fullAmount,
+    partialAmount,
+    fullParas,
+    partialParas,
+    allParas,
+    fullParaItems,
+    partialParaItems,
+    allParaItems
+  };
 };
 
 const findMatchedCorrForEntry = (entry: any, correspondenceEntries: any[] = []): any => {
@@ -544,6 +586,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
     fullParas: (string | number)[];
     partialParas: (string | number)[];
     allParas: (string | number)[];
+    fullParaItems?: { no: string | number; amount: number; involvedAmount?: number }[];
+    partialParaItems?: { no: string | number; amount: number; involvedAmount?: number }[];
+    allParaItems?: { no: string | number; amount: number; status?: string; involvedAmount?: number }[];
     fullAmount?: number;
     partialAmount?: number;
     totalAmount?: number;
@@ -2327,7 +2372,19 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredSettlementEntries.map((entry, index) => {
-                      const { fullCount, partialCount, settledAmount, fullAmount, partialAmount, fullParas, partialParas, allParas } = getSettlementEntryStats(entry);
+                      const {
+                        fullCount,
+                        partialCount,
+                        settledAmount,
+                        fullAmount,
+                        partialAmount,
+                        fullParas,
+                        partialParas,
+                        allParas,
+                        fullParaItems,
+                        partialParaItems,
+                        allParaItems
+                      } = getSettlementEntryStats(entry);
                       const rowSettledCount = (fullCount + partialCount) || fullCount || partialCount;
                       const rowSettledAmount = settledAmount;
 
@@ -2425,11 +2482,14 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                         fullParas,
                                         partialParas: [],
                                         allParas: fullParas,
+                                        fullParaItems,
+                                        partialParaItems: [],
+                                        allParaItems: fullParaItems,
                                         fullAmount,
                                         totalAmount: fullAmount
                                       });
                                     }}
-                                    title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
+                                    title="অনুচ্ছেদ নম্বর ও টাকার পরিমাণ দেখতে ক্লিক করুন"
                                   >
                                     <span className="font-bold text-emerald-700">৪. </span>
                                     <span className="font-bold text-slate-900 underline decoration-dotted underline-offset-2 hover:text-blue-700">
@@ -2449,11 +2509,14 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                         fullParas: [],
                                         partialParas,
                                         allParas: partialParas,
+                                        fullParaItems: [],
+                                        partialParaItems,
+                                        allParaItems: partialParaItems,
                                         partialAmount,
                                         totalAmount: partialAmount
                                       });
                                     }}
-                                    title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
+                                    title="অনুচ্ছেদ নম্বর ও টাকার পরিমাণ দেখতে ক্লিক করুন"
                                   >
                                     <span className="font-bold text-emerald-700">৫. </span>
                                     <span className="font-bold text-amber-800 underline decoration-dotted underline-offset-2 hover:text-amber-900">
@@ -2475,12 +2538,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                       fullParas,
                                       partialParas,
                                       allParas: rawAllParas,
+                                      fullParaItems,
+                                      partialParaItems,
+                                      allParaItems,
                                       fullAmount,
                                       partialAmount,
                                       totalAmount: settledAmount
                                     });
                                   }}
-                                  title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
+                                  title="অনুচ্ছেদ নম্বর ও টাকার পরিমাণ দেখতে ক্লিক করুন"
                                 >
                                   <span className="font-bold text-emerald-700">৪. </span>
                                   <span className="font-bold text-slate-900 underline decoration-dotted underline-offset-2 hover:text-blue-700">
@@ -2509,12 +2575,15 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                                 fullParas,
                                 partialParas,
                                 allParas: rawAllParas,
+                                fullParaItems,
+                                partialParaItems,
+                                allParaItems,
                                 fullAmount,
                                 partialAmount,
                                 totalAmount: settledAmount
                               });
                             }}
-                            title="অনুচ্ছেদ নম্বরসমূহ দেখতে ক্লিক করুন"
+                            title="অনুচ্ছেদ নম্বর ও টাকার পরিমাণ দেখতে ক্লিক করুন"
                           >
                             <span className="inline-flex items-center gap-1 bg-slate-100 hover:bg-emerald-700 hover:text-white px-2.5 py-1 rounded-lg transition-all shadow-sm font-extrabold text-slate-800">
                               {toBengaliDigits(rowSettledCount)} টি
@@ -2587,29 +2656,35 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           onClick={() => setParaModalData(null)}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex items-center justify-between shrink-0">
+            <div className="px-6 py-4.5 bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 text-white flex items-center justify-between shrink-0 shadow-sm border-b border-emerald-900/40">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl shrink-0">
-                  <BookOpen size={20} className="text-emerald-200" />
+                <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl shrink-0 border border-white/15 shadow-inner">
+                  <BookOpen size={20} className="text-emerald-300" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-white leading-tight">
-                    {paraModalData.title || 'নিষ্পন্নকৃত অনুচ্ছেদসমূহের তালিকা'}
+                  <h3 className="font-extrabold text-base text-white tracking-wide leading-tight flex items-center gap-2">
+                    {paraModalData.title || 'নিষ্পন্নকৃত অনুচ্ছেদসমূহের বিস্তারিত তালিকা'}
                   </h3>
                   {paraModalData.ministry && (
-                    <p className="text-xs text-emerald-100/90 font-medium mt-0.5">
-                      {paraModalData.ministry} {paraModalData.entity ? `• ${paraModalData.entity}` : ''}
+                    <p className="text-xs text-emerald-200/90 font-semibold mt-0.5 flex items-center gap-1.5">
+                      <span>{paraModalData.ministry}</span>
+                      {paraModalData.entity && (
+                        <>
+                          <span className="opacity-40">•</span>
+                          <span className="text-emerald-100">{paraModalData.entity}</span>
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
               </div>
               <button
                 onClick={() => setParaModalData(null)}
-                className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/20 transition-colors cursor-pointer shrink-0"
+                className="p-2 rounded-xl text-emerald-200 hover:text-white hover:bg-white/15 active:scale-95 transition-all cursor-pointer shrink-0"
                 title="বন্ধ করুন"
               >
                 <X size={20} />
@@ -2617,109 +2692,188 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-5 text-slate-800">
+            <div className="p-6 overflow-y-auto space-y-4 text-slate-800">
+              {/* Summary / Letter Info Bar */}
               {paraModalData.letterInfo && (
-                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs flex flex-wrap gap-x-4 gap-y-1 font-semibold text-slate-700">
-                  <span>স্মারক/পত্র নং ও তারিখ: <strong className="text-slate-900">{paraModalData.letterInfo}</strong></span>
+                <div className="bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/80 rounded-2xl p-3.5 text-xs flex flex-wrap items-center justify-between gap-2 font-medium text-slate-700 shadow-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-500 font-bold">স্মারক/পত্র নং ও তারিখ:</span>
+                    <strong className="text-slate-900 font-extrabold">{paraModalData.letterInfo}</strong>
+                  </div>
+                  {paraModalData.totalAmount !== undefined && paraModalData.totalAmount > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-emerald-200 rounded-xl shadow-2xs font-extrabold text-emerald-800 text-[11.5px]">
+                      <span className="text-slate-500 font-bold">সর্বমোট নিষ্পন্ন:</span>
+                      <span>{toBengaliDigits(paraModalData.totalAmount)} টাকা</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Full Paras */}
-              {paraModalData.fullParas && paraModalData.fullParas.length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-emerald-800 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
-                      পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.fullParas.length)} টি)
-                    </span>
+              {/* Full Paras Section */}
+              {((paraModalData.fullParaItems && paraModalData.fullParaItems.length > 0) || (paraModalData.fullParas && paraModalData.fullParas.length > 0)) && (
+                <div className="space-y-3 bg-emerald-50/40 p-4 rounded-2xl border border-emerald-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-100 inline-block"></span>
+                      <span className="font-extrabold text-sm text-emerald-950">
+                        পূর্ণাঙ্গ নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits((paraModalData.fullParaItems || paraModalData.fullParas).length)} টি)
+                      </span>
+                    </div>
                     {paraModalData.fullAmount !== undefined && paraModalData.fullAmount > 0 && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
-                        টাকা: {toBengaliDigits(paraModalData.fullAmount)}
+                      <span className="text-xs font-black px-3 py-1 bg-emerald-600 text-white rounded-lg shadow-2xs">
+                        মোট টাকা: {toBengaliDigits(paraModalData.fullAmount)}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {paraModalData.fullParas.map((p, idx) => (
-                      <span
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {(paraModalData.fullParaItems && paraModalData.fullParaItems.length > 0
+                      ? paraModalData.fullParaItems
+                      : (paraModalData.fullParas || []).map(p => ({
+                          no: p,
+                          amount: (paraModalData.fullParas.length === 1 ? (paraModalData.fullAmount || 0) : 0)
+                        }))
+                    ).map((item, idx) => (
+                      <div
                         key={idx}
-                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                        className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-white hover:bg-emerald-50/70 text-emerald-950 border border-emerald-200/90 rounded-xl shadow-2xs transition-all duration-150"
                       >
-                        অনুচ্ছেদ নং {toBengaliDigits(p)}
-                      </span>
+                        <div className="flex items-center gap-2 font-black text-xs text-slate-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                          <span>অনুচ্ছেদ নং {toBengaliDigits(item.no)}</span>
+                        </div>
+                        {item.amount !== undefined && item.amount > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-900 rounded-lg text-xs font-black border border-emerald-300/80 shadow-2xs shrink-0">
+                            <span className="text-[10px] text-emerald-700 font-bold">টাকা:</span>
+                            <span>{toBengaliDigits(item.amount)}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10.5px] font-bold text-emerald-700/80 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            পূর্ণাঙ্গ
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Partial Paras */}
-              {paraModalData.partialParas && paraModalData.partialParas.length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-amber-800 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                      আংশিক নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.partialParas.length)} টি)
-                    </span>
+              {/* Partial Paras Section */}
+              {((paraModalData.partialParaItems && paraModalData.partialParaItems.length > 0) || (paraModalData.partialParas && paraModalData.partialParas.length > 0)) && (
+                <div className="space-y-3 bg-amber-50/40 p-4 rounded-2xl border border-amber-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-100 inline-block"></span>
+                      <span className="font-extrabold text-sm text-amber-950">
+                        আংশিক নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits((paraModalData.partialParaItems || paraModalData.partialParas).length)} টি)
+                      </span>
+                    </div>
                     {paraModalData.partialAmount !== undefined && paraModalData.partialAmount > 0 && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md">
-                        টাকা: {toBengaliDigits(paraModalData.partialAmount)}
+                      <span className="text-xs font-black px-3 py-1 bg-amber-600 text-white rounded-lg shadow-2xs">
+                        মোট টাকা: {toBengaliDigits(paraModalData.partialAmount)}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {paraModalData.partialParas.map((p, idx) => (
-                      <span
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {(paraModalData.partialParaItems && paraModalData.partialParaItems.length > 0
+                      ? paraModalData.partialParaItems
+                      : (paraModalData.partialParas || []).map(p => ({
+                          no: p,
+                          amount: (paraModalData.partialParas.length === 1 ? (paraModalData.partialAmount || 0) : 0)
+                        }))
+                    ).map((item, idx) => (
+                      <div
                         key={idx}
-                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                        className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-white hover:bg-amber-50/70 text-amber-950 border border-amber-200/90 rounded-xl shadow-2xs transition-all duration-150"
                       >
-                        অনুচ্ছেদ নং {toBengaliDigits(p)}
-                      </span>
+                        <div className="flex items-center gap-2 font-black text-xs text-slate-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                          <span>অনুচ্ছেদ নং {toBengaliDigits(item.no)}</span>
+                        </div>
+                        {item.amount !== undefined && item.amount > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 rounded-lg text-xs font-black border border-amber-300/80 shadow-2xs shrink-0">
+                            <span className="text-[10px] text-amber-700 font-bold">টাকা:</span>
+                            <span>{toBengaliDigits(item.amount)}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10.5px] font-bold text-amber-700/80 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                            আংশিক
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Combined or generic fallback if no separate full/partial list */}
+              {/* Combined / Generic fallback if not split into full/partial */}
               {(!paraModalData.fullParas || paraModalData.fullParas.length === 0) &&
                (!paraModalData.partialParas || paraModalData.partialParas.length === 0) &&
-               paraModalData.allParas && paraModalData.allParas.length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-600 inline-block"></span>
-                      সকল নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits(paraModalData.allParas.length)} টি)
-                    </span>
+               (!paraModalData.fullParaItems || paraModalData.fullParaItems.length === 0) &&
+               (!paraModalData.partialParaItems || paraModalData.partialParaItems.length === 0) &&
+               ((paraModalData.allParaItems && paraModalData.allParaItems.length > 0) || (paraModalData.allParas && paraModalData.allParas.length > 0)) && (
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-600 ring-4 ring-slate-200 inline-block"></span>
+                      <span className="font-extrabold text-sm text-slate-900">
+                        সকল নিষ্পন্ন অনুচ্ছেদ ({toBengaliDigits((paraModalData.allParaItems || paraModalData.allParas).length)} টি)
+                      </span>
+                    </div>
                     {paraModalData.totalAmount !== undefined && paraModalData.totalAmount > 0 && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded-md">
-                        টাকা: {toBengaliDigits(paraModalData.totalAmount)}
+                      <span className="text-xs font-black px-3 py-1 bg-slate-800 text-white rounded-lg shadow-2xs">
+                        মোট টাকা: {toBengaliDigits(paraModalData.totalAmount)}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {paraModalData.allParas.map((p, idx) => (
-                      <span
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {(paraModalData.allParaItems && paraModalData.allParaItems.length > 0
+                      ? paraModalData.allParaItems
+                      : (paraModalData.allParas || []).map(p => ({
+                          no: p,
+                          amount: (paraModalData.allParas.length === 1 ? (paraModalData.totalAmount || 0) : 0)
+                        }))
+                    ).map((item, idx) => (
+                      <div
                         key={idx}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 rounded-xl text-xs font-extrabold shadow-sm transition-colors"
+                        className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-xl shadow-2xs transition-all duration-150"
                       >
-                        অনুচ্ছেদ নং {toBengaliDigits(p)}
-                      </span>
+                        <div className="flex items-center gap-2 font-black text-xs text-slate-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
+                          <span>অনুচ্ছেদ নং {toBengaliDigits(item.no)}</span>
+                        </div>
+                        {item.amount !== undefined && item.amount > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-900 rounded-lg text-xs font-black border border-slate-300 shadow-2xs shrink-0">
+                            <span className="text-[10px] text-slate-600 font-bold">টাকা:</span>
+                            <span>{toBengaliDigits(item.amount)}</span>
+                          </span>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
               {/* Empty state inside modal */}
-              {(!paraModalData.allParas || paraModalData.allParas.length === 0) && (
-                <div className="text-center py-6 text-slate-500 font-medium text-xs">
+              {(!paraModalData.allParas || paraModalData.allParas.length === 0) &&
+               (!paraModalData.allParaItems || paraModalData.allParaItems.length === 0) && (
+                <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 font-medium text-xs">
                   কোনো নির্দিষ্ট অনুচ্ছেদ নম্বর নথিভুক্ত পাওয়া যায়নি।
                 </div>
               )}
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+              <div className="text-xs font-bold text-slate-500">
+                {paraModalData.totalAmount !== undefined && paraModalData.totalAmount > 0 && (
+                  <span className="text-slate-700">
+                    মোট নিষ্পন্ন: <strong className="text-emerald-800 font-extrabold">{toBengaliDigits(paraModalData.totalAmount)} টাকা</strong>
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setParaModalData(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-extrabold transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 বন্ধ করুন
               </button>
