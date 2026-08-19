@@ -576,10 +576,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     const globalStats = useMemo(() => {
       const totalLetters = filteredEntries.length;
-      const sfiEntries = filteredEntries.filter((e) => e.paraType === "এসএফআই");
-      const nonSfiEntries = filteredEntries.filter(
-        (e) => e.paraType === "নন এসএফআই",
-      );
+      const sfiEntries = filteredEntries.filter((e) => isSFI(e.paraType));
+      const nonSfiEntries = filteredEntries.filter((e) => isNonSFI(e.paraType));
 
       const sfiBSR = sfiEntries.filter(
         (e) => !e.isMeeting || e.meetingType === "বিএসআর",
@@ -594,6 +592,28 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         (e) => e.meetingType === "দ্বিপক্ষীয় সভা",
       ).length;
 
+      const settledParas = filteredEntries.reduce(
+        (acc, ent) =>
+          acc +
+          (ent.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ").length || 0),
+        0,
+      );
+
+      const totalSettledAmount = filteredEntries.reduce((sum, ent) => {
+        const paras = ent.paragraphs || [];
+        if (paras.length > 0) {
+          const paraSum = paras.reduce(
+            (pSum, p) =>
+              pSum +
+              (Number(p.recoveredAmount) || 0) +
+              (Number(p.adjustedAmount) || 0),
+            0,
+          );
+          return sum + paraSum;
+        }
+        return sum + (Number(ent.totalRec) || 0) + (Number(ent.totalAdj) || 0);
+      }, 0);
+
       return {
         totalLetters,
         sfi: {
@@ -606,7 +626,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           bsr: nonSfiBSR,
           bi: nonSfiBi,
         },
-        settledParas: grandTotals.paraCount,
+        settledParas,
+        totalSettledAmount,
         totalInvolved: grandTotals.inv,
       };
     }, [filteredEntries, grandTotals]);
@@ -1187,22 +1208,25 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
                             {/* Settled Paras & Amount */}
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-                                <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">
+                              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                                <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">
                                   মীমাংসিত অনুচ্ছেদ
                                 </p>
                                 <p className="text-xl font-black text-slate-900">
                                   {toBengaliDigits(globalStats.settledParas)} টি
                                 </p>
                               </div>
-                              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
-                                <p className="text-[10px] font-bold text-purple-600 uppercase mb-1">
-                                  জড়িত টাকা
+                              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                                <p className="text-[10px] font-bold text-blue-700 uppercase mb-1">
+                                  মোট মীমাংসিত টাকা
                                 </p>
                                 <p className="text-xl font-black text-slate-900">
                                   {toBengaliDigits(
-                                    Math.round(globalStats.totalInvolved),
-                                  )}
+                                    Math.round(globalStats.totalSettledAmount),
+                                  )}{" "}
+                                  <span className="text-xs font-bold text-slate-500">
+                                    টাকা
+                                  </span>
                                 </p>
                               </div>
                             </div>
