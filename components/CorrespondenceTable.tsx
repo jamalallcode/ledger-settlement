@@ -2151,6 +2151,40 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 </span>
                               </div>
                             )}
+
+                            {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত কার্ড (জারিপত্র নং না থাকলে দৃশ্যমান) */}
+                            {(() => {
+                              const hasIssueNo = !!(currentIssueNo && currentIssueNo.trim() !== "" && currentIssueNo.trim() !== "-");
+                              if (hasIssueNo) return null;
+
+                              const currentCustodian = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
+                                ? currentPresName
+                                : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
+
+                              return (
+                                <div className="mt-2.5 p-2 bg-gradient-to-br from-amber-50/90 via-orange-50/30 to-amber-100/50 border border-amber-300/90 rounded-xl shadow-xs space-y-1.5 transition-all duration-300 hover:border-amber-400/90">
+                                  <div className="text-[10px] leading-tight flex items-center justify-between">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                                      <Clock size={10} className="text-amber-600" />
+                                      ১. চিঠিটির বর্তমান অবস্থা:
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black bg-amber-500/20 text-amber-900 border border-amber-300 shadow-2xs">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                      চলমান
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] leading-tight flex items-center justify-between pt-1 border-t border-amber-200/80">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                                      <User size={10} className="text-amber-700" />
+                                      ২. যার কাছে আছে:
+                                    </span>
+                                    <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-md border border-amber-300/80 text-[10px] shadow-2xs">
+                                      {currentCustodian}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className={tdCls}>
