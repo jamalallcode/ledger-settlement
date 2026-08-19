@@ -2151,6 +2151,44 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 </span>
                               </div>
                             )}
+
+                            {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত কার্ড (জারিপত্র নং না থাকলে দৃশ্যমান) */}
+                            {(() => {
+                              const hasIssueNo = !!(currentIssueNo && currentIssueNo.trim() !== "" && currentIssueNo.trim() !== "-");
+                              if (hasIssueNo) return null;
+
+                              const currentCustodian = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
+                                ? currentPresName
+                                : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
+
+                              return (
+                                <div className="group/status relative mt-2.5 p-2.5 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
+                                  {/* Ambient background highlight */}
+                                  <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-400/20 rounded-full blur-xl pointer-events-none group-hover/status:bg-amber-400/40 transition-all duration-300"></div>
+
+                                  <div className="relative text-[10px] leading-tight flex items-center justify-between gap-1">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                                      <Clock size={11} className="text-amber-700 animate-pulse" />
+                                      ১. চিঠিটির বর্তমান অবস্থা:
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                                      চলমান
+                                    </span>
+                                  </div>
+
+                                  <div className="relative text-[10px] leading-tight flex items-center justify-between pt-1.5 border-t border-amber-300/80 gap-1">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                                      <User size={11} className="text-amber-800" />
+                                      ২. যার কাছে আছে:
+                                    </span>
+                                    <span className="font-black text-slate-900 bg-white/95 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                      {currentCustodian}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className={tdCls}>
