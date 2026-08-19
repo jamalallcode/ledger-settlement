@@ -881,11 +881,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
             <colgroup>
               <col className="w-[40px]" />
-              <col className="w-[274px]" />
+              <col className="w-[219px]" />
               <col className="w-[54px]" />
               <col className="w-[54px]" />
               <col className="w-[55px]" />
-              <col className="w-[49px]" />
+              <col className="w-[59px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
               <col className="w-[55px]" />
@@ -901,7 +901,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 <th rowSpan={2} className={thS}>ডায়েরি নং ও তারিখ</th>
                 <th rowSpan={2} className={thS}>পত্রের স্মারক নং ও তারিখ</th>
                 <th colSpan={5} className={thS}>চিঠি-পত্রের ধরণ ও অনুচ্ছেদ সংখ্যা</th>
-                <th rowSpan={2} className={thS}>AMMS-এ এন্ট্রি হয়েছে কিনা? হ্যাঁ/না</th>
+                <th rowSpan={2} className={thS}>Amms status</th>
                 <th rowSpan={2} className={thS}>উপস্থাপনের তারিখ</th>
                 <th rowSpan={2} className={thS}>বর্তমান অবস্থান</th>
                 <th rowSpan={2} className={thS}>মন্তব্য</th>
@@ -931,7 +931,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{isBilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                  <td className={tdS}>{isBilateralLetter(entry) ? `দ্বি-সভা (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
