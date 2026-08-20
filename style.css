@@ -737,35 +737,10 @@ tbody tr:not(.no-hover-row):hover td {
 
 /* ==========================================================================
    LARGE SCREEN / HIGH RESOLUTION RESPONSIVE AUTO-SCALING
-   Automatically scales typography, tables, buttons and UI on large displays
    ========================================================================== */
 
-@media screen and (min-width: 1600px) and (max-width: 1919px) {
-  #root {
-    zoom: 1.10;
-  }
-}
-
-@media screen and (min-width: 1920px) and (max-width: 2559px) {
-  #root {
-    zoom: 1.20;
-  }
-}
-
-@media screen and (min-width: 2560px) and (max-width: 3839px) {
-  #root {
-    zoom: 1.35;
-  }
-}
-
-@media screen and (min-width: 3840px) {
-  #root {
-    zoom: 1.60;
-  }
-}
-
 @media print {
-  #root {
+  html, body, #root {
     zoom: 1 !important;
   }
 }
