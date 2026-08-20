@@ -21,6 +21,7 @@ import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, Corres
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { applyDisplayScale } from './utils/displayScale';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 export const THEMES = [
@@ -120,6 +121,16 @@ const App: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [isAdmin]);
+
+  // Global Display Scale & Large Screen Auto-adaptation
+  useEffect(() => {
+    applyDisplayScale();
+    const handleResize = () => {
+      applyDisplayScale();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const navigate = useNavigate();
   const [entries, setEntries] = useState<SettlementEntry[]>([]);

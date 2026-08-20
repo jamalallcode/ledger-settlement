@@ -7,11 +7,12 @@ import {
   Calendar, ShieldAlert, Filter, Printer, Menu, Fingerprint, 
   Bell, Check, XCircle, UserCheck, BellRing, ArrowRight, Library, Plus,
   Mail, ClipboardList, AlertTriangle, Sun, Moon, Link2, Send,
-  ChevronLeft, ExternalLink
+  ChevronLeft, ExternalLink, Monitor
 } from 'lucide-react';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { SavedLinksModal, SavedLink, getSavedLinksFromStorage } from './SavedLinksModal';
+import { DisplayScaleOption, getSavedDisplayScale, setSavedDisplayScale } from '../utils/displayScale';
 
 interface NavbarProps {
   activeTab: string;
@@ -86,15 +87,24 @@ const Navbar: React.FC<NavbarProps> = ({
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [isLinksHovered, setIsLinksHovered] = useState(false);
   const [savedLinksList, setSavedLinksList] = useState<SavedLink[]>([]);
+  const [scaleMode, setScaleMode] = useState<DisplayScaleOption>(getSavedDisplayScale());
+  const [showScaleDropdown, setShowScaleDropdown] = useState(false);
   
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const entryDropdownRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const handleLinksMouseEnter = () => {
     setSavedLinksList(getSavedLinksFromStorage());
     setIsLinksHovered(true);
+  };
+
+  const handleScaleSelect = (mode: DisplayScaleOption) => {
+    setScaleMode(mode);
+    setSavedDisplayScale(mode);
+    setShowScaleDropdown(false);
   };
 
   useEffect(() => {
@@ -107,6 +117,9 @@ const Navbar: React.FC<NavbarProps> = ({
       }
       if (entryDropdownRef.current && !entryDropdownRef.current.contains(e.target as Node)) {
         setShowEntryDropdown(false);
+      }
+      if (scaleRef.current && !scaleRef.current.contains(e.target as Node)) {
+        setShowScaleDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -395,6 +408,70 @@ const Navbar: React.FC<NavbarProps> = ({
 
           <div className="flex items-center gap-2">
             
+            {/* Display Scale / Zoom Controller */}
+            <div className="relative" ref={scaleRef}>
+              <button 
+                onClick={() => setShowScaleDropdown(!showScaleDropdown)} 
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                  showScaleDropdown 
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm' 
+                    : scaleMode !== '100%' && scaleMode !== 'auto'
+                      ? 'bg-blue-950/80 text-blue-300 border-blue-600 hover:bg-blue-900'
+                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+                }`}
+                title="ডিসপ্লে সাইজ ও জুম পরিবর্তন করুন"
+              >
+                <Monitor size={14} className="text-blue-400" />
+                <span className="text-[9.5px] font-black tracking-tight hidden sm:inline">
+                  {scaleMode === 'auto' ? 'অটো' : toBengaliDigits(scaleMode)}
+                </span>
+                <ChevronDown size={10} className={`transition-transform duration-200 ${showScaleDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showScaleDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-60 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 space-y-2 z-[5020] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 px-1">
+                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Monitor size={12} className="text-blue-400" /> ডিসপ্লে সাইজ
+                    </span>
+                    <span className="text-[9px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                      {scaleMode === 'auto' ? 'স্মার্ট অটো' : toBengaliDigits(scaleMode)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {[
+                      { id: 'auto', label: 'স্বয়ংক্রিয় (Auto Fit)', desc: 'বড় স্ক্রিনে নিজে বড় হবে' },
+                      { id: '100%', label: '১০০% (স্বাভাবিক)', desc: 'ল্যাপটপ বা স্ট্যান্ডার্ড ভিউ' },
+                      { id: '110%', label: '১১০% (বড় ভিউ)', desc: 'মাঝারি ডেস্কটপ মনিটর' },
+                      { id: '120%', label: '১২০% (আরও বড়)', desc: 'ফুল এইচডি / ২৪"-২৭" মনিটর' },
+                      { id: '130%', label: '১৩০% (অতিরিক্ত বড়)', desc: '২K / বড় ডিসপ্লে' },
+                      { id: '140%', label: '১৪০% (জুম ভিউ)', desc: 'দূর থেকে দেখার জন্য' },
+                      { id: '150%', label: '১৫০% (ম্যাক্সিমাম)', desc: '৪K বা বিশাল স্ক্রিন' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => handleScaleSelect(opt.id as DisplayScaleOption)}
+                        className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-all cursor-pointer ${
+                          scaleMode === opt.id
+                            ? 'bg-blue-600 text-white font-black shadow-sm'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white font-bold'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[10.5px] leading-tight">{opt.label}</span>
+                          <span className={`text-[8px] leading-tight ${scaleMode === opt.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                            {opt.desc}
+                          </span>
+                        </div>
+                        {scaleMode === opt.id && <Check size={12} className="text-white" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {isAdmin && (
               <div className="relative" ref={toolsRef}>
                 <button 
