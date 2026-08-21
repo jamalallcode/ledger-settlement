@@ -2179,6 +2179,23 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         <td className={tdCls}>
                           {(() => {
                             let itemIdx = 1;
+                            const matched = findMatchedSettlements(entry, settlementEntries || []);
+                            let totalSettledAmount = 0;
+                            matched.forEach((se) => {
+                              if (se.paragraphs && se.paragraphs.length > 0) {
+                                se.paragraphs.forEach((p) => {
+                                  totalSettledAmount += (Number(p.recoveredAmount) || 0) + (Number(p.adjustedAmount) || 0);
+                                });
+                              } else {
+                                const recAdj = (Number(se.totalRec) || 0) + (Number(se.totalAdj) || 0);
+                                const meetingAmt = Number((se as any).meetingSettledAmount) || 0;
+                                totalSettledAmount += recAdj > 0 ? recAdj : (meetingAmt > 0 ? meetingAmt : 0);
+                              }
+                            });
+
+                            const involvedAmountNum = parseBengaliNumber(entry.totalAmount);
+                            const totalRemainingAmount = Math.max(0, involvedAmountNum - totalSettledAmount);
+
                             return (
                               <div className="space-y-1">
                                 <div className="text-[10px] leading-snug">
@@ -2253,6 +2270,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <span className="font-black text-slate-950">
                                     <HighlightText
                                       text={entry.totalAmount ? `${toBengaliDigits(entry.totalAmount)} ৳` : '০ ৳'}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${toBengaliDigits(Math.round(totalRemainingAmount))} ৳`}
                                       searchTerm={searchTerm}
                                     />
                                   </span>
