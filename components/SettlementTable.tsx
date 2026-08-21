@@ -1752,7 +1752,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                           </div>
 
                           {isCycleStatsExpanded && (
-                            <div className="bg-white p-4 border-b border-slate-300 shadow-md">
+                            <div className="bg-white p-4 border-b border-slate-300 shadow-md animate-in fade-in slide-in-from-top-4 duration-500 ease-out">
                               <div className="flex flex-col gap-2.5">
                                 {/* Row 1: SFI Branch Info */}
                                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
@@ -1798,9 +1798,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </span>
                                       )}
                                     </div>
-                                    <span className="shrink-0 text-[10px] font-black text-emerald-700 bg-emerald-100/90 group-hover/sfi-settled:bg-emerald-600 group-hover/sfi-settled:text-white px-2 py-0.5 rounded-md border border-emerald-300 transition-all flex items-center gap-1 shadow-2xs">
-                                      <Eye size={11} />
-                                      <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                    <span className="shrink-0 text-[10px] font-black bg-emerald-100 text-emerald-900 group-hover/sfi-settled:bg-emerald-700 group-hover/sfi-settled:text-white px-2.5 py-1 rounded-lg border border-emerald-300 group-hover/sfi-settled:border-emerald-700 transition-all flex items-center gap-1.5 shadow-2xs">
+                                      <Eye size={12} className="text-emerald-700 group-hover/sfi-settled:text-white transition-colors" />
+                                      <span className="font-black text-emerald-900 group-hover/sfi-settled:text-white transition-colors">মন্ত্রণালয় ও বিস্তারিত</span>
                                     </span>
                                   </div>
 
@@ -1860,9 +1860,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </span>
                                       )}
                                     </div>
-                                    <span className="shrink-0 text-[10px] font-black text-amber-700 bg-amber-100/90 group-hover/nonsfi-settled:bg-amber-600 group-hover/nonsfi-settled:text-white px-2 py-0.5 rounded-md border border-amber-300 transition-all flex items-center gap-1 shadow-2xs">
-                                      <Eye size={11} />
-                                      <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                    <span className="shrink-0 text-[10px] font-black bg-amber-100 text-amber-950 group-hover/nonsfi-settled:bg-amber-700 group-hover/nonsfi-settled:text-white px-2.5 py-1 rounded-lg border border-amber-300 group-hover/nonsfi-settled:border-amber-700 transition-all flex items-center gap-1.5 shadow-2xs">
+                                      <Eye size={12} className="text-amber-700 group-hover/nonsfi-settled:text-white transition-colors" />
+                                      <span className="font-black text-amber-950 group-hover/nonsfi-settled:text-white transition-colors">মন্ত্রণালয় ও বিস্তারিত</span>
                                     </span>
                                   </div>
 
@@ -1915,9 +1915,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
                                         {toBengaliDigits(stats.cycleSettledParasCount)} টি
                                       </span>
-                                      <span className="shrink-0 text-[10px] font-black text-blue-700 bg-blue-100/90 group-hover/total-settled:bg-blue-600 group-hover/total-settled:text-white px-2 py-0.5 rounded-md border border-blue-300 transition-all flex items-center gap-1 shadow-2xs">
-                                        <Eye size={11} />
-                                        <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                      <span className="shrink-0 text-[10px] font-black bg-blue-100 text-blue-950 group-hover/total-settled:bg-blue-700 group-hover/total-settled:text-white px-2.5 py-1 rounded-lg border border-blue-300 group-hover/total-settled:border-blue-700 transition-all flex items-center gap-1.5 shadow-2xs">
+                                        <Eye size={12} className="text-blue-700 group-hover/total-settled:text-white transition-colors" />
+                                        <span className="font-black text-blue-950 group-hover/total-settled:text-white transition-colors">মন্ত্রণালয় ও বিস্তারিত</span>
                                       </span>
                                     </div>
                                   </div>
