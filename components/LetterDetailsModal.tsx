@@ -64,40 +64,40 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
               <col style={{ width: isEmbedded ? '15%' : '150px' }} />
               <col style={{ width: isEmbedded ? '13%' : '120px' }} />
             </colgroup>
-            <thead className="sticky top-0 z-30 bg-slate-100">
-              {/* Row 1: Header names */}
-              <tr>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+            <thead className="z-30">
+              {/* Row 1: Header names - sticky top-0 */}
+              <tr className="h-[34px]">
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>ক্রমিক</th>
-                <th className={`border-t border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-left font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-2 text-[11px]' : 'py-2 px-3 text-[12px]'
                 }`}>চিঠির নাম/বিবরণ</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>শাখার নাম</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>চিঠির ধরন</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>স্মারক নং ও তারিখ</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-r border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>ডায়েরি নং ও তারিখ</th>
-                <th className={`border-t border-b border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
+                <th className={`sticky top-0 z-30 border-t border-b border-slate-300 text-center font-black text-slate-900 uppercase tracking-tighter bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] ${
                   isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
                 }`}>বর্তমান অবস্থান</th>
               </tr>
-              {/* Row 2: Serial Numbers row (Solid background to avoid scroll bleed-through) */}
-              <tr className="bg-slate-200">
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(১)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(২)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৩)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৪)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৫)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৬)</th>
-                <th className="border-b border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৭)</th>
+              {/* Row 2: Serial Numbers row - sticky top-[34px] */}
+              <tr className="h-[22px]">
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(১)</th>
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(২)</th>
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(৩)</th>
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(৪)</th>
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(৫)</th>
+                <th className="sticky top-[33px] z-30 border-b border-r border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(৬)</th>
+                <th className="sticky top-[33px] z-30 border-b border-slate-300 text-center font-black text-slate-700 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1]">(৭)</th>
               </tr>
             </thead>
             <tbody className="divide-y-0">
