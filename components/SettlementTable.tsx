@@ -479,8 +479,18 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           const entityMap: Record<string, number> = {};
 
           typeEntries.forEach((ent) => {
-            const count =
-              ent.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ").length || 0;
+            let count = 0;
+            const paras = ent.paragraphs || [];
+            const fullParas = paras.filter((p) => (p.status || "").trim() === "পূর্ণাঙ্গ");
+
+            if (fullParas.length > 0) {
+              count = fullParas.length;
+            } else if (ent.isMeeting) {
+              const mFull = parseBengaliNumber((ent.meetingFullSettledParaCount || "").toString().trim());
+              const mSettled = parseBengaliNumber((ent.meetingSettledParaCount || "").toString().trim());
+              count = mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0;
+            }
+
             if (count > 0) {
               const ministry = (ent.ministryName || "").trim() || "মন্ত্রণালয় উল্লেখ নেই";
               const entity = (ent.entityName || "").trim() || "প্রতিষ্ঠান উল্লেখ নেই";
@@ -1765,15 +1775,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   {/* SFI Settled Paragraphs Card */}
                                   <div
                                     onClick={() => {
-                                      if (stats.sfiSettled?.ministries && stats.sfiSettled.ministries.length > 0) {
-                                        setSettledDetailsModalData({
-                                          isOpen: true,
-                                          branchType: "এসএফআই শাখা",
-                                          cycleLabel: group.label,
-                                          totalCount: stats.sfiSettled.total,
-                                          ministries: stats.sfiSettled.ministries,
-                                        });
-                                      }
+                                      setSettledDetailsModalData({
+                                        isOpen: true,
+                                        branchType: "এসএফআই শাখা",
+                                        cycleLabel: group.label,
+                                        totalCount: stats.sfiSettled?.total || 0,
+                                        ministries: stats.sfiSettled?.ministries || [],
+                                      });
                                     }}
                                     className="flex-1 min-w-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-emerald-50/70 hover:bg-emerald-100/90 border-2 border-emerald-300/80 hover:border-emerald-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:-translate-y-0.5 cursor-pointer text-[11px] font-black group/sfi-settled"
                                     title="মন্ত্রণালয় ও প্রতিষ্ঠানভিত্তিক বিস্তারিত দেখতে ক্লিক করুন"
@@ -1790,12 +1798,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </span>
                                       )}
                                     </div>
-                                    {stats.sfiSettled?.ministries && stats.sfiSettled.ministries.length > 0 && (
-                                      <span className="shrink-0 text-[10px] font-black text-emerald-700 bg-emerald-100/90 group-hover/sfi-settled:bg-emerald-600 group-hover/sfi-settled:text-white px-2 py-0.5 rounded-md border border-emerald-300 transition-all flex items-center gap-1 shadow-2xs">
-                                        <Eye size={11} />
-                                        <span>মন্ত্রণালয় ও বিস্তারিত</span>
-                                      </span>
-                                    )}
+                                    <span className="shrink-0 text-[10px] font-black text-emerald-700 bg-emerald-100/90 group-hover/sfi-settled:bg-emerald-600 group-hover/sfi-settled:text-white px-2 py-0.5 rounded-md border border-emerald-300 transition-all flex items-center gap-1 shadow-2xs">
+                                      <Eye size={11} />
+                                      <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                    </span>
                                   </div>
 
                                   {/* SFI Settled Total Amount */}
@@ -1831,15 +1837,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   {/* Non-SFI Settled Paragraphs Card */}
                                   <div
                                     onClick={() => {
-                                      if (stats.nonSfiSettled?.ministries && stats.nonSfiSettled.ministries.length > 0) {
-                                        setSettledDetailsModalData({
-                                          isOpen: true,
-                                          branchType: "নন এসএফআই শাখা",
-                                          cycleLabel: group.label,
-                                          totalCount: stats.nonSfiSettled.total,
-                                          ministries: stats.nonSfiSettled.ministries,
-                                        });
-                                      }
+                                      setSettledDetailsModalData({
+                                        isOpen: true,
+                                        branchType: "নন এসএফআই শাখা",
+                                        cycleLabel: group.label,
+                                        totalCount: stats.nonSfiSettled?.total || 0,
+                                        ministries: stats.nonSfiSettled?.ministries || [],
+                                      });
                                     }}
                                     className="flex-1 min-w-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-amber-50/70 hover:bg-amber-100/90 border-2 border-amber-300/80 hover:border-amber-500 rounded-xl transition-all duration-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.25)] hover:-translate-y-0.5 cursor-pointer text-[11px] font-black group/nonsfi-settled"
                                     title="মন্ত্রণালয় ও প্রতিষ্ঠানভিত্তিক বিস্তারিত দেখতে ক্লিক করুন"
@@ -1856,12 +1860,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         </span>
                                       )}
                                     </div>
-                                    {stats.nonSfiSettled?.ministries && stats.nonSfiSettled.ministries.length > 0 && (
-                                      <span className="shrink-0 text-[10px] font-black text-amber-700 bg-amber-100/90 group-hover/nonsfi-settled:bg-amber-600 group-hover/nonsfi-settled:text-white px-2 py-0.5 rounded-md border border-amber-300 transition-all flex items-center gap-1 shadow-2xs">
-                                        <Eye size={11} />
-                                        <span>মন্ত্রণালয় ও বিস্তারিত</span>
-                                      </span>
-                                    )}
+                                    <span className="shrink-0 text-[10px] font-black text-amber-700 bg-amber-100/90 group-hover/nonsfi-settled:bg-amber-600 group-hover/nonsfi-settled:text-white px-2 py-0.5 rounded-md border border-amber-300 transition-all flex items-center gap-1 shadow-2xs">
+                                      <Eye size={11} />
+                                      <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                    </span>
                                   </div>
 
                                   {/* Non-SFI Settled Total Amount */}
@@ -1894,15 +1896,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   {/* Total Settled Paragraphs Card */}
                                   <div
                                     onClick={() => {
-                                      if (stats.allSettled?.ministries && stats.allSettled.ministries.length > 0) {
-                                        setSettledDetailsModalData({
-                                          isOpen: true,
-                                          branchType: "সর্বমোট (এসএফআই ও নন এসএফআই শাখা)",
-                                          cycleLabel: group.label,
-                                          totalCount: stats.cycleSettledParasCount,
-                                          ministries: stats.allSettled.ministries,
-                                        });
-                                      }
+                                      setSettledDetailsModalData({
+                                        isOpen: true,
+                                        branchType: "সর্বমোট (এসএফআই ও নন এসএফআই শাখা)",
+                                        cycleLabel: group.label,
+                                        totalCount: stats.cycleSettledParasCount,
+                                        ministries: stats.allSettled?.ministries || [],
+                                      });
                                     }}
                                     className="flex-1 min-w-0 h-[42px] flex items-center justify-between gap-2 px-3.5 bg-slate-50 hover:bg-blue-50/80 border-2 border-slate-300 hover:border-blue-400 rounded-xl shadow-sm hover:shadow-[0_0_16px_rgba(59,130,246,0.2)] hover:-translate-y-0.5 transition-all duration-300 text-[12px] font-bold text-slate-800 cursor-pointer group/total-settled"
                                     title="মন্ত্রণালয় ও প্রতিষ্ঠানভিত্তিক সর্বমোট বিস্তারিত দেখতে ক্লিক করুন"
@@ -1915,12 +1915,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
                                         {toBengaliDigits(stats.cycleSettledParasCount)} টি
                                       </span>
-                                      {stats.allSettled?.ministries && stats.allSettled.ministries.length > 0 && (
-                                        <span className="shrink-0 text-[10px] font-black text-blue-700 bg-blue-100/90 group-hover/total-settled:bg-blue-600 group-hover/total-settled:text-white px-2 py-0.5 rounded-md border border-blue-300 transition-all flex items-center gap-1 shadow-2xs">
-                                          <Eye size={11} />
-                                          <span>মন্ত্রণালয় ও বিস্তারিত</span>
-                                        </span>
-                                      )}
+                                      <span className="shrink-0 text-[10px] font-black text-blue-700 bg-blue-100/90 group-hover/total-settled:bg-blue-600 group-hover/total-settled:text-white px-2 py-0.5 rounded-md border border-blue-300 transition-all flex items-center gap-1 shadow-2xs">
+                                        <Eye size={11} />
+                                        <span>মন্ত্রণালয় ও বিস্তারিত</span>
+                                      </span>
                                     </div>
                                   </div>
 

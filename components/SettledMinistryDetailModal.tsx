@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Building2, Building, CheckCircle2, Layers, CalendarDays } from "lucide-react";
 import { toBengaliDigits } from "../utils/numberUtils.ts";
 
@@ -81,14 +82,14 @@ const SettledMinistryDetailModal: React.FC<SettledMinistryDetailModalProps> = ({
     ? "bg-amber-600 text-white shadow-xs"
     : "bg-blue-600 text-white shadow-xs";
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[35000] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl bg-white border-2 border-slate-200 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.35)] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-white border-2 border-slate-200 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.45)] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] my-auto">
         {/* Header */}
         <div className={`p-4 sm:p-5 bg-gradient-to-r ${headerGradient} text-white relative shrink-0`}>
           <div className="flex items-start justify-between gap-3">
@@ -206,7 +207,8 @@ const SettledMinistryDetailModal: React.FC<SettledMinistryDetailModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
