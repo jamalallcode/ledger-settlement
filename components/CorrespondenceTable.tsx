@@ -3305,19 +3305,24 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         />
       )}
 
-      {/* Cycle Statistics Letter Details Modal */}
-      <LetterDetailsModal
-        isOpen={cycleDetailModal.isOpen}
-        onClose={() =>
-          setCycleDetailModal({
-            isOpen: false,
-            title: "",
-            letters: [],
-          })
-        }
-        title={cycleDetailModal.title}
-        letters={cycleDetailModal.letters}
-      />
+      {/* Cycle Statistics Letter Details View (Embedded strictly inside the white content area) */}
+      {cycleDetailModal.isOpen && (
+        <div className="absolute inset-0 z-[1200] bg-white flex flex-col min-h-[600px] rounded-2xl border border-slate-300 shadow-2xl overflow-hidden animate-in fade-in zoom-in-[0.99] duration-200">
+          <LetterDetailsModal
+            isOpen={true}
+            isEmbedded={true}
+            onClose={() =>
+              setCycleDetailModal({
+                isOpen: false,
+                title: "",
+                letters: [],
+              })
+            }
+            title={cycleDetailModal.title}
+            letters={cycleDetailModal.letters}
+          />
+        </div>
+      )}
     </div>
   );
 };

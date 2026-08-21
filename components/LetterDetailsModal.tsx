@@ -44,7 +44,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         </div>
         <button 
           onClick={onClose}
-          className={`${isEmbedded ? 'w-6 h-6 rounded-md' : 'w-7 h-7 rounded-lg'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-2xs shrink-0`}
+          className={`${isEmbedded ? 'w-6 h-6 rounded-md' : 'w-7 h-7 rounded-lg'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-2xs shrink-0 cursor-pointer`}
           title="বন্ধ করুন"
         >
           <X size={isEmbedded ? 13 : 15} />
@@ -221,7 +221,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         </div>
         <button 
           onClick={onClose}
-          className={`bg-slate-900 text-white rounded-md font-black hover:bg-slate-800 transition-all shadow-2xs active:scale-95 ${
+          className={`bg-slate-900 text-white rounded-md font-black hover:bg-slate-800 transition-all shadow-2xs active:scale-95 cursor-pointer ${
             isEmbedded ? 'px-3 py-0.5 text-[11px]' : 'px-4 py-1 text-[12px]'
           }`}
         >
