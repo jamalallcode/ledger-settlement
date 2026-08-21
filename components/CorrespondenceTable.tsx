@@ -59,6 +59,7 @@ import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper";
 import { format, addMonths } from "date-fns";
 import { CorrespondenceEntry, SettlementEntry } from "../types";
 import { SettledDataModal, findMatchedSettlements } from "./SettledDataModal";
+import LetterDetailsModal from "./LetterDetailsModal";
 
 interface CorrespondenceTableProps {
   entries: CorrespondenceEntry[];
@@ -403,6 +404,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [filterReceiver, setFilterReceiver] = useState("");
   const [filterStatus, setFilterStatus] = useState(""); // "", "চলমান", "নিষ্পন্ন"
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
+
+  const [cycleDetailModal, setCycleDetailModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    letters: CorrespondenceEntry[];
+  }>({
+    isOpen: false,
+    title: "",
+    letters: [],
+  });
 
   const [unsettledClickNoticeMap, setUnsettledClickNoticeMap] = useState<
     Record<string, boolean>
@@ -1690,13 +1701,25 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   Cycle Statistics
                                 </span>
                                 <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
-                                <span className="text-[9px] font-black text-blue-600">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCycleDetailModal({
+                                      isOpen: true,
+                                      title: `সময়কাল: ${toBengaliDigits(group.label)} — সকল চিঠিপত্র`,
+                                      letters: group.entries,
+                                    });
+                                  }}
+                                  className="text-[9px] font-black text-blue-600 hover:text-blue-800 hover:underline active:scale-95 transition-all cursor-pointer"
+                                  title="এই সময়কালের সকল চিঠি দেখতে ক্লিক করুন"
+                                >
                                   মোট{" "}
                                   {toBengaliDigits(
                                     cycleStats[group.label]?.total || 0,
                                   )}{" "}
                                   টি চিঠি
-                                </span>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -1727,7 +1750,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                         </div>
 
                         {isCycleStatsExpanded && (
-                          <div className="bg-white p-4 border-b border-slate-300 shadow-md">
+                          <div className="bg-white p-4 border-b border-slate-300 shadow-md animate-in fade-in slide-in-from-top-4 duration-500 ease-out">
                             <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                               {/* Desktop Middle Separator */}
                               <div className="hidden md:block absolute left-1/2 top-1 bottom-1 w-[2px] bg-gradient-to-b from-slate-200 via-slate-300 to-slate-200 -translate-x-1/2 rounded-full pointer-events-none"></div>
@@ -1739,58 +1762,142 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400"></div>
                                     এসএফআই (SFI)
                                   </span>
-                                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter((ent) => isSFI(ent.paraType));
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — এসএফআই (SFI) এর সকল চিঠিপত্র`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black shadow-sm transition-all cursor-pointer hover:ring-2 hover:ring-emerald-400 flex items-center gap-1"
+                                    title="এসএফআই (SFI) এর সকল চিঠি দেখতে ক্লিক করুন"
+                                  >
                                     {toBengaliDigits(
                                       cycleStats[group.label]?.sfi.total || 0,
                                     )}{" "}
                                     টি
-                                  </span>
+                                  </button>
                                 </div>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) => isSFI(ent.paraType) && ent.letterType === "বিএসআর"
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — এসএফআই (বিএসআর)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-emerald-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-emerald-300"
+                                    title="এসএফআই বিএসআর চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-emerald-700 group-hover/item:text-emerald-950 uppercase transition-colors">
                                       বিএসআর
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-emerald-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.sfi.bsr || 0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isSFI(ent.paraType) &&
+                                          (ent.letterType === "ত্রিপক্ষীয় সভা (কার্যপত্র)" ||
+                                            ent.letterType === "কার্যপত্র (ত্রি-সভা)")
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — এসএফআই — ত্রিপক্ষীয় (কার্যপত্র)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-emerald-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-emerald-300"
+                                    title="এসএফআই ত্রিপক্ষীয় (কার্যপত্র) চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-emerald-700 group-hover/item:text-emerald-950 uppercase transition-colors">
                                       ত্রিপক্ষীয় (কার্যপত্র)
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-emerald-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.sfi.triWork || 0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isSFI(ent.paraType) &&
+                                          (ent.letterType === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)" ||
+                                            ent.letterType === "ত্রিপক্ষীয় সভা")
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — এসএফআই — ত্রিপক্ষীয় (বিবরণী)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-emerald-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-emerald-300"
+                                    title="এসএফআই ত্রিপক্ষীয় (বিবরণী) চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-emerald-700 group-hover/item:text-emerald-950 uppercase transition-colors">
                                       ত্রিপক্ষীয় (বিবরণী)
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-emerald-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.sfi.triMin || 0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isSFI(ent.paraType) &&
+                                          (ent.letterType === "মিলিকরণ" ||
+                                            ent.letterType === "মিলকরণ" ||
+                                            (ent.letterType || "").includes("মিলকরণ") ||
+                                            (ent.letterType || "").includes("মিলিকরণ"))
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — এসএফআই — মিলকরণ`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-emerald-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-emerald-300"
+                                    title="এসএফআই মিলকরণ চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-emerald-700 group-hover/item:text-emerald-950 uppercase transition-colors">
                                       মিলকরণ
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-emerald-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.sfi.reconciliation || 0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
+                                  </button>
                                 </div>
                               </div>
 
@@ -1801,61 +1908,145 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-400"></div>
                                     নন এসএফআই (Non-SFI)
                                   </span>
-                                  <span className="bg-amber-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter((ent) => isNonSFI(ent.paraType));
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — নন এসএফআই (Non-SFI) এর সকল চিঠিপত্র`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black shadow-sm transition-all cursor-pointer hover:ring-2 hover:ring-amber-400 flex items-center gap-1"
+                                    title="নন এসএফআই (Non-SFI) এর সকল চিঠি দেখতে ক্লিক করুন"
+                                  >
                                     {toBengaliDigits(
                                       cycleStats[group.label]?.nonSfi.total || 0,
                                     )}{" "}
                                     টি
-                                  </span>
+                                  </button>
                                 </div>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) => isNonSFI(ent.paraType) && ent.letterType === "বিএসআর"
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — নন এসএফআই (বিএসআর)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-amber-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-amber-300"
+                                    title="নন এসএফআই বিএসআর চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-amber-700 group-hover/item:text-amber-950 uppercase transition-colors">
                                       বিএসআর
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-amber-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.nonSfi.bsr || 0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isNonSFI(ent.paraType) &&
+                                          (ent.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" ||
+                                            ent.letterType === "কার্যপত্র (দ্বি-সভা)")
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — নন এসএফআই — দ্বিপক্ষীয় (কার্যপত্র)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-amber-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-amber-300"
+                                    title="নন এসএফআই দ্বিপক্ষীয় (কার্যপত্র) চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-amber-700 group-hover/item:text-amber-950 uppercase transition-colors">
                                       দ্বিপক্ষীয় (কার্যপত্র)
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-amber-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.nonSfi.biWork ||
                                           0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isNonSFI(ent.paraType) &&
+                                          (ent.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" ||
+                                            ent.letterType === "দ্বিপক্ষীয় সভা")
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — নন এসএফআই — দ্বিপক্ষীয় (বিবরণী)`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-amber-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-amber-300"
+                                    title="নন এসএফআই দ্বিপক্ষীয় (বিবরণী) চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-amber-700 group-hover/item:text-amber-950 uppercase transition-colors">
                                       দ্বিপক্ষীয় (বিবরণী)
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-amber-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.nonSfi.biMin ||
                                           0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-amber-600 uppercase">
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const filtered = group.entries.filter(
+                                        (ent) =>
+                                          isNonSFI(ent.paraType) &&
+                                          (ent.letterType === "মিলিকরণ" ||
+                                            ent.letterType === "মিলকরণ" ||
+                                            (ent.letterType || "").includes("মিলকরণ") ||
+                                            (ent.letterType || "").includes("মিলিকরণ"))
+                                      );
+                                      setCycleDetailModal({
+                                        isOpen: true,
+                                        title: `সময়কাল: ${toBengaliDigits(group.label)} — নন এসএফআই — মিলকরণ`,
+                                        letters: filtered,
+                                      });
+                                    }}
+                                    className="flex flex-col text-left p-1.5 rounded-xl hover:bg-amber-100/80 active:scale-95 transition-all cursor-pointer group/item border border-transparent hover:border-amber-300"
+                                    title="নন এসএফআই মিলকরণ চিঠিপত্র দেখতে ক্লিক করুন"
+                                  >
+                                    <span className="text-[9px] font-bold text-amber-700 group-hover/item:text-amber-950 uppercase transition-colors">
                                       মিলকরণ
                                     </span>
-                                    <span className="text-[12px] font-black text-slate-800">
+                                    <span className="text-[12px] font-black text-slate-800 group-hover/item:text-amber-800 transition-colors">
                                       {toBengaliDigits(
                                         cycleStats[group.label]?.nonSfi.reconciliation ||
                                           0,
                                       )}{" "}
                                       টি
                                     </span>
-                                  </div>
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -3113,6 +3304,20 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           onClose={() => setViewingSettlementLetter(null)}
         />
       )}
+
+      {/* Cycle Statistics Letter Details Modal */}
+      <LetterDetailsModal
+        isOpen={cycleDetailModal.isOpen}
+        onClose={() =>
+          setCycleDetailModal({
+            isOpen: false,
+            title: "",
+            letters: [],
+          })
+        }
+        title={cycleDetailModal.title}
+        letters={cycleDetailModal.letters}
+      />
     </div>
   );
 };

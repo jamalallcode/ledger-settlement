@@ -13,6 +13,20 @@ interface LetterDetailsModalProps {
 }
 
 const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose, title, letters, isEmbedded = false }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const content = (
@@ -222,7 +236,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
   }
 
   return createPortal(
-    <div className="fixed inset-0 bg-white z-[50000] flex flex-col animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-white z-[999999] flex flex-col animate-in fade-in duration-300">
       {content}
     </div>,
     document.body
