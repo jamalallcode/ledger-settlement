@@ -2727,20 +2727,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               )}
             </div>
 
-            {/* Field Total Amount */}
-            <div className={`${colWrapper} border-rose-100`}>
-              <IDBadge id="corr-field-amount" />
-              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Banknote size={14} className="text-rose-600" /> মোট জড়িত টাকা:</label>
-              <input 
-                type="text" className={`${inputCls} ${rawInputs.totalAmount ? 'border-emerald-500' : 'border-red-500'}`} 
-                value={rawInputs.totalAmount || ''} onChange={e => handleNumericInput('totalAmount', e.target.value)}
-                placeholder="০"
-              />
-              {hasStartedFilling && (!rawInputs.totalAmount || !rawInputs.totalAmount.trim()) && (
-                <UnfilledMessage message="আপনি মোট জড়িত টাকা লেখেননি।" />
-              )}
-            </div>
-
             {/* Meeting specific fields if দ্বিপক্ষীয় / ত্রিপক্ষীয় সভা */}
             {isMeeting && (
               <>
