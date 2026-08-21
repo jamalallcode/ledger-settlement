@@ -44,7 +44,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         </div>
         <button 
           onClick={onClose}
-          className={`${isEmbedded ? 'w-6 h-6 rounded-md' : 'w-7 h-7 rounded-lg'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-2xs shrink-0`}
+          className={`${isEmbedded ? 'w-6 h-6 rounded-md' : 'w-7 h-7 rounded-lg'} flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 shadow-2xs shrink-0 cursor-pointer`}
           title="বন্ধ করুন"
         >
           <X size={isEmbedded ? 13 : 15} />
@@ -64,40 +64,54 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
               <col style={{ width: isEmbedded ? '15%' : '150px' }} />
               <col style={{ width: isEmbedded ? '13%' : '120px' }} />
             </colgroup>
-            <thead className="sticky top-0 z-30 bg-slate-100">
+            <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
               {/* Row 1: Header names */}
-              <tr>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>ক্রমিক</th>
-                <th className={`border-t border-b border-r border-slate-300 text-left font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-2 text-[11px]' : 'py-2 px-3 text-[12px]'
-                }`}>চিঠির নাম/বিবরণ</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>শাখার নাম</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>চিঠির ধরন</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>স্মারক নং ও তারিখ</th>
-                <th className={`border-t border-b border-r border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>ডায়েরি নং ও তারিখ</th>
-                <th className={`border-t border-b border-slate-300 text-center font-black text-slate-800 uppercase tracking-tighter bg-slate-100 ${
-                  isEmbedded ? 'py-1.5 px-1 text-[11px]' : 'py-2 px-2 text-[12px]'
-                }`}>বর্তমান অবস্থান</th>
+              <tr className="h-[36px]">
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  ক্রমিক
+                </th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  চিঠির নাম/বিবরণ
+                </th>
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  শাখার নাম
+                </th>
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  চিঠির ধরন
+                </th>
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  স্মারক নং ও তারিখ
+                </th>
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  ডায়েরি নং ও তারিখ
+                </th>
+                <th className="border border-slate-300 px-1 py-1.5 text-center align-middle font-black text-slate-900 text-[11px] sm:text-[12px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  বর্তমান অবস্থান
+                </th>
               </tr>
-              {/* Row 2: Serial Numbers row (Solid background to avoid scroll bleed-through) */}
-              <tr className="bg-slate-200">
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(১)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(২)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৩)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৪)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৫)</th>
-                <th className="border-b border-r border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৬)</th>
-                <th className="border-b border-slate-300 text-center font-black text-slate-600 py-0.5 text-[9.5px] sm:text-[10px] bg-slate-200">(৭)</th>
+              {/* Row 2: Serial Numbers row */}
+              <tr className="h-[24px]">
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (১)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (২)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (৩)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (৪)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (৫)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (৬)
+                </th>
+                <th className="border border-slate-300 px-1 py-0.5 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight">
+                  (৭)
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y-0">
@@ -221,7 +235,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
         </div>
         <button 
           onClick={onClose}
-          className={`bg-slate-900 text-white rounded-md font-black hover:bg-slate-800 transition-all shadow-2xs active:scale-95 ${
+          className={`bg-slate-900 text-white rounded-md font-black hover:bg-slate-800 transition-all shadow-2xs active:scale-95 cursor-pointer ${
             isEmbedded ? 'px-3 py-0.5 text-[11px]' : 'px-4 py-1 text-[12px]'
           }`}
         >

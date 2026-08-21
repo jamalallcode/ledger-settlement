@@ -1342,11 +1342,29 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         </div>
       </div>
 
-      {/* Filter UI for Correspondence */}
-      <div
-        id="correspondence-filters"
-        className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
-      >
+      {cycleDetailModal.isOpen ? (
+        <div className="bg-white flex flex-col h-[calc(100vh-210px)] min-h-[580px] rounded-2xl border border-slate-300 shadow-xl overflow-hidden animate-in fade-in zoom-in-[0.99] duration-200 mb-6">
+          <LetterDetailsModal
+            isOpen={true}
+            isEmbedded={true}
+            onClose={() =>
+              setCycleDetailModal({
+                isOpen: false,
+                title: "",
+                letters: [],
+              })
+            }
+            title={cycleDetailModal.title}
+            letters={cycleDetailModal.letters}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Filter UI for Correspondence */}
+          <div
+            id="correspondence-filters"
+            className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
+          >
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Status Selection (চলমান / সকল / নিষ্পন্ন) */}
           <div className="space-y-1.5" ref={statusDropdownRef}>
@@ -1631,38 +1649,38 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         </div>
       )}
 
-      {/* Table Container */}
-      <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
-        <table className="w-full border-separate border-spacing-0 table-fixed">
-          <colgroup>
-            <col className="w-[30px]" />
-            <col className="w-[145px]" />
-            <col className="w-[145px]" />
-            <col className="w-[135px]" />
-            <col className="w-[112px]" />
-            <col className="w-[125px]" />
-            <col className="w-[55px]" />
-          </colgroup>
-          <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
-            <tr className="h-[40px]">
-              <th className={thCls}>ক্র: নং</th>
-              <th className={thCls}>পত্রের বিবরণ</th>
-              <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
-              <th className={thCls}>অত্র অফিসের তথ্য</th>
-              <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
-              <th className={thCls}>জারিপত্র নং ও তারিখ</th>
-              <th className={thCls}>মন্তব্য</th>
-            </tr>
-            <tr className="h-[26px]">
-              <th className={thSubCls}>১</th>
-              <th className={thSubCls}>২</th>
-              <th className={thSubCls}>৩</th>
-              <th className={thSubCls}>৪</th>
-              <th className={thSubCls}>৫</th>
-              <th className={thSubCls}>৬</th>
-              <th className={thSubCls}>৭</th>
-            </tr>
-          </thead>
+          {/* Table Container */}
+          <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
+            <table className="w-full border-separate border-spacing-0 table-fixed">
+              <colgroup>
+                <col className="w-[30px]" />
+                <col className="w-[145px]" />
+                <col className="w-[145px]" />
+                <col className="w-[135px]" />
+                <col className="w-[112px]" />
+                <col className="w-[125px]" />
+                <col className="w-[55px]" />
+              </colgroup>
+              <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
+                <tr className="h-[40px]">
+                  <th className={thCls}>ক্র: নং</th>
+                  <th className={thCls}>পত্রের বিবরণ</th>
+                  <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
+                  <th className={thCls}>অত্র অফিসের তথ্য</th>
+                  <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
+                  <th className={thCls}>জারিপত্র নং ও তারিখ</th>
+                  <th className={thCls}>মন্তব্য</th>
+                </tr>
+                <tr className="h-[26px]">
+                  <th className={thSubCls}>১</th>
+                  <th className={thSubCls}>২</th>
+                  <th className={thSubCls}>৩</th>
+                  <th className={thSubCls}>৪</th>
+                  <th className={thSubCls}>৫</th>
+                  <th className={thSubCls}>৬</th>
+                  <th className={thSubCls}>৭</th>
+                </tr>
+              </thead>
           {groupedEntries.length > 0 ? (
             (() => {
               let globalIdx = 0;
@@ -3177,6 +3195,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           </tfoot>
         </table>
       </div>
+        </>
+      )}
 
       {deleteConfirm && createPortal(
         <>
@@ -3304,20 +3324,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           onClose={() => setViewingSettlementLetter(null)}
         />
       )}
-
-      {/* Cycle Statistics Letter Details Modal */}
-      <LetterDetailsModal
-        isOpen={cycleDetailModal.isOpen}
-        onClose={() =>
-          setCycleDetailModal({
-            isOpen: false,
-            title: "",
-            letters: [],
-          })
-        }
-        title={cycleDetailModal.title}
-        letters={cycleDetailModal.letters}
-      />
     </div>
   );
 };
