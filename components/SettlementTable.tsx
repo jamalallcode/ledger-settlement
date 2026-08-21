@@ -1751,8 +1751,14 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                             </div>
                           </div>
 
-                          {isCycleStatsExpanded && (
-                            <div className="bg-white p-4 border-b border-slate-300 shadow-md animate-in fade-in slide-in-from-top-4 duration-500 ease-out">
+                          <div
+                            className={`grid transition-all duration-500 ease-in-out overflow-hidden ${
+                              isCycleStatsExpanded
+                                ? "grid-rows-[1fr] opacity-100 border-b border-slate-300 shadow-md"
+                                : "grid-rows-[0fr] opacity-0 border-b-0 shadow-none"
+                            }`}
+                          >
+                            <div className="min-h-0 bg-white p-4 transition-all duration-500">
                               <div className="flex flex-col gap-2.5">
                                 {/* Row 1: SFI Branch Info */}
                                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
@@ -1935,7 +1941,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                 </div>
                               </div>
                             </div>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     )}
