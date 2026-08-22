@@ -2475,7 +2475,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <div className="relative text-[10px] leading-tight flex items-center justify-between gap-1">
                                     <span className="font-bold text-amber-950 flex items-center gap-1.5">
                                       <Clock size={11} className="text-amber-700 animate-pulse" />
-                                      বর্তমান অবস্থান:
+                                      বর্তমান অবস্থা:
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
                                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>

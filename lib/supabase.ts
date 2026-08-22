@@ -19,8 +19,17 @@ const getEnv = (key: string) => {
   }
 };
 
-const supabaseUrl = getEnv('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY');
+const rawSupabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://kewnchhbpppbcymfswjn.supabase.co';
+const rawSupabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtld25jaGhicHBwYmN5bWZzd2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMDUzMTUsImV4cCI6MjA4NTc4MTMxNX0.QGRCXrNXfksBuEYaONGt_r-67jIlveLvPeeeqHY68rA';
+
+// Sanitize URL by removing /rest/v1 or trailing slashes
+const sanitizeUrl = (url: string) => {
+  if (!url) return '';
+  return url.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+};
+
+const supabaseUrl = sanitizeUrl(rawSupabaseUrl);
+const supabaseAnonKey = rawSupabaseAnonKey.trim();
 
 const isValidUrl = (url: string) => {
   try {
