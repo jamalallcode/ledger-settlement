@@ -2482,7 +2482,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     </span>
                                     <span className="font-black text-slate-900 bg-white/95 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
                                       {currentCustodian}
-                                      {holdingDays !== null && ` (${toBengaliDigits(holdingDays)} দিন)`}
+                                      {holdingDays !== null && ` - ${toBengaliDigits(holdingDays < 10 ? `0${holdingDays}` : holdingDays.toString())} দিন`}
                                     </span>
                                   </div>
                                 </div>
