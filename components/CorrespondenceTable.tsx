@@ -2274,32 +2274,41 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </span>
                                 </div>
 
-                                <div className="text-[10px] leading-snug">
-                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা: </span>
-                                  <span className="font-black text-slate-950">
-                                    <HighlightText
-                                      text={`${toBengaliDigits(Math.round(totalInvolvedAmount))} ৳`}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </span>
-                                </div>
-                                <div className="text-[10px] leading-snug">
-                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. - মোট নিষ্পন্ন টাকা: </span>
-                                  <span className="font-black text-slate-950">
-                                    <HighlightText
-                                      text={`- ${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </span>
-                                </div>
-                                <div className="text-[10px] leading-snug">
-                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা: </span>
-                                  <span className="font-black text-slate-950">
-                                    <HighlightText
-                                      text={`${toBengaliDigits(Math.round(totalRemainingAmount))} ৳`}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </span>
+                                {/* হিসাব ব্লক: জড়িত, নিষ্পন্ন ও অবশিষ্ট টাকা (ডানদিকের কার্ডের স্টাইলে) */}
+                                <div className="relative mt-2 p-2 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 rounded-xl shadow-xs space-y-1 overflow-hidden">
+                                  <div className="flex items-center justify-between text-[10px] leading-tight gap-1">
+                                    <span className="font-bold text-amber-950">
+                                      {toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা:
+                                    </span>
+                                    <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] text-right min-w-[70px]">
+                                      <HighlightText
+                                        text={`${toBengaliDigits(Math.round(totalInvolvedAmount))} ৳`}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] leading-tight gap-1 pt-1 border-t border-amber-300/80">
+                                    <span className="font-bold text-rose-900">
+                                      {toBengaliDigits(itemIdx++)}. - মোট নিষ্পন্ন টাকা:
+                                    </span>
+                                    <span className="font-black text-rose-700 bg-white/95 px-2 py-0.5 rounded-lg border border-rose-300 shadow-xs text-[10px] text-right min-w-[70px]">
+                                      <HighlightText
+                                        text={`- ${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] leading-tight gap-1 pt-1 border-t border-amber-300/80">
+                                    <span className="font-bold text-emerald-950">
+                                      {toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা:
+                                    </span>
+                                    <span className="font-black text-emerald-900 bg-white/95 px-2 py-0.5 rounded-lg border border-emerald-300 shadow-xs text-[10px] text-right min-w-[70px]">
+                                      <HighlightText
+                                        text={`${toBengaliDigits(Math.round(totalRemainingAmount))} ৳`}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
                                 </div>
 
                                 {entry.meetingDate && (
@@ -2416,27 +2425,27 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
 
                               return (
-                                <div className="group/status relative mt-2.5 p-2.5 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
+                                <div className="group/status relative mt-2 p-2 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
                                   {/* Ambient background highlight */}
                                   <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-400/20 rounded-full blur-xl pointer-events-none group-hover/status:bg-amber-400/40 transition-all duration-300"></div>
 
-                                  <div className="relative text-[10px] leading-tight flex items-center justify-between gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
-                                      <Clock size={11} className="text-amber-700 animate-pulse" />
+                                  <div className="relative text-[9.5px] leading-tight flex items-center justify-between gap-1">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                                      <Clock size={10} className="text-amber-700 animate-pulse" />
                                       ১. চিঠিটির বর্তমান অবস্থা:
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
+                                      <span className="w-1 h-1 rounded-full bg-white animate-ping"></span>
                                       চলমান
                                     </span>
                                   </div>
 
-                                  <div className="relative text-[10px] leading-tight flex items-center justify-between pt-1.5 border-t border-amber-300/80 gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
-                                      <User size={11} className="text-amber-800" />
+                                  <div className="relative text-[9.5px] leading-tight flex items-center justify-between pt-1 border-t border-amber-300/80 gap-1 mt-1">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1">
+                                      <User size={10} className="text-amber-800" />
                                       ২. যার কাছে আছে:
                                     </span>
-                                    <span className="font-black text-slate-900 bg-white/95 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                    <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[9px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
                                       {currentCustodian}
                                     </span>
                                   </div>
