@@ -2289,11 +2289,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
                                   <div className="flex items-center justify-between text-[10px] leading-tight gap-1 pt-1 border-t border-amber-300/80">
                                     <span className="font-bold text-rose-900">
-                                      {toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:
+                                      {toBengaliDigits(itemIdx++)}. - মোট নিষ্পন্ন টাকা:
                                     </span>
                                     <span className="font-black text-rose-700 bg-white/95 px-2 py-0.5 rounded-lg border border-rose-300 shadow-xs text-[10px] text-right min-w-[70px]">
                                       <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
+                                        text={`- ${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
