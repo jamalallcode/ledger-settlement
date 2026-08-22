@@ -2204,6 +2204,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                             const totalRemainingAmount = Math.max(0, totalInvolvedAmount - totalSettledAmount);
 
+                            const pending = pendingChanges[entry.id] || {};
+                            const currentIsSettled =
+                              pending.isSettled !== undefined
+                                ? pending.isSettled
+                                : entry.isSettled;
+
                             return (
                               <div className="space-y-1">
                                 <div className="text-[10px] leading-snug">
@@ -2274,36 +2280,38 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </span>
                                 </div>
 
-                                <div className="space-y-0.5 my-1">
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিষ্পন্ন অনুচ্ছেদে জড়িত টাকা:</span>
-                                    <span className="font-black text-slate-950 text-right whitespace-nowrap">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalInvolvedAmount))}`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
+                                {currentIsSettled === "হ্যাঁ" && (
+                                  <div className="space-y-0.5 my-1">
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিষ্পন্ন অনুচ্ছেদে জড়িত টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalInvolvedAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalSettledAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
+                                    <div className="border-t-2 border-blue-500/90 my-1" />
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalRemainingAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:</span>
-                                    <span className="font-black text-slate-950 text-right whitespace-nowrap">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalSettledAmount))}`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                  <div className="border-t-2 border-blue-500/90 my-1" />
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা:</span>
-                                    <span className="font-black text-slate-950 text-right whitespace-nowrap">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalRemainingAmount))}`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                </div>
+                                )}
 
                                 {entry.meetingDate && (
                                   <div className="text-[10px] leading-snug">
