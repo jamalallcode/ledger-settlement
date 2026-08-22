@@ -2289,11 +2289,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
                                   <div className="flex items-center justify-between text-[10px] leading-tight gap-1 pt-1 border-t border-amber-300/80">
                                     <span className="font-bold text-rose-900">
-                                      {toBengaliDigits(itemIdx++)}. - মোট নিষ্পন্ন টাকা:
+                                      {toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:
                                     </span>
                                     <span className="font-black text-rose-700 bg-white/95 px-2 py-0.5 rounded-lg border border-rose-300 shadow-xs text-[10px] text-right min-w-[70px]">
                                       <HighlightText
-                                        text={`- ${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
+                                        text={`${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
@@ -2357,102 +2357,136 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                           })()}
                         </td>
                         <td className={tdCls}>
-                          <div className="space-y-1">
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">১. ডায়েরি নং ও তারিখ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={`${entry.diaryNo}, ${formatDateBN(entry.diaryDate)}`}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">২. শাখায় প্রাপ্তির তারিখ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={formatDateBN(entry.receiptDate)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৩. ডিজিটাল নথি নং- </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.digitalFileNo && entry.digitalFileNo !== '-' ? entry.digitalFileNo : ''}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৪. গ্রহণের তারিখ: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={formatDateBN(entry.receivedDate)}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            <div className="text-[10px] leading-snug">
-                              <span className="font-bold text-emerald-800">৫. অনলাইনে প্রাপ্তি: </span>
-                              <span className="font-black text-slate-950">
-                                <HighlightText
-                                  text={entry.isOnline || '-'}
-                                  searchTerm={searchTerm}
-                                />
-                              </span>
-                            </div>
-                            {entry.archiveNo && (
-                              <div className="text-[10px] leading-snug">
-                                <span className="font-bold text-emerald-800">৬. আর্কাইভ নং- </span>
-                                <span className="font-black text-purple-700">
-                                  <HighlightText
-                                    text={entry.archiveNo}
-                                    searchTerm={searchTerm}
-                                  />
-                                </span>
-                              </div>
-                            )}
+                          {(() => {
+                            let col4Idx = 1;
+                            const hasIssueNo = !!(currentIssueNo && currentIssueNo.trim() !== "" && currentIssueNo.trim() !== "-");
+                            const currentCustodian = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
+                              ? currentPresName
+                              : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
 
-                            {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত কার্ড (জারিপত্র নং না থাকলে দৃশ্যমান) */}
-                            {(() => {
-                              const hasIssueNo = !!(currentIssueNo && currentIssueNo.trim() !== "" && currentIssueNo.trim() !== "-");
-                              if (hasIssueNo) return null;
+                            // Calculate holding days: from receivedDate to currentPresDate (or today if not yet presented)
+                            let holdingDays = 0;
+                            if (entry.receivedDate) {
+                              try {
+                                const start = new Date(entry.receivedDate);
+                                if (!isNaN(start.getTime())) {
+                                  let end: Date;
+                                  if (currentPresDate && currentPresDate.trim() !== "" && currentPresDate.trim() !== "-") {
+                                    end = new Date(currentPresDate);
+                                    if (isNaN(end.getTime())) end = new Date();
+                                  } else {
+                                    end = new Date();
+                                  }
+                                  const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                                  const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+                                  const diffTime = endMidnight.getTime() - startMidnight.getTime();
+                                  holdingDays = Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)));
+                                }
+                              } catch {
+                                holdingDays = 0;
+                              }
+                            }
 
-                              const currentCustodian = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
-                                ? currentPresName
-                                : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
-
-                              return (
-                                <div className="group/status relative mt-2 p-2 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
-                                  {/* Ambient background highlight */}
-                                  <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-400/20 rounded-full blur-xl pointer-events-none group-hover/status:bg-amber-400/40 transition-all duration-300"></div>
-
-                                  <div className="relative text-[9.5px] leading-tight flex items-center justify-between gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1">
-                                      <Clock size={10} className="text-amber-700 animate-pulse" />
-                                      ১. চিঠিটির বর্তমান অবস্থা:
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
-                                      <span className="w-1 h-1 rounded-full bg-white animate-ping"></span>
-                                      চলমান
-                                    </span>
-                                  </div>
-
-                                  <div className="relative text-[9.5px] leading-tight flex items-center justify-between pt-1 border-t border-amber-300/80 gap-1 mt-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1">
-                                      <User size={10} className="text-amber-800" />
-                                      ২. যার কাছে আছে:
-                                    </span>
-                                    <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[9px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
-                                      {currentCustodian}
-                                    </span>
-                                  </div>
+                            return (
+                              <div className="space-y-1">
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. ডায়েরি নং ও তারিখ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={`${entry.diaryNo}, ${formatDateBN(entry.diaryDate)}`}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
                                 </div>
-                              );
-                            })()}
-                          </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. শাখায় প্রাপ্তির তারিখ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={formatDateBN(entry.receiptDate)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. ডিজিটাল নথি নং- </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.digitalFileNo && entry.digitalFileNo !== '-' ? entry.digitalFileNo : ''}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. গ্রহণের তারিখ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={formatDateBN(entry.receivedDate)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. অনলাইনে প্রাপ্তি: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.isOnline || '-'}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                {entry.archiveNo && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. আর্কাইভ নং- </span>
+                                    <span className="font-black text-purple-700">
+                                      <HighlightText
+                                        text={entry.archiveNo}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত কার্ড (জারিপত্র নং না থাকলে দৃশ্যমান) */}
+                                {!hasIssueNo && (
+                                  <div className="group/status relative mt-2 p-2 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
+                                    {/* Ambient background highlight */}
+                                    <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-400/20 rounded-full blur-xl pointer-events-none group-hover/status:bg-amber-400/40 transition-all duration-300"></div>
+
+                                    <div className="relative text-[9.5px] leading-tight flex items-center justify-between gap-1">
+                                      <span className="font-bold text-amber-950 flex items-center gap-1">
+                                        <Clock size={10} className="text-amber-700 animate-pulse" />
+                                        {toBengaliDigits(col4Idx++)}. চিঠিটির বর্তমান অবস্থা:
+                                      </span>
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
+                                        <span className="w-1 h-1 rounded-full bg-white animate-ping"></span>
+                                        চলমান
+                                      </span>
+                                    </div>
+
+                                    <div className="relative text-[9.5px] leading-tight flex items-center justify-between pt-1 border-t border-amber-300/80 gap-1 mt-1">
+                                      <span className="font-bold text-amber-950 flex items-center gap-1">
+                                        <User size={10} className="text-amber-800" />
+                                        {toBengaliDigits(col4Idx++)}. যার কাছে আছে:
+                                      </span>
+                                      <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[9px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                        {currentCustodian}
+                                      </span>
+                                    </div>
+
+                                    <div className="relative text-[9.5px] leading-tight flex items-center justify-between pt-1 border-t border-amber-300/80 gap-1 mt-1">
+                                      <span className="font-bold text-amber-950 flex items-center gap-1">
+                                        <CalendarRange size={10} className="text-amber-800" />
+                                        {toBengaliDigits(col4Idx++)}. যতদিন ধরে হাতে আছে:
+                                      </span>
+                                      <span className="font-black text-slate-900 bg-white/95 px-2 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[9px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                        {toBengaliDigits(holdingDays)} দিন
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className={tdCls}>
                           <div className="space-y-2">
