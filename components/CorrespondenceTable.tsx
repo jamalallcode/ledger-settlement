@@ -2276,7 +2276,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                                 <div className="space-y-0.5 my-1">
                                   <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা:</span>
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিষ্পন্ন অনুচ্ছেদে জড়িত টাকা:</span>
                                     <span className="font-black text-slate-950 text-right whitespace-nowrap">
                                       <HighlightText
                                         text={`${toBengaliDigits(Math.round(totalInvolvedAmount))} ৳`}
