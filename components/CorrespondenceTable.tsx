@@ -2476,11 +2476,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
 
                                   <div className="relative text-[10px] leading-tight flex items-center justify-between pt-1.5 border-t border-amber-300/80 gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1.5 whitespace-nowrap">
                                       <User size={11} className="text-amber-800" />
                                       নাম:
                                     </span>
-                                    <span className="font-black text-slate-900 bg-white/95 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                    <span className="font-black text-slate-900 text-[10px] text-right">
                                       {currentCustodian}
                                       {holdingDays !== null && ` - ${toBengaliDigits(holdingDays < 10 ? `0${holdingDays}` : holdingDays.toString())} দিন`}
                                     </span>
