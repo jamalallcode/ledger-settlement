@@ -2204,6 +2204,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                             const totalRemainingAmount = Math.max(0, totalInvolvedAmount - totalSettledAmount);
 
+                            const pending = pendingChanges[entry.id] || {};
+                            const currentIsSettled =
+                              pending.isSettled !== undefined
+                                ? pending.isSettled
+                                : entry.isSettled;
+
                             return (
                               <div className="space-y-1">
                                 <div className="text-[10px] leading-snug">
@@ -2274,36 +2280,38 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </span>
                                 </div>
 
-                                {/* হিসাব ব্লক: জড়িত, নিষ্পন্ন ও অবশিষ্ট টাকা */}
-                                <div className="mt-1 pt-1 border-t border-slate-200/80 space-y-0.5">
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট জড়িত টাকা: </span>
-                                    <span className="font-black text-slate-950 text-right min-w-[70px]">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalInvolvedAmount))} ৳`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
+                                {currentIsSettled === "হ্যাঁ" && (
+                                  <div className="space-y-0.5 my-1">
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিষ্পন্ন অনুচ্ছেদে জড়িত টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalInvolvedAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalSettledAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
+                                    <div className="border-t-2 border-blue-500/90 my-1" />
+                                    <div className="flex items-baseline justify-between text-[10px] leading-snug gap-2">
+                                      <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা:</span>
+                                      <span className="font-black text-slate-950 text-right whitespace-nowrap">
+                                        <HighlightText
+                                          text={`${toBengaliDigits(Math.round(totalRemainingAmount))}`}
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug text-rose-700">
-                                    <span className="font-bold">{toBengaliDigits(itemIdx++)}. (-) মোট নিষ্পন্ন টাকা: </span>
-                                    <span className="font-black text-right min-w-[70px]">
-                                      <HighlightText
-                                        text={`(-) ${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                  <div className="flex items-baseline justify-between text-[10px] leading-snug text-blue-900 border-t border-slate-300 pt-0.5 mt-0.5 bg-blue-50/40 -mx-1 px-1 rounded-sm">
-                                    <span className="font-black">{toBengaliDigits(itemIdx++)}. (=) মোট অবশিষ্ট টাকা: </span>
-                                    <span className="font-black text-blue-950 text-right min-w-[70px]">
-                                      <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalRemainingAmount))} ৳`}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                </div>
+                                )}
 
                                 {entry.meetingDate && (
                                   <div className="text-[10px] leading-snug">
@@ -2416,7 +2424,48 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                               const currentCustodian = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
                                 ? currentPresName
-                                : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : "শাখা");
+                                : (entry.receiverName && entry.receiverName.trim() !== "" ? `${entry.receiverName}` : " শাখা");
+
+                              const custodianDate = currentPresName && currentPresName.trim() !== "" && currentPresName.trim() !== "-"
+                                ? (currentPresDate || entry.receivedDate || entry.receiptDate || entry.diaryDate)
+                                : (entry.receivedDate || entry.receiptDate || entry.diaryDate);
+
+                              const calculateHoldingDays = (dateStr?: string | null): number | null => {
+                                if (!dateStr) return null;
+                                let d: Date | null = null;
+                                const clean = dateStr.trim();
+                                if (clean.includes("-")) {
+                                  const parts = clean.split("T")[0].split(" ")[0].split("-");
+                                  if (parts.length === 3) {
+                                    if (parts[0].length === 4) {
+                                      d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                    } else if (parts[2].length === 4) {
+                                      d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                                    }
+                                  }
+                                } else if (clean.includes("/")) {
+                                  const parts = clean.split("/");
+                                  if (parts.length === 3) {
+                                    if (parts[2].length === 4) {
+                                      d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                                    } else if (parts[0].length === 4) {
+                                      d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                    }
+                                  }
+                                } else {
+                                  const parsed = new Date(clean);
+                                  if (!isNaN(parsed.getTime())) d = parsed;
+                                }
+                                if (!d || isNaN(d.getTime())) return null;
+
+                                const today = new Date();
+                                const startOfDayD = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+                                const startOfDayToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+                                const diffDays = Math.floor((startOfDayToday - startOfDayD) / (1000 * 60 * 60 * 24));
+                                return Math.max(0, diffDays);
+                              };
+
+                              const holdingDays = calculateHoldingDays(custodianDate);
 
                               return (
                                 <div className="group/status relative mt-2.5 p-2.5 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
@@ -2426,7 +2475,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   <div className="relative text-[10px] leading-tight flex items-center justify-between gap-1">
                                     <span className="font-bold text-amber-950 flex items-center gap-1.5">
                                       <Clock size={11} className="text-amber-700 animate-pulse" />
-                                      ১. চিঠিটির বর্তমান অবস্থা:
+                                      বর্তমান অবস্থা:
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
                                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
@@ -2435,12 +2484,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
 
                                   <div className="relative text-[10px] leading-tight flex items-center justify-between pt-1.5 border-t border-amber-300/80 gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                                    <span className="font-bold text-amber-950 flex items-center gap-1.5 whitespace-nowrap">
                                       <User size={11} className="text-amber-800" />
-                                      ২. যার কাছে আছে:
+                                      নাম:
                                     </span>
-                                    <span className="font-black text-slate-900 bg-white/95 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-xs text-[10px] tracking-tight group-hover/status:border-amber-400 group-hover/status:shadow-sm transition-all">
+                                    <span className="font-black text-slate-900 text-[10px] text-right">
                                       {currentCustodian}
+                                      {holdingDays !== null && ` - ${toBengaliDigits(holdingDays < 10 ? `0${holdingDays}` : holdingDays.toString())} দিন`}
                                     </span>
                                   </div>
                                 </div>
