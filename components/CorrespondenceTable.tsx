@@ -2272,15 +2272,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   </div>
                                 )}
                                 <div className="text-[10px] leading-snug">
-                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্রের ধরণ: </span>
-                                  <span className="font-black text-slate-950">
-                                    <HighlightText
-                                      text={getCleanLetterTypeDisplay(entry.letterType)}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </span>
-                                </div>
-                                <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্র নং ও তারিখ: </span>
                                   <span className="font-black text-slate-950">
                                     <HighlightText
@@ -2420,6 +2411,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <span className="font-black text-slate-950">
                                       <HighlightText
                                         text={entry.paraType}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
+                                {entry.letterType && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. পত্রের ধরণ: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={getCleanLetterTypeDisplay(entry.letterType)}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
