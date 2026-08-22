@@ -2218,6 +2218,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             return (
                               <div className="space-y-1">
                                 <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. শাখার ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={entry.paraType || 'নন এসএফআই'}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
+                                <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মন্ত্রণালয়: </span>
                                   <span className="font-black text-slate-950">
                                     <HighlightText
@@ -2271,6 +2280,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     )}
                                   </div>
                                 )}
+                                <div className="text-[10px] leading-snug">
+                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্রের ধরণ: </span>
+                                  <span className="font-black text-slate-950">
+                                    <HighlightText
+                                      text={getCleanLetterTypeDisplay(entry.letterType)}
+                                      searchTerm={searchTerm}
+                                    />
+                                  </span>
+                                </div>
                                 <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্র নং ও তারিখ: </span>
                                   <span className="font-black text-slate-950">
@@ -2405,28 +2423,6 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                             return (
                               <div className="space-y-1">
-                                {entry.paraType && (
-                                  <div className="text-[10px] leading-snug">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. শাখার ধরণ: </span>
-                                    <span className="font-black text-slate-950">
-                                      <HighlightText
-                                        text={entry.paraType}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                )}
-                                {entry.letterType && (
-                                  <div className="text-[10px] leading-snug">
-                                    <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. পত্রের ধরণ: </span>
-                                    <span className="font-black text-slate-950">
-                                      <HighlightText
-                                        text={getCleanLetterTypeDisplay(entry.letterType)}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
-                                  </div>
-                                )}
                                 <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. ডায়েরি নং ও তারিখ: </span>
                                   <span className="font-black text-slate-950">
