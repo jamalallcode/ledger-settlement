@@ -430,6 +430,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
     Record<string, boolean>
   >({});
 
+  const [expandedAuditYears, setExpandedAuditYears] = useState<
+    Record<string, boolean>
+  >({});
+
+  const toggleAuditYearExpand = (entryId: string) => {
+    setExpandedAuditYears((prev) => ({
+      ...prev,
+      [entryId]: !prev[entryId],
+    }));
+  };
+
   const triggerDhakaNotice = (entryId: string) => {
     setDhakaNoticeMap((prev) => ({ ...prev, [entryId]: true }));
     setTimeout(() => {
@@ -2229,23 +2240,37 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                 {entry.auditYear && (
                                   <div className="text-[10px] leading-snug">
                                     <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিরীক্ষা সাল: </span>
-                                    <span className="font-black text-slate-950">
-                                      <HighlightText
-                                        text={entry.auditYear}
-                                        searchTerm={searchTerm}
-                                      />
-                                    </span>
+                                    {expandedAuditYears[entry.id] ? (
+                                      <span
+                                        onClick={() => toggleAuditYearExpand(entry.id)}
+                                        className="font-black text-slate-950 cursor-pointer hover:text-emerald-700 transition-colors"
+                                        title="সংক্ষিপ্ত করতে ক্লিক করুন"
+                                      >
+                                        <HighlightText
+                                          text={entry.auditYear}
+                                          searchTerm={searchTerm}
+                                        />
+                                        <span className="inline-block ml-1 text-[9px] font-bold text-emerald-600 underline">
+                                          (কম দেখুন)
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span
+                                        onClick={() => toggleAuditYearExpand(entry.id)}
+                                        className="inline-flex items-baseline max-w-full font-black text-slate-950 cursor-pointer hover:text-emerald-700 transition-colors"
+                                        title="সম্পূর্ণ দেখতে ক্লিক করুন"
+                                      >
+                                        <span className="truncate max-w-[130px] inline-block align-bottom">
+                                          <HighlightText
+                                            text={entry.auditYear}
+                                            searchTerm={searchTerm}
+                                          />
+                                        </span>
+                                        <span className="text-[10px] text-emerald-700 font-bold ml-0.5 tracking-tighter">...</span>
+                                      </span>
+                                    )}
                                   </div>
                                 )}
-                                <div className="text-[10px] leading-snug">
-                                  <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. শাখার ধরণ: </span>
-                                  <span className="font-black text-slate-950">
-                                    <HighlightText
-                                      text={entry.paraType}
-                                      searchTerm={searchTerm}
-                                    />
-                                  </span>
-                                </div>
                                 <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. পত্রের ধরণ: </span>
                                   <span className="font-black text-slate-950">
@@ -2389,6 +2414,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                             return (
                               <div className="space-y-1">
+                                {entry.paraType && (
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. শাখার ধরণ: </span>
+                                    <span className="font-black text-slate-950">
+                                      <HighlightText
+                                        text={entry.paraType}
+                                        searchTerm={searchTerm}
+                                      />
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="text-[10px] leading-snug">
                                   <span className="font-bold text-emerald-800">{toBengaliDigits(col4Idx++)}. ডায়েরি নং ও তারিখ: </span>
                                   <span className="font-black text-slate-950">
