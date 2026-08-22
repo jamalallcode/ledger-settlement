@@ -2279,7 +2279,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. নিষ্পন্ন অনুচ্ছেদে জড়িত টাকা:</span>
                                     <span className="font-black text-slate-950 text-right whitespace-nowrap">
                                       <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalInvolvedAmount))} ৳`}
+                                        text={`${toBengaliDigits(Math.round(totalInvolvedAmount))}`}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
@@ -2288,7 +2288,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট নিষ্পন্ন টাকা:</span>
                                     <span className="font-black text-slate-950 text-right whitespace-nowrap">
                                       <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalSettledAmount))} ৳`}
+                                        text={`${toBengaliDigits(Math.round(totalSettledAmount))}`}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
@@ -2298,7 +2298,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <span className="font-bold text-emerald-800">{toBengaliDigits(itemIdx++)}. মোট অবশিষ্ট টাকা:</span>
                                     <span className="font-black text-slate-950 text-right whitespace-nowrap">
                                       <HighlightText
-                                        text={`${toBengaliDigits(Math.round(totalRemainingAmount))} ৳`}
+                                        text={`${toBengaliDigits(Math.round(totalRemainingAmount))}`}
                                         searchTerm={searchTerm}
                                       />
                                     </span>
