@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2 } from 'lucide-react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2, GitFork, Layers } from 'lucide-react';
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -50,8 +50,11 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isBsrReceiptOpen, setIsBsrReceiptOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState<'সকল' | 'এসএফআই' | 'নন এসএফআই'>('সকল');
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -60,6 +63,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       }
       if (statsRef.current && !statsRef.current.contains(e.target as Node)) {
         setIsStatsOpen(false);
+      }
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+        setIsBranchDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -222,19 +228,44 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       data = data.filter(m => robustNormalize(m.ministry) === normFilter);
     }
 
-    if (!searchTerm.trim()) return data;
-    
-    return data.map(m => {
-      const filteredRows = m.entityRows.filter((row: any) => 
-        row.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.ministry.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      return { ...m, entityRows: filteredRows };
-    }).filter(m => m.entityRows.length > 0);
-  }, [reportData, searchTerm, filterMinistry]);
+    if (searchTerm.trim()) {
+      data = data.map(m => {
+        const filteredRows = m.entityRows.filter((row: any) => 
+          row.entity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.ministry.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return { ...m, entityRows: filteredRows };
+      }).filter(m => m.entityRows.length > 0);
+    }
+
+    if (selectedBranch && selectedBranch !== 'সকল') {
+      const isSFIBranch = selectedBranch === 'এসএফআই';
+      data = data.map(m => {
+        const transformedRows = m.entityRows.map((row: any) => {
+          const prevOpening = isSFIBranch ? (row.prevSFI || row.prev) : (row.prevNonSFI || row.prev);
+          const curRaisedCount = isSFIBranch ? (row.sfiRaisedCount || 0) : (row.nonSfiRaisedCount || 0);
+          const curRaisedAmount = isSFIBranch ? (row.sfiRaisedAmount || 0) : (row.nonSfiRaisedAmount || 0);
+          const curSettledCount = isSFIBranch ? (row.currentSFICount || 0) : (row.currentNonSFICount || 0);
+          const curSettledAmount = isSFIBranch ? (row.currentSFIAmount || 0) : (row.currentNonSFIAmount || 0);
+
+          return {
+            ...row,
+            prev: prevOpening,
+            currentRaisedCount: curRaisedCount,
+            currentRaisedAmount: curRaisedAmount,
+            currentSettledCount: curSettledCount,
+            currentSettledAmount: curSettledAmount,
+          };
+        });
+        return { ...m, entityRows: transformedRows };
+      });
+    }
+
+    return data;
+  }, [reportData, searchTerm, filterMinistry, selectedBranch]);
 
   const filteredGrandTotals = useMemo(() => {
-    if (!searchTerm.trim() && (!filterMinistry || filterMinistry === 'সকল')) return grandTotals;
+    if (!searchTerm.trim() && (!filterMinistry || filterMinistry === 'সকল') && (!selectedBranch || selectedBranch === 'সকল')) return grandTotals;
     
     return filteredReportData.reduce((acc: any, m: any) => {
       const mTotals = m.entityRows.reduce((mAcc: any, row: any) => {
@@ -277,7 +308,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       
       return acc;
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
-  }, [filteredReportData, searchTerm, grandTotals, filterMinistry]);
+  }, [filteredReportData, searchTerm, grandTotals, filterMinistry, selectedBranch]);
 
   const filteredStatsReportData = useMemo(() => {
     let data = statsReportData || reportData;
@@ -393,6 +424,52 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
           {/* Right Group: Reporting cycle, month picker, and statistics button in a flex-wrap container */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010] xl:mr-2">
             
+            {/* Branch Filter Dropdown ("শাখা") */}
+            <div className="relative z-[1050] no-print shrink-0" ref={branchDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsBranchDropdownOpen(prev => !prev)}
+                className={`flex items-center gap-1.5 px-3 h-[38px] rounded-xl font-bold text-[11px] sm:text-[11.5px] transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg active:scale-95 group shrink-0 leading-none animate-in fade-in ${
+                  selectedBranch !== 'সকল'
+                    ? 'bg-amber-500 text-white border border-amber-600 shadow-amber-200'
+                    : 'bg-amber-50 hover:bg-amber-500 text-amber-800 hover:text-white border border-amber-200 hover:border-amber-500'
+                }`}
+              >
+                <GitFork size={13} className={`${selectedBranch !== 'সকল' ? 'text-white' : 'text-amber-600 group-hover:text-white'} transition-colors shrink-0`} />
+                <span>{selectedBranch === 'সকল' ? 'শাখা' : selectedBranch}</span>
+                <ChevronDown size={12} className={`transition-transform duration-200 ${isBranchDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isBranchDropdownOpen && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-[1100] py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                    শাখা নির্বাচন
+                  </div>
+                  {(['সকল', 'এসএফআই', 'নন এসএফআই'] as const).map((branch) => {
+                    const isSelected = selectedBranch === branch;
+                    return (
+                      <button
+                        key={branch}
+                        type="button"
+                        onClick={() => {
+                          setSelectedBranch(branch);
+                          setIsBranchDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-amber-50 text-amber-800 font-black'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{branch}</span>
+                        {isSelected && <Check size={13} className="text-amber-600 font-bold" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Received BSR Button ("প্রাপ্ত বিএসআর") */}
             <button
               type="button"
