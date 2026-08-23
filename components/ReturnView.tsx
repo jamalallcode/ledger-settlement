@@ -713,6 +713,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           }
 
           let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiRC = 0, sfiRA = 0, nonSfiRC = 0, nonSfiRA = 0;
           let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
           let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
 
@@ -782,19 +783,35 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               }
             }
             const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
-            if (entry.manualRaisedAmount) curRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+              const rCountVal = parseBengaliNumber(rCountRaw);
+              curRC += rCountVal;
+              if (isSFI) sfiRC += rCountVal;
+              else nonSfiRC += rCountVal;
+            }
+            if (entry.manualRaisedAmount) {
+              const rAmtVal = parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+              curRA += rAmtVal;
+              if (isSFI) sfiRA += rAmtVal;
+              else nonSfiRA += rAmtVal;
+            }
           });
+          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
           return { 
             entity: entityName, 
             currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            sfiRaisedCount: sfiRC, sfiRaisedAmount: sfiRA,
+            nonSfiRaisedCount: nonSfiRC, nonSfiRaisedAmount: nonSfiRA,
             currentSettledCount: curSC, currentSettledAmount: curSA,
             currentFullCount: curFC, currentPartialCount: curPC,
             currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
             currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
             sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
             nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
-            prev: ePrev 
+            prev: ePrev,
+            prevSFI: ePrevSFI,
+            prevNonSFI: ePrevNonSFI
           };
         })
       };
