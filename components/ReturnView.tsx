@@ -572,10 +572,20 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       ? base.unsettledQuarterlyAmount 
       : base.unsettledAmount;
 
+    const qRecAdjBase = (base.recoveryAdjustmentQuarterlyAmount !== undefined && base.recoveryAdjustmentQuarterlyAmount !== null)
+      ? base.recoveryAdjustmentQuarterlyAmount
+      : (base.settledAmount || 0);
+
+    const qRecAdjCountBase = (base.recoveryAdjustmentQuarterlyCount !== undefined && base.recoveryAdjustmentQuarterlyCount !== null)
+      ? base.recoveryAdjustmentQuarterlyCount
+      : (base.settledCount || 0);
+
     return {
         unsettledCount: Math.max(0, base.unsettledCount + pastRC),
         unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
         unsettledQuarterlyAmount: Math.max(0, qBase + Math.round(pastRA)),
+        recoveryAdjustmentQuarterlyCount: Math.max(0, qRecAdjCountBase + pastSC),
+        recoveryAdjustmentQuarterlyAmount: Math.max(0, qRecAdjBase + Math.round(pastSA)),
         settledCount: base.settledCount + pastSC,
         settledAmount: base.settledAmount + Math.round(pastSA)
     };
@@ -628,10 +638,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
               ...existing,
               unsettledQuarterlyAmount: existing.unsettledQuarterlyAmount !== undefined
                 ? existing.unsettledQuarterlyAmount
-                : existing.unsettledAmount
+                : existing.unsettledAmount,
+              recoveryAdjustmentQuarterlyCount: existing.recoveryAdjustmentQuarterlyCount !== undefined
+                ? existing.recoveryAdjustmentQuarterlyCount
+                : existing.settledCount,
+              recoveryAdjustmentQuarterlyAmount: existing.recoveryAdjustmentQuarterlyAmount !== undefined
+                ? existing.recoveryAdjustmentQuarterlyAmount
+                : existing.settledAmount
             };
           } else {
-            rawMasterStats[ent] = { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+            rawMasterStats[ent] = { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
           }
         });
       });
@@ -1111,7 +1127,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const startIdx = allEntities.indexOf(startEntity);
     if (startIdx === -1) return;
     
-    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'unsettledQuarterlyAmount', 'settledCount', 'settledAmount'];
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount', 'unsettledQuarterlyAmount', 'recoveryAdjustmentQuarterlyCount', 'recoveryAdjustmentQuarterlyAmount'];
       
     const fieldStartIdx = fields.indexOf(startField);
     const newStats = { ...tempPrevStats };
@@ -1121,7 +1137,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       cells.forEach((cell, cellOffset) => {
         const fieldIdx = fieldStartIdx + cellOffset; if (fieldIdx >= fields.length) return;
         const fieldName = fields[fieldIdx]; const value = parseBengaliNumber(cell.trim());
-        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
+        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
       });
     });
     setTempPrevStats(newStats);

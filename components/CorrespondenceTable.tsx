@@ -1021,9 +1021,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   // Header font-black
   const thCls =
-    "border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border-r border-b border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap leading-tight";
   const thSubCls =
-    "border border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border-r border-b border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-700 text-[10px] sm:text-[10.5px] bg-gradient-to-b from-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap leading-tight";
   // Data cells font-bold
   const tdCls =
     "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";

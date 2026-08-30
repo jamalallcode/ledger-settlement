@@ -773,11 +773,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     // Headers reverted to font-black
     const thBase =
-      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
+      "border-r border-b border-slate-300 px-1 py-1.5 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle h-full bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap";
     const thBase2 =
-      "border border-slate-300 px-1 py-1 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
+      "border-r border-b border-slate-300 px-1 py-1.5 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle h-full bg-gradient-to-b from-slate-100 via-slate-200/80 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-border relative whitespace-nowrap";
     const thBase3 =
-      "border border-slate-300 px-1 py-0.5 font-black text-center text-slate-900 text-[8px] leading-tight align-middle h-full bg-slate-200";
+      "border-r border-b border-slate-300 px-1 py-0.5 font-black text-center text-slate-700 text-[8px] leading-tight align-middle h-full bg-gradient-to-b from-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap";
     // Body cells reverted to font-bold
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";

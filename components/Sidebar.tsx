@@ -759,7 +759,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     transition={{ duration: 0.2, ease: "easeInOut" }}
                                     className="pl-3 py-1 space-y-1 overflow-hidden"
                                   >
-                                    {['১', '২', '৩', '৪'].map((num) => {
+                                    {['১', '২'].map((num) => {
                                       const key = `ত্রৈমাসিক রিটার্ন - বিস্তারিত - ${num}`;
                                       const isSelected = reportType === key;
                                       return (

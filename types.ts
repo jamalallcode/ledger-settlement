@@ -18,6 +18,8 @@ export interface MinistryPrevStats {
   unsettledCount: number;
   unsettledAmount: number;
   unsettledQuarterlyAmount?: number;
+  recoveryAdjustmentQuarterlyCount?: number;
+  recoveryAdjustmentQuarterlyAmount?: number;
   settledCount: number;
   settledAmount: number;
 }
