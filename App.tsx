@@ -17,6 +17,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -640,12 +641,11 @@ const App: React.FC = () => {
             }
           });
           setModuleVisibility(newVisibility);
-          console.log("Fetched module settings & contact link successfully");
         } else if (error) {
-          console.error("Error fetching app_settings:", error);
+          console.warn("Supabase app_settings fetch skipped (using local config):", error.message || error);
         }
-      } catch (err) {
-        console.error("সেটিংস লোড করতে সমস্যা হয়েছে:", err);
+      } catch (err: any) {
+        console.warn("সেটিংস লোড করতে সমস্যা হয়েছে (লোকাল সেটিংস সচল):", err?.message || err);
       }
     };
 
@@ -1112,36 +1112,18 @@ const App: React.FC = () => {
   }, [pendingCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
 
   const displayedApprovedEntries = useMemo(() => {
-    if (!isAdmin) {
-      if (viewSingleEntryId) {
-        return approvedEntries.filter(e => e.id === viewSingleEntryId);
-      }
-      if (userEmail) {
-        return approvedEntries.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
-      }
-      if (justSubmittedEntryId) {
-        return approvedEntries.filter(e => e.id === justSubmittedEntryId);
-      }
-      return approvedEntries.filter(e => e.userEmail === userEmail);
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedEntries.filter(e => e.id === viewSingleEntryId);
     }
     return approvedEntries;
-  }, [approvedEntries, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
+  }, [approvedEntries, isAdmin, viewSingleEntryId]);
 
   const displayedApprovedCorrespondence = useMemo(() => {
-    if (!isAdmin) {
-      if (viewSingleEntryId) {
-        return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
-      }
-      if (userEmail) {
-        return approvedCorrespondence.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
-      }
-      if (justSubmittedEntryId) {
-        return approvedCorrespondence.filter(e => e.id === justSubmittedEntryId);
-      }
-      return approvedCorrespondence.filter(e => e.userEmail === userEmail);
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
     }
     return approvedCorrespondence;
-  }, [approvedCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
+  }, [approvedCorrespondence, isAdmin, viewSingleEntryId]);
   
   const unassignedCorrespondence = useMemo(() => {
     return approvedCorrespondence.filter(e => 
@@ -1516,7 +1498,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       <style>{dynamicThemeCSS}</style>
-      <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
+      <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden hidden lg:block ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 
           activeTab={activeTab} setActiveTab={handleTabChange} 
           onToggleVisibility={() => setIsSidebarOpen(false)}
@@ -1563,6 +1545,7 @@ const App: React.FC = () => {
               contactLink={contactLink}
               onGoBack={goBack}
               hasHistory={navHistory.length > 0}
+              moduleVisibility={moduleVisibility}
             />
           </div>
         )}
@@ -1571,7 +1554,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto flex flex-col items-center justify-center p-[10px] landing-main-container' 
+              ? 'overflow-y-auto flex flex-col items-center justify-start sm:justify-center p-2 sm:p-3 md:p-5 landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
@@ -1585,7 +1568,7 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in" 
+              ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-auto py-2 sm:py-0" 
               : activeTab === 'return'
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
@@ -1849,6 +1832,17 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Shared Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onSuccess={() => {
+          setIsAdmin(true);
+          setIsLockedMode(false);
+          setShowAdminLogin(false);
+        }}
+      />
     </div>
   );
 };

@@ -253,7 +253,7 @@ const PremiumInlineSelect: React.FC<{
     <div className="relative w-full" ref={dropdownRef}>
       <div
         onClick={handleToggle}
-        className={`w-full h-7 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between transition-all ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} ${isOpen ? "border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+        className={`w-full h-6 px-1.5 bg-slate-50 border rounded-lg flex items-center justify-between transition-all ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} ${isOpen ? "border-blue-500 ring-2 ring-blue-50 bg-white shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
       >
         <span
           className={`text-[10px] font-black truncate ${value ? "text-slate-900" : "text-slate-400"}`}
@@ -377,6 +377,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [viewingSettlementLetter, setViewingSettlementLetter] = useState<CorrespondenceEntry | null>(null);
   const [dummyDeclinedMap, setDummyDeclinedMap] = useState<Record<string, boolean>>({});
+  const [activeInlineEditingCell, setActiveInlineEditingCell] = useState<{ id: string; col: 'col4' | 'col5' } | null>(null);
+  const [inlineEditingRowId, setInlineEditingRowId] = useState<string | null>(null);
+  const [uncommittedWarningId, setUncommittedWarningId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScrollOrResize = () => {
@@ -500,6 +503,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         !summaryButtonRef.current.contains(event.target as Node)
       ) {
         setShowSummary(false);
+      }
+
+      // কলাম ৪ বা ৫ এডিট আনলক করা অবস্থায় বাইরে ক্লিক করলে (যদি কোনো এডিট না হয়ে থাকে) অটো-লক করা
+      const targetEl = event.target as HTMLElement | null;
+      if (
+        targetEl &&
+        !targetEl.closest("[data-inline-col='col4']") &&
+        !targetEl.closest("[data-inline-col='col5']")
+      ) {
+        setActiveInlineEditingCell(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -958,6 +971,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       }
       setPendingChanges({});
       setValidationErrorMap({});
+      setActiveInlineEditingCell(null);
+      setInlineEditingRowId(null);
       updatedIds.forEach((id) => {
         setRecentlyUpdatedMap((prev) => ({ ...prev, [id]: true }));
         setTimeout(() => {
@@ -1006,6 +1021,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         delete next[entryId];
         return next;
       });
+      setActiveInlineEditingCell((prev) => (prev?.id === entryId ? null : prev));
+      setInlineEditingRowId((prev) => (prev === entryId ? null : prev));
       setRecentlyUpdatedMap((prev) => ({ ...prev, [entryId]: true }));
       setTimeout(() => {
         setRecentlyUpdatedMap((prev) => ({ ...prev, [entryId]: false }));
@@ -1021,9 +1038,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
   // Header font-black
   const thCls =
-    "border border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border-r border-b border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap leading-tight";
   const thSubCls =
-    "border border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-slate-200 shadow-[inset_0_0_0_1px_#cbd5e1] leading-tight";
+    "border-r border-b border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-700 text-[10px] sm:text-[10.5px] bg-gradient-to-b from-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap leading-tight";
   // Data cells font-bold
   const tdCls =
     "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
@@ -1650,16 +1667,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       )}
 
           {/* Table Container */}
-          <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full">
-            <table className="w-full border-separate border-spacing-0 table-fixed">
+          <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0 table-fixed min-w-[900px]">
               <colgroup>
-                <col className="w-[30px]" />
+                <col className="w-[32px]" />
+                <col className="w-[155px]" />
+                <col className="w-[155px]" />
                 <col className="w-[145px]" />
-                <col className="w-[145px]" />
-                <col className="w-[135px]" />
-                <col className="w-[112px]" />
-                <col className="w-[125px]" />
-                <col className="w-[55px]" />
+                <col className="w-[164px]" />
+                <col className="w-[164px]" />
+                <col className="w-[85px]" />
               </colgroup>
               <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
                 <tr className="h-[40px]">
@@ -2417,7 +2434,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </div>
                             )}
 
-                            {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত কার্ড (জারিপত্র নং না থাকলে দৃশ্যমান) */}
+                            {/* চিঠিটির বর্তমান অবস্থা ও অবস্থান সংক্রান্ত তথ্য (ক্রমিক হিসেবে) */}
                             {(() => {
                               const hasIssueNo = !!(currentIssueNo && currentIssueNo.trim() !== "" && currentIssueNo.trim() !== "-");
                               if (hasIssueNo) return null;
@@ -2466,130 +2483,145 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               };
 
                               const holdingDays = calculateHoldingDays(custodianDate);
+                              const serial6 = entry.archiveNo ? "৭" : "৬";
+                              const serial7 = entry.archiveNo ? "৮" : "৭";
 
                               return (
-                                <div className="group/status relative mt-2.5 p-2.5 bg-gradient-to-br from-amber-100/95 via-amber-50 to-orange-100/80 border-2 border-amber-400/90 hover:border-amber-500 rounded-xl shadow-xs hover:shadow-[0_8px_22px_rgba(245,158,11,0.35)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-default overflow-hidden">
-                                  {/* Ambient background highlight */}
-                                  <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-400/20 rounded-full blur-xl pointer-events-none group-hover/status:bg-amber-400/40 transition-all duration-300"></div>
-
-                                  <div className="relative text-[10px] leading-tight flex items-center justify-between gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5">
-                                      <Clock size={11} className="text-amber-700 animate-pulse" />
-                                      বর্তমান অবস্থা:
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs shadow-amber-500/30">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                                <>
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{serial6}. বর্তমান অবস্থা: </span>
+                                    <span className="font-black text-amber-700">
                                       চলমান
                                     </span>
                                   </div>
-
-                                  <div className="relative text-[10px] leading-tight flex items-center justify-between pt-1.5 border-t border-amber-300/80 gap-1">
-                                    <span className="font-bold text-amber-950 flex items-center gap-1.5 whitespace-nowrap">
-                                      <User size={11} className="text-amber-800" />
-                                      নাম:
-                                    </span>
-                                    <span className="font-black text-slate-900 text-[10px] text-right">
+                                  <div className="text-[10px] leading-snug">
+                                    <span className="font-bold text-emerald-800">{serial7}. নাম: </span>
+                                    <span className="font-black text-slate-950">
                                       {currentCustodian}
                                       {holdingDays !== null && ` - ${toBengaliDigits(holdingDays < 10 ? `0${holdingDays}` : holdingDays.toString())} দিন`}
                                     </span>
                                   </div>
-                                </div>
+                                </>
                               );
                             })()}
                           </div>
                         </td>
-                        <td className={tdCls}>
-                          <div className="space-y-2">
-                            <div className="p-1.5 bg-slate-50 border border-slate-100 rounded-lg relative">
-                              <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter mb-0.5 flex items-center gap-1">
-                                <Inbox size={8} /> গ্রহণকারী
-                              </div>
-                              <div className="font-bold text-slate-900 text-[12px] leading-tight break-words">
-                                <HighlightText
-                                  text={entry.receiverName || "-"}
-                                  searchTerm={searchTerm}
-                                />
-                              </div>
-                              <div className="text-[9px] text-slate-500 font-bold">
-                                {formatDateBN(entry.receivedDate)}
-                              </div>
-                            </div>
+                        <td data-inline-col="col4" className={`${tdCls} relative group/col5`}>
+                          {(() => {
+                            const isRowInlineActive = inlineEditingRowId === entry.id || activeInlineEditingCell?.id === entry.id;
+                            const hasCol4Pending = !!(
+                              pending.presentationDate !== undefined ||
+                              pending.presentedToName !== undefined ||
+                              pending.sentToDhakaDate !== undefined ||
+                              pending.returnedFromDhakaDate !== undefined ||
+                              pending.receiverName !== undefined
+                            );
+                            const isCol4Editable = isRowInlineActive || hasCol4Pending;
+                            const isCol4Locked = !isCol4Editable;
 
-                            <div
-                              className={`p-1.5 border rounded-lg space-y-1.5 transition-colors ${pending.presentationDate || pending.presentedToName ? "bg-blue-600/10 border-blue-400 ring-2 ring-blue-50" : "bg-blue-50/50 border-blue-100"}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1">
-                                  <UserCheck size={8} /> উপস্থাপন
+                            return (
+                              <div className="flex flex-col justify-between h-full min-h-[175px] space-y-2">
+                                <div className={`space-y-2 flex-1 ${isCol4Locked ? 'pointer-events-none' : ''}`}>
+                            {/* ৫ নং কলামের একটি সমন্বিত একক ব্লক (Single Card) */}
+                            <div className={`p-2 border rounded-xl space-y-2 transition-all duration-200 bg-gradient-to-br from-white via-slate-50 to-blue-50/40 border-slate-300 shadow-xs ${
+                              pending.presentationDate || pending.presentedToName ? "ring-1 ring-blue-300/80 border-blue-400" : ""
+                            }`}>
+                              {/* গ্রহণকারী */}
+                              <div className="flex items-center justify-between gap-1.5 pb-1 border-b border-slate-200/80 min-w-0 h-[24px]">
+                                <div className="text-[9px] font-bold text-emerald-700 uppercase tracking-tighter flex items-center gap-1 shrink-0">
+                                  <Inbox size={9} /> গ্রহণকারী:
                                 </div>
-                                {isAdmin &&
-                                  (currentPresDate || currentPresName) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleInlineChange(
-                                          entry.id,
-                                          "presentationDate",
-                                          "",
-                                        );
-                                        handleInlineChange(
-                                          entry.id,
-                                          "presentedToName",
-                                          "",
-                                        );
-                                      }}
-                                      className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all animate-in zoom-in duration-300 ml-1"
-                                      title="তথ্য মুছুন"
-                                    >
-                                      <XCircle size={10} />
-                                    </button>
-                                  )}
-                                <div className="flex items-center gap-1.5 ml-auto">
-                                  {formatDateBN(currentPresDate) && (
-                                    <span className="text-[8px] font-black text-blue-600">
-                                      {formatDateBN(currentPresDate)}
-                                    </span>
-                                  )}
-                                  <div className="relative flex items-center h-3 w-3">
-                                    <Calendar
-                                      size={11}
-                                      className={`text-blue-500 transition-colors ${isAdmin ? "cursor-pointer hover:text-blue-700" : "opacity-50"}`}
-                                      onClick={(e) => {
-                                        if (!isAdmin) return;
-                                        const input =
-                                          e.currentTarget.parentElement?.querySelector(
-                                            "input",
-                                          ) as HTMLInputElement;
-                                        if (input) input.showPicker();
-                                      }}
-                                    />
-                                    <input
-                                      type="date"
-                                      className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
-                                      value={currentPresDate}
-                                      disabled={!isAdmin}
-                                      onChange={(e) =>
-                                        handleInlineChange(
-                                          entry.id,
-                                          "presentationDate",
-                                          e.target.value,
-                                        )
-                                      }
-                                    />
+                                <div className="font-bold text-slate-900 text-[9.5px] leading-tight truncate">
+                                  <HighlightText
+                                    text={entry.receiverName || "-"}
+                                    searchTerm={searchTerm}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* উপস্থাপন */}
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between gap-1 h-5">
+                                  <div className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter flex items-center gap-1 shrink-0">
+                                    <UserCheck size={9} /> উপস্থাপন
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0 ml-auto">
+                                    {formatDateBN(currentPresDate) && (
+                                      <span className="text-[8.5px] font-black text-blue-600">
+                                        {formatDateBN(currentPresDate)}
+                                      </span>
+                                    )}
+                                    {isCol4Editable && (currentPresDate || currentPresName) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleInlineChange(
+                                            entry.id,
+                                            "presentationDate",
+                                            "",
+                                          );
+                                          handleInlineChange(
+                                            entry.id,
+                                            "presentedToName",
+                                            "",
+                                          );
+                                        }}
+                                        className="p-0.5 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all flex items-center justify-center cursor-pointer"
+                                        title="তথ্য মুছুন"
+                                      >
+                                        <XCircle size={10} />
+                                      </button>
+                                    )}
+                                    <div className="relative flex items-center h-3.5 w-3.5 shrink-0">
+                                      <Calendar
+                                        size={11}
+                                        className={`text-blue-500 transition-colors ${isCol4Editable ? "cursor-pointer hover:text-blue-700" : "opacity-50"}`}
+                                        onClick={(e) => {
+                                          if (!isCol4Editable) return;
+                                          const input =
+                                            e.currentTarget.parentElement?.querySelector(
+                                              "input",
+                                            ) as HTMLInputElement;
+                                          if (input) {
+                                            try {
+                                              if (typeof input.showPicker === 'function') input.showPicker();
+                                              else input.focus();
+                                            } catch {
+                                              input.focus();
+                                            }
+                                          }
+                                        }}
+                                      />
+                                      <input
+                                        type="date"
+                                        className={`absolute inset-0 opacity-0 w-3.5 h-3.5 ${isCol4Editable ? "cursor-pointer" : "pointer-events-none"}`}
+                                        value={currentPresDate}
+                                        disabled={!isCol4Editable}
+                                        onChange={(e) =>
+                                          handleInlineChange(
+                                            entry.id,
+                                            "presentationDate",
+                                            e.target.value,
+                                          )
+                                        }
+                                      />
+                                    </div>
                                   </div>
                                 </div>
+                                <div>
+                                  <PremiumInlineSelect
+                                    value={currentPresName}
+                                    onSelect={(val) =>
+                                      handleInlineChange(
+                                        entry.id,
+                                        "presentedToName",
+                                        val,
+                                      )
+                                    }
+                                    disabled={!isCol4Editable}
+                                  />
+                                </div>
                               </div>
-                              <PremiumInlineSelect
-                                value={currentPresName}
-                                onSelect={(val) =>
-                                  handleInlineChange(
-                                    entry.id,
-                                    "presentedToName",
-                                    val,
-                                  )
-                                }
-                                disabled={!isAdmin}
-                              />
                             </div>
 
                             {/* 3. ঢাকায় প্রেরণ ও ঢাকা হতে ফেরত (শুধুমাত্র এসএফআই শাখার জন্য) */}
@@ -2613,9 +2645,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                       </span>
                                     ) : (
                                       <span
-                                        className={`text-[8px] font-black ${isAdmin ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
+                                        className={`text-[8px] font-black ${isCol4Editable ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
                                         onClick={(e) => {
-                                          if (!isAdmin) return;
+                                          if (!isCol4Editable) return;
                                           const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
                                           if (input) input.showPicker();
                                         }}
@@ -2623,7 +2655,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         তারিখ দিন
                                       </span>
                                     )}
-                                    {isAdmin && currentSentToDhakaDate && (
+                                    {isCol4Editable && currentSentToDhakaDate && (
                                       <button
                                         type="button"
                                         onClick={() => handleInlineChange(entry.id, "sentToDhakaDate", "")}
@@ -2636,19 +2668,19 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <div className="relative flex items-center h-3 w-3">
                                       <Calendar
                                         size={11}
-                                        className={`text-amber-600 transition-colors ${isAdmin ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
+                                        className={`text-amber-600 transition-colors ${isCol4Editable ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
                                         onClick={(e) => {
-                                          if (!isAdmin) return;
+                                          if (!isCol4Editable) return;
                                           const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
                                           if (input) input.showPicker();
                                         }}
                                       />
                                       <input
                                         type="date"
-                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
+                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isCol4Editable ? "cursor-pointer" : "pointer-events-none"}`}
                                         value={currentSentToDhakaDate}
                                         max={currentReturnedFromDhakaDate || undefined}
-                                        disabled={!isAdmin}
+                                        disabled={!isCol4Editable}
                                         onChange={(e) => {
                                           const val = e.target.value;
                                           if (val && currentReturnedFromDhakaDate && val > currentReturnedFromDhakaDate) {
@@ -2677,9 +2709,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                       </span>
                                     ) : (
                                       <span
-                                        className={`text-[8px] font-black ${isAdmin ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
+                                        className={`text-[8px] font-black ${isCol4Editable ? "text-amber-700 hover:text-amber-900 cursor-pointer" : "text-amber-400"}`}
                                         onClick={(e) => {
-                                          if (!isAdmin) return;
+                                          if (!isCol4Editable) return;
                                           const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
                                           if (input) input.showPicker();
                                         }}
@@ -2687,7 +2719,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         তারিখ দিন
                                       </span>
                                     )}
-                                    {isAdmin && currentReturnedFromDhakaDate && (
+                                    {isCol4Editable && currentReturnedFromDhakaDate && (
                                       <button
                                         type="button"
                                         onClick={() => handleInlineChange(entry.id, "returnedFromDhakaDate", "")}
@@ -2700,25 +2732,25 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     <div className="relative flex items-center h-3 w-3">
                                       <Calendar
                                         size={11}
-                                        className={`text-amber-600 transition-colors ${isAdmin ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
+                                        className={`text-amber-600 transition-colors ${isCol4Editable ? "cursor-pointer hover:text-amber-800" : "opacity-50"}`}
                                         onClick={(e) => {
-                                          if (!isAdmin) return;
+                                          if (!isCol4Editable) return;
                                           const input = e.currentTarget.parentElement?.querySelector("input") as HTMLInputElement;
                                           if (input) input.showPicker();
                                         }}
                                       />
                                       <input
                                         type="date"
-                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin ? "cursor-pointer" : "pointer-events-none"}`}
+                                        className={`absolute inset-0 opacity-0 w-3 h-3 ${isCol4Editable ? "cursor-pointer" : "pointer-events-none"}`}
                                         value={currentReturnedFromDhakaDate}
                                         min={currentSentToDhakaDate || undefined}
-                                        disabled={!isAdmin}
+                                        disabled={!isCol4Editable}
                                         onChange={(e) => {
                                           const val = e.target.value;
                                           if (val && currentSentToDhakaDate && val < currentSentToDhakaDate) {
                                             setValidationErrorMap((prev) => ({
                                               ...prev,
-                                              [entry.id]: "ঢাকা হতে ফেরত তারিখ ঢাকায় প্রেরণের তারিখের পূর্বের হতে পারবে না।",
+                                              [entry.id]: "ঢাকা হতে ফেরত তারিখ ঢাকায় প্রেরণের তারিখের আগের হতে পারবে না।",
                                             }));
                                             return;
                                           }
@@ -2731,9 +2763,25 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               </div>
                             )}
                           </div>
-                        </td>
-                        <td className={tdCls}>
-                          <div className="space-y-2">
+                        </div>
+                      );
+                    })()}
+                    </td>
+                    <td data-inline-col="col5" className={`${tdCls} relative group/col6`}>
+                      {(() => {
+                        const isRowInlineActive = inlineEditingRowId === entry.id || activeInlineEditingCell?.id === entry.id;
+                        const hasCol5Pending = !!(
+                          pending.isSettled !== undefined ||
+                          pending.issueLetterNo !== undefined ||
+                          pending.issueLetterDate !== undefined ||
+                          pending.dummyIssueLetterNo !== undefined
+                        );
+                        const isCol5Editable = isRowInlineActive || hasCol5Pending;
+                        const isCol5Locked = !isCol5Editable;
+
+                        return (
+                          <div className="flex flex-col justify-between h-full min-h-[175px] space-y-2">
+                            <div className={`space-y-2 flex-1 ${isCol5Locked ? 'pointer-events-none' : ''}`}>
                             {(() => {
                               const currentIsSettled =
                                 pending.isSettled !== undefined
@@ -2768,60 +2816,53 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                               return (
                                 <>
-                                  {/* 1. অপশন: নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না (উপরে) */}
-                                  <div className="p-2 border rounded-xl bg-gradient-to-br from-white via-slate-50 to-slate-100/80 border-slate-300/90 space-y-1.5 shadow-xs mb-1.5 transition-all">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[9.5px] font-black text-slate-800 tracking-tight flex items-center gap-1">
-                                        <CheckCircle2 size={12} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
+{/* ৬ নং কলামের একটি সমন্বিত একক ব্লক (Single Card) */}
+                                  <div className={`p-2 border rounded-xl space-y-2 transition-all duration-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 border-slate-300 shadow-xs ${
+                                    isIssueComplete ? "ring-1 ring-emerald-300/80 border-emerald-400" : ""
+                                  }`}>
+                                    {/* ১. নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না */}
+                                    <div className="flex items-center justify-between gap-1 w-full pb-1 border-b border-slate-200/80 h-[24px]">
+                                      <span className="text-[8.5px] font-black text-slate-800 tracking-tight flex items-center gap-1 shrink-0 whitespace-nowrap">
+                                        <CheckCircle2 size={11} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
                                         নিষ্পত্তি আছে কিনা:
                                       </span>
-                                      {Boolean(currentIsSettled) && isAdmin && (
+                                      <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-lg border border-slate-200/80 shrink-0">
                                         <button
                                           type="button"
-                                          onClick={() => handleInlineChange(entry.id, 'isSettled', '')}
-                                          className="text-[8px] font-black text-slate-500 hover:text-rose-600 bg-white border border-slate-300 hover:border-rose-300 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
-                                          title="বাছাই ক্লিয়ার করুন"
+                                          disabled={!isCol5Editable}
+                                          onClick={() => {
+                                            const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
+                                            handleInlineChange(entry.id, 'isSettled', nextVal);
+                                          }}
+                                          className={`py-0.5 px-1.5 rounded-md text-[8.5px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
+                                            currentIsSettled === 'হ্যাঁ'
+                                              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs ring-1 ring-emerald-400/60'
+                                              : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/60'
+                                          } ${!isCol5Editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
                                         >
-                                          <RotateCcw size={8} /> ক্লিয়ার
+                                          <Check size={9} strokeWidth={3} className="shrink-0" /> হ্যাঁ
                                         </button>
-                                      )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
-                                      <button
-                                        type="button"
-                                        disabled={!isAdmin}
-                                        onClick={() => {
-                                          const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
-                                          handleInlineChange(entry.id, 'isSettled', nextVal);
-                                        }}
-                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
-                                          currentIsSettled === 'হ্যাঁ'
-                                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md ring-2 ring-emerald-400/60 scale-[1.02]'
-                                            : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-transparent'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-                                      >
-                                        <Check size={12} strokeWidth={3} /> হ্যাঁ
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={!isAdmin}
-                                        onClick={() => {
-                                          const nextVal = currentIsSettled === 'না' ? '' : 'না';
-                                          handleInlineChange(entry.id, 'isSettled', nextVal);
-                                        }}
-                                        className={`py-1.5 px-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1.5 ${
-                                          currentIsSettled === 'না'
-                                            ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md ring-2 ring-rose-400/60 scale-[1.02]'
-                                            : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-transparent'
-                                        } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-                                      >
-                                        <X size={12} strokeWidth={3} /> না
-                                      </button>
+                                        <button
+                                          type="button"
+                                          disabled={!isCol5Editable}
+                                          onClick={() => {
+                                            const nextVal = currentIsSettled === 'না' ? '' : 'না';
+                                            handleInlineChange(entry.id, 'isSettled', nextVal);
+                                          }}
+                                          className={`py-0.5 px-1.5 rounded-md text-[8.5px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
+                                            currentIsSettled === 'না'
+                                              ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs ring-1 ring-rose-400/60'
+                                              : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 border border-slate-200/60'
+                                          } ${!isCol5Editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                                        >
+                                          <X size={9} strokeWidth={3} className="shrink-0" /> না
+                                        </button>
+                                      </div>
                                     </div>
 
                                     {/* View Settled Data Premium Button */}
                                     {currentIsSettled === 'হ্যাঁ' && (
-                                      <div className="pt-1">
+                                      <div className="pt-0.5">
                                         <button
                                           type="button"
                                           onClick={(e) => {
@@ -2845,23 +2886,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         </button>
                                       </div>
                                     )}
-                                    {(() => {
-                                      const missingIssueInfoMsg = (() => {
-                                        if (!currentIssueNo && !currentIssueDate) {
-                                          return "আপনি জারিপত্র নং ও তারিখ লেখেন নি।";
-                                        }
-                                        if (!currentIssueNo) {
-                                          return "আপনি জারিপত্র নম্বর লেখেন নি।";
-                                        }
-                                        if (!currentIssueDate) {
-                                          return "আপনি জারিপত্র তারিখ লেখেন নি।";
-                                        }
-                                        return null;
-                                      })();
 
+                                    {/* Notifications */}
+                                    {(() => {
                                       if (validationErrorMap[entry.id]) {
                                         return (
-                                          <div className="mt-1 text-[8.5px] font-black text-rose-950 bg-gradient-to-r from-rose-100 via-rose-50 to-red-50 border border-rose-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-rose-300">
+                                          <div className="text-[8.5px] font-black text-rose-950 bg-gradient-to-r from-rose-100 via-rose-50 to-red-50 border border-rose-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-rose-300">
                                             <div className="flex items-center gap-1">
                                               <AlertCircle size={12} className="text-rose-600 shrink-0 animate-bounce" />
                                               <span className="text-rose-950 font-extrabold">
@@ -2877,7 +2907,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                                       if (recentlyUpdatedMap[entry.id]) {
                                         return (
-                                          <div className="mt-1 text-[8.5px] font-black text-emerald-950 bg-gradient-to-r from-emerald-100 via-teal-100 to-emerald-50 border border-emerald-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-emerald-300/80">
+                                          <div className="text-[8.5px] font-black text-emerald-950 bg-gradient-to-r from-emerald-100 via-teal-100 to-emerald-50 border border-emerald-400 rounded-lg p-1.5 flex items-center justify-between leading-tight animate-in zoom-in-95 duration-300 shadow-xs ring-1 ring-emerald-300/80">
                                             <div className="flex items-center gap-1">
                                               <CheckCircle2 size={12} className="text-emerald-600 shrink-0 animate-bounce" />
                                               <span className="text-emerald-900 font-extrabold">
@@ -2891,10 +2921,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         );
                                       }
 
-
                                       if (unsettledClickNoticeMap[entry.id]) {
                                         return (
-                                          <div className="mt-1 text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
+                                          <div className="text-[8px] font-black text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
                                             <AlertTriangle size={12} className="text-amber-600 shrink-0 animate-bounce" />
                                             <span>নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।</span>
                                           </div>
@@ -2907,7 +2936,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         (dhakaNoticeMap[entry.id] || ((currentIssueNo || currentIssueDate) && canFillIssue))
                                       ) {
                                         return (
-                                          <div className="mt-1 text-[8px] font-black text-amber-950 bg-gradient-to-r from-amber-100 via-amber-50 to-orange-50 border border-amber-400 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
+                                          <div className="text-[8px] font-black text-amber-950 bg-gradient-to-r from-amber-100 via-amber-50 to-orange-50 border border-amber-400 rounded-lg p-1.5 flex items-center gap-1.5 leading-tight animate-in zoom-in-95 duration-200 shadow-xs ring-1 ring-amber-300">
                                             <AlertTriangle size={12} className="text-amber-600 shrink-0 animate-bounce" />
                                             <span>চিঠিটি এখনো ঢাকায় প্রেরণ বা ঢাকা হতে ফেরত আসেনি।</span>
                                           </div>
@@ -2916,238 +2945,271 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
                                       return null;
                                     })()}
-                                  </div>
 
-                                  {/* 2. জারিপত্র নং */}
-                                  {(() => {
-                                    const rawIssueDigits = toEnglishDigits(currentIssueNo || '').replace(/[^\d]/g, '');
-                                    const is100Entered = rawIssueDigits === '100';
-                                    const hasDummyTag = (currentIssueNo || '').includes('ডামি') || (currentIssueNo || '').includes('dummy');
-                                    const showDummyPrompt = isAdmin && canFillIssue && is100Entered && !hasDummyTag && !dummyDeclinedMap[entry.id];
+                                    {/* ২. জারিপত্র নং ও তারিখ */}
+                                    {(() => {
+                                      const rawIssueDigits = toEnglishDigits(currentIssueNo || '').replace(/[^\d]/g, '');
+                                      const is100Entered = rawIssueDigits === '100';
+                                      const hasDummyTag = (currentIssueNo || '').includes('ডামি') || (currentIssueNo || '').includes('dummy');
+                                      const showDummyPrompt = isCol5Editable && canFillIssue && is100Entered && !hasDummyTag && !dummyDeclinedMap[entry.id];
 
-                                    return (
-                                      <div
-                                        onClick={() => {
-                                          if (!canFillIssue) triggerUnsettledNotice(entry.id);
-                                          if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                            triggerDhakaNotice(entry.id);
-                                          }
-                                        }}
-                                        className={`p-1.5 border rounded-lg space-y-1 transition-colors relative ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <div
-                                            className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
-                                          >
-                                            <Hash size={8} /> জারিপত্র নং
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            {hasDummyTag && (
-                                              <span
-                                                className="px-1.5 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[7.5px] font-black tracking-tight flex items-center gap-0.5 shadow-2xs animate-in zoom-in-95 duration-150"
-                                                title="ডামি জারিপত্র নম্বর"
-                                              >
-                                                (ডামি)
-                                              </span>
-                                            )}
-                                            {currentIssueComment && (
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setSelectedCommentText(currentIssueComment);
-                                                }}
-                                                className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse"
-                                                title="মন্তব্য দেখুন"
-                                              >
-                                                <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
-                                              </button>
-                                            )}
-                                            {isAdmin && (
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
-                                                }}
-                                                className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors`}
-                                                title="মন্তব্য লিখুন/সম্পাদনা করুন"
-                                              >
-                                                <Edit3 size={10} />
-                                              </button>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <input
-                                          type="text"
-                                          placeholder={canFillIssue ? "নং" : "নিষ্পত্তি নির্বাচন করুন"}
-                                          className={`w-full h-6 px-1.5 border border-slate-200 rounded-md text-[10px] font-bold outline-none ${
-                                            !canFillIssue || !isAdmin
-                                              ? "bg-slate-100 text-slate-400 cursor-pointer opacity-75"
-                                              : "bg-white focus:border-emerald-400"
-                                          }`}
-                                          value={canFillIssue ? currentIssueNo : ""}
-                                          disabled={!isAdmin || !canFillIssue}
+                                      return (
+                                        <div
                                           onClick={() => {
                                             if (!canFillIssue) triggerUnsettledNotice(entry.id);
                                             if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
                                               triggerDhakaNotice(entry.id);
                                             }
                                           }}
-                                          onFocus={() => {
-                                            if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                              triggerDhakaNotice(entry.id);
-                                            }
-                                          }}
-                                          title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
-                                          onChange={(e) => {
-                                            if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                              triggerDhakaNotice(entry.id);
-                                            }
-                                            // If user modifies input, reset the decline state so prompt can appear if they type 100 again
-                                            if (dummyDeclinedMap[entry.id]) {
-                                              setDummyDeclinedMap((prev) => {
-                                                const next = { ...prev };
-                                                delete next[entry.id];
-                                                return next;
-                                              });
-                                            }
-                                            handleInlineChange(
-                                              entry.id,
-                                              "issueLetterNo",
-                                              toBengaliDigits(e.target.value),
-                                            );
-                                          }}
-                                        />
-
-                                        {/* ডামি জারিপত্র নং প্রম্পট মেসেজ (১০০ এন্ট্রি দিলে) */}
-                                        {showDummyPrompt && (
-                                          <div className="mt-1 p-1.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/90 border border-amber-300 rounded-lg flex items-center justify-between gap-1 shadow-xs animate-in zoom-in-95 duration-150 ring-1 ring-amber-200">
-                                            <div className="flex items-center gap-1 text-[8px] font-black text-amber-950 leading-tight">
-                                              <HelpCircle size={10} className="text-amber-600 shrink-0 animate-bounce" />
-                                              <span>এটি কি ডামি জারিপত্র নং?</span>
+                                          className="space-y-1.5 pt-0.5"
+                                        >
+                                          {/* জারিপত্র নং সারি */}
+                                          <div className="flex items-center gap-1.5">
+                                            <div
+                                              className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 shrink-0 ${labelColorCls}`}
+                                            >
+                                              <Hash size={8.5} /> জারিপত্র নং:
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0">
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleInlineChange(entry.id, "issueLetterNo", "১০০ (ডামি)");
+                                            <div className="flex-1 flex items-center gap-1 min-w-0">
+                                              <input
+                                                type="text"
+                                                placeholder={canFillIssue ? "নং লিখুন" : "নিষ্পত্তি নির্বাচন করুন"}
+                                                className={`w-full h-5 px-1.5 border border-slate-200 rounded-md text-[9.5px] font-bold outline-none ${
+                                                  !canFillIssue || !isCol5Editable
+                                                    ? "bg-slate-100/80 text-slate-400 cursor-pointer opacity-75"
+                                                    : "bg-white focus:border-emerald-400"
+                                                }`}
+                                                value={canFillIssue ? currentIssueNo : ""}
+                                                disabled={!isCol5Editable || !canFillIssue}
+                                                onClick={() => {
+                                                  if (!canFillIssue) triggerUnsettledNotice(entry.id);
+                                                  if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                    triggerDhakaNotice(entry.id);
+                                                  }
                                                 }}
-                                                className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
-                                                title="হ্যাঁ, এটি ডামি জারিপত্র নং"
-                                              >
-                                                <Check size={8} strokeWidth={3} /> হ্যাঁ
-                                              </button>
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setDummyDeclinedMap((prev) => ({ ...prev, [entry.id]: true }));
+                                                onFocus={() => {
+                                                  if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                    triggerDhakaNotice(entry.id);
+                                                  }
                                                 }}
-                                                className="px-1.5 py-0.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
-                                                title="না, এটি সাধারণ জারিপত্র নং"
-                                              >
-                                                <X size={8} strokeWidth={3} /> না
-                                              </button>
+                                                title={!canFillIssue ? "নিষ্পত্তি 'হ্যাঁ' বা 'না' সিলেক্ট না করা পর্যন্ত জারিপত্র নং ও তারিখ ফিলাপ হবে না।" : ""}
+                                                onChange={(e) => {
+                                                  if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                    triggerDhakaNotice(entry.id);
+                                                  }
+                                                  if (dummyDeclinedMap[entry.id]) {
+                                                    setDummyDeclinedMap((prev) => {
+                                                      const next = { ...prev };
+                                                      delete next[entry.id];
+                                                      return next;
+                                                    });
+                                                  }
+                                                  handleInlineChange(
+                                                    entry.id,
+                                                    "issueLetterNo",
+                                                    toBengaliDigits(e.target.value),
+                                                  );
+                                                }}
+                                              />
+                                              {hasDummyTag && (
+                                                <span
+                                                  className="px-1 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[7px] font-black tracking-tight shrink-0 shadow-2xs animate-in zoom-in-95 duration-150"
+                                                  title="ডামি জারিপত্র নম্বর"
+                                                >
+                                                  (ডামি)
+                                                </span>
+                                              )}
+                                              {currentIssueComment && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedCommentText(currentIssueComment);
+                                                  }}
+                                                  className="text-amber-500 hover:text-amber-600 active:scale-95 p-0.5 rounded transition-all animate-pulse shrink-0 cursor-pointer"
+                                                  title="মন্তব্য দেখুন"
+                                                >
+                                                  <MessageSquare size={10} fill="currentColor" className="text-amber-500" />
+                                                </button>
+                                              )}
+                                              {isCol5Editable && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingCommentId(editingCommentId === entry.id ? null : entry.id);
+                                                  }}
+                                                  className={`${editingCommentId === entry.id ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'} p-0.5 rounded transition-colors shrink-0 cursor-pointer`}
+                                                  title="মন্তব্য লিখুন/সম্পাদনা করুন"
+                                                >
+                                                  <Edit3 size={10} />
+                                                </button>
+                                              )}
+                                              {/* ডামি ট্যাগ বাটন */}
+                                              {canFillIssue && is100Entered && !hasDummyTag && !dummyDeclinedMap[entry.id] && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const newNo = `${currentIssueNo || ''} (ডামি)`;
+                                                    handleInlineChange(entry.id, "issueLetterNo", newNo);
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded text-[8px] font-black animate-bounce shadow-xs flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer z-10"
+                                                  title="জারিপত্র নম্বরের সাথে '(ডামি)' যুক্ত করুন"
+                                                >
+                                                  ডামি?
+                                                </button>
+                                              )}
                                             </div>
                                           </div>
-                                        )}
 
-                                        {isAdmin && editingCommentId === entry.id && (
-                                          <div className="mt-1 pt-1 border-t border-dashed border-slate-200 space-y-1">
-                                            <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
-                                            <input
-                                              type="text"
-                                              placeholder="ডামি জারিপত্র নং-এর কারণ"
-                                              className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
-                                              value={currentIssueComment}
-                                              onChange={(e) =>
-                                                handleInlineChange(
-                                                  entry.id,
-                                                  "issueLetterComment",
-                                                  e.target.value,
-                                                )
-                                              }
-                                            />
+                                          {/* ডামি জারিপত্র নং প্রম্পট মেসেজ (১০০ এন্ট্রি দিলে) */}
+                                          {showDummyPrompt && (
+                                            <div className="p-1.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/90 border border-amber-300 rounded-lg flex items-center justify-between gap-1 shadow-xs animate-in zoom-in-95 duration-150 ring-1 ring-amber-200">
+                                              <div className="flex items-center gap-1 text-[8px] font-black text-amber-950 leading-tight">
+                                                <HelpCircle size={10} className="text-amber-600 shrink-0 animate-bounce" />
+                                                <span>এটি কি ডামি জারিপত্র নং?</span>
+                                              </div>
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleInlineChange(entry.id, "issueLetterNo", "১০০ (ডামি)");
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                                  title="হ্যাঁ, এটি ডামি জারিপত্র নং"
+                                                >
+                                                  <Check size={8} strokeWidth={3} /> হ্যাঁ
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDummyDeclinedMap((prev) => ({ ...prev, [entry.id]: true }));
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded text-[7.5px] font-black flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer"
+                                                  title="না, এটি সাধারণ জারিপত্র নং"
+                                                >
+                                                  <X size={8} strokeWidth={3} /> না
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {isCol5Editable && editingCommentId === entry.id && (
+                                            <div className="pt-1 border-t border-dashed border-slate-200 space-y-1">
+                                              <div className="text-[7.5px] font-bold text-slate-400">মন্তব্য লিখুন:</div>
+                                              <input
+                                                type="text"
+                                                placeholder="ডামি জারিপত্র নং-এর কারণ"
+                                                className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
+                                                value={currentIssueComment}
+                                                onChange={(e) =>
+                                                  handleInlineChange(
+                                                    entry.id,
+                                                    "issueLetterComment",
+                                                    e.target.value,
+                                                  )
+                                                }
+                                              />
+                                            </div>
+                                          )}
+
+                                          {/* জারিপত্র তারিখ সারি */}
+                                          <div className="pt-1 border-t border-slate-200/70 flex items-center gap-1.5">
+                                            <div
+                                              className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 shrink-0 ${labelColorCls}`}
+                                            >
+                                              <Calendar size={8.5} /> জারিপত্র তারিখ:
+                                            </div>
+                                            <div
+                                              onClick={(e) => {
+                                                if (!isCol5Editable || !canFillIssue) {
+                                                  triggerUnsettledNotice(entry.id);
+                                                  return;
+                                                }
+                                                if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                  triggerDhakaNotice(entry.id);
+                                                }
+                                                const input = e.currentTarget.querySelector("input") as HTMLInputElement;
+                                                if (input) {
+                                                  try {
+                                                    if (typeof input.showPicker === 'function') input.showPicker();
+                                                    else input.focus();
+                                                  } catch {
+                                                    input.focus();
+                                                  }
+                                                }
+                                              }}
+                                              className={`relative flex-1 h-5 px-1.5 border border-slate-200 rounded-md flex items-center justify-between text-[9.5px] font-bold transition-all ${
+                                                !canFillIssue || !isCol5Editable
+                                                  ? "bg-slate-100/80 text-slate-400 cursor-pointer opacity-75"
+                                                  : "bg-white hover:border-emerald-400 cursor-pointer shadow-2xs"
+                                              }`}
+                                            >
+                                              <span
+                                                className={`truncate ${
+                                                  canFillIssue && formatDateBN(currentIssueDate)
+                                                    ? isIssueComplete
+                                                      ? "text-emerald-700 font-bold"
+                                                      : "text-amber-700 font-bold"
+                                                    : "text-slate-400"
+                                                }`}
+                                              >
+                                                {canFillIssue && formatDateBN(currentIssueDate) ? formatDateBN(currentIssueDate) : "বাছুন..."}
+                                              </span>
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                {isCol5Editable && canFillIssue && currentIssueDate && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleInlineChange(entry.id, "issueLetterDate", "");
+                                                    }}
+                                                    className="p-0.5 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all z-20 cursor-pointer"
+                                                    title="তারিখ মুছুন"
+                                                  >
+                                                    <XCircle size={10} />
+                                                  </button>
+                                                )}
+                                                <Calendar
+                                                  size={10}
+                                                  className={`${iconColorCls} shrink-0 transition-colors ${
+                                                    isCol5Editable && canFillIssue ? "hover:opacity-80" : "opacity-40"
+                                                  }`}
+                                                />
+                                              </div>
+                                              <input
+                                                type="date"
+                                                className={`absolute inset-0 opacity-0 w-full h-full ${isCol5Editable && canFillIssue ? 'cursor-pointer z-10' : 'pointer-events-none'}`}
+                                                value={canFillIssue ? currentIssueDate : ""}
+                                                disabled={!isCol5Editable || !canFillIssue}
+                                                onChange={(e) => {
+                                                  if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
+                                                    triggerDhakaNotice(entry.id);
+                                                  }
+                                                  handleInlineChange(
+                                                    entry.id,
+                                                    "issueLetterDate",
+                                                    e.target.value,
+                                                  );
+                                                }}
+                                              />
+                                            </div>
                                           </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-
-
-                                  {/* 3. জারিপত্র তারিখ */}
-                                  <div
-                                    onClick={() => {
-                                      if (!canFillIssue) {
-                                        triggerUnsettledNotice(entry.id);
-                                        return;
-                                      }
-                                      if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                        triggerDhakaNotice(entry.id);
-                                      }
-                                    }}
-                                    className={`p-1.5 border rounded-lg space-y-1 transition-colors ${issueColorCls} ${!canFillIssue ? 'cursor-pointer' : ''}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div
-                                        className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 ${labelColorCls}`}
-                                      >
-                                        <Calendar size={8} /> জারিপত্র তারিখ
-                                      </div>
-                                      <div className="flex items-center gap-1.5">
-                                        {canFillIssue && formatDateBN(currentIssueDate) && (
-                                          <span
-                                            className={`text-[8px] font-black ${isIssueComplete ? "text-emerald-600" : "text-amber-600"}`}
-                                          >
-                                            {formatDateBN(currentIssueDate)}
-                                          </span>
-                                        )}
-                                        <div className="relative flex items-center h-3 w-3">
-                                          <Calendar
-                                            size={11}
-                                            className={`${iconColorCls} transition-colors ${isAdmin && canFillIssue ? "cursor-pointer hover:opacity-80" : "opacity-40 cursor-pointer"}`}
-                                            onClick={(e) => {
-                                              if (!isAdmin || !canFillIssue) {
-                                                triggerUnsettledNotice(entry.id);
-                                                return;
-                                              }
-                                              if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                                triggerDhakaNotice(entry.id);
-                                              }
-                                              const input =
-                                                e.currentTarget.parentElement?.querySelector(
-                                                  "input",
-                                                ) as HTMLInputElement;
-                                              if (input) input.showPicker();
-                                            }}
-                                          />
-                                          <input
-                                            type="date"
-                                            className={`absolute inset-0 opacity-0 w-3 h-3 ${isAdmin && canFillIssue ? "cursor-pointer" : "pointer-events-none"}`}
-                                            value={canFillIssue ? currentIssueDate : ""}
-                                            disabled={!isAdmin || !canFillIssue}
-                                            onChange={(e) => {
-                                              if (isSfiEntry && (!currentSentToDhakaDate || !currentReturnedFromDhakaDate)) {
-                                                triggerDhakaNotice(entry.id);
-                                              }
-                                              handleInlineChange(
-                                                entry.id,
-                                                "issueLetterDate",
-                                                e.target.value,
-                                              );
-                                            }}
-                                          />
                                         </div>
-                                      </div>
-                                    </div>
+                                      );
+                                    })()}
                                   </div>
-                                </>
-                              );
-                            })()}
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </div>
-                        </td>
+                        );
+                      })()}
+                    </td>
                         <td
                           className={
                             tdCls + " relative group/action text-center"
@@ -3157,7 +3219,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                             {entry.remarks || "-"}
                           </span>
                           {isAdmin && (
-                            <div className="flex flex-col items-center gap-1 no-print mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className={`flex flex-col items-center gap-1 no-print mt-2 transition-opacity duration-300 ${inlineEditingRowId === entry.id || pendingChanges[entry.id] ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                               {pendingChanges[entry.id] && (
                                 <button
                                   onClick={(e) => {
@@ -3200,7 +3262,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                   onEdit?.(entry);
                                 }}
                                 className="p-1.5 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
-                                title="এডিট করুন"
+                                title="সম্পূর্ণ তথ্য এডিট করুন"
                               >
                                 <Pencil size={12} />
                               </button>
@@ -3219,6 +3281,51 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                               >
                                 <Trash2 size={12} />
                               </button>
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const hasPending = !!pendingChanges[entry.id];
+                                    if (inlineEditingRowId === entry.id) {
+                                      if (hasPending) {
+                                        // Show warning that changes have not been updated yet
+                                        setUncommittedWarningId(entry.id);
+                                        setTimeout(() => {
+                                          setUncommittedWarningId((prev) => (prev === entry.id ? null : prev));
+                                        }, 4000);
+                                        return;
+                                      }
+                                      setInlineEditingRowId(null);
+                                    } else {
+                                      setInlineEditingRowId(entry.id);
+                                      setUncommittedWarningId(null);
+                                    }
+                                  }}
+                                  className={`p-1.5 rounded-md shadow-md transition-all duration-300 cursor-pointer ${
+                                    inlineEditingRowId === entry.id
+                                      ? "bg-amber-600 ring-2 ring-amber-300 text-white scale-105"
+                                      : "bg-amber-500 hover:bg-amber-600 text-white"
+                                  }`}
+                                  title={inlineEditingRowId === entry.id ? "লক করুন (সম্পাদনা বন্ধ)" : "এই সারির তথ্য এন্ট্রি/এডিট করুন (কলাম ৫ ও ৬)"}
+                                >
+                                  <Edit3 size={12} />
+                                </button>
+
+                                {/* আপডেট না করে লক করতে চাইলে ডিজাইনকৃত ইনলাইন মেসেজ */}
+                                {uncommittedWarningId === entry.id && (
+                                  <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 z-50 w-48 p-2 bg-gradient-to-r from-amber-500 to-rose-600 text-white rounded-lg shadow-xl border border-white/40 text-left animate-in fade-in zoom-in duration-200">
+                                    <div className="flex items-start gap-1.5">
+                                      <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-200 animate-pulse" />
+                                      <div>
+                                        <div className="text-[10px] font-black leading-tight">আপনি এখনো আপডেট করেননি!</div>
+                                        <div className="text-[8.5px] opacity-90 leading-tight mt-0.5">সবুজ সেভ (Save) বাটনে ক্লিক করে আপডেট সম্পন্ন করুন।</div>
+                                      </div>
+                                    </div>
+                                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-rose-600 rotate-45 border-r border-t border-white/40"></div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </td>

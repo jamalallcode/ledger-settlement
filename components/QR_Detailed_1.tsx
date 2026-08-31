@@ -412,18 +412,22 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     return { col4, col5, col6, col7, col8, col9, col10, col11, col12, col13 };
   };
 
-  // Header styles with border fix for sticky header
-  const thCls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow2Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-100";
-  const thRow3Cls = "p-2 text-[10px] font-black text-slate-800 align-middle text-center bg-slate-200";
+  // Header styles matching ReturnSummaryTable (Ice-blue gradient with 3D embossed border highlights)
+  const reportThStyle1 = "z-[240] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap";
+  const reportThStyle2 = "z-[240] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/80 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-border relative whitespace-normal";
+  const reportThStyle3 = "z-[240] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-gradient-to-b from-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap";
 
-  const yellowThCls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow2Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-300";
-  const yellowThRow3Cls = "p-2 text-[10px] font-black text-slate-900 align-middle text-center bg-amber-400";
+  const thCls = reportThStyle1;
+  const thRow2Cls = reportThStyle2;
+  const thRow3Cls = reportThStyle3;
 
-  const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white";
-  const numTdCls = "p-2 text-[10px] text-slate-800 text-center align-middle font-bold bg-white whitespace-nowrap";
-  const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black font-black text-center whitespace-nowrap";
+  const yellowThCls = reportThStyle1;
+  const yellowThRow2Cls = reportThStyle2;
+  const yellowThRow3Cls = reportThStyle3;
+
+  const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white border-b border-r border-slate-200/90";
+  const numTdCls = "p-2 text-[10px] text-slate-900 text-center align-middle font-bold bg-white border-b border-r border-slate-200/90 whitespace-nowrap";
+  const footerTdCls = "p-2.5 text-[10px] text-white align-middle bg-slate-950 font-black text-center border-r border-slate-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.15)] whitespace-nowrap";
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
@@ -542,7 +546,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       {/* Main Table Container (With Fixed Borders & Scroll Fix - Item 1) */}
       <div className="qr-table-container table-container overflow-auto shadow-sm rounded-lg mb-6 max-h-[75vh]">
         {/* TABLE 1 */}
-        <table className="w-full border-separate border-spacing-0 min-w-[1050px]">
+        <table className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
           <thead>
             <tr>
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
@@ -645,27 +649,27 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                   <React.Fragment key={`t1-group-${gIdx}`}>
                     {groupRows}
                     <tr className="bg-slate-100 font-black">
-                      <td colSpan={3} className={`${tdCls} font-black text-center bg-slate-200 text-slate-900`}>
+                      <td colSpan={3} className={`${tdCls} font-black text-center !bg-slate-200 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]`}>
                         মোট ({group.ministry})
                       </td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col4.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col5.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col6.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col7.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col8.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col9.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col10.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col11.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col12.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-slate-100`}>{toBengaliDigits(groupSums.col13.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col4.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col5.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col6.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col7.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col8.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col9.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col10.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col11.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col12.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col13.toString())}</td>
                     </tr>
                   </React.Fragment>
                 );
               });
             })()}
           </tbody>
-          <tfoot className="bg-black">
-            <tr className="bg-black">
+          <tfoot className="bg-slate-950">
+            <tr className="bg-slate-950">
               <td colSpan={3} className={footerTdCls}>মোট (টেবিল-১)</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t1Totals.col5.toString())}</td>
@@ -681,8 +685,8 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           </tfoot>
         </table>
 
-        {/* TABLE 2 (YELLOW HEADER & FOOTER - FINANCIAL INSTITUTIONS) */}
-        <table className="w-full border-separate border-spacing-0 min-w-[1050px] mt-3">
+        {/* TABLE 2 (FINANCIAL INSTITUTIONS) */}
+        <table className="w-full border-separate border-spacing-0 min-w-[1050px] mt-4 border border-slate-300">
           <thead>
             <tr>
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
@@ -781,28 +785,28 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                 return (
                   <React.Fragment key={`t2-group-${gIdx}`}>
                     {groupRows}
-                    <tr className="bg-amber-100/80 font-black">
-                      <td colSpan={3} className={`${tdCls} font-black text-center bg-amber-200 text-slate-900`}>
+                    <tr className="bg-slate-100 font-black">
+                      <td colSpan={3} className={`${tdCls} font-black text-center !bg-slate-200 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]`}>
                         মোট ({group.ministry})
                       </td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col4.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col5.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col6.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col7.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col8.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col9.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col10.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col11.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col12.toString())}</td>
-                      <td className={`${numTdCls} font-black bg-amber-100/80`}>{toBengaliDigits(groupSums.col13.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col4.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col5.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col6.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col7.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col8.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col9.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col10.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col11.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col12.toString())}</td>
+                      <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupSums.col13.toString())}</td>
                     </tr>
                   </React.Fragment>
                 );
               });
             })()}
           </tbody>
-          <tfoot className="bg-black">
-            <tr className="bg-black">
+          <tfoot className="bg-slate-950">
+            <tr className="bg-slate-950">
               <td colSpan={3} className={footerTdCls}>মোট (টেবিল-২)</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col5.toString())}</td>
@@ -815,7 +819,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col12.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(t2Totals.col13.toString())}</td>
             </tr>
-            <tr className="bg-black">
+            <tr className="bg-slate-950">
               <td colSpan={3} className={footerTdCls}>সর্বমোট</td>
               <td className={footerTdCls}>{toBengaliDigits(grandTotals.col4.toString())}</td>
               <td className={footerTdCls}>{toBengaliDigits(grandTotals.col5.toString())}</td>

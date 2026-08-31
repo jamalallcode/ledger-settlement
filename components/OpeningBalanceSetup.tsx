@@ -46,27 +46,31 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   });
   const [showSavedToast, setShowSavedToast] = React.useState<boolean>(false);
 
-  const displayFields: { key: keyof MinistryPrevStats, label: string, subLabel?: string }[] = [
-    { key: 'unsettledCount', label: 'অমীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'unsettledAmount', label: 'অমীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'unsettledQuarterlyAmount', label: 'অমীমাংসিত টাকা (ত্রৈমাসিক)', subLabel: '(প্রারম্ভিক)' },
-    { key: 'settledCount', label: 'মীমাংসিত অনুচ্ছেদ সংখ্যা', subLabel: '(প্রারম্ভিক)' },
-    { key: 'settledAmount', label: 'মীমাংসিত টাকা', subLabel: '(প্রারম্ভিক)' }
+  const displayFields: { key: keyof MinistryPrevStats, label: string, group: 'monthly' | 'quarterly' }[] = [
+    { key: 'unsettledCount', label: 'সংখ্যা', group: 'monthly' },
+    { key: 'unsettledAmount', label: 'টাকা', group: 'monthly' },
+    { key: 'settledCount', label: 'সংখ্যা', group: 'monthly' },
+    { key: 'settledAmount', label: 'টাকা', group: 'monthly' },
+    { key: 'unsettledQuarterlyAmount', label: 'টাকা', group: 'quarterly' },
+    { key: 'recoveryAdjustmentQuarterlyCount', label: 'সংখ্যা', group: 'quarterly' },
+    { key: 'recoveryAdjustmentQuarterlyAmount', label: 'টাকা', group: 'quarterly' }
   ];
 
-  const setupThCls = "p-3 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300 w-[15%]";
-  const setupFooterTdCls = "p-4 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190]";
+  const setupThCls = "p-2.5 text-center font-black text-slate-900 text-[12px] md:text-[13px] uppercase leading-tight h-10 align-middle z-[210] border-b border-r border-slate-300 w-[11.4%]";
+  const setupFooterTdCls = "p-4 text-center text-[15px] bg-slate-200 text-slate-900 font-black z-[190] border-r border-slate-300";
   
   const totalStats = ministryGroups.reduce((acc, m) => {
     const entities = MINISTRY_ENTITY_MAP[m] || [];
     entities.forEach(ent => {
-      const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+      const stats = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
       acc.uC += stats.unsettledCount; acc.uA += Math.round(stats.unsettledAmount);
-      acc.uQA += Math.round(stats.unsettledQuarterlyAmount || 0);
       acc.sC += stats.settledCount; acc.sA += Math.round(stats.settledAmount);
+      acc.uQA += Math.round(stats.unsettledQuarterlyAmount || 0);
+      acc.rAQC += stats.recoveryAdjustmentQuarterlyCount || 0;
+      acc.rAQA += Math.round(stats.recoveryAdjustmentQuarterlyAmount || 0);
     });
     return acc;
-  }, { uC: 0, uA: 0, uQA: 0, sC: 0, sA: 0 });
+  }, { uC: 0, uA: 0, sC: 0, sA: 0, uQA: 0, rAQC: 0, rAQA: 0 });
 
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto space-y-6 py-4 animate-table-entrance relative px-2">
@@ -155,14 +159,42 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       <div className={`table-container bg-white rounded-3xl relative w-full overflow-auto transition-all duration-500 ${showSavedToast ? 'ring-4 ring-emerald-500/80 shadow-emerald-500/30 shadow-2xl scale-[1.002]' : ''}`}>
          <table className="w-full text-sm border-separate border-spacing-0">
            <thead>
+              {/* ১ম লেভেল: প্রধান গ্রুপ হেডার (প্রারম্ভিক অন্তর্ভুক্ত) */}
               <tr>
-                <th className="p-3.5 text-left font-black text-slate-900 text-[12px] md:text-[13px] w-[24%] bg-slate-200 leading-tight h-16 align-middle z-[210] border-b border-slate-300">মন্ত্রণালয় ও সংস্থা</th>
+                <th rowSpan={3} className="p-3.5 text-center font-black text-slate-900 text-[13px] md:text-[14px] w-[20%] bg-slate-200 leading-tight align-middle z-[210] border-b border-r border-slate-300">
+                  মন্ত্রণালয় ও সংস্থা
+                </th>
+                <th colSpan={4} className="py-2 px-3 text-center font-black text-blue-900 text-[13px] md:text-[14px] bg-blue-100/90 border-b border-r border-blue-200 tracking-wide">
+                  মাসিক রিটার্ন (প্রারম্ভিক)
+                </th>
+                <th colSpan={3} className="py-2 px-3 text-center font-black text-amber-900 text-[13px] md:text-[14px] bg-amber-100/90 border-b border-r border-amber-200 tracking-wide">
+                  ত্রৈমাসিক রিটার্ন (প্রারম্ভিক)
+                </th>
+              </tr>
+              {/* ২য় লেভেল: মার্জ করা বিষয়ের হেডার */}
+              <tr>
+                <th colSpan={2} className="py-1.5 px-2 text-center font-black text-slate-800 text-[12.5px] bg-slate-100 border-b border-r border-slate-300">
+                  অমীমাংসিত
+                </th>
+                <th colSpan={2} className="py-1.5 px-2 text-center font-black text-slate-800 text-[12.5px] bg-slate-100 border-b border-r border-slate-300">
+                  মীমাংসিত
+                </th>
+                <th colSpan={1} className="py-1.5 px-2 text-center font-black text-amber-950 text-[12px] bg-amber-50/90 border-b border-r border-amber-200">
+                  অমীমাংসিত (ত্রৈমাসিক- ৩)
+                </th>
+                <th colSpan={2} className="py-1.5 px-2 text-center font-black text-amber-950 text-[12.5px] bg-amber-50/90 border-b border-r border-amber-200">
+                  সংস্থাভিত্তিক (ত্রৈমাসিক- ৪)
+                </th>
+              </tr>
+              {/* ৩য় লেভেল: সাব-হেডার (সংখ্যা / টাকা) */}
+              <tr>
                 {displayFields.map(f => (
-                  <th key={f.key} className={setupThCls}>
-                    {f.label} {f.subLabel && <><br/><span className="text-[10px] text-slate-500 font-black">{f.subLabel}</span></>}
+                  <th key={f.key} className={`${setupThCls} ${f.group === 'quarterly' ? 'bg-amber-100/60 text-amber-950' : 'bg-slate-200 text-slate-900'}`}>
+                    {f.label}
                   </th>
                 ))}
               </tr>
+              {/* কলাম ক্রমিক নম্বর */}
               <tr className="bg-slate-300 text-slate-900 font-black text-[12px] text-center border-b border-slate-400">
                 <th className="py-1.5 px-3 text-center font-black text-slate-800 bg-slate-300 border-r border-slate-400 text-[12px]">
                   (১)
@@ -178,21 +210,23 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
              {ministryGroups.map(m => {
                const entities = MINISTRY_ENTITY_MAP[m] || [];
                const mSubTotal = entities.reduce((acc, ent) => {
-                 const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+                 const s = tempPrevStats[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
                  acc.uC += s.unsettledCount; acc.uA += Math.round(s.unsettledAmount);
-                 acc.uQA += Math.round(s.unsettledQuarterlyAmount || 0);
                  acc.sC += s.settledCount; acc.sA += Math.round(s.settledAmount);
+                 acc.uQA += Math.round(s.unsettledQuarterlyAmount || 0);
+                 acc.rAQC += s.recoveryAdjustmentQuarterlyCount || 0;
+                 acc.rAQA += Math.round(s.recoveryAdjustmentQuarterlyAmount || 0);
                  return acc;
-               }, { uC: 0, uA: 0, uQA: 0, sC: 0, sA: 0 });
+               }, { uC: 0, uA: 0, sC: 0, sA: 0, uQA: 0, rAQC: 0, rAQA: 0 });
 
                return (
                  <React.Fragment key={m}>
-                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={6} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
+                   <tr className="bg-[#1e293b] no-hover-row"><td colSpan={8} className="px-5 py-3 bg-[#1e293b]"><div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white"><LayoutGrid size={15} className="text-blue-400" /> {m}</div></td></tr>
                    {entities.map(ent => (
                      <tr key={ent} className="hover:bg-blue-50/40 transition-all group bg-white">
-                       <td className="px-6 py-4 font-bold text-slate-800 text-[13px] bg-white group-hover:text-blue-700">{ent}</td>
+                       <td className="px-6 py-4 font-bold text-slate-800 text-[13px] bg-white group-hover:text-blue-700 border-r border-slate-200">{ent}</td>
                        {displayFields.map(f => (
-                         <td key={f.key} className={`p-1.5 text-center align-middle h-14 transition-colors ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
+                         <td key={f.key} className={`p-1.5 text-center align-middle h-14 transition-colors border-r border-slate-100 ${isEditingSetup ? 'bg-white group-hover:bg-blue-50' : 'bg-slate-50'}`}>
                            <input 
                              type="text" 
                              readOnly={!isEditingSetup}
@@ -201,9 +235,9 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                              value={tempPrevStats[ent]?.[f.key] !== undefined && tempPrevStats[ent]![f.key] !== 0 ? toBengaliDigits(tempPrevStats[ent]![f.key]) : ''} 
                              onPaste={(e) => handleSetupPaste(e, ent, f.key)} 
                              onChange={e => { 
-                               if (!isEditingSetup) return;
-                               const num = parseBengaliNumber(e.target.value); 
-                               setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [f.key]: num } })); 
+                                if (!isEditingSetup) return;
+                                const num = parseBengaliNumber(e.target.value); 
+                                setTempPrevStats(prev => ({ ...prev, [ent]: { ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [f.key]: num } })); 
                              }} 
                            />
                          </td>
@@ -211,14 +245,17 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                      </tr>
                    ))}
                    <tr className="bg-sky-50/50 font-black italic text-slate-700 no-hover-row">
-                      <td className="px-6 py-3 text-right text-[11px] uppercase">{m}</td>
+                      <td className="px-6 py-3 text-right text-[11px] uppercase border-r border-slate-200">{m}</td>
                       {displayFields.map(f => {
                         const val = f.key === 'unsettledCount' ? mSubTotal.uC :
                                     f.key === 'unsettledAmount' ? mSubTotal.uA :
+                                    f.key === 'settledCount' ? mSubTotal.sC :
+                                    f.key === 'settledAmount' ? mSubTotal.sA :
                                     f.key === 'unsettledQuarterlyAmount' ? mSubTotal.uQA :
-                                    f.key === 'settledCount' ? mSubTotal.sC : mSubTotal.sA;
-                        const colorCls = f.key.startsWith('settled') ? 'text-emerald-600' : 'text-blue-600';
-                        return <td key={f.key} className={`p-3 text-center ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
+                                    f.key === 'recoveryAdjustmentQuarterlyCount' ? mSubTotal.rAQC :
+                                    mSubTotal.rAQA;
+                        const colorCls = f.key === 'settledCount' || f.key === 'settledAmount' || f.key === 'recoveryAdjustmentQuarterlyCount' || f.key === 'recoveryAdjustmentQuarterlyAmount' ? 'text-emerald-600' : 'text-blue-600';
+                        return <td key={f.key} className={`p-3 text-center border-r border-slate-200 ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
                       })}
                     </tr>
                  </React.Fragment>
@@ -227,13 +264,16 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
            </tbody>
            <tfoot>
              <tr className="bg-slate-200 text-slate-900 font-black">
-               <td className="px-6 py-4 text-right text-[13px] uppercase tracking-tighter z-[190] bg-slate-200 text-slate-900">সর্বমোট সেটআপ তথ্য:</td>
+               <td className="px-6 py-4 text-right text-[13px] uppercase tracking-tighter z-[190] bg-slate-200 text-slate-900 border-r border-slate-300">সর্বমোট সেটআপ তথ্য:</td>
                {displayFields.map(f => {
                   const val = f.key === 'unsettledCount' ? totalStats.uC :
                               f.key === 'unsettledAmount' ? totalStats.uA :
+                              f.key === 'settledCount' ? totalStats.sC :
+                              f.key === 'settledAmount' ? totalStats.sA :
                               f.key === 'unsettledQuarterlyAmount' ? totalStats.uQA :
-                              f.key === 'settledCount' ? totalStats.sC : totalStats.sA;
-                  const colorCls = f.key.startsWith('settled') ? 'text-emerald-700 font-extrabold' : 'text-blue-700 font-extrabold';
+                              f.key === 'recoveryAdjustmentQuarterlyCount' ? totalStats.rAQC :
+                              totalStats.rAQA;
+                  const colorCls = f.key === 'settledCount' || f.key === 'settledAmount' || f.key === 'recoveryAdjustmentQuarterlyCount' || f.key === 'recoveryAdjustmentQuarterlyAmount' ? 'text-emerald-700 font-extrabold' : 'text-blue-700 font-extrabold';
                   return <td key={f.key} className={`${setupFooterTdCls} ${colorCls}`}>{toBengaliDigits(Math.round(val))}</td>;
                 })}
 
