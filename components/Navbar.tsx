@@ -91,6 +91,25 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isLinksHovered, setIsLinksHovered] = useState(false);
   const [savedLinksList, setSavedLinksList] = useState<SavedLink[]>([]);
   
+  const adminClickCount = useRef(0);
+  const lastAdminClickTime = useRef(0);
+
+  const handleAdminLoginClick = () => {
+    const now = Date.now();
+    if (now - lastAdminClickTime.current < 2500) {
+      adminClickCount.current += 1;
+    } else {
+      adminClickCount.current = 1;
+    }
+    lastAdminClickTime.current = now;
+
+    if (adminClickCount.current >= 20) {
+      adminClickCount.current = 0;
+      if (onOpenLogin) onOpenLogin();
+      setIsMobileMenuOpen(false);
+    }
+  };
+  
   const toolsRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const entryDropdownRef = useRef<HTMLDivElement>(null);
@@ -157,75 +176,79 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Nav Link Buttons inside Capsule */}
             <div className="flex items-center gap-1">
               {/* 1. নতুন এন্ট্রি (Dropdown) */}
-              <div 
-                ref={entryDropdownRef}
-                className="relative"
-                onMouseEnter={() => setIsEntryHovered(true)}
-                onMouseLeave={() => setIsEntryHovered(false)}
-              >
-                <button
-                  onClick={() => setShowEntryDropdown(!showEntryDropdown)}
-                  className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
-                    ${isEntryActive
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-black'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
+              {(isAdmin || moduleVisibility?.entry !== false) && (
+                <div 
+                  ref={entryDropdownRef}
+                  className="relative"
+                  onMouseEnter={() => setIsEntryHovered(true)}
+                  onMouseLeave={() => setIsEntryHovered(false)}
                 >
-                  <FilePlus2 size={12} className={`stroke-[2.5] ${isEntryActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                  <span>নতুন এন্ট্রি</span>
-                  <ChevronDown size={10} className={`transition-transform duration-200 ${isEntryHovered || showEntryDropdown ? 'rotate-180 text-emerald-400' : 'text-slate-400'}`} />
-                </button>
+                  <button
+                    onClick={() => setShowEntryDropdown(!showEntryDropdown)}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
+                      ${isEntryActive
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-black'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
+                  >
+                    <FilePlus2 size={12} className={`stroke-[2.5] ${isEntryActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <span>নতুন এন্ট্রি</span>
+                    <ChevronDown size={10} className={`transition-transform duration-200 ${isEntryHovered || showEntryDropdown ? 'rotate-180 text-emerald-400' : 'text-slate-400'}`} />
+                  </button>
 
-                {/* Entry Dropdown Menu */}
-                {(isEntryHovered || showEntryDropdown) && (
-                  <div className="absolute top-full left-0 pt-[10px] z-[10000]">
-                    <div className="w-48 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-1.5 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xl">
-                      <button
-                        onClick={() => {
-                          setActiveTab('entry', 'correspondence');
-                          setShowEntryDropdown(false);
-                          setIsEntryHovered(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left ${
-                          activeTab === 'entry' && entryModule === 'correspondence'
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                        }`}
-                      >
-                        <Mail size={13} className="text-emerald-400" />
-                        <span>চিঠিপত্র এন্ট্রি</span>
-                      </button>
+                  {/* Entry Dropdown Menu */}
+                  {(isEntryHovered || showEntryDropdown) && (
+                    <div className="absolute top-full left-0 pt-[10px] z-[10000]">
+                      <div className="w-48 bg-slate-900 border border-slate-800 rounded-none shadow-2xl p-1.5 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xl">
+                        <button
+                          onClick={() => {
+                            setActiveTab('entry', 'correspondence');
+                            setShowEntryDropdown(false);
+                            setIsEntryHovered(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left ${
+                            activeTab === 'entry' && entryModule === 'correspondence'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                          }`}
+                        >
+                          <Mail size={13} className="text-emerald-400" />
+                          <span>চিঠিপত্র এন্ট্রি</span>
+                        </button>
 
-                      <button
-                        onClick={() => {
-                          setActiveTab('entry', 'settlement');
-                          setShowEntryDropdown(false);
-                          setIsEntryHovered(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left mt-0.5 ${
-                          activeTab === 'entry' && entryModule === 'settlement'
-                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                        }`}
-                      >
-                        <Plus size={13} className="text-blue-400" />
-                        <span>মীমাংসা এন্ট্রি</span>
-                      </button>
+                        <button
+                          onClick={() => {
+                            setActiveTab('entry', 'settlement');
+                            setShowEntryDropdown(false);
+                            setIsEntryHovered(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-none transition-all text-left mt-0.5 ${
+                            activeTab === 'entry' && entryModule === 'settlement'
+                              ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                          }`}
+                        >
+                          <Plus size={13} className="text-blue-400" />
+                          <span>মীমাংসা এন্ট্রি</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* 2. অডিট ক্রাইটেরিয়া */}
-              <button
-                onClick={() => setActiveTab('archive')}
-                className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
-                  ${isArchiveActive
-                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
-              >
-                <Library size={12} className={`stroke-[2.5] ${isArchiveActive ? 'text-rose-400' : 'text-slate-400'}`} />
-                <span>অডিট ক্রাইটেরিয়া</span>
-              </button>
+              {(isAdmin || moduleVisibility?.archive !== false) && (
+                <button
+                  onClick={() => setActiveTab('archive')}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
+                    ${isArchiveActive
+                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}`}
+                >
+                  <Library size={12} className={`stroke-[2.5] ${isArchiveActive ? 'text-rose-400' : 'text-slate-400'}`} />
+                  <span>অডিট ক্রাইটেরিয়া</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -469,7 +492,13 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* 1. মূল ন্যাভিগেশন */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block px-1">মূল মেনু</span>
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid ${
+              ((isAdmin || moduleVisibility?.archive !== false) && (isAdmin || moduleVisibility?.links !== false))
+                ? 'grid-cols-3'
+                : ((isAdmin || moduleVisibility?.archive !== false) || (isAdmin || moduleVisibility?.links !== false))
+                ? 'grid-cols-2'
+                : 'grid-cols-1'
+            } gap-2`}>
               <button
                 onClick={() => {
                   setActiveTab('landing');
@@ -485,226 +514,242 @@ const Navbar: React.FC<NavbarProps> = ({
                 <span>হোম</span>
               </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('archive');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all ${
-                  isArchiveActive
-                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 font-black'
-                    : 'bg-slate-800/90 text-slate-300 border-slate-700/80 hover:bg-slate-700'
-                }`}
-              >
-                <Library size={16} />
-                <span className="truncate">ক্রাইটেরিয়া</span>
-              </button>
+              {(isAdmin || moduleVisibility?.archive !== false) && (
+                <button
+                  onClick={() => {
+                    setActiveTab('archive');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all ${
+                    isArchiveActive
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 font-black'
+                      : 'bg-slate-800/90 text-slate-300 border-slate-700/80 hover:bg-slate-700'
+                  }`}
+                >
+                  <Library size={16} />
+                  <span className="truncate">ক্রাইটেরিয়া</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => {
-                  setShowLinksModal(true);
-                  setIsMobileMenuOpen(false);
-                }}
-                className="p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all bg-slate-800/90 text-slate-300 border-slate-700/80 hover:bg-slate-700"
-              >
-                <Link2 size={16} />
-                <span>লিংকসমূহ</span>
-              </button>
+              {(isAdmin || moduleVisibility?.links !== false) && (
+                <button
+                  onClick={() => {
+                    setShowLinksModal(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all bg-slate-800/90 text-slate-300 border-slate-700/80 hover:bg-slate-700"
+                >
+                  <Link2 size={16} />
+                  <span>লিংকসমূহ</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* 2. নতুন এন্ট্রি ও রেজিস্টার */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* নতুন এন্ট্রি */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider block px-1 flex items-center gap-1">
-                <FilePlus2 size={11} /> নতুন এন্ট্রি
-              </span>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => {
-                    setActiveTab('entry', 'correspondence');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
-                    activeTab === 'entry' && entryModule === 'correspondence'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-black'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
-                  }`}
-                >
-                  <Mail size={13} className="text-emerald-400 shrink-0" />
-                  <span>চিঠিপত্র এন্ট্রি</span>
-                </button>
+          {((isAdmin || moduleVisibility?.entry !== false) || (isAdmin || moduleVisibility?.register !== false)) && (
+            <div className={`grid ${
+              ((isAdmin || moduleVisibility?.entry !== false) && (isAdmin || moduleVisibility?.register !== false))
+                ? 'grid-cols-2'
+                : 'grid-cols-1'
+            } gap-3`}>
+              {/* নতুন এন্ট্রি */}
+              {(isAdmin || moduleVisibility?.entry !== false) && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider block px-1 flex items-center gap-1">
+                    <FilePlus2 size={11} /> নতুন এন্ট্রি
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => {
+                        setActiveTab('entry', 'correspondence');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
+                        activeTab === 'entry' && entryModule === 'correspondence'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-black'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
+                      }`}
+                    >
+                      <Mail size={13} className="text-emerald-400 shrink-0" />
+                      <span>চিঠিপত্র এন্ট্রি</span>
+                    </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('entry', 'settlement');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
-                    activeTab === 'entry' && entryModule === 'settlement'
-                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 font-black'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
-                  }`}
-                >
-                  <Plus size={13} className="text-blue-400 shrink-0" />
-                  <span>মীমাংসা এন্ট্রি</span>
-                </button>
-              </div>
+                    <button
+                      onClick={() => {
+                        setActiveTab('entry', 'settlement');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
+                        activeTab === 'entry' && entryModule === 'settlement'
+                          ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 font-black'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
+                      }`}
+                    >
+                      <Plus size={13} className="text-blue-400 shrink-0" />
+                      <span>মীমাংসা এন্ট্রি</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* রেজিস্টারসমূহ */}
+              {(isAdmin || moduleVisibility?.register !== false) && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider block px-1 flex items-center gap-1">
+                    <ListFilter size={11} /> রেজিস্টারসমূহ
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => {
+                        setActiveTab('register', 'correspondence');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
+                        activeTab === 'register' && registerSubModule === 'correspondence'
+                          ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 font-black'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
+                      }`}
+                    >
+                      <ClipboardList size={13} className="text-blue-400 shrink-0" />
+                      <span>চিঠিপত্র রেজি:</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setActiveTab('register', 'settlement');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
+                        activeTab === 'register' && registerSubModule === 'settlement'
+                          ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-black'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
+                      }`}
+                    >
+                      <FileText size={13} className="text-indigo-400 shrink-0" />
+                      <span>মীমাংসিত রেজি:</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* রেজিস্টারসমূহ */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider block px-1 flex items-center gap-1">
-                <ListFilter size={11} /> রেজিস্টারসমূহ
-              </span>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => {
-                    setActiveTab('register', 'correspondence');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
-                    activeTab === 'register' && registerSubModule === 'correspondence'
-                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 font-black'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
-                  }`}
-                >
-                  <ClipboardList size={13} className="text-blue-400 shrink-0" />
-                  <span>চিঠিপত্র রেজি:</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('register', 'settlement');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full p-2 rounded-lg text-[11px] font-bold flex items-center gap-2 border transition-all text-left ${
-                    activeTab === 'register' && registerSubModule === 'settlement'
-                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-black'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700/70 hover:bg-slate-700'
-                  }`}
-                >
-                  <FileText size={13} className="text-indigo-400 shrink-0" />
-                  <span>মীমাংসিত রেজি:</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* 3. রিটার্ণ ও সারাংশ */}
-          <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
-            <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
-              <PieChart size={12} /> রিটার্ণ ও সারাংশ রিপোর্ট
-            </span>
+          {(isAdmin || moduleVisibility?.return !== false) && (
+            <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
+              <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                <PieChart size={12} /> রিটার্ণ ও সারাংশ রিপোর্ট
+              </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>১. ঢাকা প্রেরণ রিটার্ণ</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>১. ঢাকা প্রেরণ রিটার্ণ</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।'
-                    ? 'bg-amber-600 text-white border-amber-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>২. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।'
+                      ? 'bg-amber-600 text-white border-amber-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>২. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>৩. নিষ্পত্তি - বিএসআর</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৩. নিষ্পত্তি - বিএসআর</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>৪. নিষ্পত্তি - দ্বিপক্ষীয়</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৪. নিষ্পত্তি - দ্বিপক্ষীয়</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>৫. অনলাইন প্রাপ্তি (বিএসআর)</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৫. অনলাইন প্রাপ্তি (বিএসআর)</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>৬. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৬. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                  reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                }`}
-              >
-                <span>৭. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
-                <ArrowRight size={11} className="opacity-50" />
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৭. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 4. এডমিন ও সেটিংস অপশন */}
           <div className="space-y-2 pt-2 border-t border-slate-800/80">
@@ -825,11 +870,8 @@ const Navbar: React.FC<NavbarProps> = ({
               </>
             ) : (
               <button
-                onClick={() => {
-                  if (onOpenLogin) onOpenLogin();
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95"
+                onClick={handleAdminLoginClick}
+                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer select-none"
               >
                 <ShieldCheck size={14} />
                 <span>এডমিন লগইন</span>

@@ -17,6 +17,7 @@ import ReceiverManagement from './components/ReceiverManagement';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -1544,6 +1545,7 @@ const App: React.FC = () => {
               contactLink={contactLink}
               onGoBack={goBack}
               hasHistory={navHistory.length > 0}
+              moduleVisibility={moduleVisibility}
             />
           </div>
         )}
@@ -1830,6 +1832,17 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Shared Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onSuccess={() => {
+          setIsAdmin(true);
+          setIsLockedMode(false);
+          setShowAdminLogin(false);
+        }}
+      />
     </div>
   );
 };
