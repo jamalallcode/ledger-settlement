@@ -1111,36 +1111,18 @@ const App: React.FC = () => {
   }, [pendingCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
 
   const displayedApprovedEntries = useMemo(() => {
-    if (!isAdmin) {
-      if (viewSingleEntryId) {
-        return approvedEntries.filter(e => e.id === viewSingleEntryId);
-      }
-      if (userEmail) {
-        return approvedEntries.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
-      }
-      if (justSubmittedEntryId) {
-        return approvedEntries.filter(e => e.id === justSubmittedEntryId);
-      }
-      return approvedEntries.filter(e => e.userEmail === userEmail);
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedEntries.filter(e => e.id === viewSingleEntryId);
     }
     return approvedEntries;
-  }, [approvedEntries, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
+  }, [approvedEntries, isAdmin, viewSingleEntryId]);
 
   const displayedApprovedCorrespondence = useMemo(() => {
-    if (!isAdmin) {
-      if (viewSingleEntryId) {
-        return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
-      }
-      if (userEmail) {
-        return approvedCorrespondence.filter(e => e.userEmail === userEmail || e.id === justSubmittedEntryId);
-      }
-      if (justSubmittedEntryId) {
-        return approvedCorrespondence.filter(e => e.id === justSubmittedEntryId);
-      }
-      return approvedCorrespondence.filter(e => e.userEmail === userEmail);
+    if (!isAdmin && viewSingleEntryId) {
+      return approvedCorrespondence.filter(e => e.id === viewSingleEntryId);
     }
     return approvedCorrespondence;
-  }, [approvedCorrespondence, isAdmin, viewSingleEntryId, userEmail, justSubmittedEntryId]);
+  }, [approvedCorrespondence, isAdmin, viewSingleEntryId]);
   
   const unassignedCorrespondence = useMemo(() => {
     return approvedCorrespondence.filter(e => 
