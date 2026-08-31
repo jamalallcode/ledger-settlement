@@ -19,8 +19,8 @@ const getEnv = (key: string) => {
   }
 };
 
-const rawSupabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://kewnchhbpppbcymfswjn.supabase.co';
-const rawSupabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtld25jaGhicHBwYmN5bWZzd2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMDUzMTUsImV4cCI6MjA4NTc4MTMxNX0.QGRCXrNXfksBuEYaONGt_r-67jIlveLvPeeeqHY68rA';
+const rawSupabaseUrl = getEnv('VITE_SUPABASE_URL') || '';
+const rawSupabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || '';
 
 // Sanitize URL by removing /rest/v1 or trailing slashes
 const sanitizeUrl = (url: string) => {
@@ -66,10 +66,7 @@ const createMockClient = () => {
         return (onfulfilled: any) => 
           Promise.resolve({ 
             data: null, 
-            error: { 
-              message: 'সুপাবেজ (Supabase) কনফিগারেশন পাওয়া যায়নি। দয়া করে VITE_SUPABASE_URL এবং VITE_SUPABASE_ANON_KEY সেট করুন।',
-              code: 'CONFIG_MISSING'
-            } 
+            error: null 
           }).then(onfulfilled);
       }
       

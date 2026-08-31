@@ -640,12 +640,11 @@ const App: React.FC = () => {
             }
           });
           setModuleVisibility(newVisibility);
-          console.log("Fetched module settings & contact link successfully");
         } else if (error) {
-          console.error("Error fetching app_settings:", error);
+          console.warn("Supabase app_settings fetch skipped (using local config):", error.message || error);
         }
-      } catch (err) {
-        console.error("সেটিংস লোড করতে সমস্যা হয়েছে:", err);
+      } catch (err: any) {
+        console.warn("সেটিংস লোড করতে সমস্যা হয়েছে (লোকাল সেটিংস সচল):", err?.message || err);
       }
     };
 
@@ -1516,7 +1515,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
       <style>{dynamicThemeCSS}</style>
-      <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
+      <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden hidden lg:block ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 
           activeTab={activeTab} setActiveTab={handleTabChange} 
           onToggleVisibility={() => setIsSidebarOpen(false)}
@@ -1571,7 +1570,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto flex flex-col items-center justify-center p-[10px] landing-main-container' 
+              ? 'overflow-y-auto flex flex-col items-center justify-start sm:justify-center p-2 sm:p-3 md:p-5 landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
@@ -1585,7 +1584,7 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full h-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in" 
+              ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-auto py-2 sm:py-0" 
               : activeTab === 'return'
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'

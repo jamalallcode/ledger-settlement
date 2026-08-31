@@ -935,9 +935,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <td className={tdS}>-</td>
                   <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                   <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={`${tdS} p-1`}>
-                    <div className={`w-full h-[26px] flex items-center justify-center font-black rounded-md shadow-sm ${getPositionColor(entry.presentedToName)}`}>
-                      {getDisplayName(entry.presentedToName || 'অডিটর')}
+                  <td className={`${tdS} py-1 px-1 text-center align-middle`}>
+                    <div className="flex items-center justify-center w-full">
+                      <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[9.5px] font-black rounded-full shadow-xs whitespace-nowrap leading-tight tracking-tight ${getPositionColor(entry.presentedToName)}`}>
+                        {getDisplayName(entry.presentedToName || 'অডিটর')}
+                      </span>
                     </div>
                   </td>
                   <td className={tdS}>{entry.remarks || 'চলমান'}</td>
