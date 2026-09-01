@@ -281,28 +281,28 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col sm:flex-row items-center sm:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-5 transition-colors pt-1 min-[380px]:pt-1.5 sm:pt-4">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 min-[380px]:gap-3 sm:gap-4 lg:gap-5 transition-colors pt-2 min-[380px]:pt-2.5 sm:pt-4">
               
-              {/* Centered label with premium yellow megaphone on the left, with green text appearing to emerge from its mouth */}
-              <div className="flex flex-col items-center sm:items-stretch justify-center gap-1 sm:gap-2.5 text-center sm:text-left relative w-full sm:w-[48%] md:w-[45%] max-w-full sm:max-w-[300px]">
-                <div className="hidden sm:flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="landing-label-muted text-[10px] min-[380px]:text-[11px] sm:text-xs uppercase font-black tracking-wider block text-center sm:text-left animate-colorful-slide">
+              {/* Date Box */}
+              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1.5 sm:gap-2 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
+                <div className="hidden lg:flex items-center gap-2 justify-start">
+                  <span className="landing-label-muted text-[11px] sm:text-xs uppercase font-black tracking-wider block text-left animate-colorful-slide">
                     চলমান রিপোর্টিং সাইকেল
                   </span>
                 </div>
-                <div className="flex items-stretch h-9.5 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
+                <div className="flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
                   {/* Left Icon Area: Off-white bg & gray bottom border */}
-                  <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-10 md:w-12 shrink-0 h-full">
+                  <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
                     <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                      <Calendar className="text-emerald-700 w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 stroke-[2.5]" />
+                      <Calendar className="text-emerald-700 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
                     </div>
                     <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
                   </div>
                   
                   {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
                   <div className="flex-1 flex flex-col h-full min-w-0">
-                    <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-2.5 md:px-3 overflow-hidden">
-                      <span className="text-white font-[950] text-[10px] min-[360px]:text-[11px] sm:text-xs md:text-[13px] tracking-tight text-center whitespace-nowrap leading-tight">
+                    <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3">
+                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-[12.5px] md:text-[13px] tracking-tight text-center whitespace-nowrap leading-tight">
                         {cycleLabel || "চলমান কোয়ার্টার"}
                       </span>
                     </div>
@@ -312,25 +312,25 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Launch Action Button */}
-              <div className="w-full sm:w-[48%] md:w-[45%] max-w-full sm:max-w-[300px] flex justify-center sm:justify-end">
+              <div className="w-full lg:w-[44%] max-w-full lg:max-w-[260px] flex justify-center lg:justify-end">
                 {(isAdmin || moduleVisibility.entry) && (
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="group flex items-stretch h-9.5 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
+                    className="group flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
                   >
                     {/* Left Icon Area: Off-white bg & gray bottom border */}
-                    <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-10 md:w-12 shrink-0 h-full">
+                    <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
                       <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                        <ArrowRight className="text-red-800 w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="text-red-800 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
                       </div>
                       <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
                     </div>
                     
                     {/* Right Text Area: Solid Maroon with dark maroon bottom bar */}
                     <div className="flex-1 flex flex-col h-full min-w-0">
-                      <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-2 sm:px-2.5 md:px-3">
-                        <span className="text-white font-[950] text-[10.5px] min-[360px]:text-[11.5px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
+                      <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-2 sm:px-3">
+                        <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
                           কাজ শুরু করুন
                         </span>
                       </div>
