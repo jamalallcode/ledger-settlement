@@ -12,15 +12,75 @@
 }
 
 /* Ensure table header cells stick to the scrolling viewport / main container */
-.table-container thead th,
-.table-container thead tr:first-child th {
+.table-container thead tr:first-child th,
+.table-container thead tr:nth-child(1) th {
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
+  z-index: 130 !important;
+  background-color: #e2e8f0 !important; 
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+}
+
+.table-container thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 42px !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important; 
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+}
+
+.table-container thead tr:nth-child(3) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 80px !important;
   z-index: 120 !important;
   background-color: #e2e8f0 !important; 
   background-clip: padding-box !important;
   vertical-align: middle !important;
+}
+
+/* Return Summary Table Sticky Headers */
+#table-return-summary thead tr:first-child th,
+#card-report-table-container thead tr:first-child th,
+#section-report-summary thead tr:first-child th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+#table-return-summary thead tr:nth-child(2) th,
+#card-report-table-container thead tr:nth-child(2) th,
+#section-report-summary thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 42px !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+#table-return-summary thead tr:nth-child(3) th,
+#card-report-table-container thead tr:nth-child(3) th,
+#section-report-summary thead tr:nth-child(3) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 80px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
 }
 
 /* Correspondence Register Table Sticky Headers */
@@ -63,6 +123,72 @@
   top: 80px !important;
   z-index: 120 !important;
   background-color: #e2e8f0 !important;
+}
+
+/* Correspondence Dhaka Return Table Sticky Headers */
+#correspondence-dhaka-container thead tr:first-child th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+#correspondence-dhaka-container thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 42px !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+#correspondence-dhaka-container thead tr:nth-child(3) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 80px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+/* DD Sir Correspondence Return - Summary Table (Static cleanly positioned headers, NO gaps) */
+#dd-sir-report-container .summary-table-container thead,
+#dd-sir-report-container .summary-table-container thead tr,
+#dd-sir-report-container .summary-table-container thead tr th {
+  position: static !important;
+  top: auto !important;
+  box-shadow: none !important;
+}
+
+/* DD Sir Correspondence Return - Detailed List Table Sticky Headers (Table 2) */
+#dd-sir-report-container .dd-sir-detailed-table-container thead tr:first-child th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
+}
+
+#dd-sir-report-container .dd-sir-detailed-table-container thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 36px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+  box-shadow: none !important;
 }
 
 /* Correspondence Register Cycle Header Sticky */
