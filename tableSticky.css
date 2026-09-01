@@ -8,14 +8,28 @@
   position: relative;
   background-color: white;
   border: none !important;
-  overflow: visible !important;
 }
 
 #correspondence-register-table-container,
 #settlement-register-table-container {
   width: 100%;
   max-width: 100%;
-  overflow: visible !important;
+}
+
+@media (min-width: 1280px) {
+  .table-container,
+  #correspondence-register-table-container,
+  #settlement-register-table-container {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 1279px) {
+  #correspondence-register-table-container,
+  #settlement-register-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Ensure table header cells stick to the scrolling viewport / main container */
