@@ -377,9 +377,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
     }, { pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0, sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0, nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0 });
   }, [filteredStatsReportData, searchTerm, statsGrandTotals, grandTotals, filterMinistry]);
 
-  const reportThStyle1 = "z-[240] px-1 py-2.5 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap";
-  const reportThStyle2 = "z-[240] px-1 py-2 font-black text-center text-slate-900 text-[8.5px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/80 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-border relative whitespace-nowrap";
-  const reportThStyle3 = "z-[240] px-1 py-1.5 font-black text-center text-slate-600 text-[8.5px] leading-tight align-middle bg-gradient-to-b from-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap";
+  const reportThStyle1 = "px-1 py-1 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-slate-200 whitespace-nowrap";
+  const reportThStyle2 = "px-1 py-1 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-slate-200 whitespace-nowrap";
+  const reportThStyle3 = "px-1 py-0.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-slate-200 whitespace-nowrap";
   const tdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight group-hover:bg-blue-100/80 transition-colors text-slate-900 h-[38px] whitespace-normal break-words border-b border-r border-slate-200/90 relative";
   const subTotalTdStyle = "px-0.5 py-1 text-[9px] text-center font-bold leading-tight text-slate-900 h-[38px] whitespace-normal break-words border-b border-r border-sky-200/90 relative";
   const grandStyle = "px-0.5 py-2 text-center font-black text-slate-900 text-[10px] bg-slate-200 z-[190] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_0_0_1px_#cbd5e1] h-[45px] align-middle whitespace-nowrap transition-all relative";
@@ -661,7 +661,7 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
               <col className="w-[30px]" />
               <col className="w-[55px]" />
             </colgroup>
-            <thead className="z-[240] bg-slate-200">
+            <thead className="bg-slate-200">
               <tr className="h-[42px]">
                 <th rowSpan={2} className={`${reportThStyle1}`}>মন্ত্রণালয়</th>
                 <th rowSpan={2} className={`${reportThStyle1}`}>সংস্থা</th>

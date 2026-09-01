@@ -431,6 +431,42 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return null;
   };
 
+  const getHistoricalPresentation = (entry: any, repDateStr: string) => {
+    if (!entry.presentationDate || !String(entry.presentationDate).trim()) {
+      return {
+        isPresented: false,
+        presentationDateFormatted: '-',
+        position: 'অডিটর'
+      };
+    }
+
+    const pDate = parseDate(entry.presentationDate);
+    if (!pDate) {
+      return {
+        isPresented: false,
+        presentationDateFormatted: '-',
+        position: 'অডিটর'
+      };
+    }
+
+    const reportingDateObj = parseDate(repDateStr);
+    if (reportingDateObj) {
+      if (pDate.getTime() > reportingDateObj.getTime()) {
+        return {
+          isPresented: false,
+          presentationDateFormatted: '-',
+          position: 'অডিটর'
+        };
+      }
+    }
+
+    return {
+      isPresented: true,
+      presentationDateFormatted: formatDateBN(entry.presentationDate) || '-',
+      position: entry.presentedToName || 'অডিটর'
+    };
+  };
+
   const filteredEntries = useMemo(() => {
     let data = entries || [];
     
@@ -484,7 +520,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       data = data.filter(e => e.paraType === filterBranch);
     }
 
-    return data;
+    return data.map(e => {
+      const hist = getHistoricalPresentation(e, selectedReportingDate);
+      return {
+        ...e,
+        presentationDate: hist.isPresented ? e.presentationDate : null,
+        presentationDateFormatted: hist.presentationDateFormatted,
+        presentedToName: hist.position
+      };
+    });
   }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
 
   const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
@@ -703,15 +747,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return stats;
   }, [entries]);
 
-  // Header font is font-bold
-  const thStyle = "px-2 py-2 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200 border border-slate-300 whitespace-nowrap";
+  // Header font is font-bold with solid background
+  const thStyle = "px-1.5 py-1 font-bold text-center text-[11px] leading-tight align-middle bg-slate-200 whitespace-nowrap";
   // Data cells reverted to font-bold (700 weight as per instruction)
-  const tdStyle = "px-2 py-2 text-[12px] text-center font-bold leading-tight align-middle transition-colors border border-slate-200 whitespace-nowrap";
+  const tdStyle = "px-2 py-2 text-[12px] text-center font-bold leading-tight align-middle transition-colors whitespace-nowrap bg-white";
   
-  // Reverted sticky header from bold to black with clean top-0 stickiness
-  const stickyThStyle = "sticky top-0 z-[240] px-1 py-1.5 font-black text-center text-[10px] bg-slate-200";
+  // Reverted sticky header with solid background and precise padding
+  const stickyThStyle = "px-1.5 py-1 font-bold text-center text-[10.5px] leading-tight align-middle bg-slate-200";
   // Reverted sticky data from medium to bold
-  const stickyTdStyle = "px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors";
+  const stickyTdStyle = "px-1.5 py-1.5 text-[11px] text-center font-bold leading-tight align-middle transition-colors bg-white";
 
   const getPositionColor = (name: string) => {
     const pos = name || 'অডিটর';
@@ -1050,33 +1094,33 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
 
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex flex-col items-stretch overflow-visible">
-          <div className="summary-table-container max-w-full w-full rounded-md shadow-xs border border-slate-300 overflow-x-auto bg-white">
-            <table className="w-full border-separate table-fixed border-spacing-0 min-w-[1140px]">
+          <div className="summary-table-container max-w-full w-full overflow-visible bg-white">
+            <table className="w-full border-separate border-spacing-0 table-fixed">
               <colgroup>
-                <col className="w-[36px]" />
-                <col className="w-[145px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[82px]" />
-                <col className="w-[88px]" />
-                <col className="w-[88px]" />
+                <col className="w-[60px]" />
+                <col className="w-[160px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[70px]" />
+                <col className="w-[75px]" />
+                <col className="w-[75px]" />
               </colgroup>
               <thead>
-                <tr className="bg-slate-200">
-                  <th colSpan={2} className="p-2 text-center font-bold text-[13px] border border-slate-300">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="p-2 text-center font-bold text-[13px] border border-slate-300">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={4} className="p-2 text-center font-bold text-[13px] border border-slate-300">মাস: {reportingMonthBN}</th>
-                  <th colSpan={4} className="p-2 text-center font-bold text-[13px] border border-slate-300">তারিখ: {reportingDateBN} খ্রি:</th>
+                <tr>
+                  <th colSpan={2} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">মাস: {reportingMonthBN}</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
                 <tr>
-                  <th rowSpan={2} className={thStyle}>ক্রমিক নং</th>
+                  <th rowSpan={2} className={`${thStyle} whitespace-nowrap min-w-[60px]`}>ক্রমিক নং</th>
                   <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
                   <th colSpan={2} className={thStyle}>
                     {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' : 
@@ -1327,22 +1371,22 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
              </div>
           </div>
 
-          <div className="table-container dd-sir-detailed-table-container relative overflow-auto w-full border border-slate-300 rounded-none">
-            <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+          <div className="table-container dd-sir-detailed-table-container relative overflow-visible w-full rounded-none bg-white">
+            <table className="w-full border-separate border-spacing-0 table-fixed">
               <colgroup>
-                <col className="w-[30px]" />
                 <col className="w-[50px]" />
-                <col className="w-[250px]" />
-                <col className="w-[75px]" />
-                <col className="w-[75px]" />
-                <col className="w-[85px]" />
-                <col className="w-[80px]" />
-                <col className="w-[85px]" />
+                <col className="w-[65px]" />
+                <col className="w-[280px]" />
+                <col className="w-[100px]" />
+                <col className="w-[100px]" />
+                <col className="w-[120px]" />
                 <col className="w-[90px]" />
+                <col className="w-[100px]" />
+                <col className="w-[180px]" />
               </colgroup>
               <thead>
-                <tr>
-                  <th className={stickyThStyle}>ক্রমিক নং</th>
+                <tr className="h-[36px]">
+                  <th className={`${stickyThStyle} whitespace-nowrap min-w-[50px]`}>ক্রমিক নং</th>
                   <th className={stickyThStyle}>অডিটর</th>
                   <th className={stickyThStyle}>এনটিটি/প্রতিষ্ঠানের নাম</th>
                   <th className={stickyThStyle}>স্মারক নং ও তারিখ</th>
@@ -1352,9 +1396,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th className={stickyThStyle}>বর্তমান অবস্থান</th>
                   <th className={stickyThStyle}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[24px] bg-slate-200">
+                <tr className="h-[24px]">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                    <th key={n} className={`${stickyThStyle} text-[9.5px] font-bold text-slate-700 py-0.5 border-t border-slate-300`}>
+                    <th key={n} className={`${stickyThStyle} text-[10.5px] font-bold text-slate-800 py-0.5`}>
                       {toBengaliDigits(n.toString())}
                     </th>
                   ))}
@@ -1396,7 +1440,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                              <span className="text-[9.5px] font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
                         </td>
-                        <td className={stickyTdStyle}>{formatDateBN(row.presentationDate) || '-'}</td>
+                        <td className={stickyTdStyle}>{row.presentationDateFormatted || formatDateBN(row.presentationDate) || '-'}</td>
                         <td className={`${stickyTdStyle} py-1 px-1 text-center align-middle`}>
                           <div className="flex items-center justify-center w-full">
                             <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[9.5px] font-black rounded-full shadow-xs whitespace-nowrap leading-tight tracking-tight ${getPositionColor(row.presentedToName)}`}>
