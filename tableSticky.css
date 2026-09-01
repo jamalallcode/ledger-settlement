@@ -11,6 +11,13 @@
   overflow: visible !important;
 }
 
+#correspondence-register-table-container,
+#settlement-register-table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible !important;
+}
+
 /* Ensure table header cells stick to the scrolling viewport / main container */
 .table-container thead tr:first-child th,
 .table-container thead tr:nth-child(1) th {
