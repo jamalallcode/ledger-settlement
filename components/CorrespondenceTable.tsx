@@ -1036,11 +1036,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
 
 
 
-  // Header font-black
+  // Header font-black with sticky support
   const thCls =
-    "border-r border-b border-slate-300 px-1.5 py-2.5 text-center align-middle font-black text-slate-900 text-[10.5px] sm:text-[11px] bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap leading-tight";
+    "sticky top-0 z-[120] border-r border-b border-slate-300 px-1 sm:px-1.5 py-2 text-center align-middle font-black text-slate-900 text-[10px] sm:text-[11px] bg-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border whitespace-nowrap leading-tight";
   const thSubCls =
-    "border-r border-b border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-700 text-[10px] sm:text-[10.5px] bg-gradient-to-b from-slate-200/90 to-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap leading-tight";
+    "sticky top-[40px] z-[120] border-r border-b border-slate-300 px-1 py-1 text-center align-middle font-black text-slate-700 text-[9.5px] sm:text-[10.5px] bg-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border whitespace-nowrap leading-tight";
   // Data cells font-bold
   const tdCls =
     "border border-slate-300 px-2 py-2 text-[10px] sm:text-[10.5px] text-slate-800 font-bold leading-tight align-top transition-colors group-hover:bg-blue-50/50 break-words relative";
@@ -1667,35 +1667,35 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       )}
 
           {/* Table Container */}
-          <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white max-w-full overflow-x-auto">
+          <div id="correspondence-register-table-container" className="table-container border border-slate-300 rounded-sm relative z-[1] shadow-xl bg-white">
             <table className="w-full border-separate border-spacing-0 table-fixed min-w-[900px]">
               <colgroup>
                 <col className="w-[32px]" />
-                <col className="w-[155px]" />
-                <col className="w-[155px]" />
                 <col className="w-[145px]" />
-                <col className="w-[164px]" />
-                <col className="w-[164px]" />
+                <col className="w-[145px]" />
+                <col className="w-[136px]" />
+                <col className="w-[172px]" />
+                <col className="w-[172px]" />
                 <col className="w-[85px]" />
               </colgroup>
-              <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm">
+              <thead className="sticky top-0 z-[120] bg-slate-200 shadow-sm" style={{ position: "sticky", top: 0, zIndex: 120 }}>
                 <tr className="h-[40px]">
-                  <th className={thCls}>ক্র: নং</th>
-                  <th className={thCls}>পত্রের বিবরণ</th>
-                  <th className={thCls}>পত্রের অন্যান্য তথ্য</th>
-                  <th className={thCls}>অত্র অফিসের তথ্য</th>
-                  <th className={thCls}>গ্রহণ ও উপস্থাপন</th>
-                  <th className={thCls}>জারিপত্র নং ও তারিখ</th>
-                  <th className={thCls}>মন্তব্য</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>ক্র: নং</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>পত্রের বিবরণ</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>পত্রের অন্যান্য তথ্য</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>অত্র অফিসের তথ্য</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>গ্রহণ ও উপস্থাপন</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>জারিপত্র নং ও তারিখ</th>
+                  <th className={thCls} style={{ position: "sticky", top: 0, zIndex: 120 }}>মন্তব্য</th>
                 </tr>
                 <tr className="h-[26px]">
-                  <th className={thSubCls}>১</th>
-                  <th className={thSubCls}>২</th>
-                  <th className={thSubCls}>৩</th>
-                  <th className={thSubCls}>৪</th>
-                  <th className={thSubCls}>৫</th>
-                  <th className={thSubCls}>৬</th>
-                  <th className={thSubCls}>৭</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>১</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>২</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>৩</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>৪</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>৫</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>৬</th>
+                  <th className={thSubCls} style={{ position: "sticky", top: "40px", zIndex: 120 }}>৭</th>
                 </tr>
               </thead>
           {groupedEntries.length > 0 ? (
@@ -2821,12 +2821,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                     isIssueComplete ? "ring-1 ring-emerald-300/80 border-emerald-400" : ""
                                   }`}>
                                     {/* ১. নিষ্পত্তি আছে কিনা: হ্যাঁ অথবা না */}
-                                    <div className="flex items-center justify-between gap-1 w-full pb-1 border-b border-slate-200/80 h-[24px]">
-                                      <span className="text-[8.5px] font-black text-slate-800 tracking-tight flex items-center gap-1 shrink-0 whitespace-nowrap">
-                                        <CheckCircle2 size={11} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
-                                        নিষ্পত্তি আছে কিনা:
+                                    <div className="flex items-center justify-between gap-1 w-full pb-1 border-b border-slate-200/80 min-h-[22px]">
+                                      <span className="text-[7.5px] sm:text-[8px] font-black text-slate-800 tracking-tighter flex items-center gap-0.5 shrink-0 whitespace-nowrap">
+                                        <CheckCircle2 size={10} className={currentIsSettled === 'হ্যাঁ' ? "text-emerald-600 animate-pulse" : currentIsSettled === 'না' ? "text-rose-500" : "text-amber-500"} />
+                                        নিষ্পত্তি:
                                       </span>
-                                      <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-lg border border-slate-200/80 shrink-0">
+                                      <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-md border border-slate-200/80 shrink-0">
                                         <button
                                           type="button"
                                           disabled={!isCol5Editable}
@@ -2834,13 +2834,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                             const nextVal = currentIsSettled === 'হ্যাঁ' ? '' : 'হ্যাঁ';
                                             handleInlineChange(entry.id, 'isSettled', nextVal);
                                           }}
-                                          className={`py-0.5 px-1.5 rounded-md text-[8.5px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
+                                          className={`py-0.5 px-1 sm:px-1.5 rounded text-[7.5px] sm:text-[8px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
                                             currentIsSettled === 'হ্যাঁ'
                                               ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs ring-1 ring-emerald-400/60'
                                               : 'bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/60'
                                           } ${!isCol5Editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
                                         >
-                                          <Check size={9} strokeWidth={3} className="shrink-0" /> হ্যাঁ
+                                          <Check size={8} strokeWidth={3} className="shrink-0" /> হ্যাঁ
                                         </button>
                                         <button
                                           type="button"
@@ -2849,13 +2849,13 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                             const nextVal = currentIsSettled === 'না' ? '' : 'না';
                                             handleInlineChange(entry.id, 'isSettled', nextVal);
                                           }}
-                                          className={`py-0.5 px-1.5 rounded-md text-[8.5px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
+                                          className={`py-0.5 px-1 sm:px-1.5 rounded text-[7.5px] sm:text-[8px] font-black transition-all flex items-center justify-center gap-0.5 shrink-0 whitespace-nowrap ${
                                             currentIsSettled === 'না'
                                               ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs ring-1 ring-rose-400/60'
                                               : 'bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-700 border border-slate-200/60'
                                           } ${!isCol5Editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
                                         >
-                                          <X size={9} strokeWidth={3} className="shrink-0" /> না
+                                          <X size={8} strokeWidth={3} className="shrink-0" /> না
                                         </button>
                                       </div>
                                     </div>
@@ -2964,17 +2964,17 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           className="space-y-1.5 pt-0.5"
                                         >
                                           {/* জারিপত্র নং সারি */}
-                                          <div className="flex items-center gap-1.5">
+                                          <div className="flex items-center gap-1">
                                             <div
-                                              className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 shrink-0 ${labelColorCls}`}
+                                              className={`text-[7.5px] sm:text-[8.5px] font-bold uppercase tracking-tight flex items-center gap-0.5 shrink-0 ${labelColorCls}`}
                                             >
-                                              <Hash size={8.5} /> জারিপত্র নং:
+                                              <Hash size={8} /> জারিপত্র নং:
                                             </div>
-                                            <div className="flex-1 flex items-center gap-1 min-w-0">
+                                            <div className="flex-1 flex items-center gap-0.5 min-w-0">
                                               <input
                                                 type="text"
-                                                placeholder={canFillIssue ? "নং লিখুন" : "নিষ্পত্তি নির্বাচন করুন"}
-                                                className={`w-full h-5 px-1.5 border border-slate-200 rounded-md text-[9.5px] font-bold outline-none ${
+                                                placeholder={canFillIssue ? "নং লিখুন" : "নিষ্পত্তি বাছুন"}
+                                                className={`w-full h-4.5 sm:h-5 px-1 border border-slate-200 rounded text-[8px] sm:text-[9px] font-bold outline-none ${
                                                   !canFillIssue || !isCol5Editable
                                                     ? "bg-slate-100/80 text-slate-400 cursor-pointer opacity-75"
                                                     : "bg-white focus:border-emerald-400"
@@ -3103,7 +3103,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                               <input
                                                 type="text"
                                                 placeholder="ডামি জারিপত্র নং-এর কারণ"
-                                                className="w-full h-5 px-1 border border-slate-200 rounded text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
+                                                className="w-full h-4.5 sm:h-5 px-1 border border-slate-200 rounded text-[8px] sm:text-[9px] font-bold outline-none bg-slate-50 focus:bg-white focus:border-blue-400"
                                                 value={currentIssueComment}
                                                 onChange={(e) =>
                                                   handleInlineChange(
@@ -3117,11 +3117,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                           )}
 
                                           {/* জারিপত্র তারিখ সারি */}
-                                          <div className="pt-1 border-t border-slate-200/70 flex items-center gap-1.5">
+                                          <div className="pt-1 border-t border-slate-200/70 flex items-center gap-1">
                                             <div
-                                              className={`text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1 shrink-0 ${labelColorCls}`}
+                                              className={`text-[7.5px] sm:text-[8.5px] font-bold uppercase tracking-tight flex items-center gap-0.5 shrink-0 ${labelColorCls}`}
                                             >
-                                              <Calendar size={8.5} /> জারিপত্র তারিখ:
+                                              <Calendar size={8} /> জারিপত্র তারিখ:
                                             </div>
                                             <div
                                               onClick={(e) => {
@@ -3142,7 +3142,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                                   }
                                                 }
                                               }}
-                                              className={`relative flex-1 h-5 px-1.5 border border-slate-200 rounded-md flex items-center justify-between text-[9.5px] font-bold transition-all ${
+                                              className={`relative flex-1 h-4.5 sm:h-5 px-1 border border-slate-200 rounded flex items-center justify-between text-[8px] sm:text-[9px] font-bold transition-all min-w-0 ${
                                                 !canFillIssue || !isCol5Editable
                                                   ? "bg-slate-100/80 text-slate-400 cursor-pointer opacity-75"
                                                   : "bg-white hover:border-emerald-400 cursor-pointer shadow-2xs"
@@ -3159,7 +3159,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                               >
                                                 {canFillIssue && formatDateBN(currentIssueDate) ? formatDateBN(currentIssueDate) : "বাছুন..."}
                                               </span>
-                                              <div className="flex items-center gap-1 shrink-0">
+                                              <div className="flex items-center gap-0.5 shrink-0 ml-0.5">
                                                 {isCol5Editable && canFillIssue && currentIssueDate && (
                                                   <button
                                                     type="button"
@@ -3170,11 +3170,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                                     className="p-0.5 hover:bg-red-100 text-red-400 hover:text-red-600 rounded transition-all z-20 cursor-pointer"
                                                     title="তারিখ মুছুন"
                                                   >
-                                                    <XCircle size={10} />
+                                                    <XCircle size={9} />
                                                   </button>
                                                 )}
                                                 <Calendar
-                                                  size={10}
+                                                  size={9}
                                                   className={`${iconColorCls} shrink-0 transition-colors ${
                                                     isCol5Editable && canFillIssue ? "hover:opacity-80" : "opacity-40"
                                                   }`}
