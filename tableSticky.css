@@ -8,54 +8,61 @@
   position: relative;
   background-color: white;
   border: none !important;
+  overflow: visible !important;
 }
 
-@media (min-width: 1280px) {
-  .table-container {
-    overflow: visible !important;
-  }
-
-  .table-container thead,
-  .table-container thead tr,
-  .table-container thead th,
-  .table-container thead tr:nth-child(2) th,
-  .table-container thead tr:nth-child(3) th,
-  .qr-table-container thead,
-  .qr-table-container thead tr,
-  .qr-table-container thead th,
-  .qr-table-container thead tr:nth-child(2) th,
-  .qr-table-container thead tr:nth-child(3) th {
-    position: static !important;
-    top: auto !important;
-  }
-}
-
-@media (max-width: 1279px) {
-  .table-container {
-    max-height: 72vh;
-    overflow-y: auto !important;
-    overflow-x: auto !important;
-    scrollbar-gutter: stable;
-  }
-}
-
-/* Ensure table header as a whole block is always on top */
-.table-container thead {
+/* Ensure table header cells stick to the scrolling viewport / main container */
+.table-container thead th,
+.table-container thead tr:first-child th {
+  position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
-  z-index: 250 !important;
-  background-color: #f1f5f9 !important;
-}
-
-.table-container thead tr {
-  background-color: #f1f5f9 !important;
-}
-
-.table-container thead th {
-  background-color: #f1f5f9 !important; 
-  z-index: 240 !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important; 
   background-clip: padding-box !important;
   vertical-align: middle !important;
+}
+
+/* Correspondence Register Table Sticky Headers */
+#correspondence-register-table-container thead tr:first-child th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#correspondence-register-table-container thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 40px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+}
+
+/* Settlement Register Table Sticky Headers */
+#settlement-register-table-container thead tr:first-child th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#settlement-register-table-container thead tr:nth-child(2) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 42px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#settlement-register-table-container thead tr:nth-child(3) th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 80px !important;
+  z-index: 120 !important;
+  background-color: #e2e8f0 !important;
 }
 
 /* Correspondence Register Cycle Header Sticky */

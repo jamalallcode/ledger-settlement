@@ -1558,7 +1558,7 @@ const App: React.FC = () => {
               : activeTab === 'return' 
                 ? 'overflow-y-auto overflow-x-hidden return-main-container' 
                 : activeTab === 'register'
-                  ? 'overflow-y-auto overflow-x-hidden register-main-container' 
+                  ? 'overflow-auto register-main-container' 
                   : 'overflow-y-auto overflow-x-hidden'
           } relative scroll-smooth bg-white`} 
           style={{ 
