@@ -558,6 +558,46 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     .replace('July', 'জুলাই').replace('August', 'আগস্ট').replace('September', 'সেপ্টেম্বর')
     .replace('October', 'অক্টোবর').replace('November', 'নভেম্বর').replace('December', 'ডিসেম্বর');
 
+  const getHistoricalPresentation = (entry: any, reportingDate: Date | null) => {
+    if (!entry.presentationDate || !String(entry.presentationDate).trim()) {
+      return {
+        isPresented: false,
+        presentationDateFormatted: '-',
+        position: 'অডিটর'
+      };
+    }
+
+    const pDate = parseDate(entry.presentationDate);
+    if (!pDate) {
+      return {
+        isPresented: false,
+        presentationDateFormatted: '-',
+        position: 'অডিটর'
+      };
+    }
+
+    if (reportingDate) {
+      const repLimit = new Date(
+        reportingDate.getFullYear(),
+        reportingDate.getMonth(),
+        reportingDate.getDate()
+      );
+      if (pDate.getTime() > repLimit.getTime()) {
+        return {
+          isPresented: false,
+          presentationDateFormatted: '-',
+          position: 'অডিটর'
+        };
+      }
+    }
+
+    return {
+      isPresented: true,
+      presentationDateFormatted: formatDateBN(entry.presentationDate),
+      position: entry.presentedToName || 'অডিটর'
+    };
+  };
+
   const auditorWiseStats = useMemo(() => {
     const stats: Record<string, { 
       rawName: string;
@@ -566,6 +606,9 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
     }> = {};
     
     filteredData.forEach(entry => {
+      const hist = getHistoricalPresentation(entry, selectedMonthDate);
+      const pos = hist.position;
+
       const rawAud = (entry.receiverName || entry.presentedToName || '').trim();
       const officialDisplay = getDisplayName(rawAud);
       const auditorKey = normalizeName(officialDisplay) || 'অনির্ধারিত';
@@ -578,27 +621,32 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         };
       }
       
+      const entryForDetails = {
+        ...entry,
+        presentationDate: hist.isPresented ? entry.presentationDate : '',
+        presentedToName: pos
+      };
+
       stats[auditorKey].total++;
-      stats[auditorKey].totalLetters.push(entry);
-      const pos = (entry.presentedToName || 'অডিটর');
+      stats[auditorKey].totalLetters.push(entryForDetails);
       
       if (pos.includes('অডিটর')) {
         stats[auditorKey].auditor++;
-        stats[auditorKey].auditorLetters.push(entry);
-      } else if (pos.includes('এএন্ডএও')) {
+        stats[auditorKey].auditorLetters.push(entryForDetails);
+      } else if (pos.includes('এএন্ডএও') || pos.includes('সুপার')) {
         stats[auditorKey].aao++;
-        stats[auditorKey].aaoLetters.push(entry);
+        stats[auditorKey].aaoLetters.push(entryForDetails);
       } else if (pos.includes('উপপরিচালক')) {
         stats[auditorKey].dd++;
-        stats[auditorKey].ddLetters.push(entry);
+        stats[auditorKey].ddLetters.push(entryForDetails);
       } else {
         stats[auditorKey].others++;
-        stats[auditorKey].othersLetters.push(entry);
+        stats[auditorKey].othersLetters.push(entryForDetails);
       }
     });
     
     return Object.entries(stats).map(([key, data]) => ({ name: data.rawName, ...data }));
-  }, [filteredData]);
+  }, [filteredData, selectedMonthDate]);
 
   const summaryStats = useMemo(() => {
     const stats = {
@@ -922,29 +970,32 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredData.length > 0 ? filteredData.map((entry, idx) => (
-                <tr key={entry.id} className="no-hover-row group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
-                  <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                  <td className={`${tdS} text-left px-2 transition-colors`}>{entry.description}</td>
-                  <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
-                  <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
-                  <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>{isBilateralLetter(entry) ? `দ্বি-সভা (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                  <td className={tdS}>-</td>
-                  <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
-                  <td className={tdS}>{formatDateBN(entry.presentationDate)}</td>
-                  <td className={`${tdS} py-1 px-1 text-center align-middle`}>
-                    <div className="flex items-center justify-center w-full">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[9.5px] font-black rounded-full shadow-xs whitespace-nowrap leading-tight tracking-tight ${getPositionColor(entry.presentedToName)}`}>
-                        {getDisplayName(entry.presentedToName || 'অডিটর')}
-                      </span>
-                    </div>
-                  </td>
-                  <td className={tdS}>{entry.remarks || 'চলমান'}</td>
-                </tr>
-              )) : (
+              {filteredData.length > 0 ? filteredData.map((entry, idx) => {
+                const hist = getHistoricalPresentation(entry, selectedMonthDate);
+                return (
+                  <tr key={entry.id} className="no-hover-row group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
+                    <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
+                    <td className={`${tdS} text-left px-2 transition-colors`}>{entry.description}</td>
+                    <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
+                    <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
+                    <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>{isBilateralLetter(entry) ? `দ্বি-সভা (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>-</td>
+                    <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
+                    <td className={tdS}>{hist.presentationDateFormatted}</td>
+                    <td className={`${tdS} py-1 px-1 text-center align-middle`}>
+                      <div className="flex items-center justify-center w-full">
+                        <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[9.5px] font-black rounded-full shadow-xs whitespace-nowrap leading-tight tracking-tight ${getPositionColor(hist.position)}`}>
+                          {getDisplayName(hist.position)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={tdS}>{entry.remarks || 'চলমান'}</td>
+                  </tr>
+                );
+              }) : (
                 <tr><td colSpan={13} className="py-20 text-center font-black text-slate-400 bg-slate-50 italic">এই সাইকেলে কোনো চিঠিপত্র তথ্য পাওয়া যায়নি।</td></tr>
               )}
             </tbody>
