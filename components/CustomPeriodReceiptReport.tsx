@@ -1972,7 +1972,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             (() => {
               const displayEntries = activeReportMode === 'pending' ? pendingEntries : filteredEntries;
               return displayEntries.length > 0 ? (
-                <div className="table-container overflow-x-auto rounded-2xl shadow-inner border border-slate-200">
+                <div className="table-container overflow-visible rounded-2xl shadow-inner border border-slate-200">
                   <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[3.5%]" />
@@ -1982,7 +1982,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                       <col className="w-[16.67%]" />
                       <col className="w-[16.67%]" />
                     </colgroup>
-                    <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                    <thead className="sticky top-0 z-30 shadow-sm bg-slate-200">
                       {/* Header Row 1: Titles (Black Text) */}
                       <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                         <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>
@@ -2334,7 +2334,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             })()
           ) : (
             filteredSettlementEntries.length > 0 ? (
-              <div className="table-container overflow-x-auto rounded-2xl shadow-inner">
+              <div className="table-container overflow-visible rounded-2xl shadow-inner">
                 <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
                   <colgroup>
                     <col className="w-[3.5%]" />
@@ -2346,7 +2346,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                     <col className="w-[9.5%]" />
                     <col className="w-[9.5%]" />
                   </colgroup>
-                  <thead className="sticky top-0 xl:top-[45px] z-30 shadow-sm bg-slate-200">
+                  <thead className="sticky top-0 z-30 shadow-sm bg-slate-200">
                     {/* Header Row 1: Titles */}
                     <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
                       <th className="bg-slate-200 text-slate-900 px-3 py-2.5 text-center border-b border-r border-slate-300 font-black">ক্র: নং</th>

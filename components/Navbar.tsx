@@ -675,6 +675,21 @@ const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   onClick={() => {
+                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর'
+                      ? 'bg-emerald-600 text-white border-emerald-500'
+                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                  }`}
+                >
+                  <span>৩. প্রাপ্ত বিএসআর</span>
+                  <ArrowRight size={11} className="opacity-50" />
+                </button>
+
+                <button
+                  onClick={() => {
                     setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর');
                     setIsMobileMenuOpen(false);
                   }}

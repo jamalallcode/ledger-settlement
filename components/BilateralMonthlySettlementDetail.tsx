@@ -263,7 +263,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
         <div className="flex items-center gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010]">
           
           {/* Timeframe Picker dropdown */}
-          <div className="relative no-print" ref={dropdownRef}>
+          <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
             <div 
               onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
               className={`flex items-center gap-1.5 px-3.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
@@ -275,7 +275,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
             </div>
             {isCycleDropdownOpen && (
-              <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[260px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
+              <div className="absolute top-[calc(100%+4px)] left-0 sm:left-auto sm:right-0 lg:left-0 w-[260px] max-w-[calc(100vw-32px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
                 <div className="px-3 py-1 pb-2 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
                     <CalendarDays size={11} className="text-blue-500" /> সময়কাল নির্বাচন করুন
@@ -309,7 +309,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
           </div>
 
           {/* Ministry filter dropdown */}
-          <div className="relative select-none z-[400]" ref={ministryDropdownRef}>
+          <div className={`relative select-none ${isMinistryDropdownOpen ? 'z-[5000]' : 'z-[20]'}`} ref={ministryDropdownRef}>
             <div 
                onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
                className={`flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-sm ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
@@ -322,7 +322,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
             </div>
 
             {isMinistryDropdownOpen && (
-              <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
+              <div className="absolute top-[110%] right-0 w-[220px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
                 <div className="px-3 py-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
                     <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
@@ -417,8 +417,8 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
       </div>
 
       {/* Main Table Section (Strictly matching CamScanner layout) */}
-      <div id="card-bilateral-monthly-detail-table-container" className="bg-white shadow-inner rounded-none overflow-hidden">
-        <div className="overflow-x-auto">
+      <div id="card-bilateral-monthly-detail-table-container" className="table-container bg-white shadow-inner rounded-none overflow-visible w-full relative">
+        <div className="w-full overflow-visible">
           <table id="table-bilateral-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto">
             <thead>
               <tr className="bg-slate-50">

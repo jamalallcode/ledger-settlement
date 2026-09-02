@@ -1,5 +1,5 @@
-import React from 'react';
-import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, X } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -16,6 +16,7 @@ interface QRProps {
 }
 
 const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
   // Each quarter start date is the 16th of the month preceding the quarter's start month.
@@ -254,60 +255,81 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
         </div>
 
-        {/* Statistics Button (Lowered into subject bar) */}
-        <div className="relative group no-print shrink-0">
+        {/* Statistics Button */}
+        <div className="relative no-print shrink-0">
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-black text-[11px] border border-blue-100 transition-all duration-300 hover:bg-blue-100 hover:border-blue-200"
+            onClick={() => setIsStatsOpen(prev => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg font-black text-[11px] border border-blue-100 transition-all duration-300 hover:bg-blue-100 hover:border-blue-200 cursor-pointer"
           >
             <Sparkles size={13} className="text-blue-500" />
             পরিসংখ্যান
-            <ChevronDown size={11} className="text-blue-400 transition-transform duration-300 group-hover:rotate-180" />
+            <ChevronDown size={11} className={`text-blue-400 transition-transform duration-300 ${isStatsOpen ? 'rotate-180' : ''}`} />
           </button>
           
-          <div className="absolute top-[calc(100%+4px)] right-0 w-[330px] bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                <BarChart3 size={16} className="text-blue-600" />
-                <span className="text-blue-900 font-black text-[13px]">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
-              </div>
-              <div className="space-y-1.5 text-slate-700 text-[11px] font-bold leading-normal">
-                <div className="flex justify-between">
-                  <span>সর্বমোট আলোচিত অনুচ্ছেদ সংখ্যা:</span>
-                  <span className="text-blue-700">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
+          {isStatsOpen && (
+            <div 
+              className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+              onClick={() => setIsStatsOpen(false)}
+            >
+              <div 
+                className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-100 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 size={16} className="text-blue-600" />
+                    <span className="text-blue-900 font-black text-sm">ত্রৈমাসিক রিপোর্ট পরিসংখ্যান</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsStatsOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
-                <div className="flex justify-between">
-                  <span>সর্বমোট সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</span>
-                  <span className="text-amber-600">{toBengaliDigits(totals.recommendedPara ?? 0)} টি</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>মোট জড়িত টাকা:</span>
-                  <span className="text-slate-900">{toBengaliDigits(Math.round(totals.involvedAmount ?? 0))} টাকা</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>সর্বমোট আদায়:</span>
-                  <span className="text-emerald-700">{toBengaliDigits(Math.round(totals.recovery ?? 0))} টাকা</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>সর্বমোট সমন্বয়:</span>
-                  <span className="text-indigo-600">{toBengaliDigits(Math.round(totals.adjustment ?? 0))} টাকা</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>মোট নিষ্পন্ন টাকা:</span>
-                  <span className="text-teal-700">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>সর্বমোট নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা:</span>
-                  <span className="text-emerald-600">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
+
+                {/* Modal Body */}
+                <div className="p-4 sm:p-5 space-y-2.5 text-slate-700 text-xs font-bold overflow-y-auto">
+                  <div className="flex justify-between p-2 rounded-xl bg-slate-50">
+                    <span>সর্বমোট আলোচিত অনুচ্ছেদ:</span>
+                    <span className="text-blue-700 font-black">{toBengaliDigits(totals.sentPara ?? 0)} টি</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-xl bg-slate-50">
+                    <span>সর্বমোট সুপারিশকৃত অনুচ্ছেদ:</span>
+                    <span className="text-amber-700 font-black">{toBengaliDigits(totals.recommendedPara ?? 0)} টি</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-xl bg-slate-50">
+                    <span>মোট জড়িত টাকা:</span>
+                    <span className="text-slate-900 font-black">{toBengaliDigits(Math.round(totals.involvedAmount ?? 0))} টাকা</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-xl bg-emerald-50 text-emerald-800">
+                    <span>সর্বমোট আদায়:</span>
+                    <span className="font-black">{toBengaliDigits(Math.round(totals.recovery ?? 0))} টাকা</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-xl bg-indigo-50 text-indigo-800">
+                    <span>সর্বমোট সমন্বয়:</span>
+                    <span className="font-black">{toBengaliDigits(Math.round(totals.adjustment ?? 0))} টাকা</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-xl bg-teal-50 text-teal-800">
+                    <span>মোট নিষ্পন্ন টাকা:</span>
+                    <span className="font-black">{toBengaliDigits(Math.round(totals.amount ?? 0))} টাকা</span>
+                  </div>
+                  <div className="flex justify-between p-2.5 rounded-xl bg-emerald-100/70 text-emerald-950 font-black text-sm">
+                    <span>সর্বমোট নিষ্পত্তিকৃত অনুচ্ছেদ:</span>
+                    <span className="text-emerald-700">{toBengaliDigits(totals.settledPara ?? 0)} টি</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">

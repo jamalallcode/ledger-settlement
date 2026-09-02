@@ -301,7 +301,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
         <div className="flex items-center gap-2 flex-wrap justify-center xl:justify-end shrink-0 z-[1010]">
           
           {/* Timeframe Picker dropdown */}
-          <div className="relative no-print" ref={dropdownRef}>
+          <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
             <div 
               onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
               className={`flex items-center gap-1.5 px-3.5 h-[38px] bg-white border rounded-xl cursor-pointer transition-all duration-300 hover:border-blue-500 hover:shadow-md group shadow-sm ${isCycleDropdownOpen ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-300'}`}
@@ -313,7 +313,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} />
             </div>
             {isCycleDropdownOpen && (
-              <div className="absolute top-[calc(100%+4px)] right-0 lg:left-0 w-[260px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
+              <div className="absolute top-[calc(100%+4px)] left-0 sm:left-auto sm:right-0 lg:left-0 w-[260px] max-w-[calc(100vw-32px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-3 animate-in fade-in duration-200">
                 <div className="px-3 py-1 pb-2 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
                     <CalendarDays size={11} className="text-blue-500" /> সময়কাল নির্বাচন করুন
@@ -347,7 +347,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
           </div>
 
           {/* Ministry filter dropdown */}
-          <div className="relative select-none z-[400]" ref={ministryDropdownRef}>
+          <div className={`relative select-none ${isMinistryDropdownOpen ? 'z-[5000]' : 'z-[20]'}`} ref={ministryDropdownRef}>
             <div 
                onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
                className={`flex items-center gap-1.5 px-3 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-sm ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
@@ -360,7 +360,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
             </div>
 
             {isMinistryDropdownOpen && (
-              <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
+              <div className="absolute top-[110%] right-0 w-[220px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 animate-in fade-in duration-200">
                 <div className="px-3 py-1 pb-1.5 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
                     <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
@@ -438,39 +438,54 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
           <button
             type="button"
             onClick={() => setIsStatsOpen(!isStatsOpen)}
-            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 rounded-lg text-[10px] font-black transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 rounded-lg text-[10px] font-black transition-all cursor-pointer"
           >
             <Sparkles size={11} className="text-blue-500 shrink-0" />
             <span>পরিসংখ্যান</span>
             <ChevronDown size={11} className={`text-blue-400 transition-transform ${isStatsOpen ? 'rotate-180' : ''}`} />
           </button>
           {isStatsOpen && (
-            <div className="absolute top-[110%] right-0 w-[280px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 z-[500] animate-in fade-in duration-200">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Sparkles size={14} className="text-blue-600" />
-                  <span className="text-slate-900 font-extrabold text-[12px]">মাসিক বিএসআর নিষ্পত্তি পরিসংখ্যান</span>
+            <div 
+              className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+              onClick={() => setIsStatsOpen(false)}
+            >
+              <div 
+                className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-100 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-blue-600" />
+                    <span className="text-slate-900 font-extrabold text-[13px]">মাসিক বিএসআর নিষ্পত্তি পরিসংখ্যান</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsStatsOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
-                <div className="space-y-2 text-slate-700 text-[11px] font-bold">
-                  <div className="flex justify-between">
+                <div className="p-4 sm:p-5 space-y-2.5 text-slate-700 text-xs font-bold overflow-y-auto">
+                  <div className="flex justify-between p-2 rounded-xl bg-slate-50">
                     <span>মোট ব্রডশিট জবাবের সংখ্যা:</span>
-                    <span className="text-blue-700 font-extrabold">{toBengaliDigits(filteredEntries.length.toString())} টি</span>
+                    <span className="text-blue-700 font-black">{toBengaliDigits(filteredEntries.length.toString())} টি</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between p-2 rounded-xl bg-slate-50">
                     <span>জড়িত মোট টাকা:</span>
-                    <span className="text-slate-900 font-extrabold">{toBengaliDigits(Math.round(totals.involvedAmount))} টাকা</span>
+                    <span className="text-slate-900 font-black">{toBengaliDigits(Math.round(totals.involvedAmount))} টাকা</span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-100 pt-2 text-emerald-700">
+                  <div className="flex justify-between p-2 rounded-xl bg-emerald-50 text-emerald-800">
                     <span>সর্বমোট আদায়কৃত টাকা:</span>
-                    <span className="font-extrabold">{toBengaliDigits(Math.round(totals.recoveredAmount))} টাকা</span>
+                    <span className="font-black">{toBengaliDigits(Math.round(totals.recoveredAmount))} টাকা</span>
                   </div>
-                  <div className="flex justify-between text-indigo-700">
+                  <div className="flex justify-between p-2 rounded-xl bg-indigo-50 text-indigo-800">
                     <span>সর্বমোট সমন্বয়কৃত টাকা:</span>
-                    <span className="font-extrabold">{toBengaliDigits(Math.round(totals.adjustedAmount))} টাকা</span>
+                    <span className="font-black">{toBengaliDigits(Math.round(totals.adjustedAmount))} টাকা</span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-200 pt-2 text-slate-900 text-[11.5px] font-black">
+                  <div className="flex justify-between p-2.5 rounded-xl bg-emerald-100/70 text-emerald-950 font-black text-sm">
                     <span>মোট নিষ্পত্তি টাকা:</span>
-                    <span className="text-emerald-600">{toBengaliDigits(Math.round(totals.totalSettled))} টাকা</span>
+                    <span className="text-emerald-700">{toBengaliDigits(Math.round(totals.totalSettled))} টাকা</span>
                   </div>
                 </div>
               </div>
@@ -511,8 +526,8 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
       </div>
 
       {/* Main Table Section */}
-      <div id="card-bsr-monthly-detail-table-container" className="bg-white shadow-inner rounded-none overflow-hidden">
-        <div className="overflow-x-auto">
+      <div id="card-bsr-monthly-detail-table-container" className="table-container bg-white shadow-inner rounded-none overflow-visible w-full relative">
+        <div className="w-full overflow-visible">
           <table id="table-bsr-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto">
             <thead>
               <tr className="h-[44px] bg-slate-100">

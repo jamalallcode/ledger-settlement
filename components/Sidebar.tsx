@@ -690,6 +690,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     >
                                       ডিডি স্যার রিটার্ণ
                                     </button>
+
+                                    {/* ৫. প্রাপ্ত বিএসআর */}
+                                    <button 
+                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর')}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                    >
+                                      প্রাপ্ত বিএসআর
+                                    </button>
                                   </motion.div>
                                 )}
                               </AnimatePresence>

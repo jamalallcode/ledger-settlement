@@ -731,7 +731,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </div>
 
               {isCalendarOpen && (
-                <div className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-[110%] left-0 sm:left-auto sm:right-0 lg:left-1/2 lg:-translate-x-1/2 w-[300px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
                   {/* Calendar Header */}
                   <div className="flex items-center justify-between mb-4">
                     <button
@@ -845,63 +845,83 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
             </div>
 
             {/* 2. Branch Filter Dropdown */}
-            <div className="relative group shrink-0 no-print" ref={branchDropdownRef}>
+            <div className="relative shrink-0 no-print" ref={branchDropdownRef}>
               <div 
-                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[100px] sm:min-w-[115px]"
+                onClick={() => {
+                  setIsBranchDropdownOpen(!isBranchDropdownOpen);
+                  setIsTypeDropdownOpen(false);
+                  setIsCalendarOpen(false);
+                }}
+                className={`relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 shadow-sm min-w-[100px] sm:min-w-[115px] ${isBranchDropdownOpen ? 'border-emerald-600 ring-2 ring-emerald-50 bg-white' : 'border-slate-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50'}`}
               >
                 <LayoutGrid size={13} className="text-emerald-600 shrink-0" />
                 <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
                   {filterParaType === 'সকল' ? 'সকল শাখা' : filterParaType}
                 </span>
-                <ChevronDown size={11} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600 shrink-0" />
+                <ChevronDown size={11} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isBranchDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
-                <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-                  <div className="max-h-[220px] overflow-y-auto no-scrollbar">
-                    {branchOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterParaType(opt)} 
-                        className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                        {filterParaType === opt && <Check size={12} strokeWidth={3} />}
-                      </div>
-                    ))}
+              {isBranchDropdownOpen && (
+                <div className="absolute top-full left-0 w-full pt-1 transition-all duration-200 ease-out z-[2000]">
+                  <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                    <div className="max-h-[220px] overflow-y-auto no-scrollbar">
+                      {branchOptions.map((opt, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            setFilterParaType(opt);
+                            setIsBranchDropdownOpen(false);
+                          }} 
+                          className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterParaType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
+                        >
+                          <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                          {filterParaType === opt && <Check size={12} strokeWidth={3} />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* 3. Type Filter Dropdown */}
-            <div className="relative group shrink-0 no-print" ref={typeDropdownRef}>
+            <div className="relative shrink-0 no-print" ref={typeDropdownRef}>
               <div 
-                className="relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border border-slate-300 rounded-xl cursor-pointer transition-all duration-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50 shadow-sm min-w-[110px] sm:min-w-[125px]"
+                onClick={() => {
+                  setIsTypeDropdownOpen(!isTypeDropdownOpen);
+                  setIsBranchDropdownOpen(false);
+                  setIsCalendarOpen(false);
+                }}
+                className={`relative flex items-center gap-1.5 px-2.5 h-[35px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 shadow-sm min-w-[110px] sm:min-w-[125px] ${isTypeDropdownOpen ? 'border-emerald-600 ring-2 ring-emerald-50 bg-white' : 'border-slate-300 hover:border-emerald-600 hover:ring-2 hover:ring-emerald-50'}`}
               >
                 <FileText size={13} className="text-emerald-600 shrink-0" />
                 <span className="font-extrabold text-[11px] sm:text-[11.5px] text-slate-800 break-words leading-none">
                   {filterLetterType === 'সকল' ? 'চিঠির ধরন' : filterLetterType}
                 </span>
-                <ChevronDown size={11} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-emerald-600 shrink-0" />
+                <ChevronDown size={11} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isTypeDropdownOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               </div>
               
-              <div className="absolute top-full left-0 w-full pt-1 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 ease-out z-[2000]">
-                <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-                  <div className="py-0">
-                    {typeOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterLetterType(opt)} 
-                        className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
-                        {filterLetterType === opt && <Check size={12} strokeWidth={3} />}
-                      </div>
-                    ))}
+              {isTypeDropdownOpen && (
+                <div className="absolute top-full left-0 w-full pt-1 transition-all duration-200 ease-out z-[2000]">
+                  <div className="w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                    <div className="py-0">
+                      {typeOptions.map((opt, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            setFilterLetterType(opt);
+                            setIsTypeDropdownOpen(false);
+                          }} 
+                          className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-all ${filterLetterType === opt ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-slate-700 font-bold text-[11.5px]'}`}
+                        >
+                          <span>{opt === 'সকল' ? 'চিঠির ধরন' : opt}</span>
+                          {filterLetterType === opt && <Check size={12} strokeWidth={3} />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* 4. Excel Download Button */}
@@ -925,8 +945,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
           </div>
         </div>
 
-        <div className="table-container qr-table-container relative overflow-auto">
-          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto">
+        <div className="table-container qr-table-container relative overflow-visible w-full">
+          <table className="w-full border-separate table-fixed border-spacing-0 !table-auto min-w-[1000px] xl:min-w-full">
             <colgroup>
               <col className="w-[40px]" />
               <col className="w-[219px]" />
@@ -1037,8 +1057,15 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 </button>
               </div>
               
-              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2' : 'p-4 sm:p-6'}`}>
-                <table className="w-full border-collapse">
+              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2 sm:p-3' : 'p-3 sm:p-6'}`}>
+                <table className="w-full border-collapse table-fixed">
+                  <colgroup>
+                    <col className={isDetailsModalOpen ? "w-[28%]" : "w-[36%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                  </colgroup>
                   <thead>
                     <tr className="bg-slate-100">
                       <th className={`${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
@@ -1051,23 +1078,23 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <tbody>
                     {auditorWiseStats.map((stat, idx) => (
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className={`${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
-                          <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
+                        <td className={`${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle overflow-hidden`}>
+                          <div className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-full mx-auto px-0.5 overflow-hidden">
                             {getDisplayImage(stat.name) ? (
                               <img 
                                 src={getDisplayImage(stat.name)!} 
                                 alt={getDisplayName(stat.name)} 
-                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
+                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-8 h-8 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
                                 referrerPolicy="no-referrer"
                               />
                             ) : (
-                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
+                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-8 h-8 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
                                 {getDisplayName(stat.name).slice(0, 2)}
                               </div>
                             )}
-                            <div className="flex flex-col items-center min-w-0 w-full">
-                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{getDisplayName(stat.name)}</span>
-                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
+                            <div className="flex flex-col items-center w-full min-w-0 overflow-hidden">
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[9.5px] sm:text-[11px]'} font-extrabold text-slate-800 leading-tight text-center break-words whitespace-normal w-full`}>{getDisplayName(stat.name)}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[7.5px] sm:text-[9px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words whitespace-normal w-full`}>
                                 {getDisplayDesignation(stat.name)}
                               </span>
                             </div>
