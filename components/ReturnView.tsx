@@ -23,6 +23,7 @@ import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail
 import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
 import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
 import { CustomPeriodReceiptReport } from './CustomPeriodReceiptReport';
+import BsrReceivedReturn from './BsrReceivedReturn';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -658,7 +659,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const reportData = useMemo(() => {
     const isExcludedReport = !selectedReportType || 
       selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || 
-      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।';
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ||
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর';
     if (isExcludedReport) return [];
     const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
     const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
@@ -1161,7 +1163,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   };
 
   const monthPickerElement = (
-    <div className="relative no-print z-[350]" ref={dropdownRef}>
+    <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
         className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-xl cursor-pointer transition-all duration-300 shadow-md group ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100' : 'border-sky-100'}`}
@@ -1177,7 +1179,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         <div 
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-[calc(100%+4px)] left-0 sm:left-auto sm:right-0 w-[260px] max-w-[calc(100vw-32px)] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
@@ -1219,13 +1221,13 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className="flex items-center gap-1.5 no-print shrink-0">
       <div className="flex items-center gap-1.5 animate-in fade-in duration-300 shrink-0">
         {/* COMPACT MINISTRY DROPDOWN */}
-        <div className="relative shrink-0 select-none z-[400]" ref={ministryDropdownRef}>
+        <div className={`relative shrink-0 select-none ${isMinistryDropdownOpen ? 'z-[5000]' : 'z-[20]'}`} ref={ministryDropdownRef}>
           <div 
              onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
              className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
           >
             <LayoutGrid size={14} className="text-sky-600 shrink-0" />
-            <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-800 tracking-tight shrink-0 max-w-[140px] sm:max-w-[180px] truncate leading-none">
+            <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-800 tracking-tight shrink-0 max-w-[130px] sm:max-w-[180px] truncate leading-none">
               {filterMinistry || 'সকল মন্ত্রণালয়'}
             </span>
             <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
@@ -1235,7 +1237,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             <div 
               onWheel={(e) => e.stopPropagation()}
               onTouchMove={(e) => e.stopPropagation()}
-              className="absolute top-[110%] right-0 lg:left-1/2 lg:-translate-x-1/2 w-[220px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 overscroll-contain animate-in fade-in slide-in-from-top-2 duration-200"
+              className="absolute top-[110%] right-0 w-[220px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 overscroll-contain animate-in fade-in slide-in-from-top-2 duration-200"
             >
               <div className="p-1 max-h-[300px] overflow-y-auto overscroll-contain no-scrollbar">
                 <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
@@ -1327,6 +1329,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} settlementEntries={entries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর') {
+    renderedContent = <BsrReceivedReturn correspondenceEntries={correspondenceEntries || []} settlementEntries={entries || []} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (isSetupMode) {

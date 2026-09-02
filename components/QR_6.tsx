@@ -816,7 +816,7 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>
 
-      <div className="table-container qr-table-container overflow-auto xl:overflow-visible shadow-sm rounded-lg">
+      <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg">
         <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto border-l border-slate-400">
           <thead className="bg-slate-100">
             <tr className="h-[42px]">

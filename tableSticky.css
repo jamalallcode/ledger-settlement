@@ -16,200 +16,214 @@
   max-width: 100%;
 }
 
-@media (min-width: 1280px) {
-  .table-container,
-  #correspondence-register-table-container,
-  #settlement-register-table-container {
-    overflow: visible !important;
-  }
+/* General Table Container Base Style */
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  background-color: white;
+  border: none !important;
 }
 
-@media (max-width: 1279px) {
-  #correspondence-register-table-container,
-  #settlement-register-table-container {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
+#correspondence-register-table-container,
+#settlement-register-table-container {
+  width: 100%;
+  max-width: 100%;
 }
 
-/* Ensure table header cells stick to the scrolling viewport / main container */
-.table-container thead tr:first-child th,
-.table-container thead tr:nth-child(1) th {
+/* Ensure smooth horizontal scroll on mobile for all tables without crushing headers */
+.table-container,
+.qr-table-container,
+.qr2-table-container,
+.summary-table-container,
+.dd-sir-detailed-table-container {
+  max-width: 100%;
+}
+
+/* Base sticky header rules for all table headers across mobile and desktop */
+.table-container thead th,
+.qr-table-container thead th,
+.qr2-table-container thead th,
+.summary-table-container thead th,
+.dd-sir-detailed-table-container thead th,
+#correspondence-register-table-container thead th,
+#settlement-register-table-container thead th,
+#correspondence-dhaka-container thead th,
+#table-return-summary thead th,
+#card-report-table-container thead th,
+#section-report-summary thead th,
+#table-bsr-received-return-main thead th,
+#table-bsr-monthly-detail thead th,
+#table-bilateral-monthly-detail thead th,
+#table-bsr-monthly-online-detail thead th,
+#table-bilateral-monthly-online-detail thead th,
+#custom-period-report-table thead th {
   position: -webkit-sticky !important;
   position: sticky !important;
+  background-color: #e2e8f0 !important;
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+/* 1-Row / General Table Header */
+.table-container thead tr:first-child th,
+.table-container thead tr:nth-child(1) th,
+.qr-table-container thead tr:first-child th,
+.qr2-table-container thead tr:first-child th {
   top: 0 !important;
   z-index: 130 !important;
-  background-color: #e2e8f0 !important; 
-  background-clip: padding-box !important;
-  vertical-align: middle !important;
 }
 
-.table-container thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
+.table-container thead tr:nth-child(2) th,
+.qr-table-container thead tr:nth-child(2) th,
+.qr2-table-container thead tr:nth-child(2) th {
   top: 42px !important;
   z-index: 125 !important;
-  background-color: #e2e8f0 !important; 
-  background-clip: padding-box !important;
-  vertical-align: middle !important;
 }
 
-.table-container thead tr:nth-child(3) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
+.table-container thead tr:nth-child(3) th,
+.qr-table-container thead tr:nth-child(3) th,
+.qr2-table-container thead tr:nth-child(3) th {
   top: 80px !important;
   z-index: 120 !important;
-  background-color: #e2e8f0 !important; 
-  background-clip: padding-box !important;
-  vertical-align: middle !important;
 }
 
 /* Return Summary Table Sticky Headers */
 #table-return-summary thead tr:first-child th,
 #card-report-table-container thead tr:first-child th,
 #section-report-summary thead tr:first-child th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
   top: 0px !important;
   z-index: 130 !important;
   background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
 }
 
 #table-return-summary thead tr:nth-child(2) th,
 #card-report-table-container thead tr:nth-child(2) th,
 #section-report-summary thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
   top: 42px !important;
   z-index: 125 !important;
   background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
 }
 
 #table-return-summary thead tr:nth-child(3) th,
 #card-report-table-container thead tr:nth-child(3) th,
 #section-report-summary thead tr:nth-child(3) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
   top: 80px !important;
   z-index: 120 !important;
   background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
 }
 
-/* Correspondence Register Table Sticky Headers */
-#correspondence-register-table-container thead tr:first-child th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 0 !important;
+/* DD Sir Correspondence Return - Summary Table & Detailed Table Sticky Headers */
+#dd-sir-report-container .summary-table-container thead tr:first-child th,
+.summary-table-container thead tr:first-child th {
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#dd-sir-report-container .summary-table-container thead tr:nth-child(2) th,
+.summary-table-container thead tr:nth-child(2) th {
+  top: 32px !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#dd-sir-report-container .summary-table-container thead tr:nth-child(3) th,
+.summary-table-container thead tr:nth-child(3) th {
+  top: 74px !important;
   z-index: 120 !important;
   background-color: #e2e8f0 !important;
 }
 
-#correspondence-register-table-container thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 40px !important;
-  z-index: 120 !important;
+#dd-sir-report-container .dd-sir-detailed-table-container thead tr:first-child th,
+.dd-sir-detailed-table-container thead tr:first-child th {
+  top: 0px !important;
+  z-index: 130 !important;
   background-color: #e2e8f0 !important;
 }
 
-/* Settlement Register Table Sticky Headers */
-#settlement-register-table-container thead tr:first-child th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 120 !important;
-  background-color: #e2e8f0 !important;
-}
-
-#settlement-register-table-container thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
+#dd-sir-report-container .dd-sir-detailed-table-container thead tr:nth-child(2) th,
+.dd-sir-detailed-table-container thead tr:nth-child(2) th {
   top: 42px !important;
-  z-index: 120 !important;
+  z-index: 125 !important;
+  background-color: #e2e8f0 !important;
+}
+
+/* BSR Received Return Sticky Headers */
+#table-bsr-received-return-main thead tr:first-child th {
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #ffffff !important;
+}
+
+#table-bsr-received-return-main thead tr:nth-child(2) th {
+  top: 40px !important;
+  z-index: 125 !important;
+  background-color: #ffffff !important;
+}
+
+/* Correspondence & Settlement Registers Sticky Headers */
+#correspondence-register-table-container thead tr:first-child th,
+#settlement-register-table-container thead tr:first-child th {
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#correspondence-register-table-container thead tr:nth-child(2) th,
+#settlement-register-table-container thead tr:nth-child(2) th {
+  top: 40px !important;
+  z-index: 125 !important;
   background-color: #e2e8f0 !important;
 }
 
 #settlement-register-table-container thead tr:nth-child(3) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
   top: 80px !important;
   z-index: 120 !important;
   background-color: #e2e8f0 !important;
 }
 
-/* Correspondence Dhaka Return Table Sticky Headers */
-#correspondence-dhaka-container thead tr:first-child th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
+/* Monthly Detail Tables Sticky Headers */
+#table-bsr-monthly-detail thead tr:first-child th,
+#table-bilateral-monthly-detail thead tr:first-child th,
+#table-bsr-monthly-online-detail thead tr:first-child th,
+#table-bilateral-monthly-online-detail thead tr:first-child th {
+  top: 0px !important;
+  z-index: 130 !important;
+  background-color: #f1f5f9 !important;
+}
+
+#table-bsr-monthly-detail thead tr:nth-child(2) th,
+#table-bilateral-monthly-detail thead tr:nth-child(2) th,
+#table-bsr-monthly-online-detail thead tr:nth-child(2) th,
+#table-bilateral-monthly-online-detail thead tr:nth-child(2) th {
+  top: 44px !important;
+  z-index: 125 !important;
+  background-color: #f1f5f9 !important;
+}
+
+#table-bsr-monthly-detail thead tr:nth-child(3) th,
+#table-bilateral-monthly-detail thead tr:nth-child(3) th,
+#table-bsr-monthly-online-detail thead tr:nth-child(3) th,
+#table-bilateral-monthly-online-detail thead tr:nth-child(3) th {
+  top: 82px !important;
+  z-index: 120 !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Custom Period Report Table Sticky Headers */
+#custom-period-report-table thead tr:first-child th {
   top: 0px !important;
   z-index: 130 !important;
   background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
 }
 
-#correspondence-dhaka-container thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 42px !important;
+#custom-period-report-table thead tr:nth-child(2) th {
+  top: 38px !important;
   z-index: 125 !important;
-  background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
-}
-
-#correspondence-dhaka-container thead tr:nth-child(3) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 80px !important;
-  z-index: 120 !important;
-  background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
-}
-
-/* DD Sir Correspondence Return - Summary Table (Static cleanly positioned headers, NO gaps) */
-#dd-sir-report-container .summary-table-container thead,
-#dd-sir-report-container .summary-table-container thead tr,
-#dd-sir-report-container .summary-table-container thead tr th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: none !important;
-}
-
-/* DD Sir Correspondence Return - Detailed List Table Sticky Headers (Table 2) */
-#dd-sir-report-container .dd-sir-detailed-table-container thead tr:first-child th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 0px !important;
-  z-index: 125 !important;
-  background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
-}
-
-#dd-sir-report-container .dd-sir-detailed-table-container thead tr:nth-child(2) th {
-  position: -webkit-sticky !important;
-  position: sticky !important;
-  top: 36px !important;
-  z-index: 120 !important;
-  background-color: #e2e8f0 !important;
-  opacity: 1 !important;
-  background-clip: padding-box !important;
-  box-shadow: none !important;
+  background-color: #f1f5f9 !important;
 }
 
 /* Correspondence Register Cycle Header Sticky */
@@ -450,23 +464,6 @@ tbody tr.qr-sticky-footer-offset td:hover,
   background-image: 
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%23475569'><polygon points='50,80 20,20 80,20'/></svg>") !important;
   background-size: 8px !important;
-}
-
-/* DD Sir Summary Table styles to prevent sticky positioning */
-.summary-table-container thead,
-.summary-table-container thead tr,
-.summary-table-container thead tr th {
-  position: static !important;
-  top: auto !important;
-  box-shadow: none !important;
-}
-
-/* DD Sir Detailed Table Sticky Header Adjustment to sit cleanly at top-0 of the scrolling container */
-@media (min-width: 1280px) {
-  .dd-sir-detailed-table-container thead th,
-  .dd-sir-detailed-table-container thead tr th {
-    top: 0 !important;
-  }
 }
 
 /* Clean Unified 1px Non-Overlapping Borders for ALL Tables */

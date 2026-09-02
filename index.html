@@ -132,7 +132,6 @@
         animation: table-pop-in 0.2s ease-out forwards;
       }
 
-      /* টেবিল কন্টেইনার */
       .table-container {
         position: relative;
         width: 100%;
@@ -141,15 +140,22 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      /* Force table to fit at 100% zoom on desktop/laptop */
-      @media (min-width: 1280px) {
-        .table-container {
-          overflow: visible !important;
-        }
-        .table-container table {
-          table-layout: fixed !important;
-          width: 100% !important;
-        }
+      .table-container,
+      .summary-table-container,
+      .dd-sir-detailed-table-container,
+      .qr-table-container,
+      .qr2-table-container,
+      #correspondence-register-table-container,
+      #settlement-register-table-container,
+      #bsr-received-report-container,
+      #card-report-table-container,
+      #card-bsr-monthly-detail-table-container,
+      #card-bilateral-monthly-detail-table-container,
+      #card-bsr-monthly-online-detail-table-container,
+      #card-bilateral-monthly-online-detail-table-container,
+      #correspondence-dhaka-container,
+      #dd-sir-report-container {
+        overflow: visible !important;
       }
 
       table {

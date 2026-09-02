@@ -442,8 +442,8 @@ const QR_4: React.FC<QRProps> = ({
       </div>
 
       {/* Main Table */}
-      <div className="w-full overflow-x-auto border-t border-l border-slate-400 rounded-xs shadow-xs">
-        <table id="qr-4-table" className="w-full border-collapse text-center">
+      <div className="table-container qr-table-container w-full overflow-visible border-t border-l border-slate-400 rounded-xs shadow-xs">
+        <table id="qr-4-table" className="w-full border-separate border-spacing-0 text-center">
           <thead>
             {/* Header Row 1 */}
             <tr>

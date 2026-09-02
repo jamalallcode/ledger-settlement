@@ -322,18 +322,6 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    // Intercepted scroll-locking via data-scroll-locked attribute to prevent layout shifts and flickering (flickering/কাপাকাপি)
-    if (isStatsOpen) {
-      document.body.setAttribute('data-scroll-locked', 'true');
-    } else {
-      document.body.removeAttribute('data-scroll-locked');
-    }
-    return () => {
-      document.body.removeAttribute('data-scroll-locked');
-    };
-  }, [isStatsOpen]);
-
   const auditorOptions = useMemo(() => {
     // 1. Get active auditors of selected branch
     let activeInBranch = receiversList.filter(r => r.is_active !== false);
@@ -815,7 +803,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </button>
 
                 {isCalendarOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[300px] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 lg:left-1/2 lg:-translate-x-1/2 mt-2 w-[300px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Calendar Header */}
                     <div className="flex items-center justify-between mb-4">
                       <button
@@ -945,63 +933,85 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
             </div>
 
             {/* Branch Filter */}
-            <div className="relative group shrink-0" ref={branchDropdownRef}>
+            <div className="relative shrink-0" ref={branchDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[115px] sm:min-w-[125px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+                onClick={() => {
+                  setIsBranchDropdownOpen(!isBranchDropdownOpen);
+                  setIsAuditorDropdownOpen(false);
+                  setIsCalendarOpen(false);
+                  setIsStatsOpen(false);
+                }}
+                className={customDropdownCls(isBranchDropdownOpen) + " min-w-[115px] sm:min-w-[125px]"}
               >
                 <Mail size={14} className="text-blue-600 shrink-0" />
                 <span className="font-bold text-[11.5px] text-slate-900 truncate">
                   {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch}
                 </span>
-                <ChevronDown size={13} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600 shrink-0" />
+                <ChevronDown size={13} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
               </div>
               
-              <div className="absolute top-full right-0 lg:left-0 w-[180px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                    {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterBranch(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
-                        {filterBranch === opt && <Check size={14} strokeWidth={3} />}
-                      </div>
-                    ))}
+              {isBranchDropdownOpen && (
+                <div className="absolute top-full right-0 w-[180px] max-w-[calc(100vw-24px)] pt-1 transition-all duration-200 z-[9999]">
+                  <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                      {['সকল', 'এসএফআই', 'নন এসএফআই'].map((opt, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            setFilterBranch(opt);
+                            setIsBranchDropdownOpen(false);
+                          }} 
+                          className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterBranch === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                        >
+                          <span>{opt === 'সকল' ? 'সকল শাখা' : opt}</span>
+                          {filterBranch === opt && <Check size={14} strokeWidth={3} />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Auditor Filter */}
-            <div className="relative group shrink-0" ref={auditorDropdownRef}>
+            <div className="relative shrink-0" ref={auditorDropdownRef}>
               <div 
-                className={customDropdownCls(false) + " min-w-[135px] sm:min-w-[145px] group-hover:border-blue-600 group-hover:ring-4 group-hover:ring-blue-50"}
+                onClick={() => {
+                  setIsAuditorDropdownOpen(!isAuditorDropdownOpen);
+                  setIsBranchDropdownOpen(false);
+                  setIsCalendarOpen(false);
+                  setIsStatsOpen(false);
+                }}
+                className={customDropdownCls(isAuditorDropdownOpen) + " min-w-[135px] sm:min-w-[145px]"}
               >
                 <User size={14} className="text-blue-600 shrink-0" />
                 <span className="font-bold text-[11.5px] text-slate-900 truncate">
                   {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
                 </span>
-                <ChevronDown size={13} className="text-slate-400 ml-auto transition-transform duration-300 group-hover:rotate-180 group-hover:text-blue-600 shrink-0" />
+                <ChevronDown size={13} className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isAuditorDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
               </div>
               
-              <div className="absolute top-full right-0 lg:left-0 w-[200px] pt-1 opacity-0 invisible translate-y-1.5 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-[9999]">
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden font-sans">
-                  <div className="max-h-[250px] overflow-y-auto no-scrollbar">
-                    {auditorOptions.map((opt, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => setFilterAuditor(opt)} 
-                        className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
-                      >
-                        <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
-                        {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
-                      </div>
-                    ))}
+              {isAuditorDropdownOpen && (
+                <div className="absolute top-full left-0 sm:left-auto sm:right-0 lg:left-0 w-[220px] max-w-[calc(100vw-24px)] pt-1 transition-all duration-200 z-[9999]">
+                  <div className="w-full bg-white border-2 border-slate-200 rounded-2xl shadow-2xl overflow-hidden font-sans">
+                    <div className="max-h-[250px] overflow-y-auto no-scrollbar">
+                      {auditorOptions.map((opt, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            setFilterAuditor(opt);
+                            setIsAuditorDropdownOpen(false);
+                          }} 
+                          className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-all ${filterAuditor === opt ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-slate-700 font-bold text-[12px]'}`}
+                        >
+                          <span>{opt === 'সকল' ? 'সকল অডিটর' : opt}</span>
+                          {filterAuditor === opt && <Check size={14} strokeWidth={3} />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Download Button */}
@@ -1014,7 +1024,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <FileSpreadsheet size={15} className="stroke-[2.5]" />
             </button>
 
-            {/* Right: Statistics button and its dropdown */}
+            {/* Right: Statistics button and its modal */}
             <div 
               className="relative z-[1050]" 
               ref={statsRef}
@@ -1029,51 +1039,78 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isStatsOpen ? 'rotate-180' : ''}`} />
               </button>
               
-              <div 
-                onWheel={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-                className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-[9999] transition-all duration-300 pointer-events-auto text-left max-h-[80vh] overflow-y-auto overscroll-contain scrollbar-thin ${
-                  isStatsOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
-                }`}
-              >
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <BarChart3 size={16} className="text-blue-600" />
+              {isStatsOpen && (
+                <div 
+                  className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+                  onClick={() => setIsStatsOpen(false)}
+                >
+                  <div 
+                    className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-100 shrink-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                          <BarChart3 size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-slate-900 font-black text-sm">রিপোর্ট পরিসংখ্যান</h3>
+                          <p className="text-slate-500 text-[10.5px] font-bold">ডিডি স্যার মাসিক রিটার্ন সারসংক্ষেপ</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-blue-700 font-black text-[15px]">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-700 font-black text-[14px]">এসএফআই:</span>
-                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.sfi.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span>
-                      </div>
-                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                        (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsStatsOpen(false)}
+                        className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-700 font-black text-[14px]">নন এসএফআই:</span>
-                        <span className="text-slate-900 font-black text-[14px]">{toBengaliDigits(summaryStats.nonSfi.total)} টি</span>
-                        <span className="text-emerald-600 font-bold text-[12px] ml-1">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span>
+                    {/* Modal Body */}
+                    <div 
+                      className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4"
+                      style={{
+                        WebkitOverflowScrolling: 'touch',
+                        touchAction: 'pan-y'
+                      }}
+                    >
+                      <div className="flex items-center gap-3 bg-blue-50/60 p-4 rounded-2xl border border-blue-100/60">
+                        <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                          <BarChart3 size={20} />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <span className="text-blue-950 font-black text-base">মোট চিঠি: {toBengaliDigits(summaryStats.total)} টি</span>
+                          <span className="text-emerald-700 font-black text-xs sm:text-[13px]">মোট অনুচ্ছেদ: {toBengaliDigits(summaryStats.totalParas)} টি</span>
+                        </div>
                       </div>
-                      <div className="text-slate-600 font-bold text-[11px] leading-relaxed pl-4">
-                        (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
+
+                      <div className="space-y-3">
+                        <div className="flex flex-col gap-1.5 bg-blue-50/40 p-3.5 rounded-2xl border border-blue-100/40">
+                          <div className="flex items-center justify-between">
+                            <span className="text-blue-900 font-black text-xs sm:text-sm">এসএফআই:</span>
+                            <span className="text-blue-950 font-black text-xs sm:text-sm">{toBengaliDigits(summaryStats.sfi.total)} টি <span className="text-emerald-700 font-bold text-[11px]">({toBengaliDigits(summaryStats.sfi.paras)} টি অনুচ্ছেদ)</span></span>
+                          </div>
+                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(summaryStats.sfi.bsr)} টি, ত্রিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.sfi.kp)} টি, ত্রিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.sfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.sfi.reconciliation)} টি)
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-800 font-black text-xs sm:text-sm">নন এসএফআই:</span>
+                            <span className="text-slate-900 font-black text-xs sm:text-sm">{toBengaliDigits(summaryStats.nonSfi.total)} টি <span className="text-emerald-700 font-bold text-[11px]">({toBengaliDigits(summaryStats.nonSfi.paras)} টি অনুচ্ছেদ)</span></span>
+                          </div>
+                          <div className="text-slate-600 font-bold text-[11px] leading-relaxed">
+                            (বিএসআর: {toBengaliDigits(summaryStats.nonSfi.bsr)} টি, দ্বিপক্ষীয় সভা (কার্যপত্র): {toBengaliDigits(summaryStats.nonSfi.kp)} টি, দ্বিপক্ষীয় সভা (কার্যবিবরণী): {toBengaliDigits(summaryStats.nonSfi.kb)} টি, মিলিকরণ: {toBengaliDigits(summaryStats.nonSfi.reconciliation)} টি)
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -1095,7 +1132,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         {/* SECTION 1: সারসংক্ষেপ টেবিল */}
         <div className="mb-10 flex flex-col items-stretch overflow-visible">
           <div className="summary-table-container max-w-full w-full overflow-visible bg-white">
-            <table className="w-full border-separate border-spacing-0 table-fixed">
+            <table className="w-full border-separate border-spacing-0 table-fixed min-w-[1070px] xl:min-w-full">
               <colgroup>
                 <col className="w-[60px]" />
                 <col className="w-[160px]" />
@@ -1113,43 +1150,43 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[75px]" />
               </colgroup>
               <thead>
-                <tr>
-                  <th colSpan={2} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">অনিষ্পন্ন কাজের তালিকা</th>
-                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
-                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">মাস: {reportingMonthBN}</th>
-                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12.5px] bg-slate-200 whitespace-nowrap">তারিখ: {reportingDateBN} খ্রি:</th>
+                <tr className="h-[32px]">
+                  <th colSpan={2} className="px-2 py-1 text-center font-bold text-[12px] bg-slate-200 whitespace-nowrap border border-slate-300">অনিষ্পন্ন কাজের তালিকা</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12px] bg-slate-200 whitespace-nowrap border border-slate-300">শাখা: {filterBranch === 'সকল' ? 'সকল' : filterBranch}</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12px] bg-slate-200 whitespace-nowrap border border-slate-300">মাস: {reportingMonthBN}</th>
+                  <th colSpan={4} className="px-2 py-1 text-center font-bold text-[12px] bg-slate-200 whitespace-nowrap border border-slate-300">তারিখ: {reportingDateBN} খ্রি:</th>
                 </tr>
-                <tr>
-                  <th rowSpan={2} className={`${thStyle} whitespace-nowrap min-w-[60px]`}>ক্রমিক নং</th>
-                  <th rowSpan={2} className={thStyle}>দায়িত্বপ্রাপ্ত অডিটর</th>
-                  <th colSpan={2} className={thStyle}>
+                <tr className="h-[42px]">
+                  <th rowSpan={2} className={`${thStyle} whitespace-nowrap min-w-[60px] border border-slate-300`}>ক্রমিক নং</th>
+                  <th rowSpan={2} className={`${thStyle} border border-slate-300`}>দায়িত্বপ্রাপ্ত অডিটর</th>
+                  <th colSpan={2} className={`${thStyle} border border-slate-300`}>
                     {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' : 
                      filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' : 
                      'দ্বি/ত্রিপক্ষীয় সভার কার্যপত্র'}
                   </th>
-                  <th colSpan={2} className={thStyle}>
+                  <th colSpan={2} className={`${thStyle} border border-slate-300`}>
                     {filterBranch === 'এসএফআই' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' : 
                      filterBranch === 'নন এসএফআই' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' : 
                      'দ্বি/ত্রিপক্ষীয় সভার কার্যবিবরণী'}
                   </th>
-                  <th colSpan={2} className={thStyle}>ব্রডশীট জবাব</th>
-                  <th colSpan={2} className={thStyle}>মিলিকরণ</th>
-                  <th colSpan={2} className={thStyle}>অন্যান্য</th>
-                  <th colSpan={2} className={thStyle + " bg-slate-300 text-slate-900 font-black"}>মোট</th>
+                  <th colSpan={2} className={`${thStyle} border border-slate-300`}>ব্রডশীট জবাব</th>
+                  <th colSpan={2} className={`${thStyle} border border-slate-300`}>মিলিকরণ</th>
+                  <th colSpan={2} className={`${thStyle} border border-slate-300`}>অন্যান্য</th>
+                  <th colSpan={2} className={`${thStyle} bg-slate-300 text-slate-900 font-black border border-slate-300`}>মোট</th>
                 </tr>
-                <tr>
-                  <th className={thStyle}>১ মাস-</th>
-                  <th className={thStyle}>১ মাস+</th>
-                  <th className={thStyle}>১ মাস-</th>
-                  <th className={thStyle}>১ মাস+</th>
-                  <th className={thStyle}>১ মাস-</th>
-                  <th className={thStyle}>১ মাস+</th>
-                  <th className={thStyle}>১ মাস-</th>
-                  <th className={thStyle}>১ মাস+</th>
-                  <th className={thStyle}>১ মাস-</th>
-                  <th className={thStyle}>১ মাস+</th>
-                  <th className={thStyle + " bg-slate-300 font-black"}>১ মাস-</th>
-                  <th className={thStyle + " bg-slate-300 font-black"}>১ মাস+</th>
+                <tr className="h-[30px]">
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস+</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস+</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস+</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস+</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} border border-slate-300`}>১ মাস+</th>
+                  <th className={`${thStyle} bg-slate-300 font-black border border-slate-300`}>১ মাস-</th>
+                  <th className={`${thStyle} bg-slate-300 font-black border border-slate-300`}>১ মাস+</th>
                 </tr>
               </thead>
               <tbody>
@@ -1339,7 +1376,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         </div>
 
         {/* SECTION 2: বিস্তারিত তালিকা টেবিল (Sticky by tableSticky.css logic) */}
-        <div className="pt-8 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible">
+        <div className="pt-8 border-t-4 border-double border-slate-200 flex flex-col items-center overflow-visible w-full max-w-full">
           <div className="w-full mb-4 space-y-3">
              {/* "ছক" ব্যাজ */}
              <div className="text-center">
@@ -1372,7 +1409,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           </div>
 
           <div className="table-container dd-sir-detailed-table-container relative overflow-visible w-full rounded-none bg-white">
-            <table className="w-full border-separate border-spacing-0 table-fixed">
+            <table className="w-full border-separate border-spacing-0 table-fixed min-w-[1085px] xl:min-w-full">
               <colgroup>
                 <col className="w-[50px]" />
                 <col className="w-[65px]" />
@@ -1385,7 +1422,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 <col className="w-[180px]" />
               </colgroup>
               <thead>
-                <tr className="h-[36px]">
+                <tr className="h-[42px]">
                   <th className={`${stickyThStyle} whitespace-nowrap min-w-[50px]`}>ক্রমিক নং</th>
                   <th className={stickyThStyle}>অডিটর</th>
                   <th className={stickyThStyle}>এনটিটি/প্রতিষ্ঠানের নাম</th>
@@ -1396,7 +1433,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <th className={stickyThStyle}>বর্তমান অবস্থান</th>
                   <th className={stickyThStyle}>মন্তব্য</th>
                 </tr>
-                <tr className="h-[24px]">
+                <tr className="h-[26px]">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                     <th key={n} className={`${stickyThStyle} text-[10.5px] font-bold text-slate-800 py-0.5`}>
                       {toBengaliDigits(n.toString())}
@@ -1502,8 +1539,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </button>
               </div>
               
-              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
-                <table className="w-full border-collapse">
+              <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 ${isDetailsModalOpen ? 'p-2 sm:p-3' : 'p-3 sm:p-6'}`}>
+                <table className="w-full border-collapse table-fixed">
+                  <colgroup>
+                    <col className={isDetailsModalOpen ? "w-[28%]" : "w-[36%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                    <col className={isDetailsModalOpen ? "w-[18%]" : "w-[16%]"} />
+                  </colgroup>
                   <thead>
                     <tr className="bg-slate-100">
                       <th className={`border border-slate-200 ${isDetailsModalOpen ? 'px-0.5 py-1 text-[8.5px] sm:text-[9.5px]' : 'px-1 py-1.5 text-[10px] sm:text-[11px]'} text-center font-black text-slate-700 leading-tight`}>অডিটর</th>
@@ -1516,23 +1560,23 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                   <tbody>
                     {auditorWiseStats.map((stat, idx) => (
                       <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle`}>
-                          <div className={`flex flex-col items-center justify-center gap-1 w-full mx-auto ${isDetailsModalOpen ? 'max-w-[65px]' : 'min-w-[80px]'}`}>
+                        <td className={`border border-slate-200 ${isDetailsModalOpen ? 'p-0.5' : 'px-1 py-2'} text-center align-middle overflow-hidden`}>
+                          <div className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-full mx-auto px-0.5 overflow-hidden">
                             {getDisplayImage(stat.name, stat.rawName) ? (
                               <img 
-                                      src={getDisplayImage(stat.name, stat.rawName)!} 
+                                src={getDisplayImage(stat.name, stat.rawName)!} 
                                 alt={getDisplayName(stat.name, stat.rawName)} 
-                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
+                                className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg' : 'w-8 h-8 sm:w-10 sm:h-10 rounded-xl'} object-cover border border-slate-100 shrink-0 shadow-sm`} 
                                 referrerPolicy="no-referrer"
                               />
                             ) : (
-                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-9 h-9 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
+                              <div className={`${isDetailsModalOpen ? 'w-6 h-6 sm:w-7 sm:h-7 text-[8px] rounded-lg' : 'w-8 h-8 sm:w-10 sm:h-10 text-xs rounded-xl'} bg-blue-50 text-blue-600 flex items-center justify-center font-black shrink-0 uppercase shadow-sm`}>
                                 {getDisplayName(stat.name, stat.rawName).slice(0, 2)}
                               </div>
                             )}
-                            <div className="flex flex-col items-center min-w-0 w-full">
-                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[10px] sm:text-[11.5px]'} font-extrabold text-slate-800 leading-tight text-center break-words w-full`}>{getDisplayName(stat.name, stat.rawName)}</span>
-                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[8px] sm:text-[9.5px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words w-full`}>
+                            <div className="flex flex-col items-center w-full min-w-0 overflow-hidden">
+                              <span className={`${isDetailsModalOpen ? 'text-[7.5px] sm:text-[8px] tracking-tight' : 'text-[9.5px] sm:text-[11px]'} font-extrabold text-slate-800 leading-tight text-center break-words whitespace-normal w-full`}>{getDisplayName(stat.name, stat.rawName)}</span>
+                              <span className={`${isDetailsModalOpen ? 'text-[6.5px] sm:text-[7px]' : 'text-[7.5px] sm:text-[9px]'} font-bold text-slate-400 leading-none mt-0.5 text-center break-words whitespace-normal w-full`}>
                                 {getDisplayDesignation(stat.name, stat.rawName)}
                               </span>
                             </div>

@@ -1556,10 +1556,10 @@ const App: React.FC = () => {
             activeTab === 'landing' 
               ? 'overflow-y-auto flex flex-col items-center justify-center p-0 sm:p-3 md:p-5 landing-main-container' 
               : activeTab === 'return' 
-                ? 'overflow-y-auto overflow-x-hidden return-main-container' 
+                ? 'overflow-auto return-main-container' 
                 : activeTab === 'register'
-                  ? 'overflow-y-auto overflow-x-hidden register-main-container' 
-                  : 'overflow-y-auto overflow-x-hidden'
+                  ? 'overflow-auto register-main-container' 
+                  : 'overflow-auto'
           } relative scroll-smooth bg-white`} 
           style={{ 
             scrollbarGutter: activeTab === 'landing' ? 'auto' : 'stable'
@@ -1575,7 +1575,7 @@ const App: React.FC = () => {
                   ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
                   : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
           }>
-            <div className={`animate-in fade-in duration-500 flex-1 h-full flex flex-col`}>
+            <div className="flex-1 h-full flex flex-col">
               
               {activeTab === 'setup_receivers' && (
                 <ReceiverManagement 
