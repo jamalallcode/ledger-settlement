@@ -9,6 +9,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 import { getReceivers } from './ReceiverManagement';
 import { normalizeName as normNameUtils, resolveCanonicalName, KNOWN_ALIASES } from '../utils/nameUtils';
+import { getCleanLetterTypeDisplay } from '../utils/branchUtils';
 
 interface DDSirCorrespondenceReturnProps {
   entries: any[];
@@ -1464,15 +1465,15 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         <td className={stickyTdStyle}>
                           <div className="flex flex-col gap-0.5">
                              <span className="text-blue-700 text-[10.5px] font-bold">
-                               {row.paraType === 'এসএফআই' ? (
-                                 row.letterType === 'কার্যপত্র' ? 'ত্রিপক্ষীয় সভার কার্যপত্র' :
-                                 row.letterType === 'কার্যবিবরণী' ? 'ত্রিপক্ষীয় সভার কার্যবিবরণী' :
-                                 row.letterType
-                               ) : row.paraType === 'নন এসএফআই' ? (
-                                 row.letterType === 'কার্যপত্র' ? 'দ্বিপক্ষীয় সভার কার্যপত্র' :
-                                 row.letterType === 'কার্যবিবরণী' ? 'দ্বিপক্ষীয় সভার কার্যবিবরণী' :
-                                 row.letterType
-                               ) : row.letterType}
+                               {(() => {
+                                 const cleanType = getCleanLetterTypeDisplay(row.letterType);
+                                 if (cleanType === 'কার্যপত্র' || cleanType === 'কার্যবিবরণী') {
+                                   return row.paraType === 'এসএফআই'
+                                     ? (cleanType === 'কার্যপত্র' ? 'কার্যপত্র (ত্রি-সভা)' : 'ত্রিপক্ষীয় সভা')
+                                     : (cleanType === 'কার্যপত্র' ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরনী)');
+                                 }
+                                 return cleanType || row.letterType;
+                               })()}
                              </span>
                              <span className="text-[9.5px] font-bold">(অনু: {toBengaliDigits(row.totalParas)}টি)</span>
                           </div>
