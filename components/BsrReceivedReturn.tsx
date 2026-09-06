@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
+import { isSFI, isNonSFI } from '../utils/branchUtils';
 
 interface BsrReceivedReturnProps {
   correspondenceEntries: any[];
@@ -48,8 +49,12 @@ const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গ�
 
 const parseDate = (dateStr: string | null | undefined): Date | null => {
   if (!dateStr) return null;
-  const cleanStr = toEnglishDigits(dateStr).trim();
-  const parts = cleanStr.split(/[-/.]/);
+  const cleanStr = toEnglishDigits(String(dateStr)).trim();
+  if (!cleanStr) return null;
+
+  // Extract date portion before any 'T' or space
+  const datePortion = cleanStr.split('T')[0].split(' ')[0].trim();
+  const parts = datePortion.split(/[-/.]/);
   if (parts.length === 3) {
     let d: number, m: number, y: number;
     if (parts[0].length === 4) {
@@ -67,7 +72,7 @@ const parseDate = (dateStr: string | null | undefined): Date | null => {
       return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
   }
-  const fallback = new Date(cleanStr);
+  const fallback = new Date(datePortion);
   if (!isNaN(fallback.getTime())) {
     return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
   }
@@ -75,7 +80,73 @@ const parseDate = (dateStr: string | null | undefined): Date | null => {
 };
 
 const robustNormalize = (str: string = '') => {
-  return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+  return str
+    .normalize('NFC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\u09af\u09bc/g, '\u09df') // য়
+    .replace(/\u09a1\u09bc/g, '\u09dc') // ড়
+    .replace(/\u09a2\u09bc/g, '\u09dd') // ঢ়
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const isBilateralText = (s: string = '') => {
+  const norm = robustNormalize(s);
+  return (
+    norm.includes('দ্বিপক্ষীয়') ||
+    norm.includes('দ্বিপক্ষীয়') ||
+    norm.includes('দ্বিপক্ষিয়') ||
+    norm.includes('দ্বি-পক্ষীয়') ||
+    norm.includes('দ্বি-পক্ষীয়') ||
+    norm.includes('দ্বি-পক্ষিয়') ||
+    norm.includes('দ্বিপাক্ষিক') ||
+    norm.includes('দ্বিপাক্ষীক') ||
+    norm.includes('দ্বি-পাক্ষিক') ||
+    norm.includes('দ্বি-সভা') ||
+    norm.includes('দ্বিসভা') ||
+    norm.toLowerCase().includes('bilateral')
+  );
+};
+
+const isWorkPaperText = (s: string = '') => {
+  const norm = robustNormalize(s);
+  return (
+    norm.includes('কার্যপত্র') || 
+    norm.includes('কাযপত্র') || 
+    norm.toLowerCase().includes('work paper') || 
+    norm.toLowerCase().includes('working paper')
+  );
+};
+
+const isMeetingMinutesText = (s: string = '') => {
+  const norm = robustNormalize(s);
+  return (
+    norm.includes('কার্যবিবরণী') ||
+    norm.includes('কার্যবিবরনী') ||
+    norm.includes('কাযবিবরণী') ||
+    norm.includes('কাযবিবরনী') ||
+    norm.includes('বিবরণী') ||
+    norm.includes('বিবরনী') ||
+    norm.toLowerCase().includes('minutes')
+  );
+};
+
+const isTrilateralText = (s: string = '') => {
+  const norm = robustNormalize(s);
+  return (
+    norm.includes('ত্রিপক্ষীয়') ||
+    norm.includes('ত্রিপক্ষীয়') ||
+    norm.includes('ত্রিপক্ষিয়') ||
+    norm.includes('ত্রি-পক্ষীয়') ||
+    norm.includes('ত্রি-পক্ষীয়') ||
+    norm.includes('ত্রি-পক্ষিয়') ||
+    norm.includes('ত্রিপাক্ষিক') ||
+    norm.includes('ত্রিপাক্ষীক') ||
+    norm.includes('ত্রি-পাক্ষিক') ||
+    norm.includes('ত্রি-সভা') ||
+    norm.includes('ত্রিসভা') ||
+    norm.toLowerCase().includes('trilateral')
+  );
 };
 
 const formatDateWithHyphensBN = (date: Date): string => {
@@ -94,37 +165,66 @@ const formatShortDateBN = (dateStr: string | null | undefined): string => {
   return `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(yr)}`;
 };
 
-const getLetterCategory = (entry: any): string => {
-  const lType = robustNormalize(entry.letterType || '');
-  const pType = robustNormalize(entry.paraType || '');
+const getLetterCategory = (entry: any, activeBranch?: string): string => {
+  const rawType = (entry.letterType || entry.meetingType || '').trim();
+  const lType = robustNormalize(rawType);
+  const pType = entry.paraType || '';
+  const isEntrySFI = isSFI(pType);
+  const isEntryNonSFI = isNonSFI(pType);
   
   if (lType.includes('বিএসআর') || lType.includes('bsr')) {
-    if (pType.includes('নন এসএফআই') || pType.includes('non sfi') || pType.includes('non-sfi')) {
-      return 'বিএসআর (নন এসএফআই)';
-    } else if (pType.includes('এসএফআই') || pType.includes('sfi')) {
+    if (activeBranch && activeBranch !== 'সকল') {
+      return 'বিএসআর';
+    }
+    if (isEntrySFI) {
       return 'বিএসআর (এসএফআই)';
     }
     return 'বিএসআর (নন এসএফআই)';
   }
-  if (lType.includes('দ্বিপক্ষীয়') || lType.includes('দ্বি-পক্ষীয়') || lType.includes('দ্বিপাক্ষিক') || lType.includes('bilateral')) {
-    if (lType.includes('কার্যপত্র')) return 'দ্বিপক্ষীয় সভার কার্যপত্র';
-    return 'দ্বিপক্ষীয় সভার কার্যবিবরণী';
+
+  // Bilateral / দ্বি-সভা
+  if (
+    isBilateralText(lType) ||
+    (isEntryNonSFI && (isWorkPaperText(lType) || isMeetingMinutesText(lType)))
+  ) {
+    if (isWorkPaperText(lType)) {
+      return 'দ্বি-সভা (কার্যপত্র)';
+    }
+    return 'দ্বি-সভা (কার্যবিবরণী)';
   }
-  if (lType.includes('ত্রিপক্ষীয়') || lType.includes('ত্রি-পক্ষীয়') || lType.includes('ত্রিপাক্ষিক') || lType.includes('trilateral')) {
-    if (lType.includes('কার্যপত্র')) return 'ত্রিপক্ষীয় সভার কার্যপত্র';
-    return 'ত্রিপক্ষীয় সভার কার্যবিবরণী';
+
+  // Trilateral / ত্রি-সভা
+  if (
+    isTrilateralText(lType) ||
+    (isEntrySFI && (isWorkPaperText(lType) || isMeetingMinutesText(lType)))
+  ) {
+    if (isWorkPaperText(lType)) {
+      return 'ত্রি-সভা (কার্যপত্র)';
+    }
+    return 'ত্রি-সভা (কার্যবিবরণী)';
   }
-  if (lType.includes('কার্যপত্র')) {
-    return 'কার্যপত্র';
+
+  // If still generic কার্যপত্র / কার্যবিবরণী
+  if (isWorkPaperText(lType)) {
+    return isEntrySFI ? 'ত্রি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যপত্র)';
   }
-  if (lType.includes('কার্যবিবরণী') || lType.includes('বিবরণী')) {
-    return 'কার্যবিবরণী';
+  if (isMeetingMinutesText(lType)) {
+    return isEntrySFI ? 'ত্রি-সভা (কার্যবিবরণী)' : 'দ্বি-সভা (কার্যবিবরণী)';
   }
+
   if (lType.includes('মিলিকরণ') || lType.includes('মিলকরণ')) {
     return 'মিলিকরণ';
   }
+
   if (entry.letterType && entry.letterType.trim()) {
-    return entry.letterType.trim();
+    const trimmed = entry.letterType.trim();
+    if (isBilateralText(trimmed)) {
+      return isWorkPaperText(trimmed) ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরণী)';
+    }
+    if (isTrilateralText(trimmed)) {
+      return isWorkPaperText(trimmed) ? 'ত্রি-সভা (কার্যপত্র)' : 'ত্রি-সভা (কার্যবিবরণী)';
+    }
+    return trimmed;
   }
   return 'অন্যান্য পত্রাদি';
 };
@@ -204,17 +304,25 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     };
   }, [selectedMonth, selectedYear]);
 
-  // Letter type options
+  // Letter type options dynamically based on branch
   const letterTypeOptions = useMemo(() => {
-    const standard = ['সকল', 'বিএসআর', 'দ্বিপক্ষীয় সভা', 'ত্রিপক্ষীয় সভা', 'কার্যপত্র', 'কার্যবিবরণী', 'মিলিকরণ', 'অন্যান্য'];
-    const found = new Set<string>();
-    correspondenceEntries.forEach(e => {
-      if (e.letterType && e.letterType.trim()) {
-        found.add(e.letterType.trim());
-      }
-    });
-    return Array.from(new Set([...standard, ...Array.from(found)]));
-  }, [correspondenceEntries]);
+    if (filterBranch === 'নন এসএফআই' || isNonSFI(filterBranch)) {
+      return ['সকল', 'বিএসআর', 'দ্বি-সভা (কার্যবিবরণী)', 'দ্বি-সভা (কার্যপত্র)', 'মিলিকরণ', 'অন্যান্য'];
+    }
+    if (filterBranch === 'এসএফআই' || isSFI(filterBranch)) {
+      return ['সকল', 'বিএসআর', 'ত্রি-সভা (কার্যবিবরণী)', 'ত্রি-সভা (কার্যপত্র)', 'মিলিকরণ', 'অন্যান্য'];
+    }
+    return [
+      'সকল', 
+      'বিএসআর', 
+      'দ্বি-সভা (কার্যবিবরণী)', 
+      'দ্বি-সভা (কার্যপত্র)', 
+      'ত্রি-সভা (কার্যবিবরণী)', 
+      'ত্রি-সভা (কার্যপত্র)', 
+      'মিলিকরণ', 
+      'অন্যান্য'
+    ];
+  }, [filterBranch]);
 
   // Filtered entries strictly based on Diary Date within selected month (01 to end of month)
   const filteredEntries = useMemo(() => {
@@ -232,20 +340,42 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
       }
 
       // 2. Branch / Para Type Filter
-      if (filterBranch !== 'সকল') {
-        const pType = robustNormalize(entry.paraType || '');
-        const normFilterBranch = robustNormalize(filterBranch);
-        if (!pType.includes(normFilterBranch)) {
+      if (filterBranch === 'এসএফআই' || isSFI(filterBranch)) {
+        if (!isSFI(entry.paraType)) {
+          return false;
+        }
+      } else if (filterBranch === 'নন এসএফআই' || isNonSFI(filterBranch)) {
+        if (!isNonSFI(entry.paraType)) {
           return false;
         }
       }
 
       // 3. Letter Type Filter
       if (filterLetterType !== 'সকল') {
-        const lType = robustNormalize(entry.letterType || '');
-        const normFilterLetter = robustNormalize(filterLetterType);
-        if (!lType.includes(normFilterLetter)) {
-          return false;
+        const cat = getLetterCategory(entry, filterBranch);
+        if (filterLetterType === 'বিএসআর') {
+          if (!cat.startsWith('বিএসআর')) return false;
+        } else if (filterLetterType === 'দ্বি-সভা (কার্যবিবরণী)' || filterLetterType === 'দ্বি-সভা (কার্যবিবরনী)') {
+          if (cat !== 'দ্বি-সভা (কার্যবিবরণী)' && cat !== 'দ্বি-সভা (কার্যবিবরনী)') return false;
+        } else if (filterLetterType === 'দ্বি-সভা (কার্যপত্র)') {
+          if (cat !== 'দ্বি-সভা (কার্যপত্র)') return false;
+        } else if (filterLetterType === 'ত্রি-সভা (কার্যবিবরণী)' || filterLetterType === 'ত্রি-সভা (কার্যবিবরনী)') {
+          if (cat !== 'ত্রি-সভা (কার্যবিবরণী)' && cat !== 'ত্রি-সভা (কার্যবিবরনী)') return false;
+        } else if (filterLetterType === 'ত্রি-সভা (কার্যপত্র)') {
+          if (cat !== 'ত্রি-সভা (কার্যপত্র)') return false;
+        } else if (filterLetterType === 'মিলিকরণ') {
+          if (cat !== 'মিলিকরণ') return false;
+        } else if (filterLetterType === 'অন্যান্য') {
+          if (
+            cat.startsWith('বিএসআর') ||
+            cat.includes('দ্বি-সভা') ||
+            cat.includes('ত্রি-সভা') ||
+            cat === 'মিলিকরণ'
+          ) {
+            return false;
+          }
+        } else {
+          if (cat !== filterLetterType) return false;
         }
       }
 
@@ -281,22 +411,35 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     const categoryMap = new Map<string, any[]>();
     
     const categoryOrder = [
+      'বিএসআর',
       'বিএসআর (নন এসএফআই)',
       'বিএসআর (এসএফআই)',
-      'বিএসআর',
-      'দ্বিপক্ষীয় সভার কার্যবিবরণী',
-      'দ্বিপক্ষীয় সভার কার্যপত্র',
-      'দ্বিপক্ষীয় সভা',
-      'ত্রিপক্ষীয় সভার কার্যবিবরণী',
-      'ত্রিপক্ষীয় সভার কার্যপত্র',
-      'ত্রিপক্ষীয় সভা',
-      'কার্যপত্র',
-      'কার্যবিবরণী',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'দ্বি-সভা (কার্যপত্র)',
+      'ত্রি-সভা (কার্যবিবরণী)',
+      'ত্রি-সভা (কার্যপত্র)',
       'মিলিকরণ',
+      'অন্যান্য পত্রাদি',
+      'অন্যান্য',
     ];
 
     filteredEntries.forEach(entry => {
-      const cat = getLetterCategory(entry);
+      let cat = getLetterCategory(entry, filterBranch);
+      if (
+        cat === 'দ্বিপক্ষীয় সভা' ||
+        cat === 'দ্বিপক্ষীয় সভার কার্যবিবরণী' ||
+        cat === 'দ্বি-সভা (কার্যবিবরনী)' ||
+        isBilateralText(cat)
+      ) {
+        cat = isWorkPaperText(cat) ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরণী)';
+      } else if (
+        cat === 'ত্রিপক্ষীয় সভা' ||
+        cat === 'ত্রিপক্ষীয় সভার কার্যবিবরণী' ||
+        cat === 'ত্রি-সভা (কার্যবিবরনী)' ||
+        isTrilateralText(cat)
+      ) {
+        cat = isWorkPaperText(cat) ? 'ত্রি-সভা (কার্যপত্র)' : 'ত্রি-সভা (কার্যবিবরণী)';
+      }
       if (!categoryMap.has(cat)) {
         categoryMap.set(cat, []);
       }
@@ -767,6 +910,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         type="button"
                         onClick={() => {
                           setFilterBranch(branch);
+                          setFilterLetterType('সকল');
                           setIsBranchOpen(false);
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
@@ -821,19 +965,6 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Reset Filters Button */}
-            {(filterBranch !== 'নন এসএফআই' || filterLetterType !== 'সকল' || searchTerm) && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="flex items-center gap-1 px-2.5 h-[38px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs transition-all cursor-pointer"
-                title="ফিল্টার রিসেট করুন"
-              >
-                <RotateCcw size={13} />
-                <span>রিসেট</span>
-              </button>
-            )}
           </div>
 
           {/* Right: Search Input & Count Badge */}
