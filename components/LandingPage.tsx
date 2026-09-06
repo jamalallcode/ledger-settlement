@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar,
-  Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles
+  Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles, PieChart, Library, LayoutDashboard,
+  Scale, FileText, Link2, ChevronRight, BarChart3, Users, Clock, CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits } from '../utils/numberUtils.ts';
@@ -39,34 +40,19 @@ const LandingPage: React.FC<LandingPageProps> = ({
     audit_details: true,
   }
 }) => {
-  // Mobile fan menu state: initially closed (false) so it shows '+' and floating bob animation
+  // Mobile circular radial fan menu state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-between sm:justify-center h-full sm:h-auto py-0 sm:py-2 md:py-4">
-      {/* Floating Bob Animation for Mobile Hub Button */}
-      <style>{`
-        @keyframes floatBobAnim {
-          0%, 100% {
-            transform: translateY(0px) scale(1);
-          }
-          50% {
-            transform: translateY(-6px) scale(1.05);
-          }
-        }
-        .animate-hub-float {
-          animation: floatBobAnim 2.2s ease-in-out infinite;
-        }
-      `}</style>
-
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start md:justify-center h-auto py-1 sm:py-2 md:py-4">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative overflow-hidden rounded-none sm:rounded-[2rem] p-3 min-[380px]:p-3.5 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full h-full sm:h-auto shadow-lg flex flex-col justify-between sm:justify-center border-x-0 border-t-0 sm:border"
+        className="landing-hero-card relative rounded-2xl sm:rounded-[2rem] p-3.5 sm:p-5 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full h-auto shadow-lg flex flex-col justify-start sm:justify-center border"
       >
         {/* Subtle patterned backdrop */}
-        <div className="landing-grid-bg absolute inset-0 pointer-events-none" />
+        <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-2xl sm:rounded-[2rem]" />
         
         {/* Top Split Identity Area - using stretch to match left and right column heights */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-6 lg:gap-8 items-stretch flex-1 flex flex-col md:grid justify-between">
@@ -113,86 +99,68 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
-          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0.5 sm:p-3 md:p-5 lg:p-6 space-y-2 min-[380px]:space-y-2.5 sm:space-y-4 md:space-y-6 w-full flex-1">
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0.5 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
             
-            {/* System Overview / Platform Description */}
-            {/* Desktop View: Full detailed description (100% Intact) */}
-            <div className="hidden md:block w-full space-y-2">
-              <div className="landing-tag-intro inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-                💡 সিস্টেম পরিচিতি ও বিবরণ
+            {/* System Overview / Platform Description - Centered, premium designed card */}
+            <div className="w-full relative flex items-center justify-center">
+              {/* Short text description: smoothly fades and slides up when menu is open */}
+              <div 
+                className={`w-full max-w-lg mx-auto transition-all duration-400 ease-out ${
+                  isMenuOpen 
+                    ? 'opacity-0 -translate-y-2 pointer-events-none md:opacity-100 md:translate-y-0 md:pointer-events-auto' 
+                    : 'opacity-100 translate-y-0'
+                }`}
+              >
+                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-b from-white/95 via-slate-50/90 to-blue-50/40 border border-blue-200/60 shadow-[0_2px_10px_-2px_rgba(15,23,42,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] px-3.5 py-2 sm:px-5 sm:py-2.5 flex flex-col items-center justify-center text-center">
+                  <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full text-[10.5px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+                    <span>💡</span>
+                    <span>সিস্টেম পরিচিতি</span>
+                  </div>
+                  <p className="landing-desc-text text-[12px] min-[380px]:text-[12.5px] sm:text-[13.5px] md:text-[14px] leading-relaxed font-bold text-slate-700 text-center mt-1 sm:mt-1.5">
+                    অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং।
+                  </p>
+                </div>
               </div>
-              <p className="landing-desc-text text-base md:text-[17px] leading-relaxed md:leading-loose font-extrabold text-slate-800 text-justify">
-                বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, সেক্টর: ০৬, খুলনার আওতাধীন শিল্প, ব্যাংক ও আর্থিক প্রতিষ্ঠানসমূহের অডিট আপত্তি/ অনুচ্ছেদের নিয়মতান্ত্রিক নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ড্যাশবোর্ড ট্র্যাকিং প্লাটফর্ম।
-              </p>
             </div>
 
-            {/* MOBILE ONLY: Beautiful Brief Description Card (Visible when menu is closed, hides when open) */}
-            {!isMenuOpen && (
-              <div className="block md:hidden w-full max-w-sm mx-auto transition-all duration-300 animate-in fade-in zoom-in-95">
-                <div className="bg-gradient-to-br from-emerald-50/95 via-blue-50/80 to-teal-50/90 border border-emerald-200/90 rounded-2xl p-2.5 min-[380px]:p-3 shadow-2xs space-y-1.5 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-6.5 h-6.5 min-[380px]:w-7 min-[380px]:h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
-                      <Sparkles size={13} className="text-amber-300 fill-amber-300" />
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <h4 className="text-[11.5px] min-[380px]:text-[12px] font-black text-slate-800 tracking-tight leading-tight">
-                        💡 সিস্টেম পরিচিতি ও বিবরণ
-                      </h4>
-                      <p className="text-[9.5px] font-extrabold text-emerald-800">
-                        আঞ্চলিক কার্যালয়, সেক্টর: ০৬, খুলনা
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] min-[380px]:text-[11.5px] leading-snug font-bold text-slate-700 text-center px-1">
-                    শিল্প, ব্যাংক ও আর্থিক প্রতিষ্ঠানসমূহের অডিট আপত্তি নিষ্পত্তির তথ্য সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও সহজ ট্র্যাকিং প্লাটফর্ম।
-                  </p>
-
-                  {/* Guidance callout for the button below */}
-                  <div className="pt-1 border-t border-emerald-200/70 flex items-center justify-center text-center bg-emerald-100/70 py-1 px-2 rounded-xl">
-                    <span className="text-[10px] min-[380px]:text-[10.5px] font-black text-emerald-900 animate-pulse flex items-center gap-1">
-                      👇 প্রয়োজনীয় অপশনসমূহ পেতে নিচের বাটনে স্পর্শ করুন
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MOBILE ONLY: Circular Radial Fan Menu */}
-            <div className="block md:hidden w-full my-1.5 select-none">
+            {/* MOBILE ONLY: Circular Radial Fan Menu with Central '+' Button (Fixed container height so bottom never shifts) */}
+            <div className="block md:hidden w-full select-none my-1">
               <div className="w-full flex flex-col items-center justify-center">
                 
-                {/* Active Tooltip Label */}
-                <div className="h-5 flex items-center justify-center mb-0.5">
-                  {isMenuOpen && activeTooltip && (
-                    <span className="bg-slate-900 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-md animate-in fade-in zoom-in-95 text-center">
-                      {activeTooltip}
-                    </span>
-                  )}
+                {/* Active Tooltip Label with smooth fade */}
+                <div className="h-4 flex items-center justify-center mb-0.5">
+                  <span className={`bg-slate-900 text-white text-[10.5px] font-bold px-3 py-0.5 rounded-full shadow-md transition-all duration-200 text-center ${
+                    isMenuOpen && activeTooltip ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+                  }`}>
+                    {activeTooltip || ''}
+                  </span>
                 </div>
 
-                {/* Arc Stage Container */}
-                <div className={`relative w-[280px] min-[380px]:w-[300px] mx-auto transition-all duration-300 flex items-center justify-center ${
-                  isMenuOpen ? 'h-[110px] min-[380px]:h-[120px]' : 'h-[54px]'
-                }`}>
+                {/* Arc Stage Container: Constant fixed height container, so launch buttons below NEVER move */}
+                <div className="relative w-[280px] min-[380px]:w-[300px] h-[110px] mx-auto flex items-end justify-center">
 
-                  {/* 1. Home Button (Bottom-Left) */}
+                  {/* 1. Home Button (Bottom-Left) - expands upwards/outwards from center bottom */}
                   <button
                     id="mobile-fan-home"
                     onClick={() => setActiveTab('landing')}
-                    onTouchStart={() => setActiveTooltip('🏠 হোম / ল্যান্ডিং')}
+                    onTouchStart={() => setActiveTooltip('🏠 হোম')}
                     onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('🏠 হোম / ল্যান্ডিং')}
+                    onMouseEnter={() => setActiveTooltip('🏠 হোম')}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className={`absolute left-[14px] min-[380px]:left-[18px] bottom-[2px] w-10 h-10 min-[380px]:w-10.5 min-[380px]:h-10.5 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/30 border border-white/40 flex items-center justify-center active:scale-95 transition-all duration-300 ${
-                      isMenuOpen ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-50 pointer-events-none'
+                    style={{
+                      transform: isMenuOpen 
+                        ? 'translate(0px, 0px) scale(1)' 
+                        : 'translate(95px, 0px) scale(0.2)',
+                    }}
+                    className={`absolute left-[14px] min-[380px]:left-[18px] bottom-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="হোম"
                   >
-                    <Home className="w-4.5 h-4.5 stroke-[2.5]" />
+                    <Home className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* 2. চিঠিপত্র এন্ট্রি (Upper-Left) */}
+                  {/* 2. চিঠিপত্র এন্ট্রি (Upper-Left) - expands upwards/outwards from center bottom */}
                   <button
                     id="mobile-fan-corr-entry"
                     onClick={() => setActiveTab('entry', 'correspondence')}
@@ -200,15 +168,20 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     onTouchEnd={() => setActiveTooltip(null)}
                     onMouseEnter={() => setActiveTooltip('✉️ চিঠিপত্র এন্ট্রি')}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className={`absolute left-[54px] min-[380px]:left-[60px] top-[10px] min-[380px]:top-[6px] w-10 h-10 min-[380px]:w-10.5 min-[380px]:h-10.5 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 border border-white/40 flex items-center justify-center active:scale-95 transition-all duration-300 ${
-                      isMenuOpen ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-50 pointer-events-none'
+                    style={{
+                      transform: isMenuOpen 
+                        ? 'translate(0px, 0px) scale(1)' 
+                        : 'translate(65px, 50px) scale(0.2)',
+                    }}
+                    className={`absolute left-[48px] min-[380px]:left-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 text-white shadow-xl shadow-blue-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="চিঠিপত্র এন্ট্রি"
                   >
-                    <Mail className="w-4.5 h-4.5 stroke-[2.5]" />
+                    <Mail className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* 3. মীমাংসা এন্ট্রি (Top-Center) */}
+                  {/* 3. মীমাংসা এন্ট্রি (Top-Center) - shoots straight up from center bottom */}
                   <button
                     id="mobile-fan-settle-entry"
                     onClick={() => setActiveTab('entry', 'settlement')}
@@ -216,15 +189,20 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     onTouchEnd={() => setActiveTooltip(null)}
                     onMouseEnter={() => setActiveTooltip('📝 মীমাংসা এন্ট্রি')}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className={`absolute left-1/2 -translate-x-1/2 top-0 w-11 h-11 min-[380px]:w-11.5 min-[380px]:h-11.5 rounded-full bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 text-white shadow-xl shadow-emerald-500/35 border-2 border-white/50 flex items-center justify-center active:scale-95 transition-all duration-300 z-10 ${
-                      isMenuOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'
+                    style={{
+                      transform: isMenuOpen 
+                        ? 'translate(-50%, 0px) scale(1)' 
+                        : 'translate(-50%, 55px) scale(0.2)',
+                    }}
+                    className={`absolute left-1/2 top-0 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 text-white shadow-2xl shadow-emerald-500/40 border-2 border-white/90 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out z-10 ${
+                      isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="মীমাংসা এন্ট্রি"
                   >
-                    <FileCheck2 className="w-5 h-5 stroke-[2.5]" />
+                    <FileCheck2 className="w-6 h-6 stroke-[2.5]" />
                   </button>
 
-                  {/* 4. চিঠিপত্র রেজিস্টার (Upper-Right) */}
+                  {/* 4. চিঠিপত্র রেজিস্টার (Upper-Right) - expands upwards/outwards from center bottom */}
                   <button
                     id="mobile-fan-corr-register"
                     onClick={() => setActiveTab('register', 'correspondence')}
@@ -232,15 +210,20 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     onTouchEnd={() => setActiveTooltip(null)}
                     onMouseEnter={() => setActiveTooltip('📬 চিঠিপত্র রেজিস্টার')}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className={`absolute right-[54px] min-[380px]:right-[60px] top-[10px] min-[380px]:top-[6px] w-10 h-10 min-[380px]:w-10.5 min-[380px]:h-10.5 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white shadow-lg shadow-cyan-500/30 border border-white/40 flex items-center justify-center active:scale-95 transition-all duration-300 ${
-                      isMenuOpen ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-50 pointer-events-none'
+                    style={{
+                      transform: isMenuOpen 
+                        ? 'translate(0px, 0px) scale(1)' 
+                        : 'translate(-65px, 50px) scale(0.2)',
+                    }}
+                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="চিঠিপত্র রেজিস্টার"
                   >
-                    <Inbox className="w-4.5 h-4.5 stroke-[2.5]" />
+                    <Inbox className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* 5. মীমাংসা রেজিস্টার (Bottom-Right) */}
+                  {/* 5. মীমাংসা রেজিস্টার (Bottom-Right) - expands upwards/outwards from center bottom */}
                   <button
                     id="mobile-fan-settle-register"
                     onClick={() => setActiveTab('register', 'settlement')}
@@ -248,32 +231,39 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     onTouchEnd={() => setActiveTooltip(null)}
                     onMouseEnter={() => setActiveTooltip('📋 মীমাংসা রেজিস্টার')}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className={`absolute right-[14px] min-[380px]:right-[18px] bottom-[2px] w-10 h-10 min-[380px]:w-10.5 min-[380px]:h-10.5 rounded-full bg-gradient-to-br from-teal-500 via-emerald-600 to-green-700 text-white shadow-lg shadow-teal-500/30 border border-white/40 flex items-center justify-center active:scale-95 transition-all duration-300 ${
-                      isMenuOpen ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-50 pointer-events-none'
+                    style={{
+                      transform: isMenuOpen 
+                        ? 'translate(0px, 0px) scale(1)' 
+                        : 'translate(-95px, 0px) scale(0.2)',
+                    }}
+                    className={`absolute right-[14px] min-[380px]:right-[18px] bottom-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-teal-500 via-emerald-600 to-green-700 text-white shadow-xl shadow-teal-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="মীমাংসা রেজিস্টার"
                   >
-                    <ClipboardCheck className="w-4.5 h-4.5 stroke-[2.5]" />
+                    <ClipboardCheck className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* Center Hub Trigger Button: 100% Green, Floating/Bobbing animation when closed */}
-                  <div className={`absolute left-1/2 -translate-x-1/2 bottom-[0px] z-20 ${!isMenuOpen ? 'animate-hub-float' : ''}`}>
+                  {/* Center Hub Trigger Button */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20">
                     <button
                       id="mobile-fan-hub"
                       onClick={() => {
                         setIsMenuOpen(!isMenuOpen);
                         setActiveTooltip(null);
                       }}
-                      className={`w-12 h-12 min-[380px]:w-13 min-[380px]:h-13 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-transform duration-200 cursor-pointer ${
-                        !isMenuOpen ? 'shadow-xl shadow-emerald-600/40' : 'shadow-2xl shadow-emerald-700/50'
+                      className={`w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
+                        !isMenuOpen ? 'shadow-xl shadow-emerald-600/40 hover:scale-105' : 'shadow-2xl shadow-emerald-700/50'
                       }`}
                       title={isMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
                     >
-                      {isMenuOpen ? (
-                        <X className="w-6 h-6 stroke-[3] transition-transform duration-300 rotate-0 hover:rotate-90" />
-                      ) : (
-                        <Plus className="w-6 h-6 stroke-[3] transition-transform duration-300 rotate-0 hover:rotate-90" />
-                      )}
+                      <span className={`transition-transform duration-400 ease-out flex items-center justify-center ${isMenuOpen ? 'rotate-180' : 'rotate-0'}`}>
+                        {isMenuOpen ? (
+                          <X className="w-6 h-6 stroke-[3]" />
+                        ) : (
+                          <Plus className="w-6 h-6 stroke-[3]" />
+                        )}
+                      </span>
                     </button>
                   </div>
                 </div>

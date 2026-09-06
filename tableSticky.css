@@ -73,21 +73,29 @@
 .qr-table-container thead tr:first-child th,
 .qr2-table-container thead tr:first-child th {
   top: 0 !important;
-  z-index: 130 !important;
+  z-index: 140 !important;
+}
+
+.table-container thead tr:first-child th[rowspan],
+.table-container thead tr:first-child th[rowSpan],
+.qr-table-container thead tr:first-child th[rowspan],
+.qr-table-container thead tr:first-child th[rowSpan] {
+  top: 0 !important;
+  z-index: 145 !important;
 }
 
 .table-container thead tr:nth-child(2) th,
 .qr-table-container thead tr:nth-child(2) th,
 .qr2-table-container thead tr:nth-child(2) th {
-  top: 42px !important;
-  z-index: 125 !important;
+  top: var(--th-r2-top, 42px) !important;
+  z-index: 135 !important;
 }
 
 .table-container thead tr:nth-child(3) th,
 .qr-table-container thead tr:nth-child(3) th,
 .qr2-table-container thead tr:nth-child(3) th {
-  top: 80px !important;
-  z-index: 120 !important;
+  top: var(--th-r3-top, 80px) !important;
+  z-index: 130 !important;
 }
 
 /* Return Summary Table Sticky Headers */

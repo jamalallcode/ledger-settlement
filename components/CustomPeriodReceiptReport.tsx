@@ -1861,51 +1861,51 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
         </div>
 
         <div className="p-2 sm:p-3 md:p-3">
-          {/* Toggle Report Mode Control - Engraved / Embedded Segmented Style */}
-          <div className="flex items-center p-1.5 bg-slate-200/90 border border-slate-300/80 rounded-2xl w-fit mb-6 no-print shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] max-w-full overflow-x-auto">
-            <div className="flex items-center gap-0">
+          {/* Toggle Report Mode Control - Stacked vertically on mobile, horizontal on desktop */}
+          <div className="w-full md:w-fit p-1.5 bg-slate-200/90 border border-slate-300/80 rounded-2xl mb-6 no-print shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-1.5 md:gap-0 w-full md:w-auto">
               <button
                 type="button"
                 onClick={() => setActiveReportMode('correspondence')}
-                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`w-full md:w-auto px-4 md:px-5 py-2.5 rounded-xl text-xs md:text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center justify-center md:justify-start gap-2 whitespace-nowrap ${
                   activeReportMode === 'correspondence'
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-900/20 scale-[1.01]'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                    : 'text-slate-700 hover:text-slate-900 bg-white/60 hover:bg-white md:bg-transparent md:hover:bg-slate-300/60'
                 }`}
               >
-                <FileText size={14} className={activeReportMode === 'correspondence' ? 'text-emerald-100' : 'text-slate-500'} />
+                <FileText size={15} className={activeReportMode === 'correspondence' ? 'text-emerald-100' : 'text-slate-500'} />
                 <span>চিঠিপত্র প্রাপ্তি রিপোর্ট ({toBengaliDigits(filteredEntries.length)} টি)</span>
               </button>
 
-              {/* Inset Engraved Divider */}
-              <div className="h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
+              {/* Inset Engraved Divider (Visible only on desktop/tablet) */}
+              <div className="hidden md:block h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
 
               <button
                 type="button"
                 onClick={() => setActiveReportMode('settlement')}
-                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`w-full md:w-auto px-4 md:px-5 py-2.5 rounded-xl text-xs md:text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center justify-center md:justify-start gap-2 whitespace-nowrap ${
                   activeReportMode === 'settlement'
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-900/20 scale-[1.01]'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                    : 'text-slate-700 hover:text-slate-900 bg-white/60 hover:bg-white md:bg-transparent md:hover:bg-slate-300/60'
                 }`}
               >
-                <ShieldCheck size={14} className={activeReportMode === 'settlement' ? 'text-blue-100' : 'text-slate-500'} />
+                <ShieldCheck size={15} className={activeReportMode === 'settlement' ? 'text-blue-100' : 'text-slate-500'} />
                 <span>মীমাংসিত অনুচ্ছেদ রিপোর্ট ({toBengaliDigits(filteredSettlementEntries.length)} টি)</span>
               </button>
 
-              {/* Inset Engraved Divider */}
-              <div className="h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
+              {/* Inset Engraved Divider (Visible only on desktop/tablet) */}
+              <div className="hidden md:block h-6 w-[2px] bg-slate-300/90 shadow-[1px_0_0_0_rgba(255,255,255,0.9)] mx-1 shrink-0" />
 
               <button
                 type="button"
                 onClick={() => setActiveReportMode('pending')}
-                className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`w-full md:w-auto px-4 md:px-5 py-2.5 rounded-xl text-xs md:text-[11.5px] font-black transition-all duration-200 cursor-pointer flex items-center justify-center md:justify-start gap-2 whitespace-nowrap ${
                   activeReportMode === 'pending'
                     ? 'bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-md shadow-amber-900/20 scale-[1.01]'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-300/60'
+                    : 'text-slate-700 hover:text-slate-900 bg-white/60 hover:bg-white md:bg-transparent md:hover:bg-slate-300/60'
                 }`}
               >
-                <Clock size={14} className={activeReportMode === 'pending' ? 'text-amber-100' : 'text-slate-500'} />
+                <Clock size={15} className={activeReportMode === 'pending' ? 'text-amber-100' : 'text-slate-500'} />
                 <span>চলমান/পেন্ডিং কাজ ({toBengaliDigits(pendingEntries.length)} টি)</span>
               </button>
             </div>
@@ -1967,21 +1967,87 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             </div>
           </div>
 
+          {/* Mobile responsive styles specifically for Custom Period Report tables */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media (max-width: 767px) {
+              #custom-period-report-container-1,
+              #custom-period-report-container-2 {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+              }
+              #custom-period-report-container-1::-webkit-scrollbar,
+              #custom-period-report-container-2::-webkit-scrollbar {
+                height: 6px;
+              }
+              #custom-period-report-container-1::-webkit-scrollbar-track,
+              #custom-period-report-container-2::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 4px;
+              }
+              #custom-period-report-container-1::-webkit-scrollbar-thumb,
+              #custom-period-report-container-2::-webkit-scrollbar-thumb {
+                background: #94a3b8;
+                border-radius: 4px;
+              }
+              #custom-period-report-container-1 table {
+                min-width: 980px !important;
+                width: 980px !important;
+                table-layout: fixed !important;
+              }
+              #custom-period-report-container-2 table {
+                min-width: 1040px !important;
+                width: 1040px !important;
+                table-layout: fixed !important;
+              }
+            }
+            @media (min-width: 768px) {
+              #custom-period-report-container-1 table,
+              #custom-period-report-container-2 table {
+                width: 100% !important;
+                min-width: 0 !important;
+                table-layout: fixed !important;
+              }
+            }
+            @media print {
+              #custom-period-report-container-1,
+              #custom-period-report-container-2 {
+                overflow: visible !important;
+                width: 100% !important;
+              }
+              #custom-period-report-container-1 table,
+              #custom-period-report-container-2 table {
+                width: 100% !important;
+                min-width: 0 !important;
+              }
+            }
+          `}} />
+
           {/* TABLE */}
           {activeReportMode === 'correspondence' || activeReportMode === 'pending' ? (
             (() => {
               const displayEntries = activeReportMode === 'pending' ? pendingEntries : filteredEntries;
               return displayEntries.length > 0 ? (
-                <div className="table-container overflow-visible rounded-2xl shadow-inner border border-slate-200">
-                  <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
-                    <colgroup>
-                      <col className="w-[3.5%]" />
-                      <col className="w-[25.5%]" />
-                      <col className="w-[21%]" />
-                      <col className="w-[16.66%]" />
-                      <col className="w-[16.67%]" />
-                      <col className="w-[16.67%]" />
-                    </colgroup>
+                <>
+                  <div className="md:hidden flex items-center justify-end gap-1.5 text-[11px] text-slate-500 font-bold pb-2 px-1 no-print">
+                    <span className="inline-block animate-pulse">👉</span>
+                    <span>সম্পূর্ণ বিবরণ দেখতে ডানে স্ক্রোল করুন</span>
+                  </div>
+                  <div 
+                    id="custom-period-report-container-1" 
+                    className="table-container overflow-x-auto md:overflow-visible rounded-2xl shadow-inner border border-slate-200 bg-white"
+                  >
+                    <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                      <colgroup>
+                        <col className="w-[50px] md:w-[3.5%]" />
+                        <col className="w-[240px] md:w-[25.5%]" />
+                        <col className="w-[230px] md:w-[21%]" />
+                        <col className="w-[150px] md:w-[16.66%]" />
+                        <col className="w-[150px] md:w-[16.67%]" />
+                        <col className="w-[160px] md:w-[16.67%]" />
+                      </colgroup>
                     <thead className="sticky top-0 z-30 shadow-sm bg-slate-200">
                       {/* Header Row 1: Titles (Black Text) */}
                       <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
@@ -2136,7 +2202,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
 
                           {/* Col 2: অডিট প্রতিষ্ঠান ও মন্ত্রণালয় */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
-                            <div className="space-y-1 text-[10.5px] leading-snug text-justify">
+                            <div className="space-y-1 text-[10.5px] leading-snug text-left">
                               <div>
                                 <span className="font-black text-emerald-700">১. প্রতিষ্ঠানের নাম: </span>
                                 <span className="font-bold text-slate-900">{auditEntity}</span>
@@ -2218,13 +2284,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 4: প্রাপ্ত অনুচ্ছেদ ও টাকা */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1.5 text-[11px]">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[10px]">১. প্রেরিত মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-slate-900 text-xs break-all">{toBengaliDigits(totalParas)} টি</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">১. প্রেরিত মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-slate-900 text-xs whitespace-nowrap">{toBengaliDigits(totalParas)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[10px]">২. মোট জড়িত টাকা:</span>
-                                <span className="font-black text-blue-900 text-xs break-all">{toBengaliDigits(totalAmount)}</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">২. মোট জড়িত টাকা:</span>
+                                <span className="font-black text-blue-900 text-xs whitespace-nowrap">{toBengaliDigits(totalAmount)}</span>
                               </div>
                             </div>
                           </td>
@@ -2232,13 +2298,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 6: নিষ্পত্তিকৃত তথ্য */}
                           <td className="px-3 py-3 text-left border-r border-slate-200">
                             <div className="space-y-1 text-[11px]">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-emerald-700 text-xs break-all">{toBengaliDigits(settledCount)} টি</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-emerald-700 text-xs whitespace-nowrap">{toBengaliDigits(settledCount)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
-                                <span className="font-black text-emerald-900 text-xs break-all">{toBengaliDigits(settledAmount)}</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">২. মোট টাকা:</span>
+                                <span className="font-black text-emerald-900 text-xs whitespace-nowrap">{toBengaliDigits(settledAmount)}</span>
                               </div>
                               {settledParas.length > 0 && (
                                 <div className="pt-1.5 border-t border-slate-100 flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -2283,13 +2349,13 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           {/* Col 7: অনিষ্পন্ন তথ্য ও মন্তব্য (এবং হোভারে এডিট বাটন) */}
                           <td className="px-3 py-3 text-left relative">
                             <div className="space-y-1.5 text-[11px] pr-2 pb-7">
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words">
-                                <span className="font-black text-slate-700 text-[10px]">১. মোট অনুচ্ছেদ:</span>
-                                <span className="font-black text-rose-700 text-xs break-all">{toBengaliDigits(unsettledCount)} টি</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">১. মোট অনুচ্ছেদ:</span>
+                                <span className="font-black text-rose-700 text-xs whitespace-nowrap">{toBengaliDigits(unsettledCount)} টি</span>
                               </div>
-                              <div className="flex flex-wrap items-baseline gap-x-1.5 break-words pt-0.5">
-                                <span className="font-black text-slate-700 text-[10px]">২. মোট টাকা:</span>
-                                <span className="font-black text-rose-800 text-xs break-all">{toBengaliDigits(unsettledAmount)}</span>
+                              <div className="flex flex-wrap items-baseline gap-x-1.5 pt-0.5">
+                                <span className="font-black text-slate-700 text-[10px] shrink-0">২. মোট টাকা:</span>
+                                <span className="font-black text-rose-800 text-xs whitespace-nowrap">{toBengaliDigits(unsettledAmount)}</span>
                               </div>
                               <div>
                                 <span className="font-black text-slate-700 block text-[10px] mb-0.5">৩. মন্তব্য:</span>
@@ -2300,7 +2366,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                             </div>
 
                             {/* Floating Hover Edit Button */}
-                            <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="no-print absolute bottom-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -2320,6 +2386,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </tbody>
                 </table>
               </div>
+            </>
             ) : (
               <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
                 <Info className="mx-auto text-slate-400" size={32} />
@@ -2334,18 +2401,26 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             })()
           ) : (
             filteredSettlementEntries.length > 0 ? (
-              <div className="table-container overflow-visible rounded-2xl shadow-inner">
-                <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
-                  <colgroup>
-                    <col className="w-[3.5%]" />
-                    <col className="w-[21%]" />
-                    <col className="w-[20%]" />
-                    <col className="w-[17.5%]" />
-                    <col className="w-[9.5%]" />
-                    <col className="w-[9.5%]" />
-                    <col className="w-[9.5%]" />
-                    <col className="w-[9.5%]" />
-                  </colgroup>
+              <>
+                <div className="md:hidden flex items-center justify-end gap-1.5 text-[11px] text-slate-500 font-bold pb-2 px-1 no-print">
+                  <span className="inline-block animate-pulse">👉</span>
+                  <span>সম্পূর্ণ বিবরণ দেখতে ডানে স্ক্রোল করুন</span>
+                </div>
+                <div 
+                  id="custom-period-report-container-2" 
+                  className="table-container overflow-x-auto md:overflow-visible rounded-2xl shadow-inner border border-slate-200 bg-white"
+                >
+                  <table id="custom-period-report-table" className="w-full text-left border-collapse table-fixed">
+                    <colgroup>
+                      <col className="w-[50px] md:w-[3.5%]" />
+                      <col className="w-[200px] md:w-[21%]" />
+                      <col className="w-[180px] md:w-[20%]" />
+                      <col className="w-[160px] md:w-[17.5%]" />
+                      <col className="w-[110px] md:w-[9.5%]" />
+                      <col className="w-[110px] md:w-[9.5%]" />
+                      <col className="w-[110px] md:w-[9.5%]" />
+                      <col className="w-[120px] md:w-[9.5%]" />
+                    </colgroup>
                   <thead className="sticky top-0 z-30 shadow-sm bg-slate-200">
                     {/* Header Row 1: Titles */}
                     <tr className="bg-slate-200 text-slate-900 text-[11px] font-black tracking-wider">
@@ -2595,9 +2670,9 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                           <td className="px-4 py-3 text-center text-[11px] font-bold text-rose-800 border-r border-slate-200">
                             {toBengaliDigits(rowUnsettledAmount || '০')}
                           </td>
-                          <td className="px-4 py-3 text-justify break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
+                          <td className="px-4 py-3 text-left break-words text-[11px] font-semibold text-slate-800 border-r border-slate-200 relative pb-7">
                             {entry.remarks || '-'}
-                            <div className="no-print absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="no-print absolute bottom-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -2638,6 +2713,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                   </tfoot>
                 </table>
               </div>
+            </>
             ) : (
               <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
                 <Info className="mx-auto text-slate-400" size={32} />

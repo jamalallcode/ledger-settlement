@@ -71,8 +71,8 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
 
     if (isNonSfiBranch || isAdministration) {
       opts.push(
-        { id: 'bilateral', label: 'দ্বিপক্ষীয় সভা', value: 'দ্বিপক্ষীয় সভা', icon: User, color: 'blue' },
-        { id: 'bilateral_work', label: 'কার্যপত্র (দ্বি-সভা)', value: 'কার্যপত্র (দ্বি-সভা)', icon: FileEdit, color: 'sky' }
+        { id: 'bilateral', label: 'দ্বি-সভা (কার্যবিবরনী)', value: 'দ্বি-সভা (কার্যবিবরনী)', icon: User, color: 'blue' },
+        { id: 'bilateral_work', label: 'দ্বি-সভা (কার্যপত্র)', value: 'দ্বি-সভা (কার্যপত্র)', icon: FileEdit, color: 'sky' }
       );
     }
 
@@ -144,7 +144,9 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
               <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
                 <Send size={16} />
               </div>
-              <span className="text-slate-900 font-black">{value}</span>
+              <span className="text-slate-900 font-black">
+                {value === 'দ্বিপক্ষীয় সভা' ? 'দ্বি-সভা (কার্যবিবরনী)' : value === 'কার্যপত্র (দ্বি-সভা)' ? 'দ্বি-সভা (কার্যপত্র)' : value}
+              </span>
             </>
           ) : (
             <>
@@ -194,7 +196,11 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
                 </span>
               </div>
               <div className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
-                {options.map((opt) => (
+                {options.map((opt) => {
+                  const isSelected = value === opt.value || 
+                    (opt.value === 'দ্বি-সভা (কার্যবিবরনী)' && (value === 'দ্বিপক্ষীয় সভা' || value === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)')) ||
+                    (opt.value === 'দ্বি-সভা (কার্যপত্র)' && (value === 'কার্যপত্র (দ্বি-সভা)' || value === 'দ্বিপক্ষীয় সভা (কার্যপত্র)'));
+                  return (
                   <div 
                     key={opt.id}
                     onClick={() => {
@@ -202,33 +208,34 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
                       setIsOpen(false);
                     }}
                     className={`px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between transition-all group relative ${
-                      value === opt.value
+                      isSelected
                         ? `bg-${opt.color}-50 text-${opt.color}-700 shadow-sm` 
                         : 'hover:bg-slate-50 text-slate-600'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                        value === opt.value
+                        isSelected
                           ? `bg-${opt.color}-600 text-white`
                           : 'bg-slate-100 text-slate-400'
                       }`}>
                         <opt.icon size={14} />
                       </div>
                       <span className={`text-[12.5px] font-black transition-colors ${
-                        value === opt.value
+                        isSelected
                           ? `text-${opt.color}-700`
                           : 'text-slate-700'
                       }`}>{opt.label}</span>
                     </div>
                     
-                    {value === opt.value && (
+                    {isSelected && (
                       <div className={`w-5 h-5 bg-${opt.color}-600 text-white rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-300`}>
                         <Check size={12} strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div 
                 onClick={() => setIsAddingNew(true)}
@@ -1983,7 +1990,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   // Automatically adjust letterType if branch (paraType) changes and it's no longer valid
   useEffect(() => {
     if (isSFI(formData.paraType)) {
-      if (formData.letterType === 'দ্বিপক্ষীয় সভা' || formData.letterType === 'কার্যপত্র (দ্বি-সভা)') {
+      if (formData.letterType === 'দ্বিপক্ষীয় সভা' || formData.letterType === 'কার্যপত্র (দ্বি-সভা)' || formData.letterType === 'দ্বি-সভা (কার্যবিবরনী)' || formData.letterType === 'দ্বি-সভা (কার্যপত্র)') {
         setFormData(prev => ({ ...prev, letterType: 'বিএসআর' }));
       }
     } else if (isNonSFI(formData.paraType)) {
@@ -2225,6 +2232,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const receivedDateError = getDateError(formData.receivedDate, formData.receiptDate, 'গ্রহণের তারিখ', 'শাখায় প্রাপ্তির তারিখ');
 
   const isMeeting = formData.letterType === 'দ্বিপক্ষীয় সভা' || 
+                    formData.letterType === 'দ্বি-সভা (কার্যবিবরনী)' ||
                     formData.letterType === 'ত্রিপক্ষীয় সভা' || 
                     (Boolean(formData.letterType) && formData.letterType.includes('সভা') && !formData.letterType.includes('কার্যপত্র'));
 

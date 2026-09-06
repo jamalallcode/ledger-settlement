@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-03-29] - Mobile Landing Page Visibility Fix
+
+### 🛠 Fixed
+- **Mobile Landing Page Clipping & Scroll Lock**: Resolved an issue where the main landing page was clipped or not visible on mobile viewports. Replaced rigid `h-full` and `overflow-hidden` constraints with adaptive, natural height (`h-auto`) and smooth scrolling (`justify-start md:justify-center`).
+- **Institutional Description Visibility**: Ensured the official Directorate description and system overview (`💡 সিস্টেম পরিচিতি ও বিবরণ`) is cleanly displayed on all viewports, including mobile devices.
+- **Mobile Quick-Access Controls**: Added a direct, intuitive 4-button quick action bar (চিঠিপত্র এন্ট্রি, মীমাংসা এন্ট্রি, চিঠিপত্র রেজিস্টার, মীমাংসা রেজিস্টার) on mobile, removing the awkward hidden fan menu.
+- **Background Layering**: Made `AnimatedPremiumBg` fixed to prevent gradient cutoff during mobile vertical scrolling.
+
 ## [2026-03-29] - Initial Setup & Workflow Definition
 
 ### 🚀 Added

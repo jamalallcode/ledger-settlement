@@ -14,7 +14,7 @@ const AnimatedPremiumBg: React.FC = () => {
 
   return (
     <div 
-      className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+      className="fixed inset-0 overflow-hidden pointer-events-none select-none z-0"
       style={{
         background: 'linear-gradient(135deg, var(--landing-bg-start, #93c5fd) 0%, var(--landing-bg-mid, #e0f2fe) 50%, var(--landing-bg-end, #bae6fd) 100%)'
       }}

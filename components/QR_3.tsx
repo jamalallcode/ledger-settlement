@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate, format as dateFnsFormat } from 'date-fns';
@@ -1592,9 +1592,59 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return totals;
   }, [filteredTable1Data, filteredTable2Data]);
 
-  const thCls = "z-[240] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap";
-  const thClsWithTop = "z-[240] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/80 to-slate-200 border-r border-b border-t border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-border relative whitespace-normal";
-  const thRow3Cls = "z-[240] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-gradient-to-b from-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap";
+  const table1Ref = useRef<HTMLTableElement>(null);
+  const table2Ref = useRef<HTMLTableElement>(null);
+
+  useLayoutEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      [table1Ref.current, table2Ref.current].forEach((table) => {
+        if (!table) return;
+        const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
+        const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
+        if (tr1 && tr2) {
+          const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
+          const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
+          const r2Cell = tr2.querySelector('th') as HTMLElement | null;
+          const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
+
+          if (h1 > 0) {
+            table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
+            if (h2 > 0) {
+              table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
+            }
+          }
+        }
+      });
+    };
+
+    updateHeaderStickyOffsets();
+    const t1 = setTimeout(updateHeaderStickyOffsets, 50);
+    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+
+    const observers: ResizeObserver[] = [];
+    if (window.ResizeObserver) {
+      [table1Ref.current, table2Ref.current].forEach((table) => {
+        if (table) {
+          const ro = new ResizeObserver(updateHeaderStickyOffsets);
+          ro.observe(table);
+          observers.push(ro);
+        }
+      });
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+      observers.forEach((ro) => ro.disconnect());
+    };
+  }, [filteredTable1Data, filteredTable2Data, startDate, endDate, prevMonthDate]);
+
+  const thCls = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding relative whitespace-nowrap";
+  const thClsWithTop = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-t border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding relative whitespace-normal";
+  const thRow3Cls = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding relative whitespace-nowrap";
   const tdCls = "border-r border-b border-slate-200/90 p-1.5 text-[9px] text-slate-800 align-middle bg-white";
   const numTdCls = "border-r border-b border-slate-200/90 p-1.5 text-[9px] text-slate-900 text-center align-middle font-bold bg-white";
   const footerTdCls = "border-r border-b border-slate-800 p-2.5 text-[10px] text-white align-middle bg-slate-950 font-black shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
@@ -1605,13 +1655,73 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     const totals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, tA: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
     return (
-      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-visible shadow-sm rounded-lg`}>
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto border border-slate-300">
+      <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-visible shadow-sm rounded-lg bg-white border border-slate-300`}>
+        <style>{`
+          #qr-3-table-1, #qr-3-table-2 {
+            --th-r2-top: 58px;
+            --th-r3-top: 96px;
+          }
+          #qr-3-table-1 thead th,
+          #qr-3-table-2 thead th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            vertical-align: middle !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+          }
+          #qr-3-table-1 thead tr:first-child th,
+          #qr-3-table-1 thead tr:nth-child(1) th,
+          #qr-3-table-2 thead tr:first-child th,
+          #qr-3-table-2 thead tr:nth-child(1) th {
+            top: 0px !important;
+            z-index: 140 !important;
+          }
+          #qr-3-table-1 thead tr:first-child th[rowspan],
+          #qr-3-table-1 thead tr:first-child th[rowSpan],
+          #qr-3-table-2 thead tr:first-child th[rowspan],
+          #qr-3-table-2 thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            z-index: 145 !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(2) th,
+          #qr-3-table-2 thead tr:nth-child(2) th {
+            top: var(--th-r2-top, 58px) !important;
+            z-index: 135 !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(3) th,
+          #qr-3-table-2 thead tr:nth-child(3) th {
+            top: var(--th-r3-top, 96px) !important;
+            z-index: 130 !important;
+          }
+          #qr-3-table-1 tfoot,
+          #qr-3-table-1 tfoot tr,
+          #qr-3-table-1 tfoot td,
+          #qr-3-table-1 tfoot th,
+          #qr-3-table-2 tfoot,
+          #qr-3-table-2 tfoot tr,
+          #qr-3-table-2 tfoot td,
+          #qr-3-table-2 tfoot th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            bottom: 0px !important;
+            z-index: 150 !important;
+            background-color: #020617 !important;
+            color: #ffffff !important;
+            background-clip: padding-box !important;
+          }
+        `}</style>
+        <table
+          ref={tableId === 'table-1' ? table1Ref : table2Ref}
+          id={tableId === 'table-1' ? 'qr-3-table-1' : 'qr-3-table-2'}
+          className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto border border-slate-300"
+        >
           <thead>
             <tr className="h-[42px]">
               <th rowSpan={2} className={`${thClsWithTop} w-10`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>সংস্থার নাম</th>
+              <th rowSpan={2} className={`${thClsWithTop} min-w-[110px] w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={`${thClsWithTop} min-w-[110px] w-[calc(12%-2px)]`}>সংস্থার নাম</th>
               <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত উত্থাপিত অডিট আপত্তি</th>
               <th colSpan={2} className={thClsWithTop}>মোট অডিট আপত্তি</th>

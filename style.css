@@ -722,6 +722,20 @@ tbody tr:not(.no-hover-row):hover td {
   filter: brightness(1.04);
 }
 
+/* Floating gentle bobbing animation for mobile fan menu hub button */
+@keyframes hub-gentle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-hub-float {
+  animation: hub-gentle-float 2.4s ease-in-out infinite;
+}
+
 /* ==========================================================================
    LARGE SCREEN / HIGH RESOLUTION RESPONSIVE AUTO-SCALING
    Automatically scales typography, tables, buttons and UI on large displays

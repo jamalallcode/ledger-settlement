@@ -57,8 +57,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   allowPriorPeriodSettlement = false,
   onToggleAllowPriorPeriodSettlement
 }) => {
-  if (!isAdmin) return null;
-
   const [adminSubView, setAdminSubView] = useState<'overview' | 'gmail_whitelist' | 'access_codes'>('overview');
   const [localContactLink, setLocalContactLink] = useState(contactLink);
   const [isSaved, setIsSaved] = useState(false);
@@ -66,6 +64,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     setLocalContactLink(contactLink);
   }, [contactLink]);
+
+  if (!isAdmin) return null;
 
   const handleSaveContactLink = () => {
     if (onUpdateContactLink) {
