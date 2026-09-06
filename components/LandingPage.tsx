@@ -101,13 +101,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
           <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0.5 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
             
-            {/* System Overview / Platform Description - Centered, premium designed card */}
-            <div className="w-full relative flex items-center justify-center">
-              {/* Short text description: smoothly fades and slides up when menu is open */}
+            {/* System Overview / Platform Description */}
+            <div className="w-full relative flex items-center md:items-start justify-center md:justify-start">
+              {/* Short text description for Mobile */}
               <div 
-                className={`w-full max-w-lg mx-auto transition-all duration-400 ease-out ${
+                className={`w-full max-w-lg mx-auto md:hidden transition-all duration-400 ease-out ${
                   isMenuOpen 
-                    ? 'opacity-0 -translate-y-2 pointer-events-none md:opacity-100 md:translate-y-0 md:pointer-events-auto' 
+                    ? 'opacity-0 -translate-y-2 pointer-events-none' 
                     : 'opacity-100 translate-y-0'
                 }`}
               >
@@ -116,10 +116,23 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     <span>💡</span>
                     <span>সিস্টেম পরিচিতি</span>
                   </div>
-                  <p className="landing-desc-text text-[12px] min-[380px]:text-[12.5px] sm:text-[13.5px] md:text-[14px] leading-relaxed font-bold text-slate-700 text-center mt-1 sm:mt-1.5">
+                  {/* মোবাইল ভিউয়ের জন্য সংক্ষিপ্ত লেখা (অক্ষুণ্ণ রাখা হয়েছে) */}
+                  <p className="landing-desc-text text-[12px] min-[380px]:text-[12.5px] sm:text-[13.5px] leading-relaxed font-bold text-slate-700 text-center mt-1 sm:mt-1.5">
                     অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং।
                   </p>
                 </div>
+              </div>
+
+              {/* Desktop / Laptop: Clean left-aligned layout matching exact user design */}
+              <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-1">
+                <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+                  <span>💡</span>
+                  <span>সিস্টেম পরিচিতি ও বিবরণ</span>
+                </div>
+                {/* ল্যাপটপ ও ডেস্কটপ ভিউয়ের জন্য স্ক্রিনশটের হুবহু প্রাতিষ্ঠানিক লেখা */}
+                <p className="text-slate-800 font-extrabold text-[15px] lg:text-[16px] xl:text-[16.5px] leading-relaxed tracking-normal text-left mt-3">
+                  বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, সেক্টর: ০৬, খুলনার আওতাধীন শিল্প, ব্যাংক ও আর্থিক প্রতিষ্ঠানসমূহের অডিট আপত্তি/ অনুচ্ছেদের নিয়মতান্ত্রিক নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ড্যাশবোর্ড ট্র্যাকিং প্লাটফর্ম।
+                </p>
               </div>
             </div>
 
