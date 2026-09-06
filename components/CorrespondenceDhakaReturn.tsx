@@ -1001,7 +1001,17 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                     <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
-                    <td className={tdS}>{isBilateralLetter(entry) ? `দ্বি-সভা (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
+                    <td className={tdS}>
+                      {isBilateralLetter(entry) ? (
+                        (() => {
+                          const cleanType = getCleanLetterTypeDisplay(entry.letterType);
+                          const displayType = (cleanType === 'কার্যপত্র' || cleanType === 'কার্যবিবরণী')
+                            ? (cleanType === 'কার্যপত্র' ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরনী)')
+                            : (cleanType || 'দ্বি-সভা (কার্যবিবরনী)');
+                          return `${displayType} (অনু: ${toBengaliDigits(entry.totalParas)}টি)`;
+                        })()
+                      ) : ''}
+                    </td>
                     <td className={tdS}>-</td>
                     <td className={tdS}>{entry.isOnline === 'হ্যাঁ' ? 'হ্যাঁ' : 'না'}</td>
                     <td className={tdS}>{hist.presentationDateFormatted}</td>
