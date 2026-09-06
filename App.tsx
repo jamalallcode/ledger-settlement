@@ -224,6 +224,13 @@ const App: React.FC = () => {
     localStorage.setItem('is_dark_mode', String(darkMode));
   }, [darkMode]);
 
+  // Protect admin dashboard: if logged out or not admin, never remain on dashboard
+  useEffect(() => {
+    if (!isAdmin && activeTab === 'dashboard') {
+      setActiveTab('landing');
+    }
+  }, [isAdmin, activeTab]);
+
   useEffect(() => {
     // Intercept wheel/touchmove events globally when an interactive dropdown is active
     // This freezes the main page / table from scrolling, whilst preserving scrollbars and avoiding any shaking/flickering.
@@ -401,6 +408,12 @@ const App: React.FC = () => {
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
     console.log("handleTabChange called with tab:", tab, "subModule:", subModule, "rType:", rType, "searchTerm:", searchTerm);
     
+    // Protect dashboard tab: only admin can navigate to dashboard
+    if (tab === 'dashboard' && !isAdmin) {
+      setActiveTab('landing');
+      return;
+    }
+
     pushHistory();
     setViewSingleEntryId(null);
     
@@ -1146,7 +1159,10 @@ const App: React.FC = () => {
 
   const handleAutoLogout = async () => {
     setIsAdmin(false);
+    setIsLockedMode(true);
     localStorage.removeItem(ADMIN_MODE_KEY);
+    localStorage.removeItem('ledger_admin_access_v1');
+    localStorage.removeItem('ledger_admin_email_v1');
     localStorage.removeItem('unauthorized_user_detected');
     localStorage.removeItem('show_admin_login_portal');
     localStorage.removeItem('ledger_login_timestamp');
@@ -1167,7 +1183,10 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     if (window.confirm("আপনি কি এডমিন একাউন্ট থেকে লগআউট করতে চান?")) {
       setIsAdmin(false);
+      setIsLockedMode(true);
       localStorage.removeItem(ADMIN_MODE_KEY);
+      localStorage.removeItem('ledger_admin_access_v1');
+      localStorage.removeItem('ledger_admin_email_v1');
       localStorage.removeItem('unauthorized_user_detected');
       localStorage.removeItem('show_admin_login_portal');
       localStorage.removeItem('ledger_login_timestamp');
@@ -1554,7 +1573,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto flex flex-col items-center justify-center p-0 sm:p-3 md:p-5 landing-main-container' 
+              ? 'overflow-y-auto flex flex-col items-center justify-start md:justify-center p-2 sm:p-3 md:p-5 landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-auto return-main-container' 
                 : activeTab === 'register'
@@ -1568,14 +1587,14 @@ const App: React.FC = () => {
           {activeTab === 'landing' && <AnimatedPremiumBg />}
           <div className={
             activeTab === 'landing' 
-              ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-auto h-full sm:h-auto py-0" 
+              ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-0 md:my-auto min-h-0 py-1 sm:py-0" 
               : activeTab === 'return'
                 ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
                 : activeTab === 'register'
                   ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
                   : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
           }>
-            <div className="flex-1 h-full flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
               
               {activeTab === 'setup_receivers' && (
                 <ReceiverManagement 
@@ -1763,7 +1782,7 @@ const App: React.FC = () => {
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
 
-              {activeTab === 'dashboard' && (
+              {activeTab === 'dashboard' && isAdmin && (
                 <AdminDashboard 
                   isAdmin={isAdmin}
                   entries={entries}

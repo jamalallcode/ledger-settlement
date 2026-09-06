@@ -105,6 +105,8 @@ const Navbar: React.FC<NavbarProps> = ({
 
     if (adminClickCount.current >= 20) {
       adminClickCount.current = 0;
+      // Navigate directly to dashboard on 20 clicks as requested
+      setActiveTab('dashboard');
       if (onOpenLogin) onOpenLogin();
       setIsMobileMenuOpen(false);
     }
@@ -492,13 +494,7 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* 1. মূল ন্যাভিগেশন */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block px-1">মূল মেনু</span>
-            <div className={`grid ${
-              ((isAdmin || moduleVisibility?.archive !== false) && (isAdmin || moduleVisibility?.links !== false))
-                ? 'grid-cols-3'
-                : ((isAdmin || moduleVisibility?.archive !== false) || (isAdmin || moduleVisibility?.links !== false))
-                ? 'grid-cols-2'
-                : 'grid-cols-1'
-            } gap-2`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 onClick={() => {
                   setActiveTab('landing');
@@ -513,6 +509,23 @@ const Navbar: React.FC<NavbarProps> = ({
                 <Home size={16} />
                 <span>হোম</span>
               </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all ${
+                    activeTab === 'dashboard'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
+                      : 'bg-slate-800/90 text-slate-300 border-slate-700/80 hover:bg-slate-700'
+                  }`}
+                >
+                  <LayoutDashboard size={16} />
+                  <span>ড্যাশবোর্ড</span>
+                </button>
+              )}
 
               {(isAdmin || moduleVisibility?.archive !== false) && (
                 <button
@@ -637,131 +650,258 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* 3. রিটার্ণ ও সারাংশ */}
           {(isAdmin || moduleVisibility?.return !== false) && (
-            <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
+            <div className="space-y-3 pt-1 border-t border-slate-800/80">
               <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
                 <PieChart size={12} /> রিটার্ণ ও সারাংশ রিপোর্ট
               </span>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>১. ঢাকা প্রেরণ রিটার্ণ</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+              {/* ৩.১ মাসিক রিটার্নসমূহ */}
+              <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block px-1">
+                  📅 মাসিক রিটার্নসমূহ
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>১. ঢাকা প্রেরণ রিটার্ণ</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।'
-                      ? 'bg-amber-600 text-white border-amber-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>২. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।'
+                        ? 'bg-amber-600 text-white border-amber-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>২. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর'
-                      ? 'bg-emerald-600 text-white border-emerald-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৩. প্রাপ্ত বিএসআর</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর'
+                        ? 'bg-emerald-600 text-white border-emerald-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৩. প্রাপ্ত বিএসআর</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৩. নিষ্পত্তি - বিএসআর</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৪. নিষ্পত্তি - বিএসআর</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৪. নিষ্পত্তি - দ্বিপক্ষীয়</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৫. নিষ্পত্তি - দ্বিপক্ষীয়</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৫. অনলাইন প্রাপ্তি (বিএসআর)</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৬. অনলাইন প্রাপ্তি (বিএসআর)</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৬. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৭. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                    reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>৭. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
-                  <ArrowRight size={11} className="opacity-50" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                        ? 'bg-indigo-600 text-white border-indigo-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>৮. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+                </div>
+              </div>
+
+              {/* ৩.২ ত্রৈমাসিক রিটার্নসমূহ (বিএসআর, দ্বিপক্ষীয়, বিস্তারিত ১ ও ২) */}
+              <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-amber-500/20">
+                <span className="text-[9.5px] font-black text-amber-400 uppercase tracking-wider block px-1">
+                  📊 ত্রৈমাসিক রিটার্নসমূহ
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ২');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - ২'
+                        ? 'bg-amber-600 text-white border-amber-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>ত্রৈমাসিক: বিএসআর</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ১');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - ১'
+                        ? 'bg-amber-600 text-white border-amber-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>ত্রৈমাসিক: দ্বিপক্ষীয়</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১'
+                        ? 'bg-emerald-600 text-white border-emerald-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বিস্তারিত - ১</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২'
+                        ? 'bg-emerald-600 text-white border-emerald-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বিস্তারিত - ২</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+                </div>
+              </div>
+
+              {/* ৩.৩ ষাণ্মাসিক, বাৎসরিক ও চাহিদা মোতাবেক */}
+              <div className="space-y-1.5 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                <span className="text-[9.5px] font-black text-cyan-400 uppercase tracking-wider block px-1">
+                  📈 ষাণ্মাসিক, বাৎসরিক ও অন্যান্য রিপোর্ট
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                        ? 'bg-cyan-600 text-white border-cyan-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>ষাণ্মাসিক রিটার্ণ</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                        ? 'bg-purple-600 text-white border-purple-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বাৎসরিক রিটার্ণ</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট'
+                        ? 'bg-teal-600 text-white border-teal-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>চাহিদা মোতাবেক</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+                </div>
               </div>
             </div>
           )}

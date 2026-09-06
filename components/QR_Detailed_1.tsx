@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format } from 'date-fns';
@@ -412,10 +412,10 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     return { col4, col5, col6, col7, col8, col9, col10, col11, col12, col13 };
   };
 
-  // Header styles matching ReturnSummaryTable (Ice-blue gradient with 3D embossed border highlights)
-  const reportThStyle1 = "z-[240] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-border relative whitespace-nowrap";
-  const reportThStyle2 = "z-[240] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-gradient-to-b from-slate-100 via-slate-200/80 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-border relative whitespace-normal";
-  const reportThStyle3 = "z-[240] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-gradient-to-b from-slate-200/90 to-slate-200 border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-border relative whitespace-nowrap";
+  // Header styles (solid opaque ice-slate with embossed borders and sticky positioning)
+  const reportThStyle1 = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding whitespace-nowrap";
+  const reportThStyle2 = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding whitespace-normal";
+  const reportThStyle3 = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding whitespace-nowrap";
 
   const thCls = reportThStyle1;
   const thRow2Cls = reportThStyle2;
@@ -428,6 +428,57 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   const tdCls = "p-2 text-[10px] text-slate-800 align-middle bg-white border-b border-r border-slate-200/90";
   const numTdCls = "p-2 text-[10px] text-slate-900 text-center align-middle font-bold bg-white border-b border-r border-slate-200/90 whitespace-nowrap";
   const footerTdCls = "p-2.5 text-[10px] text-white align-middle bg-slate-950 font-black text-center border-r border-slate-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.15)] whitespace-nowrap";
+
+  // Refs for Table 1 and Table 2 to dynamically compute sticky header row offsets
+  const table1Ref = useRef<HTMLTableElement>(null);
+  const table2Ref = useRef<HTMLTableElement>(null);
+
+  useLayoutEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      [table1Ref.current, table2Ref.current].forEach((table) => {
+        if (!table) return;
+        const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
+        const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
+        if (tr1 && tr2) {
+          const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
+          const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
+          const r2Cell = tr2.querySelector('th') as HTMLElement | null;
+          const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
+
+          if (h1 > 0) {
+            table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
+            if (h2 > 0) {
+              table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
+            }
+          }
+        }
+      });
+    };
+
+    updateHeaderStickyOffsets();
+    const t1 = setTimeout(updateHeaderStickyOffsets, 50);
+    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+
+    const observers: ResizeObserver[] = [];
+    if (window.ResizeObserver) {
+      [table1Ref.current, table2Ref.current].forEach((table) => {
+        if (table) {
+          const ro = new ResizeObserver(updateHeaderStickyOffsets);
+          ro.observe(table);
+          observers.push(ro);
+        }
+      });
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+      observers.forEach((ro) => ro.disconnect());
+    };
+  }, [table1Data, table2Data, priorPeriodEnd, formattedRange, cumPeriodEnd, searchTerm, filterMinistry]);
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
@@ -543,10 +594,68 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         </div>
       </div>
 
-      {/* Main Table Container (With Fixed Borders & Scroll Fix - Item 1) */}
-      <div className="qr-table-container table-container overflow-auto shadow-sm rounded-lg mb-6 max-h-[75vh]">
+      {/* Main Table Container (Exclusively for QR Detailed 1 with dynamic sticky offsets) */}
+      <div id="qr-detailed-1-container" className="w-full">
+        <style>{`
+          #qr-detailed-1-table-1, #qr-detailed-1-table-2 {
+            --th-r2-top: 34px;
+            --th-r3-top: 96px;
+          }
+          #qr-detailed-1-table-1 thead th,
+          #qr-detailed-1-table-2 thead th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            vertical-align: middle !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+          }
+          #qr-detailed-1-table-1 thead tr:first-child th,
+          #qr-detailed-1-table-1 thead tr:nth-child(1) th,
+          #qr-detailed-1-table-2 thead tr:first-child th,
+          #qr-detailed-1-table-2 thead tr:nth-child(1) th {
+            top: 0px !important;
+            z-index: 140 !important;
+          }
+          #qr-detailed-1-table-1 thead tr:first-child th[rowspan],
+          #qr-detailed-1-table-1 thead tr:first-child th[rowSpan],
+          #qr-detailed-1-table-2 thead tr:first-child th[rowspan],
+          #qr-detailed-1-table-2 thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            z-index: 145 !important;
+          }
+          #qr-detailed-1-table-1 thead tr:nth-child(2) th,
+          #qr-detailed-1-table-2 thead tr:nth-child(2) th {
+            top: var(--th-r2-top, 34px) !important;
+            z-index: 135 !important;
+          }
+          #qr-detailed-1-table-1 thead tr:nth-child(3) th,
+          #qr-detailed-1-table-2 thead tr:nth-child(3) th {
+            top: var(--th-r3-top, 96px) !important;
+            z-index: 130 !important;
+          }
+          #qr-detailed-1-table-1 tfoot,
+          #qr-detailed-1-table-1 tfoot tr,
+          #qr-detailed-1-table-1 tfoot td,
+          #qr-detailed-1-table-1 tfoot th,
+          #qr-detailed-1-table-2 tfoot,
+          #qr-detailed-1-table-2 tfoot tr,
+          #qr-detailed-1-table-2 tfoot td,
+          #qr-detailed-1-table-2 tfoot th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            bottom: 0px !important;
+            z-index: 150 !important;
+            background-color: #020617 !important;
+            color: #ffffff !important;
+            background-clip: padding-box !important;
+          }
+        `}</style>
+        
         {/* TABLE 1 */}
-        <table className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
+        <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg mb-8 bg-white border border-slate-300">
+          <table ref={table1Ref} id="qr-detailed-1-table-1" className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
           <thead>
             <tr>
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
@@ -684,9 +793,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             </tr>
           </tfoot>
         </table>
+        </div>
+
+        {/* Section divider between Table 1 and Table 2 */}
+        <div className="my-4 text-[11px] font-bold text-slate-800 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
+          <p><span className="text-slate-500">শাখাঃ</span> আর্থিক প্রতিষ্ঠান বিভাগ</p>
+          <span className="text-slate-300 hidden md:inline font-normal">|</span>
+          <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
+        </div>
 
         {/* TABLE 2 (FINANCIAL INSTITUTIONS) */}
-        <table className="w-full border-separate border-spacing-0 min-w-[1050px] mt-4 border border-slate-300">
+        <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg mb-8 bg-white border border-slate-300">
+          <table ref={table2Ref} id="qr-detailed-1-table-2" className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
           <thead>
             <tr>
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
@@ -834,6 +952,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
     </div>
   );

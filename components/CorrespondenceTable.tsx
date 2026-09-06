@@ -670,11 +670,11 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
           return variations.some(v => normalizedEntryPara === v);
         })();
         const matchType = !filterType || (() => {
-          if (filterType === "দ্বিপক্ষীয় সভা") {
-            return entry.letterType === "দ্বিপক্ষীয় সভা" || entry.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)";
+          if (filterType === "দ্বিপক্ষীয় সভা" || filterType === "দ্বি-সভা (কার্যবিবরনী)") {
+            return entry.letterType === "দ্বিপক্ষীয় সভা" || entry.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || entry.letterType === "দ্বি-সভা (কার্যবিবরনী)" || entry.letterType === "দ্বি-সভা (কার্যবিবরণী)";
           }
-          if (filterType === "কার্যপত্র (দ্বি-সভা)") {
-            return entry.letterType === "কার্যপত্র (দ্বি-সভা)" || entry.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)";
+          if (filterType === "কার্যপত্র (দ্বি-সভা)" || filterType === "দ্বি-সভা (কার্যপত্র)") {
+            return entry.letterType === "কার্যপত্র (দ্বি-সভা)" || entry.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" || entry.letterType === "দ্বি-সভা (কার্যপত্র)";
           }
           if (filterType === "ত্রিপক্ষীয় সভা") {
             return entry.letterType === "ত্রিপক্ষীয় সভা" || entry.letterType === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)";
@@ -841,10 +841,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             return e.letterType === "ত্রিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "ত্রিপক্ষীয় সভা";
           }
           if (type === "দ্বিপক্ষীয় সভা (কার্যপত্র)") {
-            return e.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" || e.letterType === "কার্যপত্র (দ্বি-সভা)";
+            return e.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" || e.letterType === "কার্যপত্র (দ্বি-সভা)" || e.letterType === "দ্বি-সভা (কার্যপত্র)";
           }
           if (type === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)") {
-            return e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "দ্বিপক্ষীয় সভা";
+            return e.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" || e.letterType === "দ্বিপক্ষীয় সভা" || e.letterType === "দ্বি-সভা (কার্যবিবরনী)" || e.letterType === "দ্বি-সভা (কার্যবিবরণী)";
           }
           if (type === "মিলিকরণ" || type === "মিলকরণ") {
             return e.letterType === "মিলিকরণ" || e.letterType === "মিলকরণ" || (e.letterType || '').includes("মিলকরণ") || (e.letterType || '').includes("মিলিকরণ");
@@ -1526,8 +1526,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                       {[
                         { val: "", label: "সকল ধরণ" },
                         { val: "বিএসআর", label: "বিএসআর" },
-                        { val: "দ্বিপক্ষীয় সভা", label: "দ্বিপক্ষীয় সভা" },
-                        { val: "কার্যপত্র (দ্বি-সভা)", label: "কার্যপত্র (দ্বি-সভা)" },
+                        { val: "দ্বি-সভা (কার্যবিবরনী)", label: "দ্বি-সভা (কার্যবিবরনী)" },
+                        { val: "দ্বি-সভা (কার্যপত্র)", label: "দ্বি-সভা (কার্যপত্র)" },
                         { val: "ত্রিপক্ষীয় সভা", label: "ত্রিপক্ষীয় সভা" },
                         { val: "কার্যপত্র (ত্রি-সভা)", label: "কার্যপত্র (ত্রি-সভা)" },
                         { val: "মিলকরণ", label: "মিলকরণ" },
@@ -1998,7 +1998,8 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         (ent) =>
                                           isNonSFI(ent.paraType) &&
                                           (ent.letterType === "দ্বিপক্ষীয় সভা (কার্যপত্র)" ||
-                                            ent.letterType === "কার্যপত্র (দ্বি-সভা)")
+                                            ent.letterType === "কার্যপত্র (দ্বি-সভা)" ||
+                                            ent.letterType === "দ্বি-সভা (কার্যপত্র)")
                                       );
                                       setCycleDetailModal({
                                         isOpen: true,
@@ -2028,7 +2029,9 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
                                         (ent) =>
                                           isNonSFI(ent.paraType) &&
                                           (ent.letterType === "দ্বিপক্ষীয় সভা (কার্যবিবরণী)" ||
-                                            ent.letterType === "দ্বিপক্ষীয় সভা")
+                                            ent.letterType === "দ্বিপক্ষীয় সভা" ||
+                                            ent.letterType === "দ্বি-সভা (কার্যবিবরনী)" ||
+                                            ent.letterType === "দ্বি-সভা (কার্যবিবরণী)")
                                       );
                                       setCycleDetailModal({
                                         isOpen: true,
