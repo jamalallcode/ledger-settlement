@@ -45,7 +45,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start md:justify-center h-auto py-1 sm:py-2 md:py-4">
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start h-auto pt-1 sm:pt-2 md:pt-2 pb-2 sm:pb-3">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
