@@ -1455,13 +1455,18 @@ const App: React.FC = () => {
       }
 
       .landing-hero-card {
-        background: linear-gradient(180deg, rgba(${primaryRgb}, 0.15) 0%, rgba(${primaryRgb}, 0.04) 100%), #ffffff !important;
-        border: 1px solid rgba(${primaryRgb}, 0.18) !important;
+        background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, rgba(255, 255, 255, 0.98) 40%, rgba(${primaryRgb}, 0.03) 100%) !important;
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(203, 213, 225, 0.85) !important;
         box-shadow: 
-          0 4px 6px -1px rgba(0, 0, 0, 0.005),
-          0 12px 24px -6px rgba(${hoverRgb}, 0.04),
-          0 25px 50px -12px rgba(${hoverRgb}, 0.035),
-          inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+          0 1px 3px 0 rgba(15, 23, 42, 0.03),
+          0 8px 20px -4px rgba(${hoverRgb}, 0.06),
+          0 24px 48px -8px rgba(${hoverRgb}, 0.07),
+          0 40px 80px -16px rgba(${hoverRgb}, 0.05),
+          inset 0 1.5px 0 0 rgba(255, 255, 255, 1),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+          inset 0 -1px 0 0 rgba(226, 232, 240, 0.5) !important;
       }
 
       .landing-tag-intro {

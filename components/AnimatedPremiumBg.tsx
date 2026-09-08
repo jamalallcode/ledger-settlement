@@ -34,41 +34,6 @@ const AnimatedPremiumBg: React.FC = () => {
       {/* 2. Premium Light Soft Grid Overlay (very light, elegant) */}
       <div className="absolute inset-0 z-10 premium-grid-panning opacity-[0.25]" />
 
-      {/* 3. Infinite Floating Vector Waves (Beautiful, flowing ledger paths) */}
-      <svg className="absolute inset-0 w-full h-full z-15 opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="gradient-wave-1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--primary-theme-start, #2563eb)" />
-            <stop offset="50%" stopColor="var(--primary-theme-color, #0d9488)" />
-            <stop offset="100%" stopColor="var(--primary-theme-end, #4f46e5)" />
-          </linearGradient>
-          <linearGradient id="gradient-wave-2" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--primary-theme-hover, #10b981)" />
-            <stop offset="100%" stopColor="var(--primary-theme-start, #3b82f6)" />
-          </linearGradient>
-        </defs>
-        
-        {/* Wave 1 */}
-        <path 
-          d="M-100 200 C 300 280, 400 80, 900 150 C 1400 220, 1500 120, 2000 250" 
-          fill="none" 
-          stroke="url(#gradient-wave-1)" 
-          strokeWidth="3" 
-          strokeLinecap="round"
-          className="animate-wave-slow-1"
-        />
-
-        {/* Wave 2 */}
-        <path 
-          d="M-50 450 C 400 350, 600 550, 1100 400 C 1600 250, 1700 480, 2100 350" 
-          fill="none" 
-          stroke="url(#gradient-wave-2)" 
-          strokeWidth="2" 
-          strokeLinecap="round"
-          className="animate-wave-slow-2"
-        />
-      </svg>
-
       {/* 4. Soft Floating Star/Sparkle Particles & Bokeh */}
       <div className="absolute inset-0 z-20">
         {particles.map((p) => (

@@ -393,17 +393,20 @@ tbody tr:not(.no-hover-row):hover td {
   border-color: rgba(226, 232, 240, 0.9) !important;
 }
 
-/* 1. Main Hero Panel Container (Premium translucent with blurred background) */
+/* 1. Main Hero Panel Container (Executive Premium 3D Elevated Curved Surface) */
 .landing-hero-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fbfd 100%) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #fbfdff 40%, #f4f8fc 100%) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(203, 213, 225, 0.85) !important;
   box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.01),
-    0 12px 24px -6px rgba(15, 23, 42, 0.04),
-    0 25px 50px -12px rgba(15, 23, 42, 0.035),
-    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+    0 1px 3px 0 rgba(15, 23, 42, 0.03),
+    0 8px 20px -4px rgba(15, 23, 42, 0.05),
+    0 24px 48px -8px rgba(15, 23, 42, 0.07),
+    0 40px 80px -16px rgba(30, 58, 138, 0.06),
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 0 rgba(226, 232, 240, 0.5) !important;
   color: #1e293b !important;
 }
 
@@ -412,10 +415,9 @@ tbody tr:not(.no-hover-row):hover td {
   text-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
 }
 
-/* 2. Premium Grid Backdrop (Custom clean glow instead of dotted pattern) */
+/* 2. Premium Grid Backdrop (Custom clean specular light crest) */
 .landing-grid-bg {
-  background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 60%),
-              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.02) 0%, transparent 60%) !important;
+  background: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.3) 60%, transparent 100%) !important;
   opacity: 1 !important;
 }
 
