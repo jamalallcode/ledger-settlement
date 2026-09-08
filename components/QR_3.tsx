@@ -1614,6 +1614,14 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             }
           }
         }
+
+        const bottomFooter = table.querySelector('.qr-sticky-footer-bottom') as HTMLElement | null;
+        if (bottomFooter) {
+          const hBottom = bottomFooter.getBoundingClientRect().height;
+          if (hBottom > 0) {
+            table.style.setProperty('--qr-footer-bottom-h', `${Math.round(hBottom)}px`);
+          }
+        }
       });
     };
 
@@ -1660,6 +1668,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           #qr-3-table-1, #qr-3-table-2 {
             --th-r2-top: 58px;
             --th-r3-top: 96px;
+            --qr-footer-bottom-h: 28px;
           }
           #qr-3-table-1 thead th,
           #qr-3-table-2 thead th {
@@ -1710,6 +1719,15 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             background-color: #020617 !important;
             color: #ffffff !important;
             background-clip: padding-box !important;
+          }
+          #qr-3-table-1 .qr-sticky-footer-offset td,
+          #qr-3-table-2 .qr-sticky-footer-offset td {
+            bottom: var(--qr-footer-bottom-h, 28px) !important;
+            border-bottom: 1px solid #94a3b8 !important;
+          }
+          #qr-3-table-1 .qr-sticky-footer-bottom td,
+          #qr-3-table-2 .qr-sticky-footer-bottom td {
+            border-top: 1px solid #94a3b8 !important;
           }
         `}</style>
         <table
