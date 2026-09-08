@@ -1694,6 +1694,20 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             top: 0px !important;
             z-index: 145 !important;
           }
+          #qr-3-table-1 thead tr:first-child th:first-child,
+          #qr-3-table-2 thead tr:first-child th:first-child {
+            width: 45px !important;
+            min-width: 45px !important;
+            white-space: nowrap !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(2) th:nth-child(5),
+          #qr-3-table-2 thead tr:nth-child(2) th:nth-child(5),
+          #qr-3-table-1 thead tr:nth-child(3) th:nth-child(8),
+          #qr-3-table-2 thead tr:nth-child(3) th:nth-child(8) {
+            width: 55px !important;
+            min-width: 55px !important;
+            white-space: nowrap !important;
+          }
           #qr-3-table-1 thead tr:nth-child(2) th,
           #qr-3-table-2 thead tr:nth-child(2) th {
             top: var(--th-r2-top, 58px) !important;
@@ -1703,6 +1717,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           #qr-3-table-2 thead tr:nth-child(3) th {
             top: var(--th-r3-top, 96px) !important;
             z-index: 130 !important;
+            white-space: nowrap !important;
           }
           #qr-3-table-1 tfoot,
           #qr-3-table-1 tfoot tr,
@@ -1737,7 +1752,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
         >
           <thead>
             <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thClsWithTop} w-10`}>ক্রঃ নং</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[45px] min-w-[45px] !whitespace-nowrap`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thClsWithTop} min-w-[110px] w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${thClsWithTop} min-w-[110px] w-[calc(12%-2px)]`}>সংস্থার নাম</th>
               <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(prevMonthDate)}/{formatYearBN(prevMonthDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
@@ -1745,14 +1760,13 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <th colSpan={2} className={thClsWithTop}>মোট অডিট আপত্তি</th>
               <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={thClsWithTop}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
-              <th rowSpan={2} className={`${thClsWithTop} w-[calc(8%-2px)]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[38px]">
               <th className={thCls}>সংখ্যা</th>
               <th className={thCls}>টাকা</th>
               <th className={thCls}>সংখ্যা</th>
               <th className={thCls}>টাকা</th>
-              <th className={thCls}>সংখ্যা</th>
+              <th className={`${thCls} w-[55px] min-w-[55px] !whitespace-nowrap`}>সংখ্যা</th>
               <th className={thCls}>টাকা</th>
               <th className={thCls}>সংখ্যা</th>
               <th className={thCls}>টাকা</th>
@@ -1760,8 +1774,8 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <th className={thCls}>টাকা</th>
             </tr>
             <tr className="h-[32px]">
-              {[1, 2, 3, 4, 5, 6, 7, '৮ = ৪+৬', '৯ = ৫+৭', 10, 11, '১২ = ৮-১০', '১৩ = ৯-১১', 14].map((n, i) => (
-                <th key={i} className={thRow3Cls}>{typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}</th>
+              {[1, 2, 3, 4, 5, 6, 7, '৮ = ৪+৬', '৯ = ৫+৭', 10, 11, '১২ = ৮-১০', '১৩ = ৯-১১'].map((n, i) => (
+                <th key={i} className={`${thRow3Cls} ${i === 7 ? 'w-[55px] min-w-[55px]' : ''} !whitespace-nowrap`}>{typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
@@ -1803,7 +1817,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                       <td className={numTdCls}>{toBengaliDigits(ent.sAmount.toString())}</td>
                       <td className={numTdCls}>{toBengaliDigits(finalObjectionCount.toString())}</td>
                       <td className={numTdCls}>{toBengaliDigits(finalObjectionAmount.toString())}</td>
-                      <td className={tdCls}></td>
                     </tr>
                   );
                 })}
@@ -1821,7 +1834,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <td className={footerNumTdCls}>{toBengaliDigits(totals.sA.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.fC.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.fA.toString())}</td>
-              <td className={footerTdCls}></td>
             </tr>
             {tableId === 'table-2' && (
               <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom no-hover-row">
@@ -1836,7 +1848,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.sA.toString())}</td>
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.fC.toString())}</td>
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.fA.toString())}</td>
-                <td className={footerTdCls}></td>
               </tr>
             )}
           </tbody>
@@ -1883,12 +1894,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
         {/* Right Column: Date Range Pill & Month Picker */}
         <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
-          <div className="inline-flex items-center gap-2 px-3.5 h-[38px] bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-            <span className="text-blue-700 font-black text-[12.5px] whitespace-nowrap">
-              {customTitle || "ত্রৈমাসিক রিটার্ন - ৩"} | {activeCycle.label}
-            </span>
-          </div>
           {monthPickerElement && (
             <div className="select-none relative z-[300]">
               {monthPickerElement}
