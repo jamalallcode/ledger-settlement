@@ -317,14 +317,16 @@ tr.settlement-cycle-header td,
   z-index: 220 !important; /* Higher than regular rows, lower than thead (250) */
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
+  border-top: 1px solid #94a3b8 !important;
 }
 
 /* Offset sticky footer (for the 'Total' row when it sits above 'Grand Total') */
 .qr-sticky-footer-offset td {
-  bottom: 28px !important; /* Matches the h-[28px] of the row below it */
+  bottom: var(--qr-footer-bottom-h, 28px) !important; /* Matches the h-[28px] or measured height of the row below it */
   z-index: 210 !important; /* Higher than regular rows, lower than bottom footer */
   background-color: #000000 !important; /* Black background */
   color: #ffffff !important; /* White text */
+  border-bottom: 1px solid #94a3b8 !important;
 }
 
 /* Disable hover background changes for Total/Grand Total rows and any tfoot rows */
@@ -526,6 +528,11 @@ table thead tr:first-child th {
   border-bottom-color: #4b5563 !important;
 }
 
-.dark table thead tr:first-child th {
+.dark table thead tr:first-child th,
+.dark .qr-sticky-footer-bottom td {
   border-top-color: #4b5563 !important;
+}
+
+.dark .qr-sticky-footer-offset td {
+  border-bottom-color: #4b5563 !important;
 }

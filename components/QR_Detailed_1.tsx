@@ -441,16 +441,14 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
         if (tr1 && tr2) {
           const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
-          const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
+          const measuredH1 = r1Cell ? r1Cell.getBoundingClientRect().height : 34;
+          const h1 = measuredH1 > 0 && measuredH1 <= 40 ? measuredH1 : 34;
           const r2Cell = tr2.querySelector('th') as HTMLElement | null;
-          const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
+          const measuredH2 = r2Cell ? r2Cell.getBoundingClientRect().height : 62;
+          const h2 = measuredH2 > 0 ? measuredH2 : 62;
 
-          if (h1 > 0) {
-            table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
-            if (h2 > 0) {
-              table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
-            }
-          }
+          table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
+          table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
         }
       });
     };
@@ -601,6 +599,10 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             --th-r2-top: 34px;
             --th-r3-top: 96px;
           }
+          #qr-detailed-1-table-1 thead,
+          #qr-detailed-1-table-2 thead {
+            background-color: #e2e8f0 !important;
+          }
           #qr-detailed-1-table-1 thead th,
           #qr-detailed-1-table-2 thead th {
             position: -webkit-sticky !important;
@@ -611,12 +613,30 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             opacity: 1 !important;
             box-shadow: none !important;
           }
+          #qr-detailed-1-table-1 thead tr:first-child,
+          #qr-detailed-1-table-1 thead tr:nth-child(1),
+          #qr-detailed-1-table-2 thead tr:first-child,
+          #qr-detailed-1-table-2 thead tr:nth-child(1) {
+            height: 34px !important;
+          }
+          #qr-detailed-1-table-1 thead tr:nth-child(2),
+          #qr-detailed-1-table-2 thead tr:nth-child(2) {
+            height: 62px !important;
+          }
+          #qr-detailed-1-table-1 thead tr:nth-child(3),
+          #qr-detailed-1-table-2 thead tr:nth-child(3) {
+            height: 28px !important;
+          }
           #qr-detailed-1-table-1 thead tr:first-child th,
           #qr-detailed-1-table-1 thead tr:nth-child(1) th,
           #qr-detailed-1-table-2 thead tr:first-child th,
           #qr-detailed-1-table-2 thead tr:nth-child(1) th {
             top: 0px !important;
             z-index: 140 !important;
+          }
+          #qr-detailed-1-table-1 thead tr:first-child th:not([rowspan]):not([rowSpan]),
+          #qr-detailed-1-table-2 thead tr:first-child th:not([rowspan]):not([rowSpan]) {
+            height: 34px !important;
           }
           #qr-detailed-1-table-1 thead tr:first-child th[rowspan],
           #qr-detailed-1-table-1 thead tr:first-child th[rowSpan],
@@ -657,16 +677,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg mb-8 bg-white border border-slate-300">
           <table ref={table1Ref} id="qr-detailed-1-table-1" className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
           <thead>
-            <tr>
+            <tr className="h-[34px]">
               <th rowSpan={2} className={`${thCls} w-[40px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${thCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
-              <th colSpan={3} className={thCls}>প্রারম্ভিক অমিমাংসিত</th>
-              <th colSpan={3} className={thCls}>প্রারম্ভিক মীমাংসিত</th>
+              <th colSpan={3} className={`${thCls} h-[34px]`}>প্রারম্ভিক অমিমাংসিত</th>
+              <th colSpan={3} className={`${thCls} h-[34px]`}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${thCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-              <th colSpan={3} className={thCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
+              <th colSpan={3} className={`${thCls} h-[34px]`}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
-            <tr>
+            <tr className="h-[62px]">
               {/* Columns 4, 5, 6 under প্রারম্ভিক অমিমাংসিত - Item 2.5 Header Text Fix */}
               <th className={thRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={thRow2Cls}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
@@ -683,7 +703,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th className={thRow2Cls}>১৯৭১-৭২ হতে {cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
             {/* Column Numbers Row */}
-            <tr>
+            <tr className="h-[28px]">
               <th className={thRow3Cls}>১</th>
               <th className={thRow3Cls}>২</th>
               <th className={thRow3Cls}>৩</th>
@@ -806,16 +826,16 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg mb-8 bg-white border border-slate-300">
           <table ref={table2Ref} id="qr-detailed-1-table-2" className="w-full border-separate border-spacing-0 min-w-[1050px] border border-slate-300">
           <thead>
-            <tr>
+            <tr className="h-[34px]">
               <th rowSpan={2} className={`${yellowThCls} w-[40px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${yellowThCls} w-[68px]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${yellowThCls} w-[78px]`}>প্রতিষ্ঠানের নাম</th>
-              <th colSpan={3} className={yellowThCls}>প্রারম্ভিক অমিমাংসিত</th>
-              <th colSpan={3} className={yellowThCls}>প্রারম্ভিক মীমাংসিত</th>
+              <th colSpan={3} className={`${yellowThCls} h-[34px]`}>প্রারম্ভিক অমিমাংসিত</th>
+              <th colSpan={3} className={`${yellowThCls} h-[34px]`}>প্রারম্ভিক মীমাংসিত</th>
               <th rowSpan={2} className={`${yellowThCls} w-[100px]`}>{cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তির সংখ্যা</th>
-              <th colSpan={3} className={yellowThCls}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
+              <th colSpan={3} className={`${yellowThCls} h-[34px]`}>অমিমাংসিত আপত্তিতে জড়িত টাকা</th>
             </tr>
-            <tr>
+            <tr className="h-[62px]">
               {/* Item 2.5 Header Text Fix */}
               <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {priorPeriodEnd} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
               <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত উত্থাপিত আপত্তির সংখ্যা</th>
@@ -829,7 +849,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
               <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
-            <tr>
+            <tr className="h-[28px]">
               <th className={yellowThRow3Cls}>১</th>
               <th className={yellowThRow3Cls}>২</th>
               <th className={yellowThRow3Cls}>৩</th>
