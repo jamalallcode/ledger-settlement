@@ -284,7 +284,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 min-[380px]:gap-3 sm:gap-4 lg:gap-5 transition-colors pt-2 min-[380px]:pt-2.5 sm:pt-4">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 min-[380px]:gap-3 sm:gap-4 lg:gap-5 transition-colors mt-12 min-[380px]:mt-16 sm:mt-0 pt-2 min-[380px]:pt-2.5 sm:pt-4">
               
               {/* Date Box */}
               <div className="flex flex-col items-center lg:items-stretch justify-center gap-1.5 sm:gap-2 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
