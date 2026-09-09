@@ -534,21 +534,21 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                 <th rowSpan={2} className={`${thStyle} w-[35px] rounded-none`}>ক্রঃ নং</th>
                 <th rowSpan={2} className={`${thStyle} w-[180px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
                 <th rowSpan={2} className={`${thStyle} w-[60px]`}>ব্রডশিট জবাবের সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[100px]`}>ডায়েরি নম্বর ও তারিখ</th>
-                <th rowSpan={2} className={`${thStyle} w-[110px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[90px]`}>ডায়েরি নম্বর ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[100px]`}>ব্রডশিট জবাবের স্মারক ও তারিখ</th>
                 <th rowSpan={2} className={`${thStyle} w-[65px]`}>প্রেরিত অনুচ্ছেদ সংখ্যা</th>
                 <th rowSpan={2} className={`${thStyle} w-[65px]`}>মীমাংসিত অনুচ্ছেদ সংখ্যা</th>
-                <th rowSpan={2} className={`${thStyle} w-[110px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
+                <th rowSpan={2} className={`${thStyle} w-[100px]`}>মীমাংসা জারিপত্রের স্মারক ও তারিখ</th>
                 <th rowSpan={2} className={`${thStyle} w-[85px]`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
-                <th colSpan={3} className={`${thStyle}`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
+                <th colSpan={3} className={`${thStyle} w-[240px]`}>ব্রডশিট জবাবের প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
                 <th rowSpan={2} className={`${thStyle} w-[65px]`}>অমীমাংসিত অনুচ্ছেদ সংখ্যা</th>
                 <th rowSpan={2} className={`${thStyle} w-[85px]`}>অমীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
                 <th rowSpan={2} className={`${thStyle} w-[70px] rounded-none`}>আর্কাইভ নং</th>
               </tr>
               <tr className="h-[38px] bg-slate-100">
-                <th className={thStyle}>আদায়</th>
-                <th className={thStyle}>সমন্বয়</th>
-                <th className={thStyle}>অন্যান্য</th>
+                <th className={`${thStyle} w-[80px]`}>আদায়</th>
+                <th className={`${thStyle} w-[80px]`}>সমন্বয়</th>
+                <th className={`${thStyle} w-[80px]`}>অন্যান্য</th>
               </tr>
               <tr className="h-[32px] bg-slate-100">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => (
@@ -623,13 +623,13 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                       <td className={numTdStyle}>
                         {formatAmountBengali(col9Amount)}
                       </td>
-                      <td className={`${numTdStyle} text-emerald-600 bg-emerald-50/10`}>
+                      <td className={`${numTdStyle} text-emerald-600 bg-emerald-50/10 whitespace-nowrap`}>
                         {formatAmountBengali(row.totalRec)}
                       </td>
-                      <td className={`${numTdStyle} text-indigo-600 bg-indigo-50/10`}>
+                      <td className={`${numTdStyle} text-indigo-600 bg-indigo-50/10 whitespace-nowrap`}>
                         {formatAmountBengali(row.totalAdj)}
                       </td>
-                      <td className={numTdStyle}>
+                      <td className={`${numTdStyle} whitespace-nowrap`}>
                         {formatAmountBengali(0)}
                       </td>
                       <td className={numTdStyle}>
@@ -665,13 +665,13 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
                     {formatAmountBengali(totals.involvedAmount)}
                   </td>
-                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-emerald-400 font-black">
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-emerald-400 font-black whitespace-nowrap">
                     {formatAmountBengali(totals.recoveredAmount)}
                   </td>
-                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-indigo-400 font-black">
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-indigo-400 font-black whitespace-nowrap">
                     {formatAmountBengali(totals.adjustedAmount)}
                   </td>
-                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-slate-300 font-black">
+                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-slate-300 font-black whitespace-nowrap">
                     {formatAmountBengali(totals.othersAmount)}
                   </td>
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">

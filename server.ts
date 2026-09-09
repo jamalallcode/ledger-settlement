@@ -117,7 +117,12 @@ const saveStoredActiveSessions = (sessions: Record<string, { token: string; time
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  app.set('trust proxy', 1);
+
+  // Bind to 3000 in dev sandbox (reverse proxied by Nginx), or Cloud Run's PORT in production
+  const PORT = process.env.DEFAULT_APP_PORT 
+    ? 3000 
+    : (process.env.PORT ? parseInt(process.env.PORT, 10) : 8080);
 
   app.use(express.json({ limit: '50mb' }));
   app.use(cookieParser());
@@ -345,23 +350,35 @@ async function startServer() {
     }
   });
 
+  const isDev = process.env.DEFAULT_APP_PORT !== undefined && process.env.NODE_ENV !== "production";
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (isDev) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = fs.existsSync(path.join(process.cwd(), 'dist'))
+      ? path.join(process.cwd(), 'dist')
+      : __dirname;
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT} (mode: ${isDev ? 'development' : 'production'})`);
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
   });
 }
 

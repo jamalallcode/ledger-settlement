@@ -1414,13 +1414,13 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
               <colgroup>
                 <col className="w-[50px]" />
                 <col className="w-[65px]" />
-                <col className="w-[280px]" />
+                <col className="w-[325px]" />
                 <col className="w-[100px]" />
                 <col className="w-[100px]" />
-                <col className="w-[120px]" />
+                <col className="w-[165px]" />
                 <col className="w-[90px]" />
                 <col className="w-[100px]" />
-                <col className="w-[180px]" />
+                <col className="w-[90px]" />
               </colgroup>
               <thead>
                 <tr className="h-[42px]">
