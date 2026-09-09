@@ -354,7 +354,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       {/* Aesthetic Institutional Footer */}
       <footer 
         id="landing-aesthetic-footer" 
-        className="mt-3 sm:mt-4 md:mt-5 w-full rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs px-3.5 sm:px-5 md:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row items-center justify-between gap-2.5 transition-all select-none"
+        className="hidden md:flex mt-3 sm:mt-4 md:mt-5 w-full rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs px-3.5 sm:px-5 md:px-6 py-2.5 sm:py-3 flex-col md:flex-row items-center justify-between gap-2.5 transition-all select-none"
       >
         <div className="flex items-center gap-2.5 text-center sm:text-left">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 hidden sm:block" />
