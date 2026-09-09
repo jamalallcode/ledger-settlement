@@ -750,8 +750,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                     <tr key={`${gIdx}-${eIdx}`} className="hover:bg-slate-50 transition-colors">
                       <td className={numTdCls}>{toBengaliDigits(serialCount.toString())}</td>
                       {isFirstOfGroup && (
-                        <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center bg-white`}>
-                          <HighlightText text={group.ministry} searchTerm={searchTerm} />
+                        <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center align-middle p-0 bg-white`}>
+                          <div
+                            className="flex items-center justify-center w-full h-full py-2 px-1"
+                            style={{ minHeight: `${Math.max(70, Math.ceil((group.ministry || '').length * 6.5) + 24)}px` }}
+                          >
+                            <span
+                              className="inline-block whitespace-nowrap font-bold text-[10.5px] tracking-normal text-slate-900 select-none"
+                              style={{ transform: 'rotate(-90deg)', transformOrigin: 'center center' }}
+                            >
+                              <HighlightText text={group.ministry} searchTerm={searchTerm} />
+                            </span>
+                          </div>
                         </td>
                       )}
                       <td className={tdCls}>
@@ -896,8 +906,18 @@ const QR_Detailed_1: React.FC<QRProps> = ({
                     <tr key={`t2-${gIdx}-${eIdx}`} className="hover:bg-amber-50/40 transition-colors">
                       <td className={numTdCls}>{toBengaliDigits(serialCount.toString())}</td>
                       {isFirstOfGroup && (
-                        <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center bg-white`}>
-                          <HighlightText text={group.ministry} searchTerm={searchTerm} />
+                        <td rowSpan={group.entities.length} className={`${tdCls} font-bold text-center align-middle p-0 bg-white`}>
+                          <div
+                            className="flex items-center justify-center w-full h-full py-2 px-1"
+                            style={{ minHeight: `${Math.max(70, Math.ceil((group.ministry || '').length * 6.5) + 24)}px` }}
+                          >
+                            <span
+                              className="inline-block whitespace-nowrap font-bold text-[10.5px] tracking-normal text-slate-900 select-none"
+                              style={{ transform: 'rotate(-90deg)', transformOrigin: 'center center' }}
+                            >
+                              <HighlightText text={group.ministry} searchTerm={searchTerm} />
+                            </span>
+                          </div>
                         </td>
                       )}
                       <td className={tdCls}>

@@ -1780,50 +1780,85 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             </tr>
           </thead>
           <tbody>
-            {data.map((mGroup, mIdx) => (
-              <React.Fragment key={mIdx}>
-                {mGroup.entities.map((ent, eIdx) => {
-                  const totalObjectionCount = ent.pCount + ent.cCount;
-                  const totalObjectionAmount = ent.pAmount + ent.cAmount;
-                  const finalObjectionCount = totalObjectionCount - ent.sCount;
-                  const finalObjectionAmount = totalObjectionAmount - ent.sAmount;
+            {data.map((mGroup, mIdx) => {
+              const groupTotals = { pC: 0, pA: 0, cC: 0, cA: 0, tC: 0, tA: 0, sC: 0, sA: 0, fC: 0, fA: 0 };
 
-                  totals.pC += ent.pCount; totals.pA += ent.pAmount;
-                  totals.cC += ent.cCount; totals.cA += ent.cAmount;
-                  totals.tC += totalObjectionCount; totals.tA += totalObjectionAmount;
-                  totals.sC += ent.sCount; totals.sA += ent.sAmount;
-                  totals.fC += finalObjectionCount; totals.fA += finalObjectionAmount;
+              return (
+                <React.Fragment key={mIdx}>
+                  {mGroup.entities.map((ent: any, eIdx: number) => {
+                    const totalObjectionCount = ent.pCount + ent.cCount;
+                    const totalObjectionAmount = ent.pAmount + ent.cAmount;
+                    const finalObjectionCount = totalObjectionCount - ent.sCount;
+                    const finalObjectionAmount = totalObjectionAmount - ent.sAmount;
 
-                  return (
-                    <tr key={`${mIdx}-${eIdx}`} className="hover:bg-slate-50 transition-colors">
-                      {eIdx === 0 && (
-                        <td rowSpan={mGroup.entities.length} className={numTdCls}>{toBengaliDigits((globalIdx++).toString())}</td>
-                      )}
-                      {eIdx === 0 && (
-                        <td rowSpan={mGroup.entities.length} className={tdCls + " font-black"}>
-                          <HighlightText text={mGroup.ministry} searchTerm={searchTerm} />
+                    groupTotals.pC += ent.pCount; groupTotals.pA += ent.pAmount;
+                    groupTotals.cC += ent.cCount; groupTotals.cA += ent.cAmount;
+                    groupTotals.tC += totalObjectionCount; groupTotals.tA += totalObjectionAmount;
+                    groupTotals.sC += ent.sCount; groupTotals.sA += ent.sAmount;
+                    groupTotals.fC += finalObjectionCount; groupTotals.fA += finalObjectionAmount;
+
+                    totals.pC += ent.pCount; totals.pA += ent.pAmount;
+                    totals.cC += ent.cCount; totals.cA += ent.cAmount;
+                    totals.tC += totalObjectionCount; totals.tA += totalObjectionAmount;
+                    totals.sC += ent.sCount; totals.sA += ent.sAmount;
+                    totals.fC += finalObjectionCount; totals.fA += finalObjectionAmount;
+
+                    return (
+                      <tr key={`${mIdx}-${eIdx}`} className="hover:bg-slate-50 transition-colors">
+                        {eIdx === 0 && (
+                          <td rowSpan={mGroup.entities.length} className={numTdCls}>{toBengaliDigits((globalIdx++).toString())}</td>
+                        )}
+                        {eIdx === 0 && (
+                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-black text-center align-middle p-0 bg-white`}>
+                            <div
+                              className="flex items-center justify-center w-full h-full py-2 px-1"
+                              style={{ minHeight: `${Math.max(70, Math.ceil((mGroup.ministry || '').length * 6.5) + 24)}px` }}
+                            >
+                              <span
+                                className="inline-block whitespace-nowrap font-bold text-[10.5px] tracking-normal text-slate-900 select-none"
+                                style={{ transform: 'rotate(-90deg)', transformOrigin: 'center center' }}
+                              >
+                                <HighlightText text={mGroup.ministry} searchTerm={searchTerm} />
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        <td className={tdCls}>
+                          <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                         </td>
-                      )}
-                      <td className={tdCls}>
-                        <HighlightText text={ent.entityName} searchTerm={searchTerm} />
-                      </td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.pCount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.pAmount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.cCount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.cAmount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(totalObjectionCount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(totalObjectionAmount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.sCount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(ent.sAmount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(finalObjectionCount.toString())}</td>
-                      <td className={numTdCls}>{toBengaliDigits(finalObjectionAmount.toString())}</td>
-                    </tr>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+                        <td className={numTdCls}>{toBengaliDigits(ent.pCount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(ent.pAmount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(ent.cCount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(ent.cAmount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(totalObjectionCount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(totalObjectionAmount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(ent.sCount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(ent.sAmount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(finalObjectionCount.toString())}</td>
+                        <td className={numTdCls}>{toBengaliDigits(finalObjectionAmount.toString())}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="bg-slate-100 font-black">
+                    <td colSpan={3} className={`${tdCls} font-black text-center !bg-slate-200 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]`}>
+                      মোট ({mGroup.ministry})
+                    </td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.pC.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.pA.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.cC.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.cA.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.tC.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.tA.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.sC.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.sA.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.fC.toString())}</td>
+                    <td className={`${numTdCls} font-black !bg-slate-100/90`}>{toBengaliDigits(groupTotals.fA.toString())}</td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
             <tr className={`font-black h-[28px] qr-sticky-footer no-hover-row ${tableId === 'table-2' ? 'qr-sticky-footer-offset' : 'qr-sticky-footer-bottom'}`}>
-              <td colSpan={3} className={footerTdCls + " text-right"}>মোট</td>
+              <td colSpan={3} className={footerTdCls + " text-center"}>মোট</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.pC.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.pA.toString())}</td>
               <td className={footerNumTdCls}>{toBengaliDigits(totals.cC.toString())}</td>
@@ -1837,7 +1872,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             </tr>
             {tableId === 'table-2' && (
               <tr className="font-black h-[28px] qr-sticky-footer qr-sticky-footer-bottom no-hover-row">
-                <td colSpan={3} className={footerTdCls + " text-right"}>সর্বমোট</td>
+                <td colSpan={3} className={footerTdCls + " text-center"}>সর্বমোট</td>
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.pC.toString())}</td>
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.pA.toString())}</td>
                 <td className={footerNumTdCls}>{toBengaliDigits(grandTotals.cC.toString())}</td>
