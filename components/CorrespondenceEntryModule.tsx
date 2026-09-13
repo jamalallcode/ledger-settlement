@@ -508,24 +508,19 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge, emptyWarning }: any) 
         onClick={() => setIsOpen(!isOpen)}
         className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-sky-400 hover:ring-4 hover:ring-sky-50 transition-all duration-300 ${isOpen ? 'border-sky-500 ring-4 ring-sky-50 bg-white shadow-md' : (value ? 'border-emerald-500 shadow-sm' : 'border-red-500 shadow-sm')}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {selectedOpt ? (
-            <>
-              <div className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center shadow-sm">
-                <Building size={16} />
-              </div>
-              <span className="text-slate-900 font-black">{selectedOpt.label}</span>
-            </>
+            <span className="text-slate-900 font-black truncate text-[13.5px]">{selectedOpt.label}</span>
           ) : (
             <>
-              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center shrink-0">
                 <Building size={16} />
               </div>
-              <span className="text-slate-400 font-bold">মন্ত্রণালয় বাছুন...</span>
+              <span className="text-slate-400 font-bold truncate text-[13.5px]">মন্ত্রণালয় বাছুন...</span>
             </>
           )}
         </div>
-        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-sky-600' : 'group-hover:text-sky-500'}`} />
+        <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform duration-500 ${isOpen ? 'rotate-180 text-sky-600' : 'group-hover:text-sky-500'}`} />
       </div>
 
       {isOpen && (
@@ -693,24 +688,19 @@ const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge, emptyWarn
         onClick={() => setIsOpen(!isOpen)}
         className={`${inputCls} flex items-center justify-between cursor-pointer group hover:border-purple-400 hover:ring-4 hover:ring-purple-50 transition-all duration-300 ${isOpen ? 'border-purple-500 ring-4 ring-purple-50 bg-white shadow-md' : (value ? 'border-emerald-500 shadow-sm' : 'border-slate-300 shadow-sm')}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {selectedOpt ? (
-            <>
-              <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center shadow-sm">
-                <Building2 size={16} />
-              </div>
-              <span className="text-slate-900 font-black">{selectedOpt.label}</span>
-            </>
+            <span className="text-slate-900 font-black truncate text-[13.5px]">{selectedOpt.label}</span>
           ) : (
             <>
-              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center shrink-0">
                 <Building2 size={16} />
               </div>
-              <span className="text-slate-400 font-bold">{value || "এনটিটি বাছুন..."}</span>
+              <span className="text-slate-400 font-bold truncate text-[13.5px]">{value || "এনটিটি বাছুন..."}</span>
             </>
           )}
         </div>
-        <ChevronDown size={18} className={`text-slate-400 transition-transform duration-500 ${isOpen ? 'rotate-180 text-purple-600' : 'group-hover:text-purple-500'}`} />
+        <ChevronDown size={18} className={`text-slate-400 shrink-0 transition-transform duration-500 ${isOpen ? 'rotate-180 text-purple-600' : 'group-hover:text-purple-500'}`} />
       </div>
 
       {isOpen && (
@@ -940,15 +930,16 @@ const PremiumAuditYearSelect = ({ value, onChange, IDBadge, emptyWarning }: any)
               {filterText.trim() && !isFilterExactMatch && (
                 <div 
                   onClick={() => handleSelectOrAdd(filterText.trim())}
-                  className="px-3 py-2 mx-0.5 rounded-lg cursor-pointer flex items-center justify-between bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all font-black border border-emerald-200 mb-1"
+                  className="px-3 py-2.5 mx-0.5 rounded-xl cursor-pointer flex items-center bg-gradient-to-r from-emerald-50 via-teal-50/70 to-emerald-50 text-emerald-900 hover:from-emerald-100/90 hover:to-teal-100/90 transition-all border border-emerald-200/90 shadow-2xs hover:shadow-xs group mb-1.5"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center">
-                      <Plus size={14} />
-                    </div>
-                    <span className="text-[12px]">কাস্টম সাল যুক্ত করুন: "{filterText.trim()}"</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 rounded-md bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-2xs transition-colors text-[13px] font-black">
+                      +
+                    </span>
+                    <span className="text-[13px] font-black text-emerald-900 truncate leading-none">
+                      যুক্ত করুন: {filterText.trim()}
+                    </span>
                   </div>
-                  <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded font-black">Enter ↵</span>
                 </div>
               )}
 
