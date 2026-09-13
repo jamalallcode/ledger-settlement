@@ -2372,12 +2372,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 IDBadge={IDBadge}
                 emptyWarning={hasStartedFilling && !formData.ministryName ? "মন্ত্রণালয় নির্বাচন করেননি।" : undefined}
               />
-              {Boolean(formData.entityName && formData.entityName.trim()) && (
-                <div className="mt-2.5 flex items-center gap-2 text-[11.5px] font-bold text-amber-900 bg-amber-50/95 border border-amber-200/90 px-3 py-1.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
-                  <AlertCircle size={14} className="shrink-0 text-amber-600" />
-                  <span className="leading-tight">আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?</span>
-                </div>
-              )}
             </div>
 
             {/* Field Entity */}
@@ -2426,12 +2420,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   autoComplete="off"
                 />
 
-                {showAuditYearWarning && formData.description && !/[0-9]{4}|[০-৯]{4}/.test(formData.description) && !formData.auditYear && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
-                    <AlertCircle size={14} className="shrink-0 text-red-600" />
-                    <span>নিরীক্ষা সাল উল্লেখ করা হয়নি (নিচের ঘরে নিরীক্ষা সাল দিন)</span>
-                  </div>
-                )}
                 {hasStartedFilling && (!formData.description || !formData.description.trim()) && (
                   <UnfilledMessage message="পত্রের বিবরণ লেখেননি।" />
                 )}
@@ -2646,12 +2634,6 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 IDBadge={IDBadge}
                 emptyWarning={hasStartedFilling && !formData.auditYear ? "নিরীক্ষা সাল নির্বাচন করেননি।" : undefined}
               />
-              {showAuditYearWarning && !formData.auditYear && (
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
-                  <AlertCircle size={14} className="shrink-0 text-red-600" />
-                  <span>নিরীক্ষা সাল প্রদান করুন</span>
-                </div>
-              )}
             </div>
 
             {/* Field Letter No */}
