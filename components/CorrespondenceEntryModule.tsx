@@ -35,7 +35,7 @@ const sectionHeaderCls = "col-span-full mt-6 mb-2 py-2 border-b border-slate-100
 const sectionTitleCls = "text-[12px] font-black text-slate-400 uppercase tracking-[0.2em]";
 
 const UnfilledMessage: React.FC<{ message: string }> = ({ message }) => (
-  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
     <AlertCircle size={12} className="shrink-0 text-rose-500" />
     <span className="leading-none">{message}</span>
   </div>
@@ -253,7 +253,7 @@ const PremiumLetterTypeSelect = ({ value, onChange, isLayoutEditable, IDBadge, p
         </div>
       )}
       {emptyWarning && !value && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -423,7 +423,7 @@ const PremiumParaTypeSelect = ({ value, onChange, IDBadge, emptyWarning }: any) 
         </div>
       )}
       {emptyWarning && !value && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -607,7 +607,7 @@ const PremiumMinistrySelect = ({ value, onChange, IDBadge, emptyWarning }: any) 
         </div>
       )}
       {emptyWarning && !value && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -792,7 +792,7 @@ const PremiumEntitySelect = ({ value, onChange, ministryName, IDBadge, emptyWarn
         </div>
       )}
       {emptyWarning && !value && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -984,7 +984,7 @@ const PremiumAuditYearSelect = ({ value, onChange, IDBadge, emptyWarning }: any)
         </div>
       )}
       {emptyWarning && !value && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -1101,7 +1101,7 @@ const SegmentedInput = ({
         </div>
       )}
       {!isFilled && !error && emptyWarning && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 bg-rose-50/90 border border-rose-200/80 px-2.5 py-1 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertCircle size={12} className="shrink-0 text-rose-500" />
           <span className="leading-none">{emptyWarning}</span>
         </div>
@@ -2161,25 +2161,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       return;
     }
 
-    // Audit Year and Ministry mismatch validations
+    // Audit Year validation
     const desc = (formData.description || '').trim();
     if (desc) {
-      // 1. Ministry mismatch validation
-      const descLower = desc.toLowerCase();
-      const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
-      const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
-
-      if (hasBank && formData.ministryName !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
-        if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-          return;
-        }
-      } else if (hasMillsOrJute && formData.ministryName !== "পাট মন্ত্রণালয়") {
-        if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-          return;
-        }
-      }
-
-      // 2. Audit Year validation
       const yearRegex = /[0-9]{4}|[০-৯]{4}/;
       if (!yearRegex.test(desc) && !formData.auditYear) {
         setShowAuditYearWarning(true);
@@ -2351,7 +2335,31 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                <h4 className={sectionTitleCls}>পত্রের অন্যান্য তথ্য</h4>
             </div>
 
-            {/* Field Ministry */}
+            {/* Field Para Type - শাখার ধরণ (সবার প্রথমে) */}
+            <div className={`${colWrapper} border-blue-100`}>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
+              <PremiumParaTypeSelect 
+                value={formData.paraType}
+                onChange={(val: string) => setFormData({...formData, paraType: val})}
+                IDBadge={IDBadge}
+                emptyWarning={hasStartedFilling && !formData.paraType ? "শাখার ধরণ নির্বাচন করেননি।" : undefined}
+              />
+            </div>
+
+            {/* Field Letter Type - পত্রের ধরণ (শাখার ধরণ এর ঠিক পরেই) */}
+            <div className={`${colWrapper} border-indigo-100`}>
+              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
+              <PremiumLetterTypeSelect 
+                value={formData.letterType}
+                onChange={(val: string) => setFormData({...formData, letterType: val})}
+                isLayoutEditable={isLayoutEditable}
+                IDBadge={IDBadge}
+                paraType={formData.paraType}
+                emptyWarning={hasStartedFilling && !formData.letterType ? "পত্রের ধরণ নির্বাচন করেননি।" : undefined}
+              />
+            </div>
+
+            {/* Field Ministry - মন্ত্রণালয় */}
             <div className={`${colWrapper} border-sky-100`}>
               <label className={labelCls}>
                 <span className={numBadge}>{getSerial()}</span> 
@@ -2360,25 +2368,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </label>
               <PremiumMinistrySelect 
                 value={formData.ministryName}
-                onChange={(val: string) => {
-                  const desc = (formData.description || '').trim();
-                  const descLower = desc.toLowerCase();
-                  const hasBank = descLower.includes('ব্যাংক') || descLower.includes('bank');
-                  const hasMillsOrJute = descLower.includes('মিল') || descLower.includes('মিলস') || descLower.includes('জুট') || descLower.includes('mill') || descLower.includes('mills') || descLower.includes('jute');
-
-                  if (hasBank && val !== "আর্থিক প্রতিষ্ঠান বিভাগ") {
-                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-                      return;
-                    }
-                  } else if (hasMillsOrJute && val !== "পাট মন্ত্রণালয়") {
-                    if (!window.confirm("আপনি কি সঠিক মন্ত্রণালয় সিলেক্ট করেছেন?")) {
-                      return;
-                    }
-                  }
-                  setFormData({...formData, ministryName: val});
-                }}
+                onChange={(val: string) => setFormData({...formData, ministryName: val})}
                 IDBadge={IDBadge}
-                emptyWarning={hasStartedFilling && !formData.ministryName ? "আপনি মন্ত্রণালয় নির্বাচন করেননি।" : undefined}
+                emptyWarning={hasStartedFilling && !formData.ministryName ? "মন্ত্রণালয় নির্বাচন করেননি।" : undefined}
               />
             </div>
 
@@ -2394,12 +2386,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 onChange={(val: string) => setFormData({...formData, entityName: val})}
                 ministryName={formData.ministryName}
                 IDBadge={IDBadge}
-                emptyWarning={hasStartedFilling && !formData.entityName ? "আপনি এনটিটি নির্বাচন করেননি।" : undefined}
+                emptyWarning={hasStartedFilling && !formData.entityName ? "এনটিটি নির্বাচন করেননি।" : undefined}
               />
             </div>
 
-            {/* Field Description - Double Width */}
-            <div className={`${colWrapper} border-emerald-100 col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2`} ref={descriptionRef}>
+            {/* Field Description - একক লাইনে সম্পূর্ন (Full Width) */}
+            <div className={`${colWrapper} border-emerald-100 col-span-full`} ref={descriptionRef}>
               <IDBadge id="corr-field-1" />
               <label className={labelCls}>
                 <span className={numBadge}>{getSerial()}</span> 
@@ -2428,14 +2420,8 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   autoComplete="off"
                 />
 
-                {showAuditYearWarning && formData.description && !/[0-9]{4}|[০-৯]{4}/.test(formData.description) && !formData.auditYear && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
-                    <AlertCircle size={14} className="shrink-0 text-red-600" />
-                    <span>নিরীক্ষা সাল উল্লেখ করা হয়নি (নিচের ঘরে নিরীক্ষা সাল দিন)</span>
-                  </div>
-                )}
                 {hasStartedFilling && (!formData.description || !formData.description.trim()) && (
-                  <UnfilledMessage message="আপনি পত্রের বিবরণ লেখেননি।" />
+                  <UnfilledMessage message="পত্রের বিবরণ লেখেননি।" />
                 )}
 
                 {showDescriptionDropdown && (
@@ -2635,7 +2621,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               </div>
             </div>
 
-            {/* Field Audit Year */}
+            {/* Field Audit Year - নিরীক্ষা সাল (পত্র নং- এর পূর্বে) */}
             <div className={`${colWrapper} border-emerald-100`}>
               <label className={labelCls}>
                 <span className={numBadge}>{getSerial()}</span> 
@@ -2646,37 +2632,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 value={formData.auditYear}
                 onChange={(val: string) => setFormData({...formData, auditYear: val})}
                 IDBadge={IDBadge}
-                emptyWarning={hasStartedFilling && !formData.auditYear ? "আপনি নিরীক্ষা সাল নির্বাচন করেননি।" : undefined}
-              />
-              {showAuditYearWarning && !formData.auditYear && (
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-red-600">
-                  <AlertCircle size={14} className="shrink-0 text-red-600" />
-                  <span>নিরীক্ষা সাল প্রদান করুন</span>
-                </div>
-              )}
-            </div>
-
-            {/* Field Para Type */}
-            <div className={`${colWrapper} border-blue-100`}>
-              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ShieldCheck size={14} className="text-blue-600" /> শাখার ধরণ:</label>
-              <PremiumParaTypeSelect 
-                value={formData.paraType}
-                onChange={(val: string) => setFormData({...formData, paraType: val})}
-                IDBadge={IDBadge}
-                emptyWarning={hasStartedFilling && !formData.paraType ? "আপনি শাখার ধরণ নির্বাচন করেননি।" : undefined}
-              />
-            </div>
-
-            {/* Field Letter Type */}
-            <div className={`${colWrapper} border-indigo-100`}>
-              <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <FileText size={14} className="text-indigo-600" /> পত্রের ধরণ:</label>
-              <PremiumLetterTypeSelect 
-                value={formData.letterType}
-                onChange={(val: string) => setFormData({...formData, letterType: val})}
-                isLayoutEditable={isLayoutEditable}
-                IDBadge={IDBadge}
-                paraType={formData.paraType}
-                emptyWarning={hasStartedFilling && !formData.letterType ? "আপনি পত্রের ধরণ নির্বাচন করেননি।" : undefined}
+                emptyWarning={hasStartedFilling && !formData.auditYear ? "নিরীক্ষা সাল নির্বাচন করেননি।" : undefined}
               />
             </div>
 
@@ -2706,7 +2662,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 </div>
               )}
               {hasStartedFilling && !formData.letterNo.trim() && !duplicates.letterNo && (
-                <UnfilledMessage message="আপনি পত্র নম্বর লেখেননি।" />
+                <UnfilledMessage message="পত্র নম্বর লেখেননি।" />
               )}
             </div>
 
@@ -2718,7 +2674,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               dayRef={ldRef} monthRef={lmRef} yearRef={lyRef} 
               isLayoutEditable={isLayoutEditable} originalValue={formData.letterDate} 
               onDateSelect={(iso: string) => handleManualDateSelect(iso, 'letter')} 
-              emptyWarning={hasStartedFilling && (!ld || !lm || !ly) ? "আপনি পত্রের তারিখ লেখেননি।" : undefined}
+              emptyWarning={hasStartedFilling && (!ld || !lm || !ly) ? "পত্রের তারিখ লেখেননি।" : undefined}
             />
 
             {/* Field Sent Para Count */}
@@ -2731,7 +2687,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 placeholder="০"
               />
               {hasStartedFilling && (!rawInputs.totalParas || !rawInputs.totalParas.trim()) && (
-                <UnfilledMessage message="আপনি প্রেরিত অনুচ্ছেদ সংখ্যা লেখেননি।" />
+                <UnfilledMessage message="প্রেরিত অনুচ্ছেদ সংখ্যা লেখেননি।" />
               )}
             </div>
 
@@ -2745,7 +2701,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   dayRef={mdRef} monthRef={mmRef} yearRef={myRef} 
                   isLayoutEditable={isLayoutEditable} originalValue={formData.meetingDate} 
                   onDateSelect={(iso: string) => handleManualDateSelect(iso, 'meeting')} 
-                  emptyWarning={hasStartedFilling && (!md || !mm || !my) ? "আপনি সভার তারিখ লেখেননি।" : undefined}
+                  emptyWarning={hasStartedFilling && (!md || !mm || !my) ? "সভার তারিখ লেখেননি।" : undefined}
                 />
 
                 <div className={`${colWrapper} border-sky-100`}>
@@ -2758,7 +2714,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     placeholder="০"
                   />
                   {hasStartedFilling && !rawInputs.meetingDiscussedParaCount && (!formData.meetingDiscussedParaCount || formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '') && (
-                    <UnfilledMessage message="আপনি আলোচিত অনুচ্ছেদ সংখ্যা লেখেননি।" />
+                    <UnfilledMessage message="আলোচিত অনুচ্ছেদ সংখ্যা লেখেননি।" />
                   )}
                 </div>
 
@@ -2772,7 +2728,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                     placeholder="০"
                   />
                   {hasStartedFilling && !rawInputs.meetingRecommendedParaCount && (!formData.meetingRecommendedParaCount || formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '') && (
-                    <UnfilledMessage message="আপনি সুপারিশকৃত অনুচ্ছেদ সংখ্যা লেখেননি।" />
+                    <UnfilledMessage message="সুপারিশকৃত অনুচ্ছেদ সংখ্যা লেখেননি।" />
                   )}
                 </div>
               </>
@@ -2810,7 +2766,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 </div>
               )}
               {hasStartedFilling && !formData.diaryNo.trim() && !duplicates.diaryNo && (
-                <UnfilledMessage message="আপনি ডায়েরি নম্বর লেখেননি।" />
+                <UnfilledMessage message="ডায়েরি নম্বর লেখেননি।" />
               )}
             </div>
 
@@ -2824,7 +2780,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 isLayoutEditable={isLayoutEditable} originalValue={formData.diaryDate} 
                 onDateSelect={(iso: string) => handleManualDateSelect(iso, 'diary')}
                 error={diaryDateError}
-                emptyWarning={hasStartedFilling && (!dd || !dm || !dy) ? "আপনি ডায়েরি তারিখ লেখেননি।" : undefined}
+                emptyWarning={hasStartedFilling && (!dd || !dm || !dy) ? "ডায়েরি তারিখ লেখেননি।" : undefined}
               />
               {calculatedCycle && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 w-fit animate-in slide-in-from-top-1 duration-300 ml-2">
@@ -2843,7 +2799,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               isLayoutEditable={isLayoutEditable} originalValue={formData.receiptDate} 
               onDateSelect={(iso: string) => handleManualDateSelect(iso, 'receipt')} 
               error={receiptDateError}
-              emptyWarning={hasStartedFilling && (!rd || !rm || !ry) ? "আপনি শাখায় প্রাপ্তির তারিখ লেখেননি।" : undefined}
+              emptyWarning={hasStartedFilling && (!rd || !rm || !ry) ? "শাখায় প্রাপ্তির তারিখ লেখেননি।" : undefined}
             />
 
             {/* Field Digital File No */}
@@ -2852,7 +2808,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Computer size={14} className="text-indigo-600" /> ডিজিটাল নথি নং-</label>
               <input 
                 type="text" className={`${inputCls} ${duplicates.digitalFileNo ? 'border-amber-500 ring-4 ring-amber-50' : (formData.digitalFileNo ? 'border-emerald-500' : 'border-red-500')}`} 
-                value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})}
+                value={formData.digitalFileNo} onChange={e => setFormData({...formData, digitalFileNo: toBengaliDigits(e.target.value)})} 
                 placeholder="নথি নং লিখুন"
               />
               {duplicates.digitalFileNo && (
@@ -2872,7 +2828,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 </div>
               )}
               {hasStartedFilling && (!formData.digitalFileNo || !formData.digitalFileNo.trim()) && !duplicates.digitalFileNo && (
-                <UnfilledMessage message="আপনি ডিজিটাল নথি নম্বর লেখেননি।" />
+                <UnfilledMessage message="ডিজিটাল নথি নম্বর লেখেননি।" />
               )}
             </div>
 
@@ -2947,7 +2903,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 )}
               </div>
               {hasStartedFilling && (!formData.receiverName || !formData.receiverName.trim()) && (
-                <UnfilledMessage message="আপনি গ্রহীতার নাম নির্বাচন করেননি।" />
+                <UnfilledMessage message="গ্রহীতার নাম নির্বাচন করেননি।" />
               )}
             </div>
 
@@ -2960,7 +2916,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
               isLayoutEditable={isLayoutEditable} originalValue={formData.receivedDate} 
               onDateSelect={(iso: string) => handleManualDateSelect(iso, 'received')}
               error={receivedDateError}
-              emptyWarning={hasStartedFilling && (!rcd || !rcm || !rcy) ? "আপনি গ্রহণের তারিখ লেখেননি।" : undefined}
+              emptyWarning={hasStartedFilling && (!rcd || !rcm || !rcy) ? "গ্রহণের তারিখ লেখেননি।" : undefined}
             />
 
             {/* Field Online Receipt */}
@@ -3007,7 +2963,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                 </div>
               )}
               {hasStartedFilling && (!formData.archiveNo || !formData.archiveNo.trim()) && !duplicates.archiveNo && (
-                <UnfilledMessage message="আপনি আর্কাইভ নম্বর লেখেননি।" />
+                <UnfilledMessage message="আর্কাইভ নম্বর লেখেননি।" />
               )}
             </div>
 

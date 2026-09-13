@@ -1750,12 +1750,12 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
     const getColWidthClass = (index: number) => {
       if (index === 0) return "w-[30px] min-w-[30px] max-w-[30px]";
-      if (index === 1) return "w-[75px] min-w-[75px] max-w-[75px]";
+      if (index === 1) return "w-[23px] min-w-[23px] max-w-[23px]";
       if (index === 2) return "w-[95px] min-w-[95px] max-w-[95px]";
       if (index % 2 === 1) {
         return "w-[35px] min-w-[35px] max-w-[35px]";
       } else {
-        return "w-[110px] min-w-[110px] max-w-[110px]";
+        return "w-[118px] min-w-[118px] max-w-[118px]";
       }
     };
 
@@ -1839,23 +1839,23 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           <table className="w-full border-separate border-spacing-0 !table-auto border-l border-slate-400">
             <colgroup>
               <col style={{ width: '30px', minWidth: '30px' }} />
-              <col style={{ width: '63px', minWidth: '63px' }} />
+              <col style={{ width: '23px', minWidth: '23px' }} />
               <col style={{ width: '83px', minWidth: '83px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '118px', minWidth: '118px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '118px', minWidth: '118px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '118px', minWidth: '118px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '118px', minWidth: '118px' }} />
               <col style={{ width: '35px', minWidth: '35px' }} />
-              <col style={{ width: '110px', minWidth: '110px' }} />
+              <col style={{ width: '118px', minWidth: '118px' }} />
             </colgroup>
             <thead className="bg-slate-100">
               <tr>
                 <th className={`${thClsWithTop} w-[30px] min-w-[30px] max-w-[30px]`} rowSpan={2}>ক্রঃ নং</th>
-                <th className={`${thClsWithTop} w-[63px] min-w-[63px] max-w-[63px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
+                <th className={`${thClsWithTop} w-[23px] min-w-[23px] max-w-[23px]`} rowSpan={2}>মন্ত্রণালয়ের নাম</th>
                 <th className={`${thClsWithTop} w-[83px] min-w-[83px] max-w-[83px]`} rowSpan={2}>সংস্থার নাম</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{priorMonthFormatted} পর্যন্ত অমীমাংসিত অডিট আপত্তির</th>
                 <th className={`${thClsWithTop}`} colSpan={2}>{currentQuarterFormatted} পর্যন্ত উত্থাপিত অডিট আপত্তির</th>
@@ -1865,15 +1865,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               </tr>
               <tr>
                 <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[118px] min-w-[118px] max-w-[118px]`}>টাকা</th>
                 <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[118px] min-w-[118px] max-w-[118px]`}>টাকা</th>
                 <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[118px] min-w-[118px] max-w-[118px]`}>টাকা</th>
                 <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[118px] min-w-[118px] max-w-[118px]`}>টাকা</th>
                 <th className={`${thCls} w-[35px] min-w-[35px] max-w-[35px]`}>সংখ্যা</th>
-                <th className={`${thCls} w-[110px] min-w-[110px] max-w-[110px]`}>টাকা</th>
+                <th className={`${thCls} w-[118px] min-w-[118px] max-w-[118px]`}>টাকা</th>
               </tr>
               <tr className="h-[28px]">
                 {["১", "২", "৩", "৪", "৫", "৬", "৭", "৮=৪+৬", "৯=৫+৭", "১০", "১১", "১২=৮-১০", "১৩=৯-১১"].map((idxLabel, i) => (
@@ -1892,7 +1892,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                           <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[30px] min-w-[30px] max-w-[30px] text-[10px]`}>
                             {toBengaliDigits((mIdx + 1).toString())}
                           </td>
-                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[75px] min-w-[75px] max-w-[75px] text-[10px]`}>
+                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[23px] min-w-[23px] max-w-[23px] text-[10px]`}>
                             <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
                           </td>
                         </>
@@ -1901,15 +1901,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                       </td>
                       <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountPrior)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
                       <td className={`${numTdCls} bg-slate-50/30 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
                       <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.totalCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
                       <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
+                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
                     </tr>
                   );
                 });
@@ -1925,7 +1925,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                           <td rowSpan={mGroup.entities.length} className={`${numTdCls} w-[30px] min-w-[30px] max-w-[30px] text-[10px]`}>
                             {toBengaliDigits((mIdx + 5).toString())}
                           </td>
-                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[75px] min-w-[75px] max-w-[75px] text-[10px]`}>
+                          <td rowSpan={mGroup.entities.length} className={`${tdCls} font-bold text-center bg-slate-50/20 w-[23px] min-w-[23px] max-w-[23px] text-[10px]`}>
                             <HighlightText text={mGroup.ministryName} searchTerm={searchTerm} />
                           </td>
                         </>
@@ -1934,15 +1934,15 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         <HighlightText text={ent.entityName} searchTerm={searchTerm} />
                       </td>
                       <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountPrior)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountPrior)}</td>
                       <td className={`${numTdCls} bg-slate-50/30 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.raisedCountCurr)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.raisedAmountCurr)}</td>
                       <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.totalCount)}</td>
-                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
+                      <td className={`${numTdCls} font-black text-slate-900 bg-slate-50/40 w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.totalAmount)}</td>
                       <td className={`${numTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.settledCountCurr)}</td>
-                      <td className={`${numTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
+                      <td className={`${numTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.settledAmountCurr)}</td>
                       <td className={`${numTdCls} font-black text-blue-900 bg-blue-50/5 w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(ent.unsettledCountEnd)}</td>
-                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
+                      <td className={`${numTdCls} text-slate-900 font-black bg-slate-50/5 w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(ent.unsettledAmountEnd)}</td>
                     </tr>
                   );
                 });
@@ -1951,48 +1951,48 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             <tfoot className="qr-sticky-footer-bottom">
               <tr className="h-[36px]">
                 <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
-                <td className={`${footerTdCls} w-[63px] min-w-[63px] max-w-[63px]`}></td>
+                <td className={`${footerTdCls} w-[23px] min-w-[23px] max-w-[23px]`}></td>
                 <td className={`${footerTdCls} text-center font-black w-[83px] min-w-[83px] max-w-[83px] text-[10px]`}>মোট (টেবিল-১)</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountPrior)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.raisedCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Totals.raisedAmountCurr)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.totalCount)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.totalAmount)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Totals.totalAmount)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.settledCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Totals.settledAmountCurr)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Totals.unsettledCountEnd)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Totals.unsettledAmountEnd)}</td>
               </tr>
               <tr className="h-[36px]">
                 <td className={`${footerTdCls} w-[30px] min-w-[30px] max-w-[30px]`}></td>
-                <td className={`${footerTdCls} w-[63px] min-w-[63px] max-w-[63px]`}></td>
+                <td className={`${footerTdCls} w-[23px] min-w-[23px] max-w-[23px]`}></td>
                 <td className={`${footerTdCls} text-center font-black w-[83px] min-w-[83px] max-w-[83px] text-[10px]`}>মোট (টেবিল-২)</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountPrior)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountPrior)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.raisedCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.raisedAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.raisedAmountCurr)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.totalCount)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.totalAmount)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.totalAmount)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.settledCountCurr)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.settledAmountCurr)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.settledAmountCurr)}</td>
                 <td className={`${footerNumTdCls} w-[35px] min-w-[35px] max-w-[35px] text-[10px]`}>{formatCountBengali(details1Table2Totals.unsettledCountEnd)}</td>
-                <td className={`${footerNumTdCls} w-[110px] min-w-[110px] max-w-[110px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
+                <td className={`${footerNumTdCls} w-[118px] min-w-[118px] max-w-[118px] text-[10px]`}>{formatAmountBengali(details1Table2Totals.unsettledAmountEnd)}</td>
               </tr>
               <tr className="h-[36px]">
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[30px] min-w-[30px] max-w-[30px]"></td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[63px] min-w-[63px] max-w-[63px]"></td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold w-[23px] min-w-[23px] max-w-[23px]"></td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-300 font-extrabold text-center w-[83px] min-w-[83px] max-w-[83px] text-[10px]">সর্বমোট</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountPrior)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountPrior)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[118px] min-w-[118px] max-w-[118px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountPrior)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.raisedCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.raisedAmountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[118px] min-w-[118px] max-w-[118px] text-[10px]">{formatAmountBengali(details1GrandTotals.raisedAmountCurr)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.totalCount)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.totalAmount)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[118px] min-w-[118px] max-w-[118px] text-[10px]">{formatAmountBengali(details1GrandTotals.totalAmount)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.settledCountCurr)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[118px] min-w-[118px] max-w-[118px] text-[10px]">{formatAmountBengali(details1GrandTotals.settledAmountCurr)}</td>
                 <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[35px] min-w-[35px] max-w-[35px] text-[10px]">{formatCountBengali(details1GrandTotals.unsettledCountEnd)}</td>
-                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[110px] min-w-[110px] max-w-[110px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
+                <td className="border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-300 w-[118px] min-w-[118px] max-w-[118px] text-[10px]">{formatAmountBengali(details1GrandTotals.unsettledAmountEnd)}</td>
               </tr>
             </tfoot>
           </table>
