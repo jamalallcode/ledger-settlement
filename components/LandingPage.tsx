@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar,
   Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles, PieChart, Library, LayoutDashboard,
   Scale, FileText, Link2, ChevronRight, BarChart3, Users, Clock, CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
-import { toBengaliDigits } from '../utils/numberUtils.ts';
+import { toBengaliDigits, formatBengaliAmount, parseBengaliNumber } from '../utils/numberUtils.ts';
+import { getCurrentCycle } from '../utils/cycleHelper.ts';
 
 interface LandingPageProps {
   entries: SettlementEntry[];
@@ -20,6 +21,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
+  entries = [],
   setActiveTab, 
   cycleLabel, 
   isLockedMode = true,
@@ -43,6 +45,150 @@ const LandingPage: React.FC<LandingPageProps> = ({
   // Mobile circular radial fan menu state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+
+  // State to read and react to opening balances from storage
+  const [prevStatsTick, setPrevStatsTick] = useState(0);
+
+  useEffect(() => {
+    const handleStatsUpdate = () => setPrevStatsTick(t => t + 1);
+    window.addEventListener('prev_stats_updated', handleStatsUpdate);
+    window.addEventListener('storage', handleStatsUpdate);
+    return () => {
+      window.removeEventListener('prev_stats_updated', handleStatsUpdate);
+      window.removeEventListener('storage', handleStatsUpdate);
+    };
+  }, []);
+
+  // Compute latest total unsettled paragraphs and amount
+  const { 
+    totalUnsettledCount, 
+    totalUnsettledAmount,
+    currentMonthSettledCount,
+    currentMonthSettledAmount
+  } = useMemo(() => {
+    let openingCount = 0;
+    let openingAmount = 0;
+
+    try {
+      const storedPrev = localStorage.getItem('ledger_prev_stats_v1');
+      if (storedPrev) {
+        const parsed = JSON.parse(storedPrev);
+        const stats = parsed.monthly || parsed;
+        const addMap = (m: Record<string, any> | undefined) => {
+          if (!m) return;
+          Object.values(m).forEach((item: any) => {
+            if (item) {
+              openingCount += Number(item.unsettledCount) || 0;
+              openingAmount += Number(item.unsettledAmount) || 0;
+            }
+          });
+        };
+        addMap(stats.entitiesSFI);
+        addMap(stats.entitiesNonSFI);
+      }
+    } catch (e) {
+      console.error("Error reading prev stats in LandingPage:", e);
+    }
+
+    // Accumulate raised (increases unsettled) and settled (decreases unsettled)
+    let currentRaisedCount = 0;
+    let currentRaisedAmount = 0;
+    let currentSettledCount = 0;
+    let currentSettledAmount = 0;
+    const processedParaIds = new Set<string>();
+
+    entries.forEach(entry => {
+      const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+      if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+        currentRaisedCount += parseBengaliNumber(rCountRaw);
+      }
+      if (entry.manualRaisedAmount) {
+        currentRaisedAmount += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+      }
+
+      if (entry.paragraphs && entry.paragraphs.length > 0) {
+        entry.paragraphs.forEach(p => {
+          const cleanParaNo = String(p.paraNo || '').trim();
+          const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+          if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+            processedParaIds.add(p.id);
+            const status = String(p.status || '').trim();
+            const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+            if (status.includes('পূর্ণাঙ্গ')) {
+              currentSettledCount++;
+            }
+            currentSettledAmount += settledAmt;
+          }
+        });
+      } else {
+        const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+        const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+        currentSettledCount += sc;
+        currentSettledAmount += settledAmt;
+      }
+    });
+
+    const netCount = Math.max(0, (openingCount + currentRaisedCount) - currentSettledCount);
+    const netAmount = Math.max(0, (openingAmount + currentRaisedAmount) - currentSettledAmount);
+
+    // Calculate current cycle (চলতি মাস) settled count and amount
+    const activeCycle = getCurrentCycle();
+    const cycleStart = activeCycle.start.getTime();
+    const cycleEnd = activeCycle.end.getTime();
+
+    let thisMonthSettledCount = 0;
+    let thisMonthSettledAmount = 0;
+    const currentMonthProcessedParaIds = new Set<string>();
+
+    entries.forEach(entry => {
+      // Parse entry date to check if it falls within current cycle
+      let entryTime = 0;
+      if (entry.entryDate) {
+        const clean = String(entry.entryDate).trim();
+        if (clean.includes('/')) {
+          const p = clean.split('/');
+          if (p.length === 3) {
+            entryTime = new Date(`${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`).getTime();
+          }
+        } else {
+          entryTime = new Date(clean).getTime();
+        }
+      } else if (entry.createdAt) {
+        entryTime = new Date(entry.createdAt).getTime();
+      }
+
+      const isCurrentMonth = entryTime >= cycleStart && entryTime <= cycleEnd;
+      if (!isCurrentMonth) return;
+
+      if (entry.paragraphs && entry.paragraphs.length > 0) {
+        entry.paragraphs.forEach(p => {
+          const cleanParaNo = String(p.paraNo || '').trim();
+          const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+          if (p.id && !currentMonthProcessedParaIds.has(p.id) && hasDigit) {
+            currentMonthProcessedParaIds.add(p.id);
+            const status = String(p.status || '').trim();
+            const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+            if (status.includes('পূর্ণাঙ্গ')) {
+              thisMonthSettledCount++;
+            }
+            thisMonthSettledAmount += settledAmt;
+          }
+        });
+      } else {
+        const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+        const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+        thisMonthSettledCount += sc;
+        thisMonthSettledAmount += settledAmt;
+      }
+    });
+
+    return {
+      totalUnsettledCount: netCount,
+      totalUnsettledAmount: netAmount,
+      currentMonthSettledCount: thisMonthSettledCount,
+      currentMonthSettledAmount: thisMonthSettledAmount
+    };
+  }, [entries, prevStatsTick]);
 
   return (
     <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start h-auto pt-1 sm:pt-2 md:pt-2 pb-2 sm:pb-3">
@@ -349,32 +495,55 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
         </div>
 
+        {/* Integrated Aesthetic Institutional Footer - Inside Main Card */}
+        <div 
+          id="landing-aesthetic-footer" 
+          className="relative z-10 mt-4 sm:mt-5 md:mt-6 pt-3.5 sm:pt-4 border-t border-slate-200/80 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 transition-all select-none"
+        >
+          {/* বাম দিক: সর্বশেষ মোট অনিষ্পন্ন তথ্য */}
+          <div className="flex flex-col items-start space-y-1.5 text-left shrink-0">
+            {/* ১ম লাইন: সর্বশেষ মোট অনিষ্পন্ন অনুচ্ছেদ সংখ্যা */}
+            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+              <span>সর্বশেষ মোট অনিষ্পন্ন অনুচ্ছেদ সংখ্যা:</span>
+              <span className="font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs sm:text-[13px]">
+                {toBengaliDigits(totalUnsettledCount.toString())} টি
+              </span>
+            </div>
+
+            {/* ২য় লাইন: সর্বশেষ মোট অনিষ্পন্ন টাকার পরিমাণ */}
+            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              <span>সর্বশেষ মোট অনিষ্পন্ন টাকার পরিমাণ:</span>
+              <span className="font-black text-slate-900 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200 text-xs sm:text-[13px]">
+                {formatBengaliAmount(totalUnsettledAmount)} টাকা
+              </span>
+            </div>
+          </div>
+
+          {/* মাঝের অংশ: চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা ও টাকার পরিমাণ */}
+          <div className="flex flex-col items-start space-y-1.5 text-left shrink-0">
+            {/* ১ম লাইন: চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা: */}
+            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+              <span>চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা:</span>
+              <span className="font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs sm:text-[13px]">
+                {toBengaliDigits(currentMonthSettledCount.toString())} টি
+              </span>
+            </div>
+
+            {/* ২য় লাইন: চলতি মাসে মোট নিষ্পন্ন টাকার পরিমাণ: */}
+            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span>চলতি মাসে মোট নিষ্পন্ন টাকার পরিমাণ:</span>
+              <span className="font-black text-slate-900 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200 text-xs sm:text-[13px]">
+                {formatBengaliAmount(currentMonthSettledAmount)} টাকা
+              </span>
+            </div>
+          </div>
+        </div>
+
       </div>
-
-      {/* Aesthetic Institutional Footer */}
-      <footer 
-        id="landing-aesthetic-footer" 
-        className="hidden md:flex mt-3 sm:mt-4 md:mt-5 w-full rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs px-3.5 sm:px-5 md:px-6 py-2.5 sm:py-3 flex-col md:flex-row items-center justify-between gap-2.5 transition-all select-none"
-      >
-        <div className="flex items-center gap-2.5 text-center sm:text-left">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 hidden sm:block" />
-          <div className="text-[11px] sm:text-[12px] font-bold text-slate-700 leading-snug">
-            <span>© ২০২৬ <span className="text-blue-700 font-black">বাণিজ্যিক অডিট অধিদপ্তর, খুলনা আঞ্চলিক কার্যালয় (সেক্টর: ০৬)</span> । সর্বস্বত্ব সংরক্ষিত।</span>
-            <span className="hidden lg:inline text-slate-300 mx-2">|</span>
-            <span className="text-slate-500 font-bold hidden lg:inline">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</span>
-          </div>
-        </div>
-
-        <div className="flex items-center flex-wrap justify-center gap-2 shrink-0">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 bg-slate-100/90 text-slate-700 rounded-lg border border-slate-200/80 text-[10.5px] sm:text-[11px] font-bold shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>নিরাপদ ডাটাবেজ সক্রিয়</span>
-          </div>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 bg-blue-50/90 text-blue-700 rounded-lg border border-blue-200/60 text-[10.5px] sm:text-[11px] font-black shadow-2xs">
-            <span>সংস্করণ: ১.০.০</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
