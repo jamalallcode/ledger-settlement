@@ -8,7 +8,7 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "start": "NODE_ENV=production node dist/server.cjs"
+    "start": "node dist/server.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
@@ -18,6 +18,7 @@
     "autoprefixer": "^10.4.20",
     "cookie-parser": "^1.4.7",
     "date-fns": "^2.30.0",
+    "esbuild": "^0.28.2",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "framer-motion": "^11.11.17",
@@ -34,8 +35,5 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.1"
-  },
-  "devDependencies": {
-    "esbuild": "^0.28.2"
   }
 }

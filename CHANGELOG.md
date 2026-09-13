@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-09] - Cloud Run Deployment Fix
+
+### 🛠 Fixed
+- **Cloud Run Deployment Failure**: Fixed the container failure issue on Cloud Run by:
+  1. Moving `esbuild` from `devDependencies` into production `dependencies` in `package.json` so that production build containers (which run with `NODE_ENV=production`) do not skip `esbuild` during installation.
+  2. Aligning the `start` script to standard `node dist/server.cjs` (removing prefix `NODE_ENV=production` that can interfere with container execution runners).
+  3. Fixed port binding in `server.ts` to strictly bind to port 3000 on host 0.0.0.0, matching the container infrastructure reverse proxy configuration.
+  4. Removed Node ES module incompatible globals (`__dirname`, `__filename`) from `server.ts` to prevent runtime crashes during startup.
+  5. Robust fallback handling for `dist/index.html` static serving in production.
+
 ## [2026-03-29] - Mobile Landing Page Visibility Fix
 
 ### 🛠 Fixed

@@ -119,10 +119,10 @@ async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
 
-  // Bind to 3000 in dev sandbox (reverse proxied by Nginx), or Cloud Run's PORT in production
-  const PORT = process.env.DEFAULT_APP_PORT 
-    ? 3000 
-    : (process.env.PORT ? parseInt(process.env.PORT, 10) : 8080);
+  // The application runs behind a reverse proxy that routes external traffic exclusively to port 3000.
+  // PORT 3000 must be hardcoded according to runtime container environment constraints.
+  const isDev = process.env.NODE_ENV !== "production";
+  const PORT = 3000;
 
   app.use(express.json({ limit: '50mb' }));
   app.use(cookieParser());
@@ -350,8 +350,6 @@ async function startServer() {
     }
   });
 
-  const isDev = process.env.DEFAULT_APP_PORT !== undefined && process.env.NODE_ENV !== "production";
-
   // Vite middleware for development
   if (isDev) {
     const vite = await createViteServer({
@@ -360,12 +358,15 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = fs.existsSync(path.join(process.cwd(), 'dist'))
-      ? path.join(process.cwd(), 'dist')
-      : __dirname;
+    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Application index.html not found.");
+      }
     });
   }
 
