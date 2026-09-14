@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar,
   Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles, PieChart, Library, LayoutDashboard,
@@ -52,38 +52,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   // State to read and react to opening balances from storage
   const [prevStatsTick, setPrevStatsTick] = useState(0);
-
-  // Desktop footer synchronized banner and column glow stage (1: Left/Green, 2: Center/Blue, 3: Right/Red)
-  const [bannerStage, setBannerStage] = useState<1 | 2 | 3>(1);
-  const [isBannerHovered, setIsBannerHovered] = useState(false);
-  const bannerDirectionRef = useRef<'forward' | 'backward'>('forward');
-
-  useEffect(() => {
-    if (isBannerHovered) return;
-
-    const timer = setInterval(() => {
-      setBannerStage((prev) => {
-        if (prev === 1) {
-          bannerDirectionRef.current = 'forward';
-          return 2;
-        }
-        if (prev === 2) {
-          if (bannerDirectionRef.current === 'forward') {
-            return 3;
-          } else {
-            return 1;
-          }
-        }
-        if (prev === 3) {
-          bannerDirectionRef.current = 'backward';
-          return 2;
-        }
-        return 1;
-      });
-    }, 10000); // 10s: 4.4s silky slide (half speed) + 5.6s resting pause at each column
-
-    return () => clearInterval(timer);
-  }, [isBannerHovered]);
 
   useEffect(() => {
     const handleStatsUpdate = () => setPrevStatsTick(t => t + 1);
@@ -709,22 +677,18 @@ const LandingPage: React.FC<LandingPageProps> = ({
         <div 
           id="landing-aesthetic-footer" 
           className="hidden md:block relative z-10 mt-auto pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-1.5 border-t border-slate-200/80 w-full transition-all select-none"
-          onMouseEnter={() => setIsBannerHovered(true)}
-          onMouseLeave={() => setIsBannerHovered(false)}
         >
-          {/* পূর্ণাঙ্গ প্রস্থ জুড়ে বাম থেকে ডানে এবং ডান থেকে বামে চলমান অ্যানিমেটেড প্রিমিয়াম হেডার ব্যানার */}
+          {/* প্রতিটি কলামের জন্য ফিক্সড শিরোনাম (বাম: পূর্ববর্তী মাস, মধ্য: চলতি মাস, ডান: চলতি মাস) */}
           <div 
-            className="desktop-banner-container relative w-full h-7 sm:h-8 overflow-hidden flex items-center mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1 cursor-pointer"
+            className="w-full mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1.5"
           >
             <DesktopAnimatedBanner 
               prevCycleLabel={prevCycleLabel} 
-              currentCycleLabel={cycleLabel}
-              activeStage={bannerStage}
-              onHoverChange={setIsBannerHovered}
+              currentCycleLabel={cycleLabel} 
             />
           </div>
 
-          {/* ৩টি কলামে নিখুঁত সমান্তরাল ডাটা সারি (চলমান ব্যানার ট্রানজিশনের সাথে সিনক্রোনাইজড গ্লো ও হাই-কনট্রাস্ট কালার) */}
+          {/* ৩টি কলামে নিখুঁত সমান্তরাল ডাটা সারি */}
           <DesktopFooterColumns
             openingCount={openingCount}
             openingAmount={openingAmount}
@@ -732,7 +696,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
             currentMonthSettledAmount={currentMonthSettledAmount}
             totalUnsettledCount={totalUnsettledCount}
             totalUnsettledAmount={totalUnsettledAmount}
-            activeStage={bannerStage}
           />
         </div>
 
