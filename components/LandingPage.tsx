@@ -5,8 +5,10 @@ import {
   Scale, FileText, Link2, ChevronRight, BarChart3, Users, Clock, CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
-import { toBengaliDigits, formatBengaliAmount, parseBengaliNumber } from '../utils/numberUtils.ts';
+import { toBengaliDigits, formatBengaliAmount, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
 import { getCurrentCycle } from '../utils/cycleHelper.ts';
+import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants.ts';
+import { format as dateFnsFormat } from 'date-fns';
 import { DesktopAnimatedBanner } from './DesktopAnimatedBanner.tsx';
 import { DesktopFooterColumns } from './DesktopFooterColumns.tsx';
 
@@ -71,132 +73,280 @@ const LandingPage: React.FC<LandingPageProps> = ({
     currentMonthSettledAmount,
     prevCycleLabel
   } = useMemo(() => {
-    let openingCount = 0;
-    let openingAmount = 0;
-
-    try {
-      const storedPrev = localStorage.getItem('ledger_prev_stats_v1');
-      if (storedPrev) {
-        const parsed = JSON.parse(storedPrev);
-        const stats = parsed.monthly || parsed;
-        const addMap = (m: Record<string, any> | undefined) => {
-          if (!m) return;
-          Object.values(m).forEach((item: any) => {
-            if (item) {
-              openingCount += Number(item.unsettledCount) || 0;
-              openingAmount += Number(item.unsettledAmount) || 0;
-            }
-          });
-        };
-        addMap(stats.entitiesSFI);
-        addMap(stats.entitiesNonSFI);
-      }
-    } catch (e) {
-      console.error("Error reading prev stats in LandingPage:", e);
-    }
-
-    // Accumulate raised (increases unsettled) and settled (decreases unsettled)
-    let currentRaisedCount = 0;
-    let currentRaisedAmount = 0;
-    let currentSettledCount = 0;
-    let currentSettledAmount = 0;
-    const processedParaIds = new Set<string>();
-
-    entries.forEach(entry => {
-      const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
-      if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
-        currentRaisedCount += parseBengaliNumber(rCountRaw);
-      }
-      if (entry.manualRaisedAmount) {
-        currentRaisedAmount += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
-      }
-
-      if (entry.paragraphs && entry.paragraphs.length > 0) {
-        entry.paragraphs.forEach(p => {
-          const cleanParaNo = String(p.paraNo || '').trim();
-          const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-          if (p.id && !processedParaIds.has(p.id) && hasDigit) {
-            processedParaIds.add(p.id);
-            const status = String(p.status || '').trim();
-            const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
-            if (status.includes('পূর্ণাঙ্গ')) {
-              currentSettledCount++;
-            }
-            currentSettledAmount += settledAmt;
-          }
-        });
-      } else {
-        const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
-        const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
-        currentSettledCount += sc;
-        currentSettledAmount += settledAmt;
-      }
-    });
-
-    const netCount = Math.max(0, (openingCount + currentRaisedCount) - currentSettledCount);
-    const netAmount = Math.max(0, (openingAmount + currentRaisedAmount) - currentSettledAmount);
-
-    // Calculate current cycle (চলতি মাস) and previous cycle (পূর্ববর্তী মাস)
+    // Current cycle and previous cycle dates
     const activeCycle = getCurrentCycle();
-    const cycleStart = activeCycle.start.getTime();
-    const cycleEnd = activeCycle.end.getTime();
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
 
     // Previous cycle: 1 month before current active cycle
     const prevStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() - 1, 16);
     const prevEnd = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 15);
     const prevDateStartStr = `${String(prevStart.getDate()).padStart(2, '0')}/${String(prevStart.getMonth() + 1).padStart(2, '0')}/${prevStart.getFullYear()}`;
     const prevDateEndStr = `${String(prevEnd.getDate()).padStart(2, '0')}/${String(prevEnd.getMonth() + 1).padStart(2, '0')}/${prevEnd.getFullYear()}`;
-    const prevCycleLabel = `${toBengaliDigits(prevDateStartStr)} থেকে ${toBengaliDigits(prevDateEndStr)}`;
+    const prevCycleLabel = `${toBengaliDigits(prevDateStartStr)} হতে ${toBengaliDigits(prevDateEndStr)}`;
 
-    let thisMonthSettledCount = 0;
-    let thisMonthSettledAmount = 0;
-    const currentMonthProcessedParaIds = new Set<string>();
+    // Read saved baseline master stats
+    let rawMasterStats: any = null;
+    try {
+      const stored = localStorage.getItem('ledger_prev_stats_v1');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        rawMasterStats = parsed.monthly || parsed;
+      }
+    } catch (e) {
+      console.error("Error reading prev stats in LandingPage:", e);
+    }
 
-    entries.forEach(entry => {
-      // Parse entry date to check if it falls within current cycle
-      let entryTime = 0;
-      if (entry.entryDate) {
-        const clean = String(entry.entryDate).trim();
+    const robustNormalize = (str: string = '') => {
+      if (!str) return '';
+      return str.normalize('NFC')
+        .replace(/कर्मসংস্থান/g, "কর্মসংস্থান")
+        .replace(/कर्मसंस्थान/g, "কর্মসংস্থান")
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boolean => {
+      const normEntry = robustNormalize(entryEntity);
+      const normTarget = robustNormalize(targetEntity);
+      if (!normEntry || !normTarget) return false;
+      if (normEntry === normTarget) return true;
+
+      if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+          (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+      if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+          (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+      if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+          (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+      if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+      if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+      if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+      if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+      if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+      if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+      if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+      if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+      if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+      if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+      if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+      if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+      if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+      if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+      if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+      const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+      const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+      if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+      const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+      const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+      if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+      if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+      if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+          (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+      if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+      if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+      return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+    };
+
+    // Calculate recursive opening for an entity and paraType (exact ReturnView logic)
+    const calculateRecursiveOpening = (entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
+      const cycleStartString = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
+      let baseCount = 0;
+      let baseAmount = 0;
+
+      const typeKey = paraType === 'এসএফআই' ? 'entitiesSFI' : 'entitiesNonSFI';
+      const entityData = rawMasterStats?.[typeKey]?.[entityName];
+      if (entityData) {
+        baseCount = Number(entityData.unsettledCount) || 0;
+        baseAmount = Number(entityData.unsettledAmount) || 0;
+      }
+
+      let effectiveEntryStartDate = ENTRY_START_DATE;
+      if (cycleStartString <= effectiveEntryStartDate) {
+        return { unsettledCount: baseCount, unsettledAmount: baseAmount, settledCount: 0, settledAmount: 0 };
+      }
+
+      let historicalRaisedCount = 0;
+      let historicalRaisedAmount = 0;
+      let historicalSettledCount = 0;
+      let historicalSettledAmount = 0;
+
+      entries.forEach(e => {
+        if (!isEntityMatch(e.entityName, entityName)) return;
+
+        const rawDate = e.issueDateISO || '';
+        if (!rawDate) return;
+        let entryDate = '';
+        const clean = toEnglishDigits(rawDate).trim();
         if (clean.includes('/')) {
           const p = clean.split('/');
           if (p.length === 3) {
-            entryTime = new Date(`${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`).getTime();
+            entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
           }
         } else {
-          entryTime = new Date(clean).getTime();
+          entryDate = clean.split('T')[0].split(' ')[0];
         }
-      } else if (entry.createdAt) {
-        entryTime = new Date(entry.createdAt).getTime();
-      }
 
-      const isCurrentMonth = entryTime >= cycleStart && entryTime <= cycleEnd;
-      if (!isCurrentMonth) return;
+        if (!entryDate || entryDate < effectiveEntryStartDate || entryDate >= cycleStartString) return;
 
-      if (entry.paragraphs && entry.paragraphs.length > 0) {
-        entry.paragraphs.forEach(p => {
-          const cleanParaNo = String(p.paraNo || '').trim();
-          const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
-          if (p.id && !currentMonthProcessedParaIds.has(p.id) && hasDigit) {
-            currentMonthProcessedParaIds.add(p.id);
+        let entryType = (e.paraType || '').trim();
+        if (!entryType && e.paragraphs && e.paragraphs.length > 0) {
+          entryType = (e.paragraphs[0].paraType || '').trim();
+        }
+        if (!entryType) entryType = 'এসএফআই';
+
+        const isExactType = entryType === paraType || (paraType === 'এসএফআই' && entryType.includes('এসএফআই'));
+        if (!isExactType) return;
+
+        const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+          historicalRaisedCount += parseBengaliNumber(rCountRaw);
+        }
+        if (e.manualRaisedAmount) {
+          historicalRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+        }
+
+        if (e.paragraphs && e.paragraphs.length > 0) {
+          e.paragraphs.forEach(p => {
+            const pType = (p.paraType || entryType || 'এসএফআই').trim();
+            const pMatches = pType === paraType || (paraType === 'এসএফআই' && pType.includes('এসএফআই'));
+            if (!pMatches) return;
+
             const status = String(p.status || '').trim();
             const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
             if (status.includes('পূর্ণাঙ্গ')) {
-              thisMonthSettledCount++;
+              historicalSettledCount++;
             }
-            thisMonthSettledAmount += settledAmt;
+            historicalSettledAmount += settledAmt;
+          });
+        } else {
+          const settledAmt = parseBengaliNumber(e.totalRec || '0') + parseBengaliNumber(e.totalAdj || '0');
+          const sc = parseBengaliNumber(e.meetingFullSettledParaCount || '0');
+          historicalSettledCount += sc;
+          historicalSettledAmount += settledAmt;
+        }
+      });
+
+      const finalUnsettledCount = Math.max(0, (baseCount + historicalRaisedCount) - historicalSettledCount);
+      const finalUnsettledAmount = Math.max(0, (baseAmount + historicalRaisedAmount) - historicalSettledAmount);
+
+      return {
+        unsettledCount: finalUnsettledCount,
+        unsettledAmount: finalUnsettledAmount,
+        settledCount: historicalSettledCount,
+        settledAmount: historicalSettledAmount
+      };
+    };
+
+    const getCombinedPrev = (entityName: string) => {
+      const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+      const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+      
+      const isUnified = rawMasterStats?.entitiesSFI && rawMasterStats?.entitiesNonSFI && 
+        JSON.stringify(rawMasterStats.entitiesSFI) === JSON.stringify(rawMasterStats.entitiesNonSFI);
+
+      if (isUnified) {
+        const base = rawMasterStats?.entitiesSFI?.[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        const pastRC_SFI = ePrevSFI.unsettledCount - base.unsettledCount;
+        const pastRA_SFI = ePrevSFI.unsettledAmount - base.unsettledAmount;
+        const pastSC_SFI = ePrevSFI.settledCount - base.settledCount;
+        const pastSA_SFI = ePrevSFI.settledAmount - base.settledAmount;
+
+        const pastRC_NonSFI = ePrevNonSFI.unsettledCount - base.unsettledCount;
+        const pastRA_NonSFI = ePrevNonSFI.unsettledAmount - base.unsettledAmount;
+        const pastSC_NonSFI = ePrevNonSFI.settledCount - base.settledCount;
+        const pastSA_NonSFI = ePrevNonSFI.settledAmount - base.settledAmount;
+
+        return {
+          unsettledCount: Math.max(0, base.unsettledCount + pastRC_SFI + pastRC_NonSFI),
+          unsettledAmount: Math.max(0, base.unsettledAmount + pastRA_SFI + pastRA_NonSFI),
+          settledCount: Math.max(0, base.settledCount + pastSC_SFI + pastSC_NonSFI),
+          settledAmount: Math.max(0, base.settledAmount + pastSA_SFI + pastSA_NonSFI)
+        };
+      }
+
+      return {
+        unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+        unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+        settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+        settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+      };
+    };
+
+    // Calculate total Opening Balances across all entities
+    let totalOpeningCount = 0;
+    let totalOpeningAmount = 0;
+
+    Object.values(MINISTRY_ENTITY_MAP).forEach(entityList => {
+      entityList.forEach(entityName => {
+        const combined = getCombinedPrev(entityName);
+        totalOpeningCount += combined.unsettledCount;
+        totalOpeningAmount += combined.unsettledAmount;
+      });
+    });
+
+    // Current Month (Active Cycle) Activity: Raised & Settled
+    let thisMonthRaisedCount = 0;
+    let thisMonthRaisedAmount = 0;
+    let thisMonthSettledCount = 0;
+    let thisMonthSettledAmount = 0;
+
+    entries.forEach(e => {
+      const rawDate = e.issueDateISO || '';
+      if (!rawDate) return;
+      let entryDate = '';
+      const clean = toEnglishDigits(rawDate).trim();
+      if (clean.includes('/')) {
+        const p = clean.split('/');
+        if (p.length === 3) {
+          entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        }
+      } else {
+        entryDate = clean.split('T')[0].split(' ')[0];
+      }
+
+      const isCurrentMonth = entryDate !== '' && entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+      if (!isCurrentMonth) return;
+
+      const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+      if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+        thisMonthRaisedCount += parseBengaliNumber(rCountRaw);
+      }
+      if (e.manualRaisedAmount) {
+        thisMonthRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+      }
+
+      if (e.paragraphs && e.paragraphs.length > 0) {
+        e.paragraphs.forEach(p => {
+          const status = String(p.status || '').trim();
+          const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+          if (status.includes('পূর্ণাঙ্গ')) {
+            thisMonthSettledCount++;
           }
+          thisMonthSettledAmount += settledAmt;
         });
       } else {
-        const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
-        const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+        const settledAmt = parseBengaliNumber(e.totalRec || '0') + parseBengaliNumber(e.totalAdj || '0');
+        const sc = parseBengaliNumber(e.meetingFullSettledParaCount || '0');
         thisMonthSettledCount += sc;
         thisMonthSettledAmount += settledAmt;
       }
     });
 
+    // Net Unsettled (চলতি মাস পর্যন্ত মোট অমীমাংসিত = প্রারম্ভিক + চলতি উত্থাপিত - চলতি নিষ্পত্তিকৃত)
+    const netCount = Math.max(0, (totalOpeningCount + thisMonthRaisedCount) - thisMonthSettledCount);
+    const netAmount = Math.max(0, (totalOpeningAmount + thisMonthRaisedAmount) - thisMonthSettledAmount);
+
     return {
-      openingCount,
-      openingAmount,
+      openingCount: totalOpeningCount,
+      openingAmount: totalOpeningAmount,
       totalUnsettledCount: netCount,
       totalUnsettledAmount: netAmount,
       currentMonthSettledCount: thisMonthSettledCount,
