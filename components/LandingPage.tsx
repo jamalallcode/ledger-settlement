@@ -7,6 +7,8 @@ import {
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
 import { toBengaliDigits, formatBengaliAmount, parseBengaliNumber } from '../utils/numberUtils.ts';
 import { getCurrentCycle } from '../utils/cycleHelper.ts';
+import { DesktopAnimatedBanner } from './DesktopAnimatedBanner.tsx';
+import { DesktopFooterColumns } from './DesktopFooterColumns.tsx';
 
 interface LandingPageProps {
   entries: SettlementEntry[];
@@ -61,10 +63,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   // Compute latest total unsettled paragraphs and amount
   const { 
+    openingCount,
+    openingAmount,
     totalUnsettledCount, 
     totalUnsettledAmount,
     currentMonthSettledCount,
-    currentMonthSettledAmount
+    currentMonthSettledAmount,
+    prevCycleLabel
   } = useMemo(() => {
     let openingCount = 0;
     let openingAmount = 0;
@@ -131,10 +136,17 @@ const LandingPage: React.FC<LandingPageProps> = ({
     const netCount = Math.max(0, (openingCount + currentRaisedCount) - currentSettledCount);
     const netAmount = Math.max(0, (openingAmount + currentRaisedAmount) - currentSettledAmount);
 
-    // Calculate current cycle (চলতি মাস) settled count and amount
+    // Calculate current cycle (চলতি মাস) and previous cycle (পূর্ববর্তী মাস)
     const activeCycle = getCurrentCycle();
     const cycleStart = activeCycle.start.getTime();
     const cycleEnd = activeCycle.end.getTime();
+
+    // Previous cycle: 1 month before current active cycle
+    const prevStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() - 1, 16);
+    const prevEnd = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 15);
+    const prevDateStartStr = `${String(prevStart.getDate()).padStart(2, '0')}/${String(prevStart.getMonth() + 1).padStart(2, '0')}/${prevStart.getFullYear()}`;
+    const prevDateEndStr = `${String(prevEnd.getDate()).padStart(2, '0')}/${String(prevEnd.getMonth() + 1).padStart(2, '0')}/${prevEnd.getFullYear()}`;
+    const prevCycleLabel = `${toBengaliDigits(prevDateStartStr)} থেকে ${toBengaliDigits(prevDateEndStr)}`;
 
     let thisMonthSettledCount = 0;
     let thisMonthSettledAmount = 0;
@@ -183,19 +195,22 @@ const LandingPage: React.FC<LandingPageProps> = ({
     });
 
     return {
+      openingCount,
+      openingAmount,
       totalUnsettledCount: netCount,
       totalUnsettledAmount: netAmount,
       currentMonthSettledCount: thisMonthSettledCount,
-      currentMonthSettledAmount: thisMonthSettledAmount
+      currentMonthSettledAmount: thisMonthSettledAmount,
+      prevCycleLabel
     };
   }, [entries, prevStatsTick]);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start h-auto pt-1 sm:pt-2 md:pt-2 pb-2 sm:pb-3">
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-full h-full md:h-auto pt-0 sm:pt-2 md:pt-2 pb-0 sm:pb-3">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-4 sm:p-6 md:p-7 lg:p-8 transition-all duration-500 animate-fade-in w-full h-auto flex flex-col justify-start sm:justify-center border"
+        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-2.5 sm:p-6 md:p-7 lg:px-8 lg:pt-9 lg:pb-8 transition-all duration-500 animate-fade-in w-full flex-1 md:flex-initial min-h-full md:min-h-0 h-full md:h-auto flex flex-col justify-between sm:justify-center border"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem]" />
@@ -204,39 +219,39 @@ const LandingPage: React.FC<LandingPageProps> = ({
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-6 lg:gap-8 items-stretch flex-1 flex flex-col md:grid justify-between">
           
           {/* LEFT PANEL: Branding & Executive Seals */}
-          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 pt-0.5 sm:pt-1 pb-1 sm:pb-3 md:pb-6 lg:pb-7">
+          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 pt-0 sm:pt-2 md:pt-3 lg:pt-4 pb-0.5 sm:pb-2 md:pb-4 lg:pb-5">
             {/* Master Seal Shield - Government Themed */}
-            <div className="flex flex-col items-center space-y-1.5 sm:space-y-3 w-full">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-2.5 w-full">
               <div 
-                className="landing-shield-bg relative flex items-center justify-center w-12 h-12 min-[380px]:w-14 min-[380px]:h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 text-white rounded-2xl sm:rounded-[2rem] shadow-xl border-2 sm:border-3 border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
+                className="landing-shield-bg relative flex items-center justify-center w-11 h-11 min-[380px]:w-13 min-[380px]:h-13 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-[88px] lg:h-[88px] text-white rounded-2xl sm:rounded-[1.6rem] shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
               >
-                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[2rem]"></div>
-                <Landmark className="stroke-[2.5] text-white relative z-10 w-6 h-6 min-[380px]:w-7 min-[380px]:h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 min-[380px]:w-6 min-[380px]:h-6 sm:w-7 sm:h-7 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] sm:text-[12px] text-white shadow-md font-black">
+                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[1.6rem]"></div>
+                <Landmark className="stroke-[2.5] text-white relative z-10 w-5.5 h-5.5 min-[380px]:w-6.5 min-[380px]:h-6.5 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-11 lg:h-11" />
+                <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 min-[380px]:w-5.5 min-[380px]:w-5.5 sm:w-6 sm:h-6 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8.5px] sm:text-[11px] text-white shadow-md font-black">
                   ✓
                 </div>
               </div>
 
               {/* Structured Institutional Identity Card */}
-              <div className="space-y-1 sm:space-y-2 w-full">
-                <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-black uppercase tracking-wider">
+              <div className="space-y-0.5 sm:space-y-1.5 w-full pt-1">
+                <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-0.5 rounded-md text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-black uppercase tracking-wider">
                   গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
                 </span>
                 
-                <h3 className="landing-hero-title text-lg min-[380px]:text-xl sm:text-2xl md:text-2xl lg:text-[23px] font-black tracking-tight leading-tight">
+                <h3 className="landing-hero-title text-base min-[380px]:text-lg sm:text-2xl md:text-2xl lg:text-[22px] font-black tracking-tight leading-tight">
                   বাণিজ্যিক অডিট অধিদপ্তর
                 </h3>
                 
-                <div className="flex flex-col items-center w-full space-y-1 sm:space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-bold shadow-2xs">
+                <div className="flex flex-col items-center w-full space-y-0.5 sm:space-y-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-bold shadow-2xs">
                     <Award size={12} className="text-blue-600 shrink-0" />
                     আঞ্চলিক কার্যালয়, সেক্টর: ০৬
                   </span>
                 </div>
 
                 {/* খুলনা Tag (Placed right below Regional Office tag) */}
-                <div className="mt-0.5 sm:mt-2 flex items-center justify-center">
-                  <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-base font-black px-5 min-[380px]:px-6 sm:px-7 py-0.5 sm:py-1.5 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
+                <div className="mt-0.5 sm:mt-1.5 flex items-center justify-center">
+                  <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-sm font-black px-5 min-[380px]:px-6 sm:px-6 py-0.5 sm:py-1 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
                     খুলনা
                   </span>
                 </div>
@@ -245,29 +260,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
-          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0.5 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
             
             {/* System Overview / Platform Description */}
             <div className="w-full relative flex items-center md:items-start justify-center md:justify-start">
-              {/* Short text description for Mobile */}
-              <div 
-                className={`w-full max-w-lg mx-auto md:hidden transition-all duration-400 ease-out ${
-                  isMenuOpen 
-                    ? 'opacity-0 -translate-y-2 pointer-events-none' 
-                    : 'opacity-100 translate-y-0'
-                }`}
-              >
-                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-b from-white/95 via-slate-50/90 to-blue-50/40 border border-blue-200/60 shadow-[0_2px_10px_-2px_rgba(15,23,42,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] px-3.5 py-2 sm:px-5 sm:py-2.5 flex flex-col items-center justify-center text-center">
-                  <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full text-[10.5px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
-                    <span>💡</span>
-                    <span>সিস্টেম পরিচিতি</span>
-                  </div>
-                  {/* মোবাইল ভিউয়ের জন্য সংক্ষিপ্ত লেখা (অক্ষুণ্ণ রাখা হয়েছে) */}
-                  <p className="landing-desc-text text-[12px] min-[380px]:text-[12.5px] sm:text-[13.5px] leading-relaxed font-bold text-slate-700 text-center mt-1 sm:mt-1.5">
-                    অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং।
-                  </p>
-                </div>
-              </div>
+              {/* Short text description for Mobile - REMOVED as per user instruction in favor of the circular ring */}
 
               {/* Desktop / Laptop: Clean left-aligned layout matching exact user design */}
               <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-1">
@@ -283,7 +280,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* MOBILE ONLY: Circular Radial Fan Menu with Central '+' Button (Fixed container height so bottom never shifts) */}
-            <div className="block md:hidden w-full select-none my-1">
+            <div className="block md:hidden w-full select-none my-auto py-1">
               <div className="w-full flex flex-col items-center justify-center">
                 
                 {/* Active Tooltip Label with smooth fade */}
@@ -365,21 +362,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     id="mobile-fan-corr-register"
                     onClick={() => setActiveTab('register', 'correspondence')}
-                    onTouchStart={() => setActiveTooltip('📬 চিঠিপত্র রেজিস্টার')}
+                    onTouchStart={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
                     onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('📬 চিঠিপত্র রেজিস্টার')}
+                    onMouseEnter={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
                     onMouseLeave={() => setActiveTooltip(null)}
                     style={{
                       transform: isMenuOpen 
                         ? 'translate(0px, 0px) scale(1)' 
                         : 'translate(-65px, 50px) scale(0.2)',
                     }}
-                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-teal-600 to-cyan-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
                       isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="চিঠিপত্র রেজিস্টার"
                   >
-                    <Inbox className="w-5 h-5 stroke-[2.5]" />
+                    <FileText className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
                   {/* 5. মীমাংসা রেজিস্টার (Bottom-Right) - expands upwards/outwards from center bottom */}
@@ -403,15 +400,38 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     <ClipboardCheck className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* Center Hub Trigger Button */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20">
+                  {/* Center Hub Trigger Button with Surrounding Rotating Circular Text */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20 flex items-center justify-center">
+                    {/* Circular Rotating Ring Badge around the Center Hub Trigger */}
+                    <div 
+                      className={`absolute w-[104px] h-[104px] min-[380px]:w-[112px] min-[380px]:h-[112px] pointer-events-none z-10 transition-all duration-300 flex items-center justify-center ${
+                        isMenuOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'
+                      }`}
+                    >
+                      <svg 
+                        className="w-full h-full animate-circular-text-spin drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)]" 
+                        viewBox="0 0 100 100"
+                      >
+                        <path
+                          id="circlePathHub"
+                          d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0"
+                          fill="none"
+                        />
+                        <text className="text-[6.5px] font-[950] fill-emerald-800 tracking-[0.7px] select-none">
+                          <textPath href="#circlePathHub" startOffset="0%">
+                            ★ অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি ★ স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং ★ সিস্টেম পরিচিতি 
+                          </textPath>
+                        </text>
+                      </svg>
+                    </div>
+
                     <button
                       id="mobile-fan-hub"
                       onClick={() => {
                         setIsMenuOpen(!isMenuOpen);
                         setActiveTooltip(null);
                       }}
-                      className={`w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
+                      className={`relative z-20 w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
                         !isMenuOpen ? 'shadow-xl shadow-emerald-600/40 hover:scale-105' : 'shadow-2xl shadow-emerald-700/50'
                       }`}
                       title={isMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
@@ -430,7 +450,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 min-[380px]:gap-3 sm:gap-4 lg:gap-5 transition-colors mt-12 min-[380px]:mt-16 sm:mt-0 pt-2 min-[380px]:pt-2.5 sm:pt-4">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-4 lg:gap-5 transition-colors mt-auto sm:mt-0 pt-2 min-[380px]:pt-3 sm:pt-4 pb-0.5 sm:pb-0">
               
               {/* Date Box */}
               <div className="flex flex-col items-center lg:items-stretch justify-center gap-1.5 sm:gap-2 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
@@ -495,52 +515,31 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
         </div>
 
-        {/* Integrated Aesthetic Institutional Footer - Inside Main Card */}
+        {/* Integrated Aesthetic Institutional Footer - Inside Main Card (HIDDEN ON MOBILE, DISPLAYED ON MD+ DESKTOP) */}
         <div 
           id="landing-aesthetic-footer" 
-          className="relative z-10 mt-4 sm:mt-5 md:mt-6 pt-3.5 sm:pt-4 border-t border-slate-200/80 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 transition-all select-none"
+          className="hidden md:block relative z-10 mt-3.5 sm:mt-4 md:mt-5 pt-3 sm:pt-3.5 pb-2 border-t border-slate-200/80 w-full transition-all select-none"
         >
-          {/* বাম দিক: সর্বশেষ মোট অনিষ্পন্ন তথ্য */}
-          <div className="flex flex-col items-start space-y-1.5 text-left shrink-0">
-            {/* ১ম লাইন: সর্বশেষ মোট অনিষ্পন্ন অনুচ্ছেদ সংখ্যা */}
-            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
-              <span>সর্বশেষ মোট অনিষ্পন্ন অনুচ্ছেদ সংখ্যা:</span>
-              <span className="font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-xs sm:text-[13px]">
-                {toBengaliDigits(totalUnsettledCount.toString())} টি
-              </span>
-            </div>
-
-            {/* ২য় লাইন: সর্বশেষ মোট অনিষ্পন্ন টাকার পরিমাণ */}
-            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-              <span>সর্বশেষ মোট অনিষ্পন্ন টাকার পরিমাণ:</span>
-              <span className="font-black text-slate-900 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200 text-xs sm:text-[13px]">
-                {formatBengaliAmount(totalUnsettledAmount)} টাকা
-              </span>
-            </div>
+          {/* পূর্ণাঙ্গ প্রস্থ জুড়ে বাম থেকে ডানে এবং ডান থেকে বামে চলমান অ্যানিমেটেড প্রিমিয়াম হেডার ব্যানার */}
+          <div 
+            className="relative w-full h-7 sm:h-8 overflow-hidden flex items-center mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1"
+            style={{ containerType: 'inline-size' }}
+          >
+            <DesktopAnimatedBanner 
+              prevCycleLabel={prevCycleLabel} 
+              currentCycleLabel={cycleLabel} 
+            />
           </div>
 
-          {/* মাঝের অংশ: চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা ও টাকার পরিমাণ */}
-          <div className="flex flex-col items-start space-y-1.5 text-left shrink-0">
-            {/* ১ম লাইন: চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা: */}
-            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
-              <span>চলতি মাসে মোট নিষ্পন্ন অনুচ্ছেদ সংখ্যা:</span>
-              <span className="font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-xs sm:text-[13px]">
-                {toBengaliDigits(currentMonthSettledCount.toString())} টি
-              </span>
-            </div>
-
-            {/* ২য় লাইন: চলতি মাসে মোট নিষ্পন্ন টাকার পরিমাণ: */}
-            <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-              <span>চলতি মাসে মোট নিষ্পন্ন টাকার পরিমাণ:</span>
-              <span className="font-black text-slate-900 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200 text-xs sm:text-[13px]">
-                {formatBengaliAmount(currentMonthSettledAmount)} টাকা
-              </span>
-            </div>
-          </div>
+          {/* ৩টি কলামে নিখুঁত সমান্তরাল ডাটা সারি (চলমান ব্যানার ট্রানজিশনের সাথে সিনক্রোনাইজড গ্লো ও হাই-কনট্রাস্ট কালার) */}
+          <DesktopFooterColumns
+            openingCount={openingCount}
+            openingAmount={openingAmount}
+            currentMonthSettledCount={currentMonthSettledCount}
+            currentMonthSettledAmount={currentMonthSettledAmount}
+            totalUnsettledCount={totalUnsettledCount}
+            totalUnsettledAmount={totalUnsettledAmount}
+          />
         </div>
 
       </div>

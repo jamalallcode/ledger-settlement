@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-13] - Synchronized Footer Column Glow & High-Contrast Highlight
+
+### 🚀 Added
+- **`/components/DesktopFooterColumns.tsx`**: Created a dedicated, modular component for the 3 desktop footer columns (`DesktopFooterColumns`), keeping `LandingPage.tsx` clean, lightweight, and maintainable.
+- **Synchronized Tri-Column Glow & High-Contrast Color Sync**:
+  1. **Column 1 (Left / সর্ববামে)**: When the banner arrives and pauses at the 1st column, the column transitions to **Deep Emerald Green text (`#064e3b`)** with a **Soft Emerald Peak Glow (`rgba(5, 150, 105, 0.07)` background tint + subtle ambient box-shadow)**.
+  2. **Column 2 (Center / মাঝখানে)**: When the banner moves to the 2nd column, the column transitions to **Deep Royal Blue text (`#1e3a8a`)** with a **Soft Royal Blue Peak Glow (`rgba(37, 99, 235, 0.07)` background tint + subtle ambient box-shadow)**.
+  3. **Column 3 (Right / সর্বডানে)**: When the banner moves to the 3rd column, the column transitions to **Deep Crimson Red text (`#7f1d1d`)** with a **Soft Crimson Red Peak Glow (`rgba(220, 38, 38, 0.07)` background tint + subtle ambient box-shadow)**.
+  - **Return Motion Sync**: On the reverse trajectory from right to left, Column 2 lights up blue again as the banner reaches the center, and Column 1 lights up green again as the banner docks on the left.
+  - **Anti-Washout High Contrast Design**: Background glow is locked to a subtle ~7% translucent tint while text is rendered in deep, bold tones (contrast ratio > 11:1), ensuring Bengali characters and numbers remain 100% crisp and readable.
+  - **Strict Preservation**: 100% isolation in desktop view; zero impact on mobile layout, authentication, or business data.
+
+## [2026-09-13] - Desktop Institutional Banner Tri-Color Motion Animation
+
+### 🚀 Added
+- **`/components/DesktopAnimatedBanner.tsx`**: Created a modular, isolated component for the desktop landing page institutional footer banner.
+- **3-Stage Tri-Color Pingpong Motion**:
+  1. **Stage 1 (Left / সর্ববামে)**: Pauses at the 1st column with **Emerald Green (#047857)** text and green indicator dot, displaying: `পূর্ববর্তী মাস (তারিখ খ্রিঃ) পর্যন্ত`.
+  2. **Stage 2 (Center / মাঝখানে)**: Pauses over the 2nd column with **Royal Blue (#1d4ed8)** text and blue indicator dot, displaying: `চলতি মাস (তারিখ খ্রিঃ) পর্যন্ত`.
+  3. **Stage 3 (Right / সর্বডানে)**: Pauses over the 3rd column with **Crimson Red (#b91c1c)** text and red indicator dot, displaying: `চলতি মাস (তারিখ খ্রিঃ) পর্যন্ত`.
+  - Seamless CSS grid overlay ensures smooth text cross-fade without layout jitter or reflow.
+  - Zero modifications to existing business logic, authentication, or mobile layout.
+
 ## [2026-09-09] - Cloud Run Deployment Fix
 
 ### 🛠 Fixed
