@@ -36,10 +36,13 @@ export const parseBengaliNumber = (input: string | number | undefined | null): n
 
 /**
  * Formats a number with commas and converts to Bengali digits for display only.
+ * By default formats as a round integer (no .০০), or optional decimals if specified.
  */
-export const formatBengaliAmount = (num: number): string => {
-  if (num === 0) return '০.০০';
-  const formatted = num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const formatBengaliAmount = (num: number, includeDecimals: boolean = false): string => {
+  if (num === 0) return '০';
+  const formatted = includeDecimals
+    ? num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.round(num).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   return toBengaliDigits(formatted);
 };
 

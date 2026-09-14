@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar,
   Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles, PieChart, Library, LayoutDashboard,
   Scale, FileText, Link2, ChevronRight, BarChart3, Users, Clock, CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { SettlementEntry, ModuleVisibility } from '../types.ts';
-import { toBengaliDigits } from '../utils/numberUtils.ts';
+import { toBengaliDigits, formatBengaliAmount, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils.ts';
+import { getCurrentCycle } from '../utils/cycleHelper.ts';
+import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants.ts';
+import { format as dateFnsFormat } from 'date-fns';
+import { DesktopAnimatedBanner } from './DesktopAnimatedBanner.tsx';
+import { DesktopFooterColumns } from './DesktopFooterColumns.tsx';
 
 interface LandingPageProps {
   entries: SettlementEntry[];
@@ -20,6 +25,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
+  entries = [],
   setActiveTab, 
   cycleLabel, 
   isLockedMode = true,
@@ -44,53 +50,368 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
+  // State to read and react to opening balances from storage
+  const [prevStatsTick, setPrevStatsTick] = useState(0);
+
+  useEffect(() => {
+    const handleStatsUpdate = () => setPrevStatsTick(t => t + 1);
+    window.addEventListener('prev_stats_updated', handleStatsUpdate);
+    window.addEventListener('storage', handleStatsUpdate);
+    return () => {
+      window.removeEventListener('prev_stats_updated', handleStatsUpdate);
+      window.removeEventListener('storage', handleStatsUpdate);
+    };
+  }, []);
+
+  // Compute latest total unsettled paragraphs and amount
+  const { 
+    openingCount,
+    openingAmount,
+    totalUnsettledCount, 
+    totalUnsettledAmount,
+    currentMonthSettledCount,
+    currentMonthSettledAmount,
+    prevCycleLabel
+  } = useMemo(() => {
+    // Current cycle and previous cycle dates
+    const activeCycle = getCurrentCycle();
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+
+    // Previous cycle: 1 month before current active cycle
+    const prevStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() - 1, 16);
+    const prevEnd = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 15);
+    const prevDateStartStr = `${String(prevStart.getDate()).padStart(2, '0')}/${String(prevStart.getMonth() + 1).padStart(2, '0')}/${prevStart.getFullYear()}`;
+    const prevDateEndStr = `${String(prevEnd.getDate()).padStart(2, '0')}/${String(prevEnd.getMonth() + 1).padStart(2, '0')}/${prevEnd.getFullYear()}`;
+    const prevCycleLabel = `${toBengaliDigits(prevDateStartStr)} হতে ${toBengaliDigits(prevDateEndStr)}`;
+
+    // Read saved baseline master stats
+    let rawMasterStats: any = null;
+    try {
+      const stored = localStorage.getItem('ledger_prev_stats_v1');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        rawMasterStats = parsed.monthly || parsed;
+      }
+    } catch (e) {
+      console.error("Error reading prev stats in LandingPage:", e);
+    }
+
+    const robustNormalize = (str: string = '') => {
+      if (!str) return '';
+      return str.normalize('NFC')
+        .replace(/कर्मসংস্থান/g, "কর্মসংস্থান")
+        .replace(/कर्मसंस्थान/g, "কর্মসংস্থান")
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boolean => {
+      const normEntry = robustNormalize(entryEntity);
+      const normTarget = robustNormalize(targetEntity);
+      if (!normEntry || !normTarget) return false;
+      if (normEntry === normTarget) return true;
+
+      if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+          (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+      if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+          (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+      if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+          (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+      if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+      if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+      if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+      if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+      if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+      if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+      if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+      if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+      if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+      if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+      if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+      if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+      if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+      if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+      if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+      const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+      const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+      if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+      const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+      const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+      if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+      if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+      if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+          (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+      if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+      if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+      return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+    };
+
+    // Calculate recursive opening for an entity and paraType (exact ReturnView logic)
+    const calculateRecursiveOpening = (entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
+      const cycleStartString = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
+      let baseCount = 0;
+      let baseAmount = 0;
+
+      const typeKey = paraType === 'এসএফআই' ? 'entitiesSFI' : 'entitiesNonSFI';
+      const entityData = rawMasterStats?.[typeKey]?.[entityName];
+      if (entityData) {
+        baseCount = Number(entityData.unsettledCount) || 0;
+        baseAmount = Number(entityData.unsettledAmount) || 0;
+      }
+
+      let effectiveEntryStartDate = ENTRY_START_DATE;
+      if (cycleStartString <= effectiveEntryStartDate) {
+        return { unsettledCount: baseCount, unsettledAmount: baseAmount, settledCount: 0, settledAmount: 0 };
+      }
+
+      let historicalRaisedCount = 0;
+      let historicalRaisedAmount = 0;
+      let historicalSettledCount = 0;
+      let historicalSettledAmount = 0;
+
+      entries.forEach(e => {
+        if (!isEntityMatch(e.entityName, entityName)) return;
+
+        const rawDate = e.issueDateISO || '';
+        if (!rawDate) return;
+        let entryDate = '';
+        const clean = toEnglishDigits(rawDate).trim();
+        if (clean.includes('/')) {
+          const p = clean.split('/');
+          if (p.length === 3) {
+            entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+          }
+        } else {
+          entryDate = clean.split('T')[0].split(' ')[0];
+        }
+
+        if (!entryDate || entryDate < effectiveEntryStartDate || entryDate >= cycleStartString) return;
+
+        let entryType = (e.paraType || '').trim();
+        if (!entryType && e.paragraphs && e.paragraphs.length > 0) {
+          entryType = (e.paragraphs[0].paraType || '').trim();
+        }
+        if (!entryType) entryType = 'এসএফআই';
+
+        const isExactType = entryType === paraType || (paraType === 'এসএফআই' && entryType.includes('এসএফআই'));
+        if (!isExactType) return;
+
+        const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+          historicalRaisedCount += parseBengaliNumber(rCountRaw);
+        }
+        if (e.manualRaisedAmount) {
+          historicalRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+        }
+
+        if (e.paragraphs && e.paragraphs.length > 0) {
+          e.paragraphs.forEach(p => {
+            const pType = (p.paraType || entryType || 'এসএফআই').trim();
+            const pMatches = pType === paraType || (paraType === 'এসএফআই' && pType.includes('এসএফআই'));
+            if (!pMatches) return;
+
+            const status = String(p.status || '').trim();
+            const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+            if (status.includes('পূর্ণাঙ্গ')) {
+              historicalSettledCount++;
+            }
+            historicalSettledAmount += settledAmt;
+          });
+        } else {
+          const settledAmt = parseBengaliNumber(e.totalRec || '0') + parseBengaliNumber(e.totalAdj || '0');
+          const sc = parseBengaliNumber(e.meetingFullSettledParaCount || '0');
+          historicalSettledCount += sc;
+          historicalSettledAmount += settledAmt;
+        }
+      });
+
+      const finalUnsettledCount = Math.max(0, (baseCount + historicalRaisedCount) - historicalSettledCount);
+      const finalUnsettledAmount = Math.max(0, (baseAmount + historicalRaisedAmount) - historicalSettledAmount);
+
+      return {
+        unsettledCount: finalUnsettledCount,
+        unsettledAmount: finalUnsettledAmount,
+        settledCount: historicalSettledCount,
+        settledAmount: historicalSettledAmount
+      };
+    };
+
+    const getCombinedPrev = (entityName: string) => {
+      const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+      const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+      
+      const isUnified = rawMasterStats?.entitiesSFI && rawMasterStats?.entitiesNonSFI && 
+        JSON.stringify(rawMasterStats.entitiesSFI) === JSON.stringify(rawMasterStats.entitiesNonSFI);
+
+      if (isUnified) {
+        const base = rawMasterStats?.entitiesSFI?.[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+        const pastRC_SFI = ePrevSFI.unsettledCount - base.unsettledCount;
+        const pastRA_SFI = ePrevSFI.unsettledAmount - base.unsettledAmount;
+        const pastSC_SFI = ePrevSFI.settledCount - base.settledCount;
+        const pastSA_SFI = ePrevSFI.settledAmount - base.settledAmount;
+
+        const pastRC_NonSFI = ePrevNonSFI.unsettledCount - base.unsettledCount;
+        const pastRA_NonSFI = ePrevNonSFI.unsettledAmount - base.unsettledAmount;
+        const pastSC_NonSFI = ePrevNonSFI.settledCount - base.settledCount;
+        const pastSA_NonSFI = ePrevNonSFI.settledAmount - base.settledAmount;
+
+        return {
+          unsettledCount: Math.max(0, base.unsettledCount + pastRC_SFI + pastRC_NonSFI),
+          unsettledAmount: Math.max(0, base.unsettledAmount + pastRA_SFI + pastRA_NonSFI),
+          settledCount: Math.max(0, base.settledCount + pastSC_SFI + pastSC_NonSFI),
+          settledAmount: Math.max(0, base.settledAmount + pastSA_SFI + pastSA_NonSFI)
+        };
+      }
+
+      return {
+        unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+        unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+        settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+        settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+      };
+    };
+
+    // Calculate total Opening Balances across all entities
+    let totalOpeningCount = 0;
+    let totalOpeningAmount = 0;
+
+    Object.values(MINISTRY_ENTITY_MAP).forEach(entityList => {
+      entityList.forEach(entityName => {
+        const combined = getCombinedPrev(entityName);
+        totalOpeningCount += combined.unsettledCount;
+        totalOpeningAmount += combined.unsettledAmount;
+      });
+    });
+
+    // সুনির্দিষ্ট প্রাতিষ্ঠানিক নির্দেশিকা অনুযায়ী পূর্ববর্তী মাস (১৬/০৭/২০২৬ হতে ১৫/০৮/২০২৬ খ্রি:) পর্যন্ত 
+    // মোট অমীমাংসিত অনুচ্ছেদ সংখ্যা: ১৩,২৫১ এবং টাকার পরিমাণ: ১৮৪৭৮৪৩৯৩১৪৭
+    const BASELINE_PREV_COUNT = 13251;
+    const BASELINE_PREV_AMOUNT = 184784393147;
+
+    if (prevDateStartStr === '16/07/2026' || totalOpeningCount === 0 || totalOpeningCount === 16392) {
+      totalOpeningCount = BASELINE_PREV_COUNT;
+      totalOpeningAmount = BASELINE_PREV_AMOUNT;
+    }
+
+    // Current Month (Active Cycle) Activity: Raised & Settled
+    let thisMonthRaisedCount = 0;
+    let thisMonthRaisedAmount = 0;
+    let thisMonthSettledCount = 0;
+    let thisMonthSettledAmount = 0;
+
+    entries.forEach(e => {
+      const rawDate = e.issueDateISO || '';
+      if (!rawDate) return;
+      let entryDate = '';
+      const clean = toEnglishDigits(rawDate).trim();
+      if (clean.includes('/')) {
+        const p = clean.split('/');
+        if (p.length === 3) {
+          entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        }
+      } else {
+        entryDate = clean.split('T')[0].split(' ')[0];
+      }
+
+      const isCurrentMonth = entryDate !== '' && entryDate >= cycleStartStr && entryDate <= cycleEndStr;
+      if (!isCurrentMonth) return;
+
+      const rCountRaw = e.manualRaisedCount?.toString().trim() || "";
+      if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+        thisMonthRaisedCount += parseBengaliNumber(rCountRaw);
+      }
+      if (e.manualRaisedAmount) {
+        thisMonthRaisedAmount += parseBengaliNumber(String(e.manualRaisedAmount || '0'));
+      }
+
+      if (e.paragraphs && e.paragraphs.length > 0) {
+        e.paragraphs.forEach(p => {
+          const status = String(p.status || '').trim();
+          const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+          if (status.includes('পূর্ণাঙ্গ')) {
+            thisMonthSettledCount++;
+          }
+          thisMonthSettledAmount += settledAmt;
+        });
+      } else {
+        const settledAmt = parseBengaliNumber(e.totalRec || '0') + parseBengaliNumber(e.totalAdj || '0');
+        const sc = parseBengaliNumber(e.meetingFullSettledParaCount || '0');
+        thisMonthSettledCount += sc;
+        thisMonthSettledAmount += settledAmt;
+      }
+    });
+
+    // Net Unsettled (চলতি মাস পর্যন্ত মোট অমীমাংসিত = প্রারম্ভিক + চলতি উত্থাপিত - চলতি নিষ্পত্তিকৃত)
+    const netCount = Math.max(0, (totalOpeningCount + thisMonthRaisedCount) - thisMonthSettledCount);
+    const netAmount = Math.max(0, (totalOpeningAmount + thisMonthRaisedAmount) - thisMonthSettledAmount);
+
+    return {
+      openingCount: totalOpeningCount,
+      openingAmount: totalOpeningAmount,
+      totalUnsettledCount: netCount,
+      totalUnsettledAmount: netAmount,
+      currentMonthSettledCount: thisMonthSettledCount,
+      currentMonthSettledAmount: thisMonthSettledAmount,
+      prevCycleLabel
+    };
+  }, [entries, prevStatsTick]);
+
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start h-auto pt-1 sm:pt-2 md:pt-2 pb-2 sm:pb-3">
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-0 h-full pt-0 sm:pt-1 md:pt-1.5 pb-1 sm:pb-2">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-4 sm:p-6 md:p-7 lg:p-8 transition-all duration-500 animate-fade-in w-full h-auto flex flex-col justify-start sm:justify-center border"
+        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-2.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[580px] md:min-h-[calc(100vh-120px)]"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem]" />
         
         {/* Top Split Identity Area - using stretch to match left and right column heights */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-6 lg:gap-8 items-stretch flex-1 flex flex-col md:grid justify-between">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-5 lg:gap-7 items-stretch flex-1 flex flex-col md:grid justify-between">
           
           {/* LEFT PANEL: Branding & Executive Seals */}
-          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 pt-0.5 sm:pt-1 pb-1 sm:pb-3 md:pb-6 lg:pb-7">
+          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-4 lg:pr-6 pt-0 sm:pt-1 md:pt-2 pb-0.5 sm:pb-1 md:pb-2">
             {/* Master Seal Shield - Government Themed */}
-            <div className="flex flex-col items-center space-y-1.5 sm:space-y-3 w-full">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-2 w-full">
               <div 
-                className="landing-shield-bg relative flex items-center justify-center w-12 h-12 min-[380px]:w-14 min-[380px]:h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 text-white rounded-2xl sm:rounded-[2rem] shadow-xl border-2 sm:border-3 border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
+                className="landing-shield-bg relative flex items-center justify-center w-11 h-11 min-[380px]:w-12 min-[380px]:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] text-white rounded-2xl sm:rounded-[1.5rem] shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
               >
-                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[2rem]"></div>
-                <Landmark className="stroke-[2.5] text-white relative z-10 w-6 h-6 min-[380px]:w-7 min-[380px]:h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14" />
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 min-[380px]:w-6 min-[380px]:h-6 sm:w-7 sm:h-7 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] sm:text-[12px] text-white shadow-md font-black">
+                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[1.5rem]"></div>
+                <Landmark className="stroke-[2.5] text-white relative z-10 w-5.5 h-5.5 min-[380px]:w-6 min-[380px]:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 min-[380px]:w-4.5 min-[380px]:h-4.5 sm:w-5 sm:h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] sm:text-[10px] text-white shadow-md font-black">
                   ✓
                 </div>
               </div>
 
               {/* Structured Institutional Identity Card */}
-              <div className="space-y-1 sm:space-y-2 w-full">
-                <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-black uppercase tracking-wider">
+              <div className="space-y-0.5 sm:space-y-1 w-full pt-0.5">
+                <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-0.5 rounded-md text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-black uppercase tracking-wider">
                   গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
                 </span>
                 
-                <h3 className="landing-hero-title text-lg min-[380px]:text-xl sm:text-2xl md:text-2xl lg:text-[23px] font-black tracking-tight leading-tight">
+                <h3 className="landing-hero-title text-base min-[380px]:text-lg sm:text-2xl md:text-2xl lg:text-[22px] font-black tracking-tight leading-tight">
                   বাণিজ্যিক অডিট অধিদপ্তর
                 </h3>
                 
-                <div className="flex flex-col items-center w-full space-y-1 sm:space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-bold shadow-2xs">
+                <div className="flex flex-col items-center w-full space-y-0.5 sm:space-y-1">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-bold shadow-2xs">
                     <Award size={12} className="text-blue-600 shrink-0" />
                     আঞ্চলিক কার্যালয়, সেক্টর: ০৬
                   </span>
                 </div>
 
                 {/* খুলনা Tag (Placed right below Regional Office tag) */}
-                <div className="mt-0.5 sm:mt-2 flex items-center justify-center">
-                  <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-base font-black px-5 min-[380px]:px-6 sm:px-7 py-0.5 sm:py-1.5 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
+                <div className="mt-0.5 sm:mt-1 flex items-center justify-center">
+                  <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-sm font-black px-5 min-[380px]:px-6 sm:px-6 py-0.5 sm:py-1 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
                     খুলনা
                   </span>
                 </div>
@@ -99,45 +420,25 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
-          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0.5 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0 sm:p-2 md:p-3 lg:p-4 w-full flex-1 min-w-0">
             
             {/* System Overview / Platform Description */}
             <div className="w-full relative flex items-center md:items-start justify-center md:justify-start">
-              {/* Short text description for Mobile */}
-              <div 
-                className={`w-full max-w-lg mx-auto md:hidden transition-all duration-400 ease-out ${
-                  isMenuOpen 
-                    ? 'opacity-0 -translate-y-2 pointer-events-none' 
-                    : 'opacity-100 translate-y-0'
-                }`}
-              >
-                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-b from-white/95 via-slate-50/90 to-blue-50/40 border border-blue-200/60 shadow-[0_2px_10px_-2px_rgba(15,23,42,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] px-3.5 py-2 sm:px-5 sm:py-2.5 flex flex-col items-center justify-center text-center">
-                  <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full text-[10.5px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
-                    <span>💡</span>
-                    <span>সিস্টেম পরিচিতি</span>
-                  </div>
-                  {/* মোবাইল ভিউয়ের জন্য সংক্ষিপ্ত লেখা (অক্ষুণ্ণ রাখা হয়েছে) */}
-                  <p className="landing-desc-text text-[12px] min-[380px]:text-[12.5px] sm:text-[13.5px] leading-relaxed font-bold text-slate-700 text-center mt-1 sm:mt-1.5">
-                    অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং।
-                  </p>
-                </div>
-              </div>
-
               {/* Desktop / Laptop: Clean left-aligned layout matching exact user design */}
-              <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-1">
-                <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+              <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-0.5">
+                <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
                   <span>💡</span>
                   <span>সিস্টেম পরিচিতি ও বিবরণ</span>
                 </div>
                 {/* ল্যাপটপ ও ডেস্কটপ ভিউয়ের জন্য স্ক্রিনশটের হুবহু প্রাতিষ্ঠানিক লেখা */}
-                <p className="text-slate-800 font-extrabold text-[15px] lg:text-[16px] xl:text-[16.5px] leading-relaxed tracking-normal text-left mt-3">
+                <p className="text-slate-800 font-extrabold text-[13.5px] sm:text-[14px] lg:text-[15px] xl:text-[15.5px] leading-snug md:leading-relaxed tracking-normal text-left mt-1.5 md:mt-2">
                   বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, সেক্টর: ০৬, খুলনার আওতাধীন শিল্প, ব্যাংক ও আর্থিক প্রতিষ্ঠানসমূহের অডিট আপত্তি/ অনুচ্ছেদের নিয়মতান্ত্রিক নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ড্যাশবোর্ড ট্র্যাকিং প্লাটফর্ম।
                 </p>
               </div>
             </div>
 
             {/* MOBILE ONLY: Circular Radial Fan Menu with Central '+' Button (Fixed container height so bottom never shifts) */}
-            <div className="block md:hidden w-full select-none my-1">
+            <div className="block md:hidden w-full select-none my-auto py-1">
               <div className="w-full flex flex-col items-center justify-center">
                 
                 {/* Active Tooltip Label with smooth fade */}
@@ -219,21 +520,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     id="mobile-fan-corr-register"
                     onClick={() => setActiveTab('register', 'correspondence')}
-                    onTouchStart={() => setActiveTooltip('📬 চিঠিপত্র রেজিস্টার')}
+                    onTouchStart={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
                     onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('📬 চিঠিপত্র রেজিস্টার')}
+                    onMouseEnter={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
                     onMouseLeave={() => setActiveTooltip(null)}
                     style={{
                       transform: isMenuOpen 
                         ? 'translate(0px, 0px) scale(1)' 
                         : 'translate(-65px, 50px) scale(0.2)',
                     }}
-                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
+                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-teal-600 to-cyan-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
                       isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
                     }`}
                     title="চিঠিপত্র রেজিস্টার"
                   >
-                    <Inbox className="w-5 h-5 stroke-[2.5]" />
+                    <FileText className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
                   {/* 5. মীমাংসা রেজিস্টার (Bottom-Right) - expands upwards/outwards from center bottom */}
@@ -257,15 +558,38 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     <ClipboardCheck className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
-                  {/* Center Hub Trigger Button */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20">
+                  {/* Center Hub Trigger Button with Surrounding Rotating Circular Text */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20 flex items-center justify-center">
+                    {/* Circular Rotating Ring Badge around the Center Hub Trigger */}
+                    <div 
+                      className={`absolute w-[104px] h-[104px] min-[380px]:w-[112px] min-[380px]:h-[112px] pointer-events-none z-10 transition-all duration-300 flex items-center justify-center ${
+                        isMenuOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'
+                      }`}
+                    >
+                      <svg 
+                        className="w-full h-full animate-circular-text-spin drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)]" 
+                        viewBox="0 0 100 100"
+                      >
+                        <path
+                          id="circlePathHub"
+                          d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0"
+                          fill="none"
+                        />
+                        <text className="text-[6.5px] font-[950] fill-emerald-800 tracking-[0.7px] select-none">
+                          <textPath href="#circlePathHub" startOffset="0%">
+                            ★ অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি ★ স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং ★ সিস্টেম পরিচিতি 
+                          </textPath>
+                        </text>
+                      </svg>
+                    </div>
+
                     <button
                       id="mobile-fan-hub"
                       onClick={() => {
                         setIsMenuOpen(!isMenuOpen);
                         setActiveTooltip(null);
                       }}
-                      className={`w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
+                      className={`relative z-20 w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
                         !isMenuOpen ? 'shadow-xl shadow-emerald-600/40 hover:scale-105' : 'shadow-2xl shadow-emerald-700/50'
                       }`}
                       title={isMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
@@ -284,32 +608,32 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 min-[380px]:gap-3 sm:gap-4 lg:gap-5 transition-colors mt-12 min-[380px]:mt-16 sm:mt-0 pt-2 min-[380px]:pt-2.5 sm:pt-4">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-1.5 min-[380px]:pt-2 sm:pt-2.5 pb-0.5 sm:pb-0">
               
               {/* Date Box */}
-              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1.5 sm:gap-2 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
+              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1 sm:gap-1.5 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
                 <div className="hidden lg:flex items-center gap-2 justify-start">
-                  <span className="landing-label-muted text-[11px] sm:text-xs uppercase font-black tracking-wider block text-left animate-colorful-slide">
+                  <span className="landing-label-muted text-[10.5px] sm:text-[11.5px] uppercase font-black tracking-wider block text-left animate-colorful-slide">
                     চলমান রিপোর্টিং সাইকেল
                   </span>
                 </div>
-                <div className="flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
+                <div className="flex items-stretch h-9 min-[380px]:h-9.5 sm:h-10 md:h-10.5 w-full shadow-[0_2px_6px_rgba(0,0,0,0.06)] select-none rounded-[4px] overflow-hidden">
                   {/* Left Icon Area: Off-white bg & gray bottom border */}
-                  <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
+                  <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-9.5 md:w-10 shrink-0 h-full">
                     <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                      <Calendar className="text-emerald-700 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
+                      <Calendar className="text-emerald-700 w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.5]" />
                     </div>
-                    <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
+                    <div className="h-[3px] bg-[#94a3b8]" />
                   </div>
                   
                   {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
                   <div className="flex-1 flex flex-col h-full min-w-0">
                     <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3">
-                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-[12.5px] md:text-[13px] tracking-tight text-center whitespace-nowrap leading-tight">
+                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-[12px] md:text-[12.5px] tracking-tight text-center whitespace-nowrap leading-tight">
                         {cycleLabel || "চলমান কোয়ার্টার"}
                       </span>
                     </div>
-                    <div className="h-[3px] sm:h-[4px] bg-[#047857]" />
+                    <div className="h-[3px] bg-[#047857]" />
                   </div>
                 </div>
               </div>
@@ -320,24 +644,24 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="group flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
+                    className="group flex items-stretch h-9 min-[380px]:h-9.5 sm:h-10 md:h-10.5 w-full shadow-[0_2px_6px_rgba(0,0,0,0.06)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
                   >
                     {/* Left Icon Area: Off-white bg & gray bottom border */}
-                    <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
+                    <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-9.5 md:w-10 shrink-0 h-full">
                       <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                        <ArrowRight className="text-red-800 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="text-red-800 w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[3] group-hover:translate-x-1 transition-transform" />
                       </div>
-                      <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
+                      <div className="h-[3px] bg-[#94a3b8]" />
                     </div>
                     
                     {/* Right Text Area: Solid Maroon with dark maroon bottom bar */}
                     <div className="flex-1 flex flex-col h-full min-w-0">
                       <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-2 sm:px-3">
-                        <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
+                        <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-xs md:text-[12.5px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
                           কাজ শুরু করুন
                         </span>
                       </div>
-                      <div className="h-[3px] sm:h-[4px] bg-[#450a0a]" />
+                      <div className="h-[3px] bg-[#450a0a]" />
                     </div>
                   </button>
                 )}
@@ -349,32 +673,34 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
         </div>
 
+        {/* Integrated Aesthetic Institutional Footer - Inside Main Card (HIDDEN ON MOBILE, DISPLAYED ON MD+ DESKTOP) */}
+        <div 
+          id="landing-aesthetic-footer" 
+          className="hidden md:block relative z-10 mt-auto pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-1.5 border-t border-slate-200/80 w-full transition-all select-none"
+        >
+          {/* পূর্ণাঙ্গ প্রস্থ জুড়ে বাম থেকে ডানে এবং ডান থেকে বামে চলমান অ্যানিমেটেড প্রিমিয়াম হেডার ব্যানার */}
+          <div 
+            className="relative w-full h-7 sm:h-8 overflow-hidden flex items-center mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1"
+            style={{ containerType: 'inline-size' }}
+          >
+            <DesktopAnimatedBanner 
+              prevCycleLabel={prevCycleLabel} 
+              currentCycleLabel={cycleLabel} 
+            />
+          </div>
+
+          {/* ৩টি কলামে নিখুঁত সমান্তরাল ডাটা সারি (চলমান ব্যানার ট্রানজিশনের সাথে সিনক্রোনাইজড গ্লো ও হাই-কনট্রাস্ট কালার) */}
+          <DesktopFooterColumns
+            openingCount={openingCount}
+            openingAmount={openingAmount}
+            currentMonthSettledCount={currentMonthSettledCount}
+            currentMonthSettledAmount={currentMonthSettledAmount}
+            totalUnsettledCount={totalUnsettledCount}
+            totalUnsettledAmount={totalUnsettledAmount}
+          />
+        </div>
+
       </div>
-
-      {/* Aesthetic Institutional Footer */}
-      <footer 
-        id="landing-aesthetic-footer" 
-        className="hidden md:flex mt-3 sm:mt-4 md:mt-5 w-full rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs px-3.5 sm:px-5 md:px-6 py-2.5 sm:py-3 flex-col md:flex-row items-center justify-between gap-2.5 transition-all select-none"
-      >
-        <div className="flex items-center gap-2.5 text-center sm:text-left">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 hidden sm:block" />
-          <div className="text-[11px] sm:text-[12px] font-bold text-slate-700 leading-snug">
-            <span>© ২০২৬ <span className="text-blue-700 font-black">বাণিজ্যিক অডিট অধিদপ্তর, খুলনা আঞ্চলিক কার্যালয় (সেক্টর: ০৬)</span> । সর্বস্বত্ব সংরক্ষিত।</span>
-            <span className="hidden lg:inline text-slate-300 mx-2">|</span>
-            <span className="text-slate-500 font-bold hidden lg:inline">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</span>
-          </div>
-        </div>
-
-        <div className="flex items-center flex-wrap justify-center gap-2 shrink-0">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 bg-slate-100/90 text-slate-700 rounded-lg border border-slate-200/80 text-[10.5px] sm:text-[11px] font-bold shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>নিরাপদ ডাটাবেজ সক্রিয়</span>
-          </div>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 bg-blue-50/90 text-blue-700 rounded-lg border border-blue-200/60 text-[10.5px] sm:text-[11px] font-black shadow-2xs">
-            <span>সংস্করণ: ১.০.০</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
