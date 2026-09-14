@@ -12,6 +12,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ModuleVisibility } from '../types';
 import { AccessCodeManager } from './AccessCodeManager';
 import { WhitelistedEmailManager } from './WhitelistedEmailManager';
+import { MASTER_WHEEL_ITEMS, getWheelSettings, saveWheelSettings } from '../utils/cycleWheelConfig';
 
 interface AdminDashboardProps {
   isAdmin: boolean;
@@ -60,6 +61,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminSubView, setAdminSubView] = useState<'overview' | 'gmail_whitelist' | 'access_codes'>('overview');
   const [localContactLink, setLocalContactLink] = useState(contactLink);
   const [isSaved, setIsSaved] = useState(false);
+  const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
+
+  const handleToggleWheelItem = (itemId: string) => {
+    const nextSettings = { ...wheelSettings, [itemId]: !wheelSettings[itemId] };
+    setWheelSettings(nextSettings);
+    saveWheelSettings(nextSettings);
+  };
 
   useEffect(() => {
     setLocalContactLink(contactLink);
@@ -387,6 +395,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Cycle Wheel Feature Controls for Homepage */}
+              <div className="pt-4 pb-1 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-1.5 ml-1">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">সাইকেল হুইল (হোমপেজ চক্র) ফিচার কন্ট্রোল</h3>
+                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ডায়নামিক চক্র
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium mb-3 ml-1">
+                  হোম পেজের অ্যানিমেটেড চক্রে কোন কোন ফিচার প্রদর্শিত হবে তা এখান থেকে অন/অফ করুন:
+                </p>
+                <div className="space-y-2">
+                  {MASTER_WHEEL_ITEMS.map((item) => {
+                    const isEnabled = wheelSettings[item.id] ?? item.defaultEnabled;
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                          isEnabled ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50/80 border-slate-200/60 opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span 
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0"
+                            style={{ backgroundColor: item.color }}
+                          >
+                            {item.numberBn}
+                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-black text-slate-800">{item.title}</span>
+                            <span className="text-[9.5px] font-bold text-slate-400">{item.englishLabel || item.shortTitle}</span>
+                          </div>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => handleToggleWheelItem(item.id)}
+                          className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                            isEnabled 
+                              ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                              : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                          }`}
+                          title={`${item.title} চক্রে অন/অফ করুন`}
+                        >
+                          {/* Inner Track Text */}
+                          {isEnabled ? (
+                            <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                          ) : (
+                            <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                          )}
+                          
+                          {/* Knob */}
+                          <span 
+                            className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                            style={{ 
+                              left: isEnabled ? '2px' : '40px' 
+                            }}
+                          />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

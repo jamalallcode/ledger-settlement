@@ -11,6 +11,7 @@ import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants.ts';
 import { format as dateFnsFormat } from 'date-fns';
 import { DesktopAnimatedBanner } from './DesktopAnimatedBanner.tsx';
 import { DesktopFooterColumns } from './DesktopFooterColumns.tsx';
+import { SegmentedCycleWheel } from './SegmentedCycleWheel.tsx';
 
 interface LandingPageProps {
   entries: SettlementEntry[];
@@ -46,10 +47,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
     audit_details: true,
   }
 }) => {
-  // Mobile circular radial fan menu state
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
-
   // State to read and react to opening balances from storage
   const [prevStatsTick, setPrevStatsTick] = useState(0);
 
@@ -366,11 +363,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }, [entries, prevStatsTick]);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-0 h-full pt-0 sm:pt-1 md:pt-1.5 pb-1 sm:pb-2">
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-0 h-full pt-0 sm:pt-1 md:pt-1.5 pb-0.5 sm:pb-2">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-none p-2.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[580px] md:min-h-[calc(100vh-120px)]"
+        className="landing-hero-card relative rounded-none p-1.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[480px] md:min-h-[calc(100vh-120px)]"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-none" />
@@ -437,178 +434,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            {/* MOBILE ONLY: Circular Radial Fan Menu with Central '+' Button (Fixed container height so bottom never shifts) */}
-            <div className="block md:hidden w-full select-none my-auto py-1">
-              <div className="w-full flex flex-col items-center justify-center">
-                
-                {/* Active Tooltip Label with smooth fade */}
-                <div className="h-4 flex items-center justify-center mb-0.5">
-                  <span className={`bg-slate-900 text-white text-[10.5px] font-bold px-3 py-0.5 rounded-full shadow-md transition-all duration-200 text-center ${
-                    isMenuOpen && activeTooltip ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
-                  }`}>
-                    {activeTooltip || ''}
-                  </span>
-                </div>
-
-                {/* Arc Stage Container: Constant fixed height container, so launch buttons below NEVER move */}
-                <div className="relative w-[280px] min-[380px]:w-[300px] h-[110px] mx-auto flex items-end justify-center">
-
-                  {/* 1. Home Button (Bottom-Left) - expands upwards/outwards from center bottom */}
-                  <button
-                    id="mobile-fan-home"
-                    onClick={() => setActiveTab('landing')}
-                    onTouchStart={() => setActiveTooltip('🏠 হোম')}
-                    onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('🏠 হোম')}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    style={{
-                      transform: isMenuOpen 
-                        ? 'translate(0px, 0px) scale(1)' 
-                        : 'translate(95px, 0px) scale(0.2)',
-                    }}
-                    className={`absolute left-[14px] min-[380px]:left-[18px] bottom-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
-                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                    title="হোম"
-                  >
-                    <Home className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-
-                  {/* 2. চিঠিপত্র এন্ট্রি (Upper-Left) - expands upwards/outwards from center bottom */}
-                  <button
-                    id="mobile-fan-corr-entry"
-                    onClick={() => setActiveTab('entry', 'correspondence')}
-                    onTouchStart={() => setActiveTooltip('✉️ চিঠিপত্র এন্ট্রি')}
-                    onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('✉️ চিঠিপত্র এন্ট্রি')}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    style={{
-                      transform: isMenuOpen 
-                        ? 'translate(0px, 0px) scale(1)' 
-                        : 'translate(65px, 50px) scale(0.2)',
-                    }}
-                    className={`absolute left-[48px] min-[380px]:left-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 text-white shadow-xl shadow-blue-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
-                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                    title="চিঠিপত্র এন্ট্রি"
-                  >
-                    <Mail className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-
-                  {/* 3. মীমাংসা এন্ট্রি (Top-Center) - shoots straight up from center bottom */}
-                  <button
-                    id="mobile-fan-settle-entry"
-                    onClick={() => setActiveTab('entry', 'settlement')}
-                    onTouchStart={() => setActiveTooltip('📝 মীমাংসা এন্ট্রি')}
-                    onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('📝 মীমাংসা এন্ট্রি')}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    style={{
-                      transform: isMenuOpen 
-                        ? 'translate(-50%, 0px) scale(1)' 
-                        : 'translate(-50%, 55px) scale(0.2)',
-                    }}
-                    className={`absolute left-1/2 top-0 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 text-white shadow-2xl shadow-emerald-500/40 border-2 border-white/90 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out z-10 ${
-                      isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                    title="মীমাংসা এন্ট্রি"
-                  >
-                    <FileCheck2 className="w-6 h-6 stroke-[2.5]" />
-                  </button>
-
-                  {/* 4. চিঠিপত্র রেজিস্টার (Upper-Right) - expands upwards/outwards from center bottom */}
-                  <button
-                    id="mobile-fan-corr-register"
-                    onClick={() => setActiveTab('register', 'correspondence')}
-                    onTouchStart={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
-                    onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('📑 চিঠিপত্র রেজিস্টার')}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    style={{
-                      transform: isMenuOpen 
-                        ? 'translate(0px, 0px) scale(1)' 
-                        : 'translate(-65px, 50px) scale(0.2)',
-                    }}
-                    className={`absolute right-[48px] min-[380px]:right-[54px] top-[14px] min-[380px]:top-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 via-teal-600 to-cyan-700 text-white shadow-xl shadow-cyan-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
-                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                    title="চিঠিপত্র রেজিস্টার"
-                  >
-                    <FileText className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-
-                  {/* 5. মীমাংসা রেজিস্টার (Bottom-Right) - expands upwards/outwards from center bottom */}
-                  <button
-                    id="mobile-fan-settle-register"
-                    onClick={() => setActiveTab('register', 'settlement')}
-                    onTouchStart={() => setActiveTooltip('📋 মীমাংসা রেজিস্টার')}
-                    onTouchEnd={() => setActiveTooltip(null)}
-                    onMouseEnter={() => setActiveTooltip('📋 মীমাংসা রেজিস্টার')}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    style={{
-                      transform: isMenuOpen 
-                        ? 'translate(0px, 0px) scale(1)' 
-                        : 'translate(-95px, 0px) scale(0.2)',
-                    }}
-                    className={`absolute right-[14px] min-[380px]:right-[18px] bottom-[10px] w-11 h-11 rounded-full bg-gradient-to-br from-teal-500 via-emerald-600 to-green-700 text-white shadow-xl shadow-teal-500/35 border-2 border-white/80 flex items-center justify-center active:scale-95 transition-all duration-400 ease-out ${
-                      isMenuOpen ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                    title="মীমাংসা রেজিস্টার"
-                  >
-                    <ClipboardCheck className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-
-                  {/* Center Hub Trigger Button with Surrounding Rotating Circular Text */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[2px] z-20 flex items-center justify-center">
-                    {/* Circular Rotating Ring Badge around the Center Hub Trigger */}
-                    <div 
-                      className={`absolute w-[104px] h-[104px] min-[380px]:w-[112px] min-[380px]:h-[112px] pointer-events-none z-10 transition-all duration-300 flex items-center justify-center ${
-                        isMenuOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'
-                      }`}
-                    >
-                      <svg 
-                        className="w-full h-full animate-circular-text-spin drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)]" 
-                        viewBox="0 0 100 100"
-                      >
-                        <path
-                          id="circlePathHub"
-                          d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0"
-                          fill="none"
-                        />
-                        <text className="text-[6.5px] font-[950] fill-emerald-800 tracking-[0.7px] select-none">
-                          <textPath href="#circlePathHub" startOffset="0%">
-                            ★ অডিট আপত্তি ও অনুচ্ছেদ নিষ্পত্তি ★ স্বয়ংক্রিয় রিপোর্টিং ও ট্র্যাকিং ★ সিস্টেম পরিচিতি 
-                          </textPath>
-                        </text>
-                      </svg>
-                    </div>
-
-                    <button
-                      id="mobile-fan-hub"
-                      onClick={() => {
-                        setIsMenuOpen(!isMenuOpen);
-                        setActiveTooltip(null);
-                      }}
-                      className={`relative z-20 w-13 h-13 min-[380px]:w-14 min-[380px]:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer ${
-                        !isMenuOpen ? 'shadow-xl shadow-emerald-600/40 hover:scale-105' : 'shadow-2xl shadow-emerald-700/50'
-                      }`}
-                      title={isMenuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
-                    >
-                      <span className={`transition-transform duration-400 ease-out flex items-center justify-center ${isMenuOpen ? 'rotate-180' : 'rotate-0'}`}>
-                        {isMenuOpen ? (
-                          <X className="w-6 h-6 stroke-[3]" />
-                        ) : (
-                          <Plus className="w-6 h-6 stroke-[3]" />
-                        )}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on desktop/computer screens) */}
+            <div className="w-full select-none my-auto py-0 flex items-center justify-center md:hidden">
+              <SegmentedCycleWheel 
+                onSelectFeature={setActiveTab} 
+                isAdmin={isAdmin} 
+              />
             </div>
-
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-1.5 min-[380px]:pt-2 sm:pt-2.5 pb-0.5 sm:pb-0">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-1.5 min-[380px]:gap-2 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-1 min-[380px]:pt-1.5 sm:pt-2.5 pb-0">
               
               {/* Date Box */}
               <div className="flex flex-col items-center lg:items-stretch justify-center gap-1 sm:gap-1.5 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
