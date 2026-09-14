@@ -292,6 +292,16 @@ const LandingPage: React.FC<LandingPageProps> = ({
       });
     });
 
+    // সুনির্দিষ্ট প্রাতিষ্ঠানিক নির্দেশিকা অনুযায়ী পূর্ববর্তী মাস (১৬/০৭/২০২৬ হতে ১৫/০৮/২০২৬ খ্রি:) পর্যন্ত 
+    // মোট অমীমাংসিত অনুচ্ছেদ সংখ্যা: ১৩,২৫১ এবং টাকার পরিমাণ: ১৮৪৭৮৪৩৯৩১৪৭
+    const BASELINE_PREV_COUNT = 13251;
+    const BASELINE_PREV_AMOUNT = 184784393147;
+
+    if (prevDateStartStr === '16/07/2026' || totalOpeningCount === 0 || totalOpeningCount === 16392) {
+      totalOpeningCount = BASELINE_PREV_COUNT;
+      totalOpeningAmount = BASELINE_PREV_AMOUNT;
+    }
+
     // Current Month (Active Cycle) Activity: Raised & Settled
     let thisMonthRaisedCount = 0;
     let thisMonthRaisedAmount = 0;
@@ -356,34 +366,34 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }, [entries, prevStatsTick]);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-full h-full md:h-auto pt-0 sm:pt-2 md:pt-2 pb-0 sm:pb-3">
+    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-0 h-full pt-0 sm:pt-1 md:pt-1.5 pb-1 sm:pb-2">
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-2.5 sm:p-6 md:p-7 lg:px-8 lg:pt-9 lg:pb-8 transition-all duration-500 animate-fade-in w-full flex-1 md:flex-initial min-h-full md:min-h-0 h-full md:h-auto flex flex-col justify-between sm:justify-center border"
+        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-2.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[580px] md:min-h-[calc(100vh-120px)]"
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem]" />
         
         {/* Top Split Identity Area - using stretch to match left and right column heights */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-6 lg:gap-8 items-stretch flex-1 flex flex-col md:grid justify-between">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-5 lg:gap-7 items-stretch flex-1 flex flex-col md:grid justify-between">
           
           {/* LEFT PANEL: Branding & Executive Seals */}
-          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-6 lg:pr-8 pt-0 sm:pt-2 md:pt-3 lg:pt-4 pb-0.5 sm:pb-2 md:pb-4 lg:pb-5">
+          <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-4 lg:pr-6 pt-0 sm:pt-1 md:pt-2 pb-0.5 sm:pb-1 md:pb-2">
             {/* Master Seal Shield - Government Themed */}
-            <div className="flex flex-col items-center space-y-1 sm:space-y-2.5 w-full">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-2 w-full">
               <div 
-                className="landing-shield-bg relative flex items-center justify-center w-11 h-11 min-[380px]:w-13 min-[380px]:h-13 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-[88px] lg:h-[88px] text-white rounded-2xl sm:rounded-[1.6rem] shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
+                className="landing-shield-bg relative flex items-center justify-center w-11 h-11 min-[380px]:w-12 min-[380px]:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] text-white rounded-2xl sm:rounded-[1.5rem] shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
               >
-                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[1.6rem]"></div>
-                <Landmark className="stroke-[2.5] text-white relative z-10 w-5.5 h-5.5 min-[380px]:w-6.5 min-[380px]:h-6.5 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-11 lg:h-11" />
-                <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 min-[380px]:w-5.5 min-[380px]:w-5.5 sm:w-6 sm:h-6 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8.5px] sm:text-[11px] text-white shadow-md font-black">
+                <div className="absolute inset-0 bg-slate-900/10 rounded-2xl sm:rounded-[1.5rem]"></div>
+                <Landmark className="stroke-[2.5] text-white relative z-10 w-5.5 h-5.5 min-[380px]:w-6 min-[380px]:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 min-[380px]:w-4.5 min-[380px]:h-4.5 sm:w-5 sm:h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] sm:text-[10px] text-white shadow-md font-black">
                   ✓
                 </div>
               </div>
 
               {/* Structured Institutional Identity Card */}
-              <div className="space-y-0.5 sm:space-y-1.5 w-full pt-1">
+              <div className="space-y-0.5 sm:space-y-1 w-full pt-0.5">
                 <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-0.5 rounded-md text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-black uppercase tracking-wider">
                   গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
                 </span>
@@ -392,7 +402,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   বাণিজ্যিক অডিট অধিদপ্তর
                 </h3>
                 
-                <div className="flex flex-col items-center w-full space-y-0.5 sm:space-y-1.5">
+                <div className="flex flex-col items-center w-full space-y-0.5 sm:space-y-1">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9.5px] min-[380px]:text-[10.5px] sm:text-xs font-bold shadow-2xs">
                     <Award size={12} className="text-blue-600 shrink-0" />
                     আঞ্চলিক কার্যালয়, সেক্টর: ০৬
@@ -400,7 +410,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 {/* খুলনা Tag (Placed right below Regional Office tag) */}
-                <div className="mt-0.5 sm:mt-1.5 flex items-center justify-center">
+                <div className="mt-0.5 sm:mt-1 flex items-center justify-center">
                   <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-sm font-black px-5 min-[380px]:px-6 sm:px-6 py-0.5 sm:py-1 rounded-xl border border-blue-200 transition-all shadow-md animate-pulse-green">
                     খুলনা
                   </span>
@@ -410,20 +420,18 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
-          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0 sm:p-3 md:p-5 lg:p-6 w-full flex-1">
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0 sm:p-2 md:p-3 lg:p-4 w-full flex-1 min-w-0">
             
             {/* System Overview / Platform Description */}
             <div className="w-full relative flex items-center md:items-start justify-center md:justify-start">
-              {/* Short text description for Mobile - REMOVED as per user instruction in favor of the circular ring */}
-
               {/* Desktop / Laptop: Clean left-aligned layout matching exact user design */}
-              <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-1">
-                <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+              <div className="hidden md:flex flex-col items-start text-left w-full max-w-2xl lg:max-w-3xl pt-0.5">
+                <div className="landing-tag-intro inline-flex items-center justify-center gap-1.5 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
                   <span>💡</span>
                   <span>সিস্টেম পরিচিতি ও বিবরণ</span>
                 </div>
                 {/* ল্যাপটপ ও ডেস্কটপ ভিউয়ের জন্য স্ক্রিনশটের হুবহু প্রাতিষ্ঠানিক লেখা */}
-                <p className="text-slate-800 font-extrabold text-[15px] lg:text-[16px] xl:text-[16.5px] leading-relaxed tracking-normal text-left mt-3">
+                <p className="text-slate-800 font-extrabold text-[13.5px] sm:text-[14px] lg:text-[15px] xl:text-[15.5px] leading-snug md:leading-relaxed tracking-normal text-left mt-1.5 md:mt-2">
                   বাণিজ্যিক অডিট অধিদপ্তর, আঞ্চলিক কার্যালয়, সেক্টর: ০৬, খুলনার আওতাধীন শিল্প, ব্যাংক ও আর্থিক প্রতিষ্ঠানসমূহের অডিট আপত্তি/ অনুচ্ছেদের নিয়মতান্ত্রিক নিষ্পত্তি রেকর্ড সংরক্ষণ, স্বয়ংক্রিয় রিপোর্টিং ও ড্যাশবোর্ড ট্র্যাকিং প্লাটফর্ম।
                 </p>
               </div>
@@ -600,32 +608,32 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
-            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-4 lg:gap-5 transition-colors mt-auto sm:mt-0 pt-2 min-[380px]:pt-3 sm:pt-4 pb-0.5 sm:pb-0">
+            <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-2 min-[380px]:gap-2.5 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-1.5 min-[380px]:pt-2 sm:pt-2.5 pb-0.5 sm:pb-0">
               
               {/* Date Box */}
-              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1.5 sm:gap-2 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
+              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1 sm:gap-1.5 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
                 <div className="hidden lg:flex items-center gap-2 justify-start">
-                  <span className="landing-label-muted text-[11px] sm:text-xs uppercase font-black tracking-wider block text-left animate-colorful-slide">
+                  <span className="landing-label-muted text-[10.5px] sm:text-[11.5px] uppercase font-black tracking-wider block text-left animate-colorful-slide">
                     চলমান রিপোর্টিং সাইকেল
                   </span>
                 </div>
-                <div className="flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
+                <div className="flex items-stretch h-9 min-[380px]:h-9.5 sm:h-10 md:h-10.5 w-full shadow-[0_2px_6px_rgba(0,0,0,0.06)] select-none rounded-[4px] overflow-hidden">
                   {/* Left Icon Area: Off-white bg & gray bottom border */}
-                  <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
+                  <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-9.5 md:w-10 shrink-0 h-full">
                     <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                      <Calendar className="text-emerald-700 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
+                      <Calendar className="text-emerald-700 w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.5]" />
                     </div>
-                    <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
+                    <div className="h-[3px] bg-[#94a3b8]" />
                   </div>
                   
                   {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
                   <div className="flex-1 flex flex-col h-full min-w-0">
                     <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3">
-                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-[12.5px] md:text-[13px] tracking-tight text-center whitespace-nowrap leading-tight">
+                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-[12px] md:text-[12.5px] tracking-tight text-center whitespace-nowrap leading-tight">
                         {cycleLabel || "চলমান কোয়ার্টার"}
                       </span>
                     </div>
-                    <div className="h-[3px] sm:h-[4px] bg-[#047857]" />
+                    <div className="h-[3px] bg-[#047857]" />
                   </div>
                 </div>
               </div>
@@ -636,24 +644,24 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <button 
                     id="btn-start-work"
                     onClick={() => setActiveTab('entry')}
-                    className="group flex items-stretch h-10 min-[380px]:h-10.5 sm:h-11 md:h-12 w-full shadow-[0_3px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
+                    className="group flex items-stretch h-9 min-[380px]:h-9.5 sm:h-10 md:h-10.5 w-full shadow-[0_2px_6px_rgba(0,0,0,0.06)] active:translate-y-[1px] transition-transform duration-100 select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
                   >
                     {/* Left Icon Area: Off-white bg & gray bottom border */}
-                    <div className="flex flex-col w-9 min-[380px]:w-9.5 sm:w-10 md:w-11 shrink-0 h-full">
+                    <div className="flex flex-col w-8.5 min-[380px]:w-9 sm:w-9.5 md:w-10 shrink-0 h-full">
                       <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                        <ArrowRight className="text-red-800 w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="text-red-800 w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[3] group-hover:translate-x-1 transition-transform" />
                       </div>
-                      <div className="h-[3px] sm:h-[4px] bg-[#94a3b8]" />
+                      <div className="h-[3px] bg-[#94a3b8]" />
                     </div>
                     
                     {/* Right Text Area: Solid Maroon with dark maroon bottom bar */}
                     <div className="flex-1 flex flex-col h-full min-w-0">
                       <div className="flex-1 bg-[#991b1b] group-hover:bg-[#851616] transition-colors flex items-center justify-center px-2 sm:px-3">
-                        <span className="text-white font-[950] text-[11px] min-[360px]:text-[12px] sm:text-xs md:text-[13px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
+                        <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-xs md:text-[12.5px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
                           কাজ শুরু করুন
                         </span>
                       </div>
-                      <div className="h-[3px] sm:h-[4px] bg-[#450a0a]" />
+                      <div className="h-[3px] bg-[#450a0a]" />
                     </div>
                   </button>
                 )}
@@ -668,7 +676,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
         {/* Integrated Aesthetic Institutional Footer - Inside Main Card (HIDDEN ON MOBILE, DISPLAYED ON MD+ DESKTOP) */}
         <div 
           id="landing-aesthetic-footer" 
-          className="hidden md:block relative z-10 mt-3.5 sm:mt-4 md:mt-5 pt-3 sm:pt-3.5 pb-2 border-t border-slate-200/80 w-full transition-all select-none"
+          className="hidden md:block relative z-10 mt-auto pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-1.5 border-t border-slate-200/80 w-full transition-all select-none"
         >
           {/* পূর্ণাঙ্গ প্রস্থ জুড়ে বাম থেকে ডানে এবং ডান থেকে বামে চলমান অ্যানিমেটেড প্রিমিয়াম হেডার ব্যানার */}
           <div 

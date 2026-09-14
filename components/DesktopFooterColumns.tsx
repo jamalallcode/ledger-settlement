@@ -29,31 +29,31 @@ export const DesktopFooterColumns: React.FC<DesktopFooterColumnsProps> = ({
   totalUnsettledAmount,
 }) => {
   return (
-    <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3.5 lg:gap-4">
+    <div className="w-full grid grid-cols-1 min-[900px]:grid-cols-3 gap-2 sm:gap-2.5 lg:gap-3.5">
       
       {/* ১ম কলাম (সর্ববামে): পূর্ববর্তী মাস পর্যন্ত - সবুজ গ্লো সিঙ্ক */}
       <div 
         id="desktop-footer-col-1"
-        className="desktop-sync-col desktop-sync-col-1 flex flex-col items-stretch space-y-1.5 text-left min-w-0 p-2 sm:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
+        className="desktop-sync-col desktop-sync-col-1 flex flex-col items-stretch space-y-1 sm:space-y-1.5 text-left min-w-0 p-1.5 sm:p-2 md:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
       >
         {/* ১ম লাইন: মোট অমীমাংসিত অনুচ্ছেদ সংখ্যা: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11.5px] sm:text-xs xl:text-[13px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">মোট অমীমাংসিত অনুচ্ছেদ সংখ্যা:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">মোট অমীমাংসিত অনুচ্ছেদ:</span>
           </div>
-          <span className="sync-pill font-black px-2.5 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-2 py-0.5 rounded border text-[11px] sm:text-xs xl:text-[13px] shrink-0 text-center whitespace-nowrap min-w-[65px] transition-all">
             {toBengaliDigits(openingCount.toString())} টি
           </span>
         </div>
 
         {/* ২য় লাইন: মোট অমীমাংসিত টাকার পরিমাণ: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-[11.5px] xl:text-[12.5px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">মোট অমীমাংসিত টাকার পরিমাণ:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">মোট টাকার পরিমাণ:</span>
           </div>
-          <span className="sync-pill font-black px-2 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-1.5 sm:px-2 py-0.5 rounded border text-[10.5px] sm:text-[11px] xl:text-[12px] shrink-0 text-center whitespace-nowrap min-w-[70px] transition-all">
             {formatBengaliAmount(openingAmount)} টাকা
           </span>
         </div>
@@ -62,26 +62,26 @@ export const DesktopFooterColumns: React.FC<DesktopFooterColumnsProps> = ({
       {/* ২য় কলাম (মাঝখানে): চলতি মাসে মীমাংসিত - নীল গ্লো সিঙ্ক */}
       <div 
         id="desktop-footer-col-2"
-        className="desktop-sync-col desktop-sync-col-2 flex flex-col items-stretch space-y-1.5 text-left min-w-0 md:border-l md:border-slate-200/80 md:pl-3.5 lg:pl-4 p-2 sm:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
+        className="desktop-sync-col desktop-sync-col-2 flex flex-col items-stretch space-y-1 sm:space-y-1.5 text-left min-w-0 min-[900px]:border-l min-[900px]:border-slate-200/80 min-[900px]:pl-2.5 lg:pl-3.5 xl:pl-4 p-1.5 sm:p-2 md:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
       >
         {/* ১ম লাইন: চলতি মাসে মীমাংসিত অনুচ্ছেদ সংখ্যা: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11.5px] sm:text-xs xl:text-[13px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">চলতি মাসে মীমাংসিত অনুচ্ছেদ সংখ্যা:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">চলতি মাসে মীমাংসিত:</span>
           </div>
-          <span className="sync-pill font-black px-2.5 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-2 py-0.5 rounded border text-[11px] sm:text-xs xl:text-[13px] shrink-0 text-center whitespace-nowrap min-w-[65px] transition-all">
             {toBengaliDigits(currentMonthSettledCount.toString())} টি
           </span>
         </div>
 
         {/* ২য় লাইন: চলতি মাসে মীমাংসিত টাকার পরিমাণ: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-[11.5px] xl:text-[12.5px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">চলতি মাসে মীমাংসিত টাকার পরিমাণ:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">মীমাংসিত টাকার পরিমাণ:</span>
           </div>
-          <span className="sync-pill font-black px-2 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-1.5 sm:px-2 py-0.5 rounded border text-[10.5px] sm:text-[11px] xl:text-[12px] shrink-0 text-center whitespace-nowrap min-w-[70px] transition-all">
             {formatBengaliAmount(currentMonthSettledAmount)} টাকা
           </span>
         </div>
@@ -90,26 +90,26 @@ export const DesktopFooterColumns: React.FC<DesktopFooterColumnsProps> = ({
       {/* ৩য় কলাম (ডানদিকে): সর্বমোট অমীমাংসিত - লাল গ্লো সিঙ্ক */}
       <div 
         id="desktop-footer-col-3"
-        className="desktop-sync-col desktop-sync-col-3 flex flex-col items-stretch space-y-1.5 text-left min-w-0 md:border-l md:border-slate-200/80 md:pl-3.5 lg:pl-4 p-2 sm:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
+        className="desktop-sync-col desktop-sync-col-3 flex flex-col items-stretch space-y-1 sm:space-y-1.5 text-left min-w-0 min-[900px]:border-l min-[900px]:border-slate-200/80 min-[900px]:pl-2.5 lg:pl-3.5 xl:pl-4 p-1.5 sm:p-2 md:p-2.5 rounded-xl transition-all duration-300 border border-transparent"
       >
         {/* ১ম লাইন: সর্বমোট অমীমাংসিত অনুচ্ছেদ সংখ্যা: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11.5px] sm:text-xs xl:text-[13px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">সর্বমোট অমীমাংসিত অনুচ্ছেদ সংখ্যা:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">সর্বমোট অমীমাংসিত:</span>
           </div>
-          <span className="sync-pill font-black px-2.5 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-2 py-0.5 rounded border text-[11px] sm:text-xs xl:text-[13px] shrink-0 text-center whitespace-nowrap min-w-[65px] transition-all">
             {toBengaliDigits(totalUnsettledCount.toString())} টি
           </span>
         </div>
 
         {/* ২য় লাইন: সর্বমোট অমীমাংসিত টাকার পরিমাণ: */}
-        <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px] font-bold w-full">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-[11.5px] xl:text-[12.5px] font-bold w-full min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="sync-dot w-1.5 h-1.5 rounded-full shrink-0 transition-colors" />
-            <span className="sync-label truncate transition-colors">সর্বমোট অমীমাংসিত টাকার পরিমাণ:</span>
+            <span className="sync-label whitespace-nowrap transition-colors">সর্বমোট টাকার পরিমাণ:</span>
           </div>
-          <span className="sync-pill font-black px-2 py-0.5 rounded border text-xs sm:text-[13px] shrink-0 text-center min-w-[76px] transition-all">
+          <span className="sync-pill font-black px-1.5 sm:px-2 py-0.5 rounded border text-[10.5px] sm:text-[11px] xl:text-[12px] shrink-0 text-center whitespace-nowrap min-w-[70px] transition-all">
             {formatBengaliAmount(totalUnsettledAmount)} টাকা
           </span>
         </div>
