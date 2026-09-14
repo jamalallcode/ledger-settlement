@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ArrowRight, ShieldCheck, ShieldAlert, Landmark, Award, Lock, MapPin, FileCheck, User, Phone, Megaphone, Calendar,
   Home, Mail, FileCheck2, Inbox, ClipboardCheck, X, Plus, Sparkles, PieChart, Library, LayoutDashboard,
@@ -52,6 +52,38 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   // State to read and react to opening balances from storage
   const [prevStatsTick, setPrevStatsTick] = useState(0);
+
+  // Desktop footer synchronized banner and column glow stage (1: Left/Green, 2: Center/Blue, 3: Right/Red)
+  const [bannerStage, setBannerStage] = useState<1 | 2 | 3>(1);
+  const [isBannerHovered, setIsBannerHovered] = useState(false);
+  const bannerDirectionRef = useRef<'forward' | 'backward'>('forward');
+
+  useEffect(() => {
+    if (isBannerHovered) return;
+
+    const timer = setInterval(() => {
+      setBannerStage((prev) => {
+        if (prev === 1) {
+          bannerDirectionRef.current = 'forward';
+          return 2;
+        }
+        if (prev === 2) {
+          if (bannerDirectionRef.current === 'forward') {
+            return 3;
+          } else {
+            return 1;
+          }
+        }
+        if (prev === 3) {
+          bannerDirectionRef.current = 'backward';
+          return 2;
+        }
+        return 1;
+      });
+    }, 10000); // 10s: 4.4s silky slide (half speed) + 5.6s resting pause at each column
+
+    return () => clearInterval(timer);
+  }, [isBannerHovered]);
 
   useEffect(() => {
     const handleStatsUpdate = () => setPrevStatsTick(t => t + 1);
@@ -370,10 +402,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] p-2.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[580px] md:min-h-[calc(100vh-120px)]"
+        className="landing-hero-card relative rounded-none p-2.5 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-[580px] md:min-h-[calc(100vh-120px)]"
       >
         {/* Subtle patterned backdrop */}
-        <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem]" />
+        <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-none" />
         
         {/* Top Split Identity Area - using stretch to match left and right column heights */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-2 min-[380px]:gap-2.5 sm:gap-5 lg:gap-7 items-stretch flex-1 flex flex-col md:grid justify-between">
@@ -677,15 +709,18 @@ const LandingPage: React.FC<LandingPageProps> = ({
         <div 
           id="landing-aesthetic-footer" 
           className="hidden md:block relative z-10 mt-auto pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-1.5 border-t border-slate-200/80 w-full transition-all select-none"
+          onMouseEnter={() => setIsBannerHovered(true)}
+          onMouseLeave={() => setIsBannerHovered(false)}
         >
           {/* পূর্ণাঙ্গ প্রস্থ জুড়ে বাম থেকে ডানে এবং ডান থেকে বামে চলমান অ্যানিমেটেড প্রিমিয়াম হেডার ব্যানার */}
           <div 
-            className="relative w-full h-7 sm:h-8 overflow-hidden flex items-center mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1"
-            style={{ containerType: 'inline-size' }}
+            className="desktop-banner-container relative w-full h-7 sm:h-8 overflow-hidden flex items-center mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1 cursor-pointer"
           >
             <DesktopAnimatedBanner 
               prevCycleLabel={prevCycleLabel} 
-              currentCycleLabel={cycleLabel} 
+              currentCycleLabel={cycleLabel}
+              activeStage={bannerStage}
+              onHoverChange={setIsBannerHovered}
             />
           </div>
 
@@ -697,6 +732,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             currentMonthSettledAmount={currentMonthSettledAmount}
             totalUnsettledCount={totalUnsettledCount}
             totalUnsettledAmount={totalUnsettledAmount}
+            activeStage={bannerStage}
           />
         </div>
 
