@@ -113,7 +113,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleToggleModule = async (moduleKey: keyof ModuleVisibility) => {
-    const newValue = !moduleVisibility[moduleKey];
+    const isCurrentlyVisible = moduleVisibility[moduleKey] !== false;
+    const newValue = !isCurrentlyVisible;
     const newVisibility = { ...moduleVisibility, [moduleKey]: newValue };
     setModuleVisibility(newVisibility);
     
@@ -387,7 +388,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="space-y-2 pt-1">
                     {[
                       { key: 'navbar', label: 'মেনু বার', icon: Menu, color: 'amber' },
-                      { key: 'cycle_wheel', label: 'হোমপেজ গোল চক্র (হুইল)', icon: Sparkles, color: 'indigo' },
                       { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
                       { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
                       { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
@@ -458,6 +458,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       ডায়নামিক চক্র
                     </span>
+                  </div>
+
+                  {/* মাস্টার সুইচ: হোমপেজ গোল চক্র (হুইল) অন/অফ */}
+                  <div className="pt-1">
+                    {(() => {
+                      const isWheelVisible = moduleVisibility.cycle_wheel !== false;
+                      return (
+                        <div 
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                            isWheelVisible 
+                              ? 'bg-emerald-50/70 border-emerald-300 shadow-xs' 
+                              : 'bg-slate-50/80 border-slate-200/60 opacity-70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span 
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0 bg-emerald-600"
+                            >
+                              <Sparkles size={15} />
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-slate-800">হোমপেজ গোল চক্র (হুইল)</span>
+                              <span className="text-[9.5px] font-bold text-emerald-700">HOMEPAGE CYCLE WHEEL</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => handleToggleModule('cycle_wheel')}
+                            className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                              isWheelVisible 
+                                ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                                : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                            }`}
+                            title="হোমপেজ গোল চক্র (হুইল) অন/অফ করুন"
+                          >
+                            {/* Inner Track Text */}
+                            {isWheelVisible ? (
+                              <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                            ) : (
+                              <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                            )}
+                            
+                            {/* Knob */}
+                            <span 
+                              className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                              style={{ 
+                                left: isWheelVisible ? '2px' : '40px' 
+                              }}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="space-y-2 pt-1">
