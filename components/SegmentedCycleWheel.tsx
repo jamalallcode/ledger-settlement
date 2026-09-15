@@ -108,6 +108,39 @@ function describeChevronSegment(
   ].join(' ');
 }
 
+/**
+ * Generates a clean full circular donut segment for a single active option
+ */
+function describeSingleRingSegment(
+  cx: number,
+  cy: number,
+  rInner: number,
+  rOuter: number,
+  gapAngle: number = 0.06
+): string {
+  const startAngle = -Math.PI / 2 + gapAngle / 2;
+  const midAngle = startAngle + Math.PI;
+  const endAngle = startAngle + 2 * Math.PI - gapAngle;
+
+  const pOutStart = polarToCartesian(cx, cy, rOuter, startAngle);
+  const pOutMid = polarToCartesian(cx, cy, rOuter, midAngle);
+  const pOutEnd = polarToCartesian(cx, cy, rOuter, endAngle);
+
+  const pInEnd = polarToCartesian(cx, cy, rInner, endAngle);
+  const pInMid = polarToCartesian(cx, cy, rInner, midAngle);
+  const pInStart = polarToCartesian(cx, cy, rInner, startAngle);
+
+  return [
+    `M ${pOutStart.x.toFixed(2)} ${pOutStart.y.toFixed(2)}`,
+    `A ${rOuter} ${rOuter} 0 0 1 ${pOutMid.x.toFixed(2)} ${pOutMid.y.toFixed(2)}`,
+    `A ${rOuter} ${rOuter} 0 0 1 ${pOutEnd.x.toFixed(2)} ${pOutEnd.y.toFixed(2)}`,
+    `L ${pInEnd.x.toFixed(2)} ${pInEnd.y.toFixed(2)}`,
+    `A ${rInner} ${rInner} 0 0 0 ${pInMid.x.toFixed(2)} ${pInMid.y.toFixed(2)}`,
+    `A ${rInner} ${rInner} 0 0 0 ${pInStart.x.toFixed(2)} ${pInStart.y.toFixed(2)}`,
+    'Z',
+  ].join(' ');
+}
+
 export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   onSelectFeature,
   isAdmin = false,
@@ -251,83 +284,122 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
 
             {/* Group containing all segments */}
             <g id="cycle-wheel-segments-group">
-              {/* Render each chevron segment */}
-              {activeItems.map((item, index) => {
-              const startAngle = startBaseAngle + index * angleStep + gapAngle / 2;
-              const endAngle = startBaseAngle + (index + 1) * angleStep - gapAngle / 2;
-              const pathData = describeChevronSegment(cx, cy, rInner, rOuter, startAngle, endAngle, arrowAngle);
-
-              // Centroid angle for positioning labels and outward explosion
-              const midAngle = (startAngle + endAngle) / 2 + arrowAngle / 2;
-              
-              // Explode translation vector when isOpen = true
-              const explodeDistance = 34; // outward shift in pixels
-              const dx = isOpen ? Math.cos(midAngle) * explodeDistance : 0;
-              const dy = isOpen ? Math.sin(midAngle) * explodeDistance : 0;
-
-              // Content label position (Cartesian)
-              const labelPos = polarToCartesian(cx, cy, rMid, midAngle);
-              const isHovered = hoveredItemId === item.id;
-
-              return (
-                <g
-                  key={item.id}
-                  id={`wheel-segment-${item.id}`}
-                  className="cursor-pointer"
-                  style={{
-                    transform: `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) ${isHovered ? 'scale(1.04)' : 'scale(1)'}`,
-                    transformOrigin: `${cx}px ${cy}px`,
-                    transition: 'transform 440ms cubic-bezier(0.34, 1.45, 0.64, 1), filter 240ms ease',
-                    filter: isHovered 
-                      ? 'url(#wheel-active-glow) brightness(1.1)' 
-                      : 'url(#wheel-segment-shadow)',
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectFeature(item.tab, item.subModule);
-                  }}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                  onTouchStart={() => setHoveredItemId(item.id)}
-                >
-                  {/* Segment Chevron Shape */}
-                  <path
-                    d={pathData}
-                    fill={item.color}
-                    stroke="#ffffff"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                    className="transition-colors duration-200"
+              {/* Empty state placeholder when all switches are OFF */}
+              {activeItems.length === 0 && (
+                <g className="pointer-events-none select-none">
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={rMid}
+                    fill="none"
+                    stroke="#cbd5e1"
+                    strokeWidth="10"
+                    strokeDasharray="6 6"
+                    className="opacity-40"
                   />
-
-                  {/* Number & Bengali Label within the Segment */}
-                  <g 
-                    transform={`translate(${labelPos.x}, ${labelPos.y})`}
-                    className="pointer-events-none select-none"
+                  <text
+                    x={cx}
+                    y={cy - 52}
+                    textAnchor="middle"
+                    fill="#64748b"
+                    className="text-[11px] font-bold"
                   >
-                    {/* Sequence Number */}
-                    <text
-                      y="-4"
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      className="font-black text-[13px] sm:text-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
-                    >
-                      {item.numberBn}
-                    </text>
-                    
-                    {/* Short Feature Title in Bengali */}
-                    <text
-                      y="10"
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      className="font-bold text-[9px] sm:text-[10px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
-                    >
-                      {item.shortTitle}
-                    </text>
-                  </g>
+                    কোনো অপশন সক্রিয় নেই
+                  </text>
                 </g>
-              );
-            })}
+              )}
+
+              {/* Render each active chevron segment */}
+              {activeItems.map((item, index) => {
+                let pathData = '';
+                let labelPos = { x: cx, y: cy + rMid };
+                let dx = 0;
+                let dy = 0;
+
+                if (count === 1) {
+                  pathData = describeSingleRingSegment(cx, cy, rInner, rOuter);
+                  labelPos = polarToCartesian(cx, cy, rMid, Math.PI / 2);
+                } else {
+                  const startAngle = startBaseAngle + index * angleStep + gapAngle / 2;
+                  const endAngle = startBaseAngle + (index + 1) * angleStep - gapAngle / 2;
+                  pathData = describeChevronSegment(cx, cy, rInner, rOuter, startAngle, endAngle, arrowAngle);
+
+                  // Centroid angle for positioning labels and outward explosion
+                  const midAngle = (startAngle + endAngle) / 2 + arrowAngle / 2;
+                  
+                  // Explode translation vector when isOpen = true
+                  const explodeDistance = 34; // outward shift in pixels
+                  dx = isOpen ? Math.cos(midAngle) * explodeDistance : 0;
+                  dy = isOpen ? Math.sin(midAngle) * explodeDistance : 0;
+
+                  // Content label position (Cartesian)
+                  labelPos = polarToCartesian(cx, cy, rMid, midAngle);
+                }
+
+                const isHovered = hoveredItemId === item.id;
+                const segmentTransform = count === 1
+                  ? `${isOpen ? 'scale(1.05)' : isHovered ? 'scale(1.03)' : 'scale(1)'}`
+                  : `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) ${isHovered ? 'scale(1.04)' : 'scale(1)'}`;
+
+                return (
+                  <g
+                    key={item.id}
+                    id={`wheel-segment-${item.id}`}
+                    className="cursor-pointer"
+                    style={{
+                      transform: segmentTransform,
+                      transformOrigin: `${cx}px ${cy}px`,
+                      transition: 'transform 440ms cubic-bezier(0.34, 1.45, 0.64, 1), filter 240ms ease',
+                      filter: isHovered 
+                        ? 'url(#wheel-active-glow) brightness(1.1)' 
+                        : 'url(#wheel-segment-shadow)',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectFeature(item.tab, item.subModule);
+                    }}
+                    onMouseEnter={() => setHoveredItemId(item.id)}
+                    onMouseLeave={() => setHoveredItemId(null)}
+                    onTouchStart={() => setHoveredItemId(item.id)}
+                  >
+                    {/* Segment Chevron Shape */}
+                    <path
+                      d={pathData}
+                      fill={item.color}
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      strokeLinejoin="round"
+                      className="transition-colors duration-200"
+                    />
+
+                    {/* Number & Bengali Label within the Segment */}
+                    <g 
+                      transform={`translate(${labelPos.x}, ${labelPos.y})`}
+                      className="pointer-events-none select-none"
+                    >
+                      {/* Sequence Number */}
+                      <text
+                        y="-4"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        className="font-black text-[13px] sm:text-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+                      >
+                        {item.numberBn}
+                      </text>
+                      
+                      {/* Short Feature Title in Bengali */}
+                      <text
+                        y="10"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        className="font-bold text-[9px] sm:text-[10px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                      >
+                        {item.shortTitle}
+                      </text>
+                    </g>
+                  </g>
+                );
+              })}
           </g>
         </svg>
       </div>
