@@ -177,7 +177,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
       </div>
 
       {/* Main Wheel Container with SVG segments and Center '+' Hub - Optimized compact mobile dimensions */}
-      <div className="relative w-[240px] h-[240px] min-[360px]:w-[252px] min-[360px]:h-[252px] min-[390px]:w-[264px] min-[390px]:h-[264px] sm:w-[300px] sm:h-[300px] flex items-center justify-center">
+      <div className="relative w-[190px] h-[190px] min-[350px]:w-[205px] min-[350px]:h-[205px] min-[380px]:w-[220px] min-[380px]:h-[220px] min-[420px]:w-[240px] min-[420px]:h-[240px] sm:w-[270px] sm:h-[270px] flex items-center justify-center">
         
         {/* Scoped CSS for smooth continuous rotation and elevated ambient glow */}
         <style>{`
