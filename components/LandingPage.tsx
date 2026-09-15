@@ -408,7 +408,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 {/* খুলনা Tag (Placed right below Regional Office tag) */}
-                <div className="mt-1 flex items-center justify-center">
+                <div className="mt-1 mb-1 sm:mb-1.5 flex items-center justify-center">
                   <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-sm font-black px-5 min-[380px]:px-6 sm:px-6 py-0.5 sm:py-1 rounded-xl border border-blue-200 transition-all shadow-sm sm:shadow-md animate-pulse-green">
                     খুলনা
                   </span>

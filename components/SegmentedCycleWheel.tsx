@@ -191,11 +191,11 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   return (
     <div className="w-full flex flex-col items-center justify-center select-none py-0 my-auto">
       
-      {/* Active Hovered Feature Floating Tooltip (Only visible during hover/touch, otherwise zero height) */}
-      <div className="h-0 relative w-full flex items-center justify-center pointer-events-none">
-        {activeHoveredItem && (
+      {/* Active Hovered Feature Floating Tooltip (Positioned cleanly between header and wheel, never overlapping 'খুলনা') */}
+      <div className="h-6 w-full flex items-center justify-center pointer-events-none mb-1 z-20">
+        {activeHoveredItem ? (
           <div 
-            className="absolute -top-7 flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black shadow-md animate-fade-in z-30"
+            className="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black shadow-md animate-fade-in"
             style={{
               backgroundColor: activeHoveredItem.color,
               color: activeHoveredItem.textColor,
@@ -204,6 +204,8 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
             {renderWheelIcon(activeHoveredItem.iconName, "w-3 h-3 shrink-0")}
             <span>{activeHoveredItem.numberBn}. {activeHoveredItem.title}</span>
           </div>
+        ) : (
+          <div className="h-5 invisible" />
         )}
       </div>
 
