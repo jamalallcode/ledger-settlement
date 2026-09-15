@@ -63,8 +63,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
 
+  useEffect(() => {
+    const handleSettingsUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<Record<string, boolean>>;
+      if (customEvent.detail) {
+        setWheelSettings(customEvent.detail);
+      } else {
+        setWheelSettings(getWheelSettings());
+      }
+    };
+
+    window.addEventListener('cycle-wheel-settings-updated', handleSettingsUpdate);
+    return () => {
+      window.removeEventListener('cycle-wheel-settings-updated', handleSettingsUpdate);
+    };
+  }, []);
+
   const handleToggleWheelItem = async (itemId: string) => {
-    const currentVal = wheelSettings[itemId] ?? true;
+    const itemDef = MASTER_WHEEL_ITEMS.find((i) => i.id === itemId);
+    const defaultVal = itemDef ? itemDef.defaultEnabled : true;
+    const currentVal = wheelSettings[itemId] !== undefined ? wheelSettings[itemId] : defaultVal;
     const nextSettings = { ...wheelSettings, [itemId]: !currentVal };
     setWheelSettings(nextSettings);
     saveWheelSettings(nextSettings);
