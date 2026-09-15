@@ -17,7 +17,8 @@ import {
 import { 
   getActiveWheelItems, 
   CycleWheelItem, 
-  getWheelSettings 
+  getWheelSettings,
+  MASTER_WHEEL_ITEMS
 } from '../utils/cycleWheelConfig';
 import { ModuleVisibility } from '../types';
 
@@ -138,7 +139,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     const items = getActiveWheelItems(wheelSettings);
     
     // Filter by moduleVisibility so toggling dashboard switches directly affects the wheel!
-    return items.filter((item) => {
+    const filtered = items.filter((item) => {
       if (moduleVisibility) {
         if (item.tab === 'entry' && moduleVisibility.entry === false) return false;
         if (item.tab === 'register' && moduleVisibility.register === false) return false;
@@ -148,7 +149,14 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
         if (item.tab === 'voting' && moduleVisibility.voting === false) return false;
       }
       return true;
-    }).map((item, idx) => {
+    });
+
+    // Fallback guarantee: Never allow activeItems to be empty
+    const finalItems = filtered.length > 0 
+      ? filtered 
+      : (items.length > 0 ? items : MASTER_WHEEL_ITEMS.filter(i => i.defaultEnabled));
+
+    return finalItems.map((item, idx) => {
       const bengaliDigits = ['১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯', '১০'];
       return {
         ...item,
@@ -200,15 +208,15 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
       </div>
 
       {/* Main Wheel Container with SVG segments and Center '+' Hub - Optimized compact mobile dimensions */}
-      <div className="relative w-[180px] h-[180px] min-[350px]:w-[192px] min-[350px]:h-[192px] min-[380px]:w-[204px] min-[380px]:h-[204px] min-[420px]:w-[218px] min-[420px]:h-[218px] sm:w-[270px] sm:h-[270px] flex items-center justify-center">
+      <div className="relative w-[230px] h-[230px] min-[360px]:w-[250px] min-[360px]:h-[250px] min-[400px]:w-[270px] min-[400px]:h-[270px] sm:w-[280px] sm:h-[280px] flex items-center justify-center">
         
         {/* Scoped CSS for smooth continuous rotation and elevated ambient glow */}
         <style>{`
           @keyframes cycle-wheel-slow-spin {
-            0% {
+            from {
               transform: rotate(0deg);
             }
-            100% {
+            to {
               transform: rotate(360deg);
             }
           }
@@ -226,8 +234,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
           }
           .cycle-wheel-rotating {
             animation: cycle-wheel-slow-spin 48s linear infinite;
-            transform-origin: 160px 160px;
-            transform-box: view-box;
+            transform-origin: center center;
           }
           .cycle-wheel-glow-aura {
             animation: cycle-wheel-ambient-glow 4.5s ease-in-out infinite;
@@ -243,34 +250,34 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
           }`} 
         />
 
-        {/* SVG Canvas for Chevron Arrow Segments */}
-        <svg
-          viewBox={`0 0 ${size} ${size}`}
-          className="w-full h-full overflow-visible drop-shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
+        {/* SVG Container for Chevron Arrow Segments - Smooth reliable rotation wrapper */}
+        <div 
+          className={`absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-500 ${
+            !isOpen ? 'cycle-wheel-rotating' : ''
+          }`}
+          style={{ transformOrigin: 'center center' }}
         >
-          <defs>
-            {/* Soft inner filter for depth */}
-            <filter id="wheel-segment-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
-            </filter>
-            <filter id="wheel-active-glow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.8" />
-              <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.35" />
-            </filter>
-          </defs>
-
-          {/* Rotating Group: Rotates strictly around SVG mathematical center (cx, cy) so it never wobbles or moves off the Plus button */}
-          <g
-            id="cycle-wheel-segments-group"
-            className={!isOpen ? 'cycle-wheel-rotating' : ''}
-            style={{
-              transformOrigin: `${cx}px ${cy}px`,
-              transformBox: 'view-box',
-              transition: 'transform 500ms ease-out',
-            }}
+          <svg
+            viewBox={`0 0 ${size} ${size}`}
+            width="100%"
+            height="100%"
+            className="w-full h-full overflow-visible drop-shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
           >
-            {/* Render each chevron segment */}
-            {activeItems.map((item, index) => {
+            <defs>
+              {/* Soft inner filter for depth */}
+              <filter id="wheel-segment-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
+              </filter>
+              <filter id="wheel-active-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ffffff" floodOpacity="0.8" />
+                <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.35" />
+              </filter>
+            </defs>
+
+            {/* Group containing all segments */}
+            <g id="cycle-wheel-segments-group">
+              {/* Render each chevron segment */}
+              {activeItems.map((item, index) => {
               const startAngle = startBaseAngle + index * angleStep + gapAngle / 2;
               const endAngle = startBaseAngle + (index + 1) * angleStep - gapAngle / 2;
               const pathData = describeChevronSegment(cx, cy, rInner, rOuter, startAngle, endAngle, arrowAngle);
@@ -348,6 +355,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
             })}
           </g>
         </svg>
+      </div>
 
         {/* CENTER HUB: The Iconic Green Circular '+' Button */}
         <div 

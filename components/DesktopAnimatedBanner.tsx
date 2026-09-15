@@ -30,26 +30,26 @@ export const DesktopAnimatedBanner: React.FC<DesktopAnimatedBannerProps> = ({
   }, [currentCycleLabel]);
 
   return (
-    <div className="w-full grid grid-cols-1 min-[900px]:grid-cols-3 gap-2 sm:gap-2.5 lg:gap-3.5 select-none font-bold text-[12px] sm:text-[13px] xl:text-[14px]">
+    <div className="w-full grid grid-cols-3 gap-2 sm:gap-2.5 lg:gap-3.5 select-none font-bold text-[10.5px] min-[900px]:text-[12px] lg:text-[13px] xl:text-[14px]">
       {/* ১ম কলাম শিরোনাম (সর্ববামে - সবুজ) */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[#047857] min-w-0 px-2 py-0.5">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#059669] shadow-[0_0_0_2px_rgba(5,150,105,0.25)] shrink-0" />
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[#047857] min-w-0 px-1 sm:px-2 py-0.5">
+        <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#059669] shadow-[0_0_0_2px_rgba(5,150,105,0.25)] shrink-0" />
         <span className="truncate whitespace-nowrap">
           পূর্ববর্তী মাস ({cleanPrev} খ্রিঃ) পর্যন্ত
         </span>
       </div>
 
       {/* ২য় কলাম শিরোনাম (মাঝখানে - নীল) */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[#1d4ed8] min-w-0 px-2 py-0.5">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] shadow-[0_0_0_2px_rgba(37,99,235,0.25)] shrink-0" />
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[#1d4ed8] min-w-0 px-1 sm:px-2 py-0.5">
+        <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#2563eb] shadow-[0_0_0_2px_rgba(37,99,235,0.25)] shrink-0" />
         <span className="truncate whitespace-nowrap">
           চলতি মাস ({cleanCurr} খ্রিঃ) পর্যন্ত
         </span>
       </div>
 
       {/* ৩য় কলাম শিরোনাম (সর্বডানে - লাল) */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[#b91c1c] min-w-0 px-2 py-0.5">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626] shadow-[0_0_0_2px_rgba(220,38,38,0.25)] shrink-0" />
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[#b91c1c] min-w-0 px-1 sm:px-2 py-0.5">
+        <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#dc2626] shadow-[0_0_0_2px_rgba(220,38,38,0.25)] shrink-0" />
         <span className="truncate whitespace-nowrap">
           চলতি মাস ({cleanCurr} খ্রিঃ) পর্যন্ত
         </span>
