@@ -134,37 +134,10 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     };
   }, []);
 
-  // Compute active items based on wheelSettings AND moduleVisibility
+  // Compute active items based strictly on right-panel wheelSettings (Cycle Wheel Feature Controls)
   const activeItems = useMemo(() => {
-    const items = getActiveWheelItems(wheelSettings);
-    
-    // Filter by moduleVisibility so toggling dashboard switches directly affects the wheel!
-    const filtered = items.filter((item) => {
-      if (moduleVisibility) {
-        if (item.tab === 'entry' && moduleVisibility.entry === false) return false;
-        if (item.tab === 'register' && moduleVisibility.register === false) return false;
-        if (item.tab === 'return' && moduleVisibility.return === false) return false;
-        if (item.tab === 'archive' && moduleVisibility.archive === false) return false;
-        if (item.tab === 'links' && moduleVisibility.links === false) return false;
-        if (item.tab === 'voting' && moduleVisibility.voting === false) return false;
-      }
-      return true;
-    });
-
-    // Fallback guarantee: Never allow activeItems to be empty
-    const finalItems = filtered.length > 0 
-      ? filtered 
-      : (items.length > 0 ? items : MASTER_WHEEL_ITEMS.filter(i => i.defaultEnabled));
-
-    return finalItems.map((item, idx) => {
-      const bengaliDigits = ['১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯', '১০'];
-      return {
-        ...item,
-        numberBn: bengaliDigits[idx] || `${idx + 1}`,
-        numberEn: `${idx + 1}`,
-      };
-    });
-  }, [wheelSettings, moduleVisibility]);
+    return getActiveWheelItems(wheelSettings);
+  }, [wheelSettings]);
 
   // Geometry configuration for SVG rendering
   const size = 320;
