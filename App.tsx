@@ -1520,7 +1520,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-bengali">
+    <div className="flex h-screen h-[100dvh] bg-slate-50 overflow-hidden font-bengali">
       <style>{dynamicThemeCSS}</style>
       <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden hidden lg:block ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 
@@ -1544,7 +1544,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 min-h-0 h-full flex flex-col min-w-0">
         {(isAdmin || moduleVisibility.navbar !== false) && (
           <div className="no-print">
             <Navbar 
@@ -1576,7 +1576,7 @@ const App: React.FC = () => {
 
         <main 
           ref={mainScrollRef} 
-          className={`flex-1 ${
+          className={`flex-1 min-h-0 ${
             activeTab === 'landing' 
               ? 'overflow-y-auto md:overflow-y-auto flex flex-col items-center justify-start p-1 sm:p-3 md:px-6 md:py-3.5 landing-main-container' 
               : activeTab === 'return' 
