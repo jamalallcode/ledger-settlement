@@ -28,10 +28,6 @@ export interface CycleWheelItem {
 // 3. চিঠিপত্র রেজিস্টার (Correspondence Register)
 // 4. মীমাংসা রেজিস্টার (Settlement Register)
 // 5. রিপোর্ট ও সারাংশ (Reports)
-// 6. অডিট আর্কাইভ (Audit Archive)
-// 7. ড্যাশবোর্ড (Dashboard - Admin)
-// 8. গুরুত্বপূর্ণ লিংক (Links)
-// 9. অভ্যন্তরীণ মতামত (Voting)
 export const MASTER_WHEEL_ITEMS: CycleWheelItem[] = [
   {
     id: 'entry_correspondence',
@@ -111,66 +107,6 @@ export const MASTER_WHEEL_ITEMS: CycleWheelItem[] = [
     iconName: 'PieChart',
     tab: 'return',
     defaultEnabled: true,
-  },
-  {
-    id: 'archive',
-    title: 'অডিট আর্কাইভ',
-    shortTitle: 'আর্কাইভ',
-    englishLabel: 'ARCHIVE',
-    numberBn: '৬',
-    numberEn: '6',
-    color: '#475569',      // Slate / Archive Gray
-    gradient: 'from-[#64748b] to-[#334155]',
-    hoverColor: '#334155',
-    textColor: '#ffffff',
-    iconName: 'Library',
-    tab: 'archive',
-    defaultEnabled: true,
-  },
-  {
-    id: 'dashboard',
-    title: 'ড্যাশবোর্ড',
-    shortTitle: 'ড্যাশবোর্ড',
-    englishLabel: 'DASHBOARD',
-    numberBn: '৭',
-    numberEn: '7',
-    color: '#ea580c',      // Tangerine Orange
-    gradient: 'from-[#f97316] to-[#c2410c]',
-    hoverColor: '#c2410c',
-    textColor: '#ffffff',
-    iconName: 'LayoutDashboard',
-    tab: 'dashboard',
-    defaultEnabled: true,
-  },
-  {
-    id: 'links',
-    title: 'গুরুত্বপূর্ণ লিংক',
-    shortTitle: 'লিংকসমূহ',
-    englishLabel: 'LINKS',
-    numberBn: '৮',
-    numberEn: '8',
-    color: '#6366f1',      // Indigo
-    gradient: 'from-[#818cf8] to-[#4f46e5]',
-    hoverColor: '#4338ca',
-    textColor: '#ffffff',
-    iconName: 'ExternalLink',
-    tab: 'links',
-    defaultEnabled: false,
-  },
-  {
-    id: 'voting',
-    title: 'অভ্যন্তরীণ মতামত',
-    shortTitle: 'মতামত',
-    englishLabel: 'VOTING',
-    numberBn: '৯',
-    numberEn: '9',
-    color: '#ec4899',      // Pink
-    gradient: 'from-[#f472b6] to-[#db2777]',
-    hoverColor: '#be185d',
-    textColor: '#ffffff',
-    iconName: 'Vote',
-    tab: 'voting',
-    defaultEnabled: false,
   },
 ];
 
