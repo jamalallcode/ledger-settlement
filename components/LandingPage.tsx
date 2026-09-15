@@ -363,15 +363,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
     };
   }, [entries, prevStatsTick]);
 
+  const formattedCycleText = useMemo(() => {
+    if (!cycleLabel) return "চলমান মাস: চলতি সাইকেল";
+    if (cycleLabel.startsWith("চলমান মাস:")) return cycleLabel;
+    return `চলমান মাস: ${cycleLabel}`;
+  }, [cycleLabel]);
+
   return (
     <div 
-      className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-auto shrink-0 min-h-full h-auto pt-0 sm:pt-1 md:pt-1.5 pb-16 sm:pb-20 md:pb-4"
+      className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-auto shrink-0 min-h-full h-auto pt-0 sm:pt-1 md:pt-1.5 pb-10 min-[380px]:pb-10.5 md:pb-4"
       style={{ minHeight: 'max(100%, max-content)' }}
     >
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-none pt-3.5 min-[380px]:pt-4 sm:pt-4 px-1.5 sm:px-4 pb-14 sm:pb-16 md:px-5 md:pt-4 md:pb-4 lg:px-7 lg:pt-5 lg:pb-5 transition-all duration-500 animate-fade-in w-full flex-auto shrink-0 flex flex-col justify-between border min-h-full h-auto"
+        className="landing-hero-card relative rounded-none pt-3.5 min-[380px]:pt-4 sm:pt-4 px-1.5 sm:px-4 pb-3 sm:pb-4 md:px-5 md:pt-4 md:pb-4 lg:px-7 lg:pt-5 lg:pb-5 transition-all duration-500 animate-fade-in w-full flex-auto shrink-0 flex flex-col justify-between border min-h-full h-auto"
         style={{ minHeight: 'max(100%, max-content)' }}
       >
         {/* Subtle patterned backdrop */}
@@ -453,7 +459,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
             <div className="hidden md:flex w-full flex-col lg:flex-row items-center lg:items-end justify-between gap-1.5 min-[380px]:gap-2 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-0.5 min-[380px]:pt-1 sm:pt-2.5 pb-0">
               
               {/* Date Box */}
-              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1 sm:gap-1.5 text-center lg:text-left relative w-full lg:w-[54%] max-w-full lg:max-w-[340px]">
+              <div className="flex flex-col items-center lg:items-stretch justify-center gap-1 sm:gap-1.5 text-center lg:text-left relative w-full lg:w-[60%] max-w-full lg:max-w-[400px]">
                 <div className="hidden lg:flex items-center gap-2 justify-start">
                   <span className="landing-label-muted text-[10.5px] sm:text-[11.5px] uppercase font-black tracking-wider block text-left animate-colorful-slide">
                     চলমান রিপোর্টিং সাইকেল
@@ -471,8 +477,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   {/* Right Text Area: Solid Emerald Green with dark green bottom bar */}
                   <div className="flex-1 flex flex-col h-full min-w-0">
                     <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3">
-                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-[12px] md:text-[12.5px] tracking-tight text-center whitespace-nowrap leading-tight">
-                        {cycleLabel || "চলমান কোয়ার্টার"}
+                      <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] sm:text-[11.5px] md:text-[12px] tracking-tight text-center whitespace-nowrap leading-tight">
+                        {formattedCycleText}
                       </span>
                     </div>
                     <div className="h-[3px] bg-[#047857]" />
@@ -481,7 +487,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Launch Action Button */}
-              <div className="w-full lg:w-[44%] max-w-full lg:max-w-[260px] flex justify-center lg:justify-end">
+              <div className="w-full lg:w-[38%] max-w-full lg:max-w-[230px] flex justify-center lg:justify-end">
                 {(isAdmin || moduleVisibility.entry) && (
                   <button 
                     id="btn-start-work"
@@ -543,57 +549,18 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
       </div>
 
-      {/* MOBILE FIXED BOTTOM ACTION BAR (Strictly visible on mobile, fixed at the bottom of the screen) */}
+      {/* MOBILE FIXED BOTTOM BAR (Strictly visible on mobile, fixed at the bottom of the screen) */}
       <div 
         id="mobile-fixed-bottom-actions"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] px-2.5 sm:px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full select-none shadow-[0_-4px_16px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="w-full max-w-lg mx-auto flex items-center justify-between gap-2">
-          {/* Date Box on Mobile */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-stretch h-9.5 min-[380px]:h-10 w-full shadow-[0_1px_4px_rgba(0,0,0,0.08)] select-none rounded-[4px] overflow-hidden">
-              <div className="flex flex-col w-8 min-[380px]:w-8.5 shrink-0 h-full">
-                <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                  <Calendar className="text-emerald-700 w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div className="h-[3px] bg-[#94a3b8]" />
-              </div>
-              <div className="flex-1 flex flex-col h-full min-w-0">
-                <div className="flex-1 bg-[#059669] flex items-center justify-center px-2">
-                  <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] tracking-tight text-center truncate leading-tight">
-                    {cycleLabel || "চলমান কোয়ার্টার"}
-                  </span>
-                </div>
-                <div className="h-[3px] bg-[#047857]" />
-              </div>
-            </div>
+        <div className="w-full flex flex-col h-10 min-[380px]:h-10.5">
+          <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3 overflow-hidden">
+            <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] min-[390px]:text-[12px] sm:text-[12.5px] tracking-tight text-center whitespace-nowrap leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+              {formattedCycleText}
+            </span>
           </div>
-
-          {/* Launch Action Button on Mobile */}
-          {(isAdmin || moduleVisibility?.entry !== false) && (
-            <div className="flex-1 min-w-0">
-              <button 
-                id="btn-start-work-mobile"
-                onClick={() => setActiveTab('entry')}
-                className="group flex items-stretch h-9.5 min-[380px]:h-10 w-full shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:translate-y-[1px] transition-transform select-none cursor-pointer text-left font-inherit outline-none border-none p-0 rounded-[4px] overflow-hidden"
-              >
-                <div className="flex flex-col w-8 min-[380px]:w-8.5 shrink-0 h-full">
-                  <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                    <ArrowRight className="text-red-800 w-4 h-4 stroke-[3] group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <div className="h-[3px] bg-[#94a3b8]" />
-                </div>
-                <div className="flex-1 flex flex-col h-full min-w-0">
-                  <div className="flex-1 bg-[#991b1b] active:bg-[#851616] transition-colors flex items-center justify-center px-2">
-                    <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] tracking-wide text-center uppercase whitespace-nowrap leading-tight">
-                      কাজ শুরু করুন
-                    </span>
-                  </div>
-                  <div className="h-[3px] bg-[#450a0a]" />
-                </div>
-              </button>
-            </div>
-          )}
+          <div className="h-[3px] bg-[#047857]" />
         </div>
       </div>
     </div>
