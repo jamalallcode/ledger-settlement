@@ -45,6 +45,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
     change_pass: true,
     admin_analytics: true,
     audit_details: true,
+    cycle_wheel: true,
   }
 }) => {
   // State to read and react to opening balances from storage
@@ -434,13 +435,16 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on desktop/computer screens; shifted upward by the button height on mobile) */}
-            <div className="w-full select-none my-auto py-0 flex items-center justify-center md:hidden -translate-y-8 min-[380px]:-translate-y-9 sm:translate-y-0">
-              <SegmentedCycleWheel 
-                onSelectFeature={setActiveTab} 
-                isAdmin={isAdmin} 
-              />
-            </div>
+            {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on laptop/desktop) */}
+            {(moduleVisibility?.cycle_wheel !== false) && (
+              <div className="w-full select-none my-auto py-0 flex items-center justify-center md:hidden -mt-2.5 min-[380px]:-mt-3.5 -mb-2.5 min-[380px]:-mb-3.5 -translate-y-1.5 min-[380px]:-translate-y-2 sm:my-auto sm:mt-0 sm:mb-0 sm:translate-y-0">
+                <SegmentedCycleWheel 
+                  onSelectFeature={setActiveTab} 
+                  isAdmin={isAdmin} 
+                  moduleVisibility={moduleVisibility}
+                />
+              </div>
+            )}
             {/* LAUNCH ACTIONS (Enclosed inside Right Card) */}
             <div className="w-full flex flex-col lg:flex-row items-center lg:items-end justify-between gap-1.5 min-[380px]:gap-2 sm:gap-3 lg:gap-4 transition-colors mt-auto sm:mt-0 pt-0.5 min-[380px]:pt-1 sm:pt-2.5 pb-0">
               

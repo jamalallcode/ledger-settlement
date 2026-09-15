@@ -189,4 +189,5 @@ export interface ModuleVisibility {
   audit_details: boolean;
   navbar?: boolean;
   links?: boolean;
+  cycle_wheel?: boolean;
 }
