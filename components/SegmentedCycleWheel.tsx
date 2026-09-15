@@ -26,6 +26,7 @@ interface SegmentedCycleWheelProps {
   onSelectFeature: (tab: string, subModule?: 'settlement' | 'correspondence') => void;
   isAdmin?: boolean;
   moduleVisibility?: ModuleVisibility;
+  wheelSettings?: Record<string, boolean>;
 }
 
 // Icon helper to render appropriate Lucide icon for each item
@@ -145,19 +146,20 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   onSelectFeature,
   isAdmin = false,
   moduleVisibility,
+  wheelSettings: propWheelSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
-  const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
+  const [localWheelSettings, setLocalWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
 
   // Listen for settings update from Admin Dashboard
   useEffect(() => {
     const handleSettingsUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<Record<string, boolean>>;
       if (customEvent.detail) {
-        setWheelSettings(customEvent.detail);
+        setLocalWheelSettings(customEvent.detail);
       } else {
-        setWheelSettings(getWheelSettings());
+        setLocalWheelSettings(getWheelSettings());
       }
     };
 
@@ -167,10 +169,12 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     };
   }, []);
 
+  const effectiveWheelSettings = propWheelSettings || localWheelSettings;
+
   // Compute active items based strictly on right-panel wheelSettings (Cycle Wheel Feature Controls)
   const activeItems = useMemo(() => {
-    return getActiveWheelItems(wheelSettings);
-  }, [wheelSettings]);
+    return getActiveWheelItems(effectiveWheelSettings);
+  }, [effectiveWheelSettings]);
 
   // Geometry configuration for SVG rendering
   const size = 320;
