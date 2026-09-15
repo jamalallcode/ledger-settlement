@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, FileText, Calendar, Hash, User } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
+import { getCleanLetterTypeDisplay } from '../utils/branchUtils';
 
 interface LetterDetailsModalProps {
   isOpen: boolean;
@@ -150,7 +151,7 @@ const LetterDetailsModal: React.FC<LetterDetailsModalProps> = ({ isOpen, onClose
                         <span className={`bg-blue-50 text-blue-700 border border-blue-200 rounded font-black uppercase tracking-wider ${
                           isEmbedded ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
                         }`}>
-                          {letter.letterType}
+                          {getCleanLetterTypeDisplay(letter.letterType)}
                         </span>
                       )}
                       {letter.archiveNo && (

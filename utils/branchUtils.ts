@@ -70,10 +70,25 @@ export const getBranchVariations = (type: string): string[] => {
 export const getCleanLetterTypeDisplay = (type: string | null | undefined): string => {
   if (!type) return '';
   const t = type.trim();
-  if (t === 'দ্বিপক্ষীয় সভা (কার্যপত্র)' || t === 'কার্যপত্র (দ্বি-সভা)' || t === 'দ্বি-সভা (কার্যপত্র)') return 'দ্বি-সভা (কার্যপত্র)';
-  if (t === 'ত্রিপক্ষীয় সভা (কার্যপত্র)') return 'কার্যপত্র (ত্রি-সভা)';
-  if (t === 'দ্বিপক্ষীয় সভা (কার্যবিবরণী)' || t === 'দ্বিপক্ষীয় সভা' || t === 'দ্বি-সভা (কার্যবিবরনী)' || t === 'দ্বি-সভা (কার্যবিবরণী)') return 'দ্বি-সভা (কার্যবিবরনী)';
-  if (t === 'ত্রিপক্ষীয় সভা (কার্যবিবরণী)') return 'ত্রিপক্ষীয় সভা';
+  const norm = t.normalize('NFC');
+  if (norm.includes('কার্যপত্র') && (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষ'))) {
+    return 'দ্বি-সভা (কার্যপত্র)';
+  }
+  if (norm.includes('কার্যপত্র') && (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষ'))) {
+    return 'কার্যপত্র (ত্রি-সভা)';
+  }
+  if (
+    (norm.includes('দ্বিপক্ষ') && !norm.includes('কার্যপত্র')) ||
+    (norm.includes('দ্বি-সভা') && !norm.includes('কার্যপত্র'))
+  ) {
+    return 'দ্বি-সভা (কার্যবিবরনী)';
+  }
+  if (
+    (norm.includes('ত্রিপক্ষ') && !norm.includes('কার্যপত্র')) ||
+    (norm.includes('ত্রি-সভা') && !norm.includes('কার্যপত্র'))
+  ) {
+    return 'ত্রিপক্ষীয় সভা';
+  }
   return t;
 };
 
