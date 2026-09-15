@@ -364,17 +364,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
   }, [entries, prevStatsTick]);
 
   return (
-    <div className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-1 min-h-0 h-full pt-0 sm:pt-1 md:pt-1.5 pb-1 sm:pb-2">
+    <div 
+      className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-auto shrink-0 min-h-full h-auto pt-0 sm:pt-1 md:pt-1.5 pb-2 sm:pb-3 md:pb-4"
+      style={{ minHeight: 'max(100%, max-content)' }}
+    >
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-none p-1 sm:p-4 md:p-6 lg:p-7 transition-all duration-500 animate-fade-in w-full flex-1 flex flex-col justify-between border min-h-0 md:min-h-[calc(100vh-120px)]"
+        className="landing-hero-card relative rounded-none pt-3.5 min-[380px]:pt-4 sm:pt-4 px-1.5 sm:px-4 pb-3 sm:pb-4 md:px-5 md:pt-4 md:pb-4 lg:px-7 lg:pt-5 lg:pb-5 transition-all duration-500 animate-fade-in w-full flex-auto shrink-0 flex flex-col justify-between border min-h-full h-auto"
+        style={{ minHeight: 'max(100%, max-content)' }}
       >
         {/* Subtle patterned backdrop */}
         <div className="landing-grid-bg absolute inset-0 pointer-events-none rounded-none" />
         
         {/* Top Split Identity Area - using stretch to match left and right column heights */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-1.5 min-[380px]:gap-2 sm:gap-5 lg:gap-7 items-stretch flex-1 flex flex-col md:grid justify-between">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-1 min-[380px]:gap-1.5 sm:gap-4 lg:gap-6 items-stretch flex-auto shrink-0 flex flex-col md:grid justify-between">
           
           {/* LEFT PANEL: Branding & Executive Seals */}
           <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-4 lg:pr-6 pt-0 sm:pt-1 md:pt-2 pb-0 sm:pb-1 md:pb-2">
@@ -418,7 +422,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* RIGHT PANEL: App Description & Interactive Portal Actions - Seamlessly integrated on the parent background */}
-          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-between p-0 sm:p-2 md:p-3 lg:p-4 w-full flex-1 min-w-0">
+          <div className="md:col-span-8 lg:col-span-8 flex flex-col justify-start md:justify-between p-0 sm:p-2 md:p-3 lg:p-4 w-full flex-1 min-w-0">
             
             {/* System Overview / Platform Description */}
             <div className="w-full relative flex items-center md:items-start justify-center md:justify-start">
@@ -437,7 +441,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on laptop/desktop) */}
             {(moduleVisibility?.cycle_wheel !== false) && (
-              <div className="w-full select-none my-auto py-1 sm:py-2 flex items-center justify-center md:hidden">
+              <div className="w-full select-none mt-0 mb-auto py-0.5 sm:py-1 flex items-center justify-center md:hidden -translate-y-1 sm:-translate-y-2">
                 <SegmentedCycleWheel 
                   onSelectFeature={setActiveTab} 
                   isAdmin={isAdmin} 
@@ -514,11 +518,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
         {/* Integrated Aesthetic Institutional Footer - Inside Main Card (HIDDEN ON MOBILE, DISPLAYED ON MD+ DESKTOP) */}
         <div 
           id="landing-aesthetic-footer" 
-          className="hidden md:block relative z-10 mt-auto pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-1.5 border-t border-slate-200/80 w-full transition-all select-none"
+          className="hidden md:block relative z-10 mt-auto shrink-0 pt-2.5 md:pt-3 lg:pt-4 pb-2.5 md:pb-3 lg:pb-4 border-t border-slate-200/80 w-full transition-all select-none"
         >
           {/* প্রতিটি কলামের জন্য ফিক্সড শিরোনাম (বাম: পূর্ববর্তী মাস, মধ্য: চলতি মাস, ডান: চলতি মাস) */}
           <div 
-            className="w-full mb-2 sm:mb-2.5 border-b border-emerald-100/60 pb-1.5"
+            className="w-full mb-1.5 sm:mb-2 border-b border-emerald-100/60 pb-1"
           >
             <DesktopAnimatedBanner 
               prevCycleLabel={prevCycleLabel} 

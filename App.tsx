@@ -1599,16 +1599,22 @@ const App: React.FC = () => {
           }}
         >
           {activeTab === 'landing' && <AnimatedPremiumBg />}
-          <div className={
-            activeTab === 'landing' 
-              ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-0 min-h-0 py-0 flex-1 justify-start h-full" 
-              : activeTab === 'return'
-                ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
-                : activeTab === 'register'
-                  ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
-                  : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
-          }>
-            <div className={activeTab === 'landing' ? "flex-1 min-h-0 flex flex-col h-full" : "flex-1 min-h-0 flex flex-col"}>
+          <div 
+            className={
+              activeTab === 'landing' 
+                ? "relative z-10 w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col animate-fade-in my-0 min-h-full h-auto py-0 flex-auto shrink-0 justify-start" 
+                : activeTab === 'return'
+                  ? "px-0 max-w-full mx-auto w-full flex flex-col pt-0 pb-0" 
+                  : activeTab === 'register'
+                    ? "px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8"
+                    : `px-2 md:px-4 max-w-full mx-auto w-full flex flex-col pt-4 md:pt-8 pb-4 md:pb-8`
+            }
+            style={{ minHeight: activeTab === 'landing' ? 'max(100%, max-content)' : undefined }}
+          >
+            <div 
+              className={activeTab === 'landing' ? "flex-auto shrink-0 flex flex-col min-h-full h-auto" : "flex-1 min-h-0 flex flex-col"}
+              style={{ minHeight: activeTab === 'landing' ? 'max(100%, max-content)' : undefined }}
+            >
               
               {activeTab === 'setup_receivers' && (
                 <ReceiverManagement 
