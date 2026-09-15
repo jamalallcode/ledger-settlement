@@ -23,6 +23,7 @@ interface LandingPageProps {
   onShowPending?: () => void;
   moduleVisibility?: ModuleVisibility;
   onOpenSpecialLogin?: () => void;
+  wheelSettings?: Record<string, boolean>;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -34,6 +35,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   pendingCount = 0,
   onShowPending,
   onOpenSpecialLogin,
+  wheelSettings,
   moduleVisibility = {
     entry: true,
     register: true,
@@ -452,6 +454,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   onSelectFeature={setActiveTab} 
                   isAdmin={isAdmin} 
                   moduleVisibility={moduleVisibility}
+                  wheelSettings={wheelSettings}
                 />
               </div>
             )}

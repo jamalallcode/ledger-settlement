@@ -30,6 +30,8 @@ interface AdminDashboardProps {
   themes?: any[];
   allowPriorPeriodSettlement?: boolean;
   onToggleAllowPriorPeriodSettlement?: () => void;
+  wheelSettings?: Record<string, boolean>;
+  onToggleWheelItem?: (itemId: string) => void;
 }
 
 const colorClasses: Record<string, any> = {
@@ -56,20 +58,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onThemeChange,
   themes = [],
   allowPriorPeriodSettlement = false,
-  onToggleAllowPriorPeriodSettlement
+  onToggleAllowPriorPeriodSettlement,
+  wheelSettings: propWheelSettings,
+  onToggleWheelItem: onToggleWheelItemProp,
 }) => {
   const [adminSubView, setAdminSubView] = useState<'overview' | 'gmail_whitelist' | 'access_codes'>('overview');
   const [localContactLink, setLocalContactLink] = useState(contactLink);
   const [isSaved, setIsSaved] = useState(false);
-  const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
+  const [localWheelSettings, setLocalWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
+
+  const activeWheelSettings = propWheelSettings || localWheelSettings;
 
   useEffect(() => {
     const handleSettingsUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<Record<string, boolean>>;
       if (customEvent.detail) {
-        setWheelSettings(customEvent.detail);
+        setLocalWheelSettings(customEvent.detail);
       } else {
-        setWheelSettings(getWheelSettings());
+        setLocalWheelSettings(getWheelSettings());
       }
     };
 
@@ -80,18 +86,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, []);
 
   const handleToggleWheelItem = async (itemId: string) => {
+    if (onToggleWheelItemProp) {
+      onToggleWheelItemProp(itemId);
+      return;
+    }
     const itemDef = MASTER_WHEEL_ITEMS.find((i) => i.id === itemId);
     const defaultVal = itemDef ? itemDef.defaultEnabled : true;
-    const currentVal = wheelSettings[itemId] !== undefined ? wheelSettings[itemId] : defaultVal;
-    const nextSettings = { ...wheelSettings, [itemId]: !currentVal };
-    setWheelSettings(nextSettings);
+    const currentVal = activeWheelSettings[itemId] !== undefined ? activeWheelSettings[itemId] : defaultVal;
+    const nextVal = !currentVal;
+    const nextSettings = { ...activeWheelSettings, [itemId]: nextVal };
+    setLocalWheelSettings(nextSettings);
     saveWheelSettings(nextSettings);
 
     if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
       try {
         await supabase
           .from('app_settings')
-          .upsert({ key: 'cycle_wheel_settings', value: nextSettings }, { onConflict: 'key' });
+          .upsert({ key: `show_wheel_${itemId}`, value: nextVal }, { onConflict: 'key' });
+
+        await supabase
+          .from('app_settings')
+          .upsert({ key: 'cycle_wheel_settings', value: JSON.stringify(nextSettings) }, { onConflict: 'key' });
       } catch (err) {
         console.error('Failed to sync cycle wheel settings to Supabase:', err);
       }
@@ -515,7 +530,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div className="space-y-2 pt-1">
                     {MASTER_WHEEL_ITEMS.map((item) => {
-                      const isEnabled = wheelSettings[item.id] ?? item.defaultEnabled;
+                      const isEnabled = activeWheelSettings[item.id] ?? item.defaultEnabled;
                       return (
                         <div 
                           key={item.id} 

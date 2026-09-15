@@ -22,7 +22,7 @@ import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, Corres
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { saveWheelSettings } from './utils/cycleWheelConfig';
+import { getWheelSettings, saveWheelSettings } from './utils/cycleWheelConfig';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 export const THEMES = [
@@ -153,6 +153,30 @@ const App: React.FC = () => {
     links: true,
     cycle_wheel: true,
   });
+  
+  const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
+
+  const handleToggleWheelItem = async (itemId: string) => {
+    const currentVal = wheelSettings[itemId] !== undefined ? wheelSettings[itemId] : true;
+    const nextVal = !currentVal;
+    const nextSettings = { ...wheelSettings, [itemId]: nextVal };
+    setWheelSettings(nextSettings);
+    saveWheelSettings(nextSettings);
+
+    if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
+      try {
+        await supabase
+          .from('app_settings')
+          .upsert({ key: `show_wheel_${itemId}`, value: nextVal }, { onConflict: 'key' });
+
+        await supabase
+          .from('app_settings')
+          .upsert({ key: 'cycle_wheel_settings', value: JSON.stringify(nextSettings) }, { onConflict: 'key' });
+      } catch (err) {
+        console.error('Failed to sync cycle wheel settings to Supabase:', err);
+      }
+    }
+  };
   
   const [contactLink, setContactLink] = useState<string>(() => {
     return localStorage.getItem('admin_contact_link') || 'https://wa.me/8801700000000';
@@ -651,10 +675,21 @@ const App: React.FC = () => {
             } else if (setting.key === 'cycle_wheel_settings' && setting.value) {
               try {
                 const settingsObj = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
-                saveWheelSettings(settingsObj);
+                if (settingsObj && typeof settingsObj === 'object') {
+                  setWheelSettings(prev => ({ ...prev, ...settingsObj }));
+                  saveWheelSettings(settingsObj);
+                }
               } catch (e) {
                 console.error("Error parsing cycle_wheel_settings from Supabase:", e);
               }
+            } else if (setting.key && setting.key.startsWith('show_wheel_')) {
+              const wheelItemId = setting.key.replace('show_wheel_', '');
+              const boolVal = setting.value === true || setting.value === 'true';
+              setWheelSettings(prev => {
+                const next = { ...prev, [wheelItemId]: boolVal };
+                saveWheelSettings(next);
+                return next;
+              });
             } else {
               const key = setting.key.replace('show_', '');
               if (key in newVisibility) {
@@ -695,10 +730,21 @@ const App: React.FC = () => {
             } else if (payload.new.key === 'cycle_wheel_settings' && payload.new.value) {
               try {
                 const settingsObj = typeof payload.new.value === 'string' ? JSON.parse(payload.new.value) : payload.new.value;
-                saveWheelSettings(settingsObj);
+                if (settingsObj && typeof settingsObj === 'object') {
+                  setWheelSettings(prev => ({ ...prev, ...settingsObj }));
+                  saveWheelSettings(settingsObj);
+                }
               } catch (e) {
                 console.error("Error parsing realtime cycle_wheel_settings:", e);
               }
+            } else if (payload.new.key && payload.new.key.startsWith('show_wheel_')) {
+              const wheelItemId = payload.new.key.replace('show_wheel_', '');
+              const boolVal = payload.new.value === true || payload.new.value === 'true';
+              setWheelSettings(prev => {
+                const next = { ...prev, [wheelItemId]: boolVal };
+                saveWheelSettings(next);
+                return next;
+              });
             } else {
               const key = payload.new.key.replace('show_', '');
               setModuleVisibility(prev => {
@@ -1647,6 +1693,7 @@ const App: React.FC = () => {
                   pendingCount={totalPendingCount}
                   onShowPending={() => handleTabChange('moderation')}
                   moduleVisibility={moduleVisibility}
+                  wheelSettings={wheelSettings}
                   onOpenSpecialLogin={() => setShowAdminLogin(true)}
                 />
               )}
@@ -1826,6 +1873,8 @@ const App: React.FC = () => {
                   themes={THEMES}
                   allowPriorPeriodSettlement={allowPriorPeriodSettlement}
                   onToggleAllowPriorPeriodSettlement={handleToggleAllowPriorPeriodSettlement}
+                  wheelSettings={wheelSettings}
+                  onToggleWheelItem={handleToggleWheelItem}
                 />
               )}
             </div>
