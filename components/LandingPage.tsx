@@ -437,7 +437,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on laptop/desktop) */}
             {(moduleVisibility?.cycle_wheel !== false) && (
-              <div className="w-full select-none my-auto py-0 flex items-center justify-center md:hidden -mt-2.5 min-[380px]:-mt-3.5 -mb-2.5 min-[380px]:-mb-3.5 -translate-y-1.5 min-[380px]:-translate-y-2 sm:my-auto sm:mt-0 sm:mb-0 sm:translate-y-0">
+              <div className="w-full select-none my-auto py-1 sm:py-2 flex items-center justify-center md:hidden">
                 <SegmentedCycleWheel 
                   onSelectFeature={setActiveTab} 
                   isAdmin={isAdmin} 
