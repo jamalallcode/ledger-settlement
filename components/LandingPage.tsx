@@ -378,37 +378,37 @@ const LandingPage: React.FC<LandingPageProps> = ({
           {/* LEFT PANEL: Branding & Executive Seals */}
           <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center text-center md:border-r md:border-slate-200/70 md:pr-4 lg:pr-6 pt-0 sm:pt-1 md:pt-2 pb-0 sm:pb-1 md:pb-2">
             {/* Master Seal Shield - Government Themed */}
-            <div className="flex flex-col items-center space-y-0.5 sm:space-y-2 w-full">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-2 w-full">
               <div 
-                className="landing-shield-bg relative flex items-center justify-center w-10 h-10 min-[380px]:w-11 min-[380px]:h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] text-white rounded-xl sm:rounded-[1.5rem] shadow-md sm:shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
+                className="landing-shield-bg relative flex items-center justify-center w-12 h-12 min-[380px]:w-13 min-[380px]:h-13 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] text-white rounded-xl sm:rounded-[1.5rem] shadow-md sm:shadow-xl border-2 sm:border-[2.5px] border-amber-400 transform hover:scale-[1.03] transition-all duration-300 select-none shrink-0"
               >
                 <div className="absolute inset-0 bg-slate-900/10 rounded-xl sm:rounded-[1.5rem]"></div>
-                <Landmark className="stroke-[2.5] text-white relative z-10 w-5 h-5 min-[380px]:w-5.5 min-[380px]:h-5.5 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9" />
-                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 min-[380px]:w-4 min-[380px]:h-4 sm:w-5 sm:h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] min-[380px]:text-[8px] sm:text-[10px] text-white shadow-md font-black">
+                <Landmark className="stroke-[2.5] text-white relative z-10 w-6 h-6 min-[380px]:w-6.5 min-[380px]:h-6.5 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 min-[380px]:w-4.5 min-[380px]:h-4.5 sm:w-5 sm:h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] min-[380px]:text-[9px] sm:text-[10px] text-white shadow-md font-black">
                   ✓
                 </div>
               </div>
 
               {/* Structured Institutional Identity Card */}
-              <div className="space-y-0.5 sm:space-y-1 w-full pt-0.5">
-                <span className="landing-gov-tag inline-block px-2 py-0.5 sm:px-3 sm:py-0.5 rounded-md text-[9px] min-[380px]:text-[10px] sm:text-xs font-black uppercase tracking-wider">
+              <div className="space-y-1 w-full pt-0.5">
+                <span className="landing-gov-tag inline-block px-2.5 py-0.5 sm:px-3 sm:py-0.5 rounded-md text-[11px] min-[380px]:text-xs sm:text-xs font-black uppercase tracking-wider">
                   গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
                 </span>
                 
-                <h3 className="landing-hero-title text-sm min-[380px]:text-base sm:text-2xl md:text-2xl lg:text-[22px] font-black tracking-tight leading-tight">
+                <h3 className="landing-hero-title text-lg min-[380px]:text-xl sm:text-2xl md:text-2xl lg:text-[22px] font-black tracking-tight leading-snug">
                   বাণিজ্যিক অডিট অধিদপ্তর
                 </h3>
                 
-                <div className="flex flex-col items-center w-full space-y-0.5 sm:space-y-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[9px] min-[380px]:text-[10px] sm:text-xs font-bold shadow-2xs">
-                    <Award size={11} className="text-blue-600 shrink-0" />
+                <div className="flex flex-col items-center w-full space-y-1">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 sm:px-3.5 sm:py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200/40 text-[11px] min-[380px]:text-xs sm:text-xs font-bold shadow-2xs">
+                    <Award size={13} className="text-blue-600 shrink-0" />
                     আঞ্চলিক কার্যালয়, সেক্টর: ০৬
                   </span>
                 </div>
 
                 {/* খুলনা Tag (Placed right below Regional Office tag) */}
-                <div className="mt-0.5 sm:mt-1 flex items-center justify-center">
-                  <span className="landing-sector-text text-[11px] min-[380px]:text-xs sm:text-sm font-black px-4 min-[380px]:px-5 sm:px-6 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border border-blue-200 transition-all shadow-sm sm:shadow-md animate-pulse-green">
+                <div className="mt-1 flex items-center justify-center">
+                  <span className="landing-sector-text text-xs min-[380px]:text-sm sm:text-sm font-black px-5 min-[380px]:px-6 sm:px-6 py-0.5 sm:py-1 rounded-xl border border-blue-200 transition-all shadow-sm sm:shadow-md animate-pulse-green">
                     খুলনা
                   </span>
                 </div>
@@ -434,8 +434,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on desktop/computer screens) */}
-            <div className="w-full select-none my-auto py-0.5 sm:py-0 flex items-center justify-center md:hidden">
+            {/* INTERACTIVE SEGMENTED CYCLE WHEEL (Visible on mobile screens, hidden on desktop/computer screens; shifted upward by the button height on mobile) */}
+            <div className="w-full select-none my-auto py-0 flex items-center justify-center md:hidden -translate-y-8 min-[380px]:-translate-y-9 sm:translate-y-0">
               <SegmentedCycleWheel 
                 onSelectFeature={setActiveTab} 
                 isAdmin={isAdmin} 
