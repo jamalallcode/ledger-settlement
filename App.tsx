@@ -22,6 +22,7 @@ import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, Corres
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { saveWheelSettings } from './utils/cycleWheelConfig';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 export const THEMES = [
@@ -150,6 +151,7 @@ const App: React.FC = () => {
     audit_details: true,
     navbar: true,
     links: true,
+    cycle_wheel: true,
   });
   
   const [contactLink, setContactLink] = useState<string>(() => {
@@ -646,6 +648,13 @@ const App: React.FC = () => {
               const boolVal = setting.value === true || setting.value === 'true';
               setAllowPriorPeriodSettlement(boolVal);
               localStorage.setItem('allow_prior_period_settlement', String(boolVal));
+            } else if (setting.key === 'cycle_wheel_settings' && setting.value) {
+              try {
+                const settingsObj = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+                saveWheelSettings(settingsObj);
+              } catch (e) {
+                console.error("Error parsing cycle_wheel_settings from Supabase:", e);
+              }
             } else {
               const key = setting.key.replace('show_', '');
               if (key in newVisibility) {
@@ -1520,7 +1529,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen h-[100dvh] bg-slate-50 overflow-hidden font-bengali">
+    <div className="flex h-screen h-[100dvh] h-[100svh] bg-slate-50 overflow-hidden font-bengali">
       <style>{dynamicThemeCSS}</style>
       <div className={`no-print h-full relative z-[10000] transition-all duration-300 ease-in-out overflow-hidden hidden lg:block ${isSidebarOpen ? 'w-[126px]' : 'w-0'}`}>
         <Sidebar 

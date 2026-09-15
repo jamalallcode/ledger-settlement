@@ -63,10 +63,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
 
-  const handleToggleWheelItem = (itemId: string) => {
-    const nextSettings = { ...wheelSettings, [itemId]: !wheelSettings[itemId] };
+  const handleToggleWheelItem = async (itemId: string) => {
+    const currentVal = wheelSettings[itemId] ?? true;
+    const nextSettings = { ...wheelSettings, [itemId]: !currentVal };
     setWheelSettings(nextSettings);
     saveWheelSettings(nextSettings);
+
+    if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
+      try {
+        await supabase
+          .from('app_settings')
+          .upsert({ key: 'cycle_wheel_settings', value: nextSettings }, { onConflict: 'key' });
+      } catch (err) {
+        console.error('Failed to sync cycle wheel settings to Supabase:', err);
+      }
+    }
   };
 
   useEffect(() => {
@@ -322,6 +333,170 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               );
             })}
           </div>
+
+          {/* Side-by-Side Switch Controls Panel (বাম পাশের খালি জায়গায় নিখুঁতভাবে সন্নিবেশিত) */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-5 bg-indigo-600 rounded-full"></div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">মডিউল ও সাইকেল হুইল ভিজিবিলিটি কন্ট্রোল</h2>
+                  <p className="text-xs text-slate-500 font-medium">অ্যাপ্লিকেশনের বিভিন্ন মডিউল এবং হোমপেজের গোল চক্রের ফিচার নিয়ন্ত্রণ করুন</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+                পাশাপাশি সুইচ কন্ট্রোল
+              </span>
+            </div>
+
+            <div className="p-6 rounded-[2rem] bg-white border border-slate-200/80 shadow-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x md:divide-slate-200">
+                {/* Left Column: Module Visibility Controls */}
+                <div className="space-y-3 md:pr-6">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2">
+                        <Eye size={16} className="text-blue-600" />
+                        মডিউল ভিজিবিলিটি কন্ট্রোল
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium">অ্যাপ্লিকেশনের কোন কোন প্রধান মডিউল ও মেনু সক্রিয় থাকবে:</p>
+                    </div>
+                    <span className="text-[9.5px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                      প্রধান মডিউল
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {[
+                      { key: 'navbar', label: 'মেনু বার', icon: Menu, color: 'amber' },
+                      { key: 'cycle_wheel', label: 'হোমপেজ গোল চক্র (হুইল)', icon: Sparkles, color: 'indigo' },
+                      { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
+                      { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
+                      { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
+                      { key: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose' },
+                      { key: 'links', label: 'লিংকসমূহ', icon: LinkIcon, color: 'sky' },
+                    ].map((module) => {
+                      const isVisible = moduleVisibility[module.key as keyof ModuleVisibility] !== false;
+                      return (
+                        <div 
+                          key={module.key} 
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                            isVisible 
+                              ? 'bg-white border-slate-200 shadow-2xs' 
+                              : 'bg-slate-50/80 border-slate-200/60 opacity-70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {isVisible ? (
+                              <Eye size={16} className={`text-${module.color}-600`} />
+                            ) : (
+                              <EyeOff size={16} className="text-slate-400" />
+                            )}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-slate-800">{module.label}</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => handleToggleModule(module.key as keyof ModuleVisibility)}
+                            className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                              isVisible 
+                                ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                                : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                            }`}
+                            title={`${module.label} অন/অফ করুন`}
+                          >
+                            {/* Inner Track Text */}
+                            {isVisible ? (
+                              <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                            ) : (
+                              <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                            )}
+                            
+                            {/* Knob */}
+                            <span 
+                              className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                              style={{ 
+                                left: isVisible ? '2px' : '40px' 
+                              }}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Column: Cycle Wheel Feature Controls */}
+                <div className="space-y-3 pt-6 md:pt-0 md:pl-6">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2">
+                        <Sparkles size={16} className="text-emerald-600" />
+                        সাইকেল হুইল (হোমপেজ চক্র) ফিচার কন্ট্রোল
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium">হোম পেজের অ্যানিমেটেড চক্রে কোন কোন ফিচার প্রদর্শিত হবে:</p>
+                    </div>
+                    <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      ডায়নামিক চক্র
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {MASTER_WHEEL_ITEMS.map((item) => {
+                      const isEnabled = wheelSettings[item.id] ?? item.defaultEnabled;
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                            isEnabled ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50/80 border-slate-200/60 opacity-70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span 
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0"
+                              style={{ backgroundColor: item.color }}
+                            >
+                              {item.numberBn}
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-slate-800">{item.title}</span>
+                              <span className="text-[9.5px] font-bold text-slate-400">{item.englishLabel || item.shortTitle}</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => handleToggleWheelItem(item.id)}
+                            className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
+                              isEnabled 
+                                ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
+                                : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
+                            }`}
+                            title={`${item.title} চক্রে অন/অফ করুন`}
+                          >
+                            {/* Inner Track Text */}
+                            {isEnabled ? (
+                              <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
+                            ) : (
+                              <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
+                            )}
+                            
+                            {/* Knob */}
+                            <span 
+                              className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
+                              style={{ 
+                                left: isEnabled ? '2px' : '40px' 
+                              }}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Security & System Status */}
@@ -349,117 +524,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span className="text-xs font-bold text-slate-700">ডাটাবেজ সিঙ্ক</span>
                 </div>
                 <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-widest">Active</span>
-              </div>
-
-              {/* Module Visibility Controls */}
-              <div className="pt-2 pb-1">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">মডিউল ভিজিবিলিটি কন্ট্রোল</h3>
-                <div className="space-y-2">
-                  {[
-                    { key: 'navbar', label: 'মেনু বার', icon: Menu, color: 'amber' },
-                    { key: 'entry', label: 'নতুন এন্ট্রি', icon: PlusCircle, color: 'blue' },
-                    { key: 'register', label: 'রেজিস্টার দেখুন', icon: FileText, color: 'emerald' },
-                    { key: 'return', label: 'রিপোর্ট ও সারাংশ', icon: PieChart, color: 'indigo' },
-                    { key: 'archive', label: 'অডিট ক্রাইটেরিয়া', icon: Library, color: 'rose' },
-                    { key: 'links', label: 'লিংকসমূহ', icon: LinkIcon, color: 'sky' },
-                  ].map((module) => (
-                    <div key={module.key} className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${moduleVisibility[module.key as keyof ModuleVisibility] ? `bg-${module.color}-600/5 border-${module.color}-200/50` : 'bg-slate-50 border-slate-200/80'}`}>
-                      <div className="flex items-center gap-3">
-                        {moduleVisibility[module.key as keyof ModuleVisibility] ? <Eye size={16} className={`text-${module.color}-600`} /> : <EyeOff size={16} className="text-slate-400" />}
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black text-slate-800">{module.label}</span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleToggleModule(module.key as keyof ModuleVisibility)}
-                        className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
-                          moduleVisibility[module.key as keyof ModuleVisibility] 
-                            ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
-                            : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
-                        }`}
-                      >
-                        {/* Inner Track Text */}
-                        {moduleVisibility[module.key as keyof ModuleVisibility] ? (
-                          <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
-                        ) : (
-                          <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
-                        )}
-                        
-                        {/* Knob */}
-                        <span 
-                          className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
-                          style={{ 
-                            left: moduleVisibility[module.key as keyof ModuleVisibility] ? '2px' : '40px' 
-                          }}
-                        />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cycle Wheel Feature Controls for Homepage */}
-              <div className="pt-4 pb-1 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-1.5 ml-1">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">সাইকেল হুইল (হোমপেজ চক্র) ফিচার কন্ট্রোল</h3>
-                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    ডায়নামিক চক্র
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium mb-3 ml-1">
-                  হোম পেজের অ্যানিমেটেড চক্রে কোন কোন ফিচার প্রদর্শিত হবে তা এখান থেকে অন/অফ করুন:
-                </p>
-                <div className="space-y-2">
-                  {MASTER_WHEEL_ITEMS.map((item) => {
-                    const isEnabled = wheelSettings[item.id] ?? item.defaultEnabled;
-                    return (
-                      <div 
-                        key={item.id} 
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
-                          isEnabled ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50/80 border-slate-200/60 opacity-75'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0"
-                            style={{ backgroundColor: item.color }}
-                          >
-                            {item.numberBn}
-                          </span>
-                          <div className="flex flex-col">
-                            <span className="text-[11px] font-black text-slate-800">{item.title}</span>
-                            <span className="text-[9.5px] font-bold text-slate-400">{item.englishLabel || item.shortTitle}</span>
-                          </div>
-                        </div>
-                        <button 
-                          type="button"
-                          onClick={() => handleToggleWheelItem(item.id)}
-                          className={`relative inline-flex h-9 w-[76px] shrink-0 cursor-pointer items-center rounded-full border-[3px] border-[#1c1c1c] overflow-hidden transition-all duration-300 select-none focus:outline-none ${
-                            isEnabled 
-                              ? 'bg-gradient-to-r from-[#2ebd59] to-[#39db39] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]' 
-                              : 'bg-gradient-to-r from-[#e63c3c] to-[#ef4444] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
-                          }`}
-                          title={`${item.title} চক্রে অন/অফ করুন`}
-                        >
-                          {/* Inner Track Text */}
-                          {isEnabled ? (
-                            <span className="ml-auto mr-3 text-white text-[10px] font-black tracking-wider select-none">ON</span>
-                          ) : (
-                            <span className="ml-3 mr-auto text-white text-[10px] font-black tracking-wider select-none">OFF</span>
-                          )}
-                          
-                          {/* Knob */}
-                          <span 
-                            className="absolute h-7 w-7 rounded-full bg-gradient-to-b from-[#404040] to-[#1e1e1e] border border-[#0d0d0d] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-all duration-300 ease-out"
-                            style={{ 
-                              left: isEnabled ? '2px' : '40px' 
-                            }}
-                          />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Prior Period Settlement Entry Permission Switch */}

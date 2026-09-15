@@ -19,10 +19,12 @@ import {
   CycleWheelItem, 
   getWheelSettings 
 } from '../utils/cycleWheelConfig';
+import { ModuleVisibility } from '../types';
 
 interface SegmentedCycleWheelProps {
   onSelectFeature: (tab: string, subModule?: 'settlement' | 'correspondence') => void;
   isAdmin?: boolean;
+  moduleVisibility?: ModuleVisibility;
 }
 
 // Icon helper to render appropriate Lucide icon for each item
@@ -108,6 +110,7 @@ function describeChevronSegment(
 export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   onSelectFeature,
   isAdmin = false,
+  moduleVisibility,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -130,10 +133,30 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     };
   }, []);
 
-  // Compute active items based on settings
+  // Compute active items based on wheelSettings AND moduleVisibility
   const activeItems = useMemo(() => {
-    return getActiveWheelItems(wheelSettings);
-  }, [wheelSettings]);
+    const items = getActiveWheelItems(wheelSettings);
+    
+    // Filter by moduleVisibility so toggling dashboard switches directly affects the wheel!
+    return items.filter((item) => {
+      if (moduleVisibility) {
+        if (item.tab === 'entry' && moduleVisibility.entry === false) return false;
+        if (item.tab === 'register' && moduleVisibility.register === false) return false;
+        if (item.tab === 'return' && moduleVisibility.return === false) return false;
+        if (item.tab === 'archive' && moduleVisibility.archive === false) return false;
+        if (item.tab === 'links' && moduleVisibility.links === false) return false;
+        if (item.tab === 'voting' && moduleVisibility.voting === false) return false;
+      }
+      return true;
+    }).map((item, idx) => {
+      const bengaliDigits = ['১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯', '১০'];
+      return {
+        ...item,
+        numberBn: bengaliDigits[idx] || `${idx + 1}`,
+        numberEn: `${idx + 1}`,
+      };
+    });
+  }, [wheelSettings, moduleVisibility]);
 
   // Geometry configuration for SVG rendering
   const size = 320;
@@ -161,10 +184,10 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     <div className="w-full flex flex-col items-center justify-center select-none py-0 my-auto">
       
       {/* Active Hovered Feature Floating Tooltip (Only visible during hover/touch, otherwise zero height) */}
-      <div className="h-5 flex items-center justify-center mb-0.5 pointer-events-none">
+      <div className="h-0 relative w-full flex items-center justify-center pointer-events-none">
         {activeHoveredItem && (
           <div 
-            className="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black shadow-md animate-fade-in"
+            className="absolute -top-7 flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black shadow-md animate-fade-in z-30"
             style={{
               backgroundColor: activeHoveredItem.color,
               color: activeHoveredItem.textColor,
@@ -177,7 +200,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
       </div>
 
       {/* Main Wheel Container with SVG segments and Center '+' Hub - Optimized compact mobile dimensions */}
-      <div className="relative w-[190px] h-[190px] min-[350px]:w-[205px] min-[350px]:h-[205px] min-[380px]:w-[220px] min-[380px]:h-[220px] min-[420px]:w-[240px] min-[420px]:h-[240px] sm:w-[270px] sm:h-[270px] flex items-center justify-center">
+      <div className="relative w-[180px] h-[180px] min-[350px]:w-[192px] min-[350px]:h-[192px] min-[380px]:w-[204px] min-[380px]:h-[204px] min-[420px]:w-[218px] min-[420px]:h-[218px] sm:w-[270px] sm:h-[270px] flex items-center justify-center">
         
         {/* Scoped CSS for smooth continuous rotation and elevated ambient glow */}
         <style>{`
