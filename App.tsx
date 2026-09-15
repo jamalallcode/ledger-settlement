@@ -692,6 +692,13 @@ const App: React.FC = () => {
               const boolVal = payload.new.value === true || payload.new.value === 'true';
               setAllowPriorPeriodSettlement(boolVal);
               localStorage.setItem('allow_prior_period_settlement', String(boolVal));
+            } else if (payload.new.key === 'cycle_wheel_settings' && payload.new.value) {
+              try {
+                const settingsObj = typeof payload.new.value === 'string' ? JSON.parse(payload.new.value) : payload.new.value;
+                saveWheelSettings(settingsObj);
+              } catch (e) {
+                console.error("Error parsing realtime cycle_wheel_settings:", e);
+              }
             } else {
               const key = payload.new.key.replace('show_', '');
               setModuleVisibility(prev => {
