@@ -678,6 +678,21 @@ const Navbar: React.FC<NavbarProps> = ({
 
                   <button
                     onClick={() => {
+                      setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২'
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>২. ঢাকা রিটার্ন-২</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
                       setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।');
                       setIsMobileMenuOpen(false);
                     }}
@@ -687,7 +702,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>২. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
+                    <span>৩. ডিডি স্যার চিঠিপত্র রিটার্ণ</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -702,7 +717,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৩. প্রাপ্ত বিএসআর</span>
+                    <span>৪. প্রাপ্ত বিএসআর</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -717,7 +732,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৪. নিষ্পত্তি - বিএসআর</span>
+                    <span>৫. নিষ্পত্তি - বিএসআর</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -732,7 +747,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৫. নিষ্পত্তি - দ্বিপক্ষীয়</span>
+                    <span>৬. নিষ্পত্তি - দ্বিপক্ষীয়</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -747,7 +762,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৬. অনলাইন প্রাপ্তি (বিএসআর)</span>
+                    <span>৭. অনলাইন প্রাপ্তি (বিএসআর)</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -762,7 +777,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৭. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
+                    <span>৮. অনলাইন প্রাপ্তি (দ্বিপক্ষীয়)</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 
@@ -777,7 +792,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>৮. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
+                    <span>৯. অনুচ্ছেদ নিষ্পত্তি রিটার্ণ</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
                 </div>

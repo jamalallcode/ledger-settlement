@@ -611,6 +611,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                       ঢাকা রিটার্ণ
                                     </button>
 
+                                    {/* ঢাকা রিটার্ন-২ */}
+                                    <button 
+                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২')}
+                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                    >
+                                      ঢাকা রিটার্ন-২
+                                    </button>
+
                                     {/* ২. নিষ্পত্তি (Toggle) */}
                                     <button 
                                       onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
