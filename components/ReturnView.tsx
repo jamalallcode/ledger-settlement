@@ -9,6 +9,7 @@ import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate } from '../u
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
+import CorrespondenceDhakaReturn2 from './CorrespondenceDhakaReturn2';
 import OpeningBalanceSetup from './OpeningBalanceSetup';
 import ReturnSummaryTable from './ReturnSummaryTable';
 import QR_1 from './QR_1';
@@ -659,6 +660,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const reportData = useMemo(() => {
     const isExcludedReport = !selectedReportType || 
       selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' || 
       selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ||
       selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর';
     if (isExcludedReport) return [];
@@ -837,7 +839,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [entries, correspondenceEntries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
 
   const filteredCorrespondence = useMemo(() => {
-    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
     
     const today = new Date();
     const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -872,7 +874,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         lt === 'অন্যান্য' || 
         lt.includes('অন্যান্য') || 
         lt.includes('কার্যপত্র');
-      if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && isExcludedType) return false;
+      if ((selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') && isExcludedType) return false;
 
       const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
       const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
@@ -1333,6 +1335,8 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = <BsrReceivedReturn correspondenceEntries={correspondenceEntries || []} settlementEntries={entries || []} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') {
+    renderedContent = <CorrespondenceDhakaReturn2 correspondenceEntries={correspondenceEntries} settlementEntries={entries || []} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (isSetupMode) {
     renderedContent = <OpeningBalanceSetup 
       ministryGroups={ministryGroups} 

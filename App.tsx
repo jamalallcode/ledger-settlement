@@ -677,7 +677,6 @@ const App: React.FC = () => {
                 const settingsObj = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
                 if (settingsObj && typeof settingsObj === 'object') {
                   setWheelSettings(prev => ({ ...prev, ...settingsObj }));
-                  saveWheelSettings(settingsObj);
                 }
               } catch (e) {
                 console.error("Error parsing cycle_wheel_settings from Supabase:", e);
@@ -685,11 +684,7 @@ const App: React.FC = () => {
             } else if (setting.key && setting.key.startsWith('show_wheel_')) {
               const wheelItemId = setting.key.replace('show_wheel_', '');
               const boolVal = setting.value === true || setting.value === 'true';
-              setWheelSettings(prev => {
-                const next = { ...prev, [wheelItemId]: boolVal };
-                saveWheelSettings(next);
-                return next;
-              });
+              setWheelSettings(prev => ({ ...prev, [wheelItemId]: boolVal }));
             } else {
               const key = setting.key.replace('show_', '');
               if (key in newVisibility) {
@@ -732,7 +727,6 @@ const App: React.FC = () => {
                 const settingsObj = typeof payload.new.value === 'string' ? JSON.parse(payload.new.value) : payload.new.value;
                 if (settingsObj && typeof settingsObj === 'object') {
                   setWheelSettings(prev => ({ ...prev, ...settingsObj }));
-                  saveWheelSettings(settingsObj);
                 }
               } catch (e) {
                 console.error("Error parsing realtime cycle_wheel_settings:", e);
@@ -740,11 +734,7 @@ const App: React.FC = () => {
             } else if (payload.new.key && payload.new.key.startsWith('show_wheel_')) {
               const wheelItemId = payload.new.key.replace('show_wheel_', '');
               const boolVal = payload.new.value === true || payload.new.value === 'true';
-              setWheelSettings(prev => {
-                const next = { ...prev, [wheelItemId]: boolVal };
-                saveWheelSettings(next);
-                return next;
-              });
+              setWheelSettings(prev => ({ ...prev, [wheelItemId]: boolVal }));
             } else {
               const key = payload.new.key.replace('show_', '');
               setModuleVisibility(prev => {

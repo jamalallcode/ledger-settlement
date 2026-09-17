@@ -541,7 +541,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
 
   const thS = "px-1 py-1 font-black text-center text-[10px] bg-slate-200 text-slate-900 leading-tight align-middle h-full bg-clip-border";
   const customDropdownCls = (isOpen: boolean) => `relative flex items-center gap-3 px-4 h-[44px] bg-slate-50 border rounded-xl cursor-pointer transition-all duration-300 ${isOpen ? 'border-emerald-600 ring-4 ring-emerald-50 shadow-md z-[1010]' : 'border-slate-300 shadow-sm hover:border-slate-300'}`;
-  const tdS = "px-2 py-2 text-[11px] text-center font-bold leading-tight min-h-[40px] align-middle break-words";
+  const tdS = "px-2 py-2 text-[11px] text-center font-black text-slate-950 leading-tight min-h-[40px] align-middle break-words";
   
   const reportingLimitDate = useMemo(() => {
     return selectedMonthDate;
@@ -983,7 +983,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               </tr>
               <tr className="h-[26px] bg-slate-200">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
-                  <th key={n} className={`${thS} text-[9px] font-bold text-slate-700 py-0.5`}>
+                  <th key={n} className={`${thS} text-[10px] font-black text-slate-950 py-0.5`}>
                     {toBengaliDigits(n.toString())}
                   </th>
                 ))}

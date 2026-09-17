@@ -139,7 +139,10 @@ export function getWheelSettings(): Record<string, boolean> {
 export function saveWheelSettings(settings: Record<string, boolean>): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    window.dispatchEvent(new CustomEvent('cycle-wheel-settings-updated', { detail: settings }));
+    // Asynchronously dispatch event to prevent updating other components while rendering
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('cycle-wheel-settings-updated', { detail: settings }));
+    }, 0);
   } catch (err) {
     console.error('Failed to save cycle wheel settings:', err);
   }

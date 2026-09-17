@@ -152,8 +152,10 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [localWheelSettings, setLocalWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
 
-  // Listen for settings update from Admin Dashboard
+  // Listen for settings update from Admin Dashboard (only needed when propWheelSettings is not provided)
   useEffect(() => {
+    if (propWheelSettings) return;
+
     const handleSettingsUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<Record<string, boolean>>;
       if (customEvent.detail) {
@@ -167,7 +169,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
     return () => {
       window.removeEventListener('cycle-wheel-settings-updated', handleSettingsUpdate);
     };
-  }, []);
+  }, [propWheelSettings]);
 
   const effectiveWheelSettings = propWheelSettings || localWheelSettings;
 
