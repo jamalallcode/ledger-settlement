@@ -393,22 +393,34 @@ tbody tr:not(.no-hover-row):hover td {
   border-color: rgba(226, 232, 240, 0.9) !important;
 }
 
-/* 1. Main Hero Panel Container (Executive Premium 3D Elevated Rectangular Surface) */
+/* 1. Main Hero Panel Container (Executive Premium 3D Elevated Floating Surface) */
 .landing-hero-card {
   border-radius: 0px !important;
-  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #fbfdff 40%, #f4f8fc 100%) !important;
+  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #fcfdfe 40%, #f5f8fc 100%) !important;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  border: 1px solid rgba(219, 229, 241, 0.95) !important;
   box-shadow: 
-    0 1px 3px 0 rgba(15, 23, 42, 0.03),
-    0 8px 20px -4px rgba(15, 23, 42, 0.05),
-    0 24px 48px -8px rgba(15, 23, 42, 0.07),
-    0 40px 80px -16px rgba(30, 58, 138, 0.06),
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
-    inset 0 -1px 0 0 rgba(226, 232, 240, 0.5) !important;
+    10px 16px 36px -4px rgba(148, 163, 184, 0.38),
+    4px 6px 16px -2px rgba(148, 163, 184, 0.24),
+    -4px -4px 18px 0px rgba(255, 255, 255, 0.9),
+    inset 0 2px 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px 0 rgba(203, 213, 225, 0.4) !important;
   color: #1e293b !important;
+}
+
+@media (min-width: 640px) {
+  .landing-hero-card {
+    border-radius: 0px !important;
+    box-shadow: 
+      14px 22px 48px -6px rgba(148, 163, 184, 0.4),
+      6px 10px 22px -3px rgba(148, 163, 184, 0.26),
+      -6px -6px 26px 0px rgba(255, 255, 255, 0.95),
+      inset 0 2px 1px 0 rgba(255, 255, 255, 1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+      inset 0 -1px 2px 0 rgba(203, 213, 225, 0.4) !important;
+  }
 }
 
 .landing-hero-title {
@@ -421,6 +433,12 @@ tbody tr:not(.no-hover-row):hover td {
   border-radius: 0px !important;
   background: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.3) 60%, transparent 100%) !important;
   opacity: 1 !important;
+}
+
+@media (min-width: 640px) {
+  .landing-grid-bg {
+    border-radius: 0px !important;
+  }
 }
 
 /* 3. Government Tag Overlay */

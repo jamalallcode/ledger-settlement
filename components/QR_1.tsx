@@ -151,11 +151,19 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                         mType.includes(robustNormalize('দ্বিপাক্ষিক'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date)
+    // Filter by Date Range (Issue Date based on activeCycle)
     const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
-    const issueDate = new Date(issueDateStr);
-    if (issueDate < startDate || issueDate > endDate) return false;
+    
+    if (activeCycle?.start && activeCycle?.end) {
+      const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
+      const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
+      const entryDateOnly = issueDateStr.split('T')[0];
+      if (entryDateOnly < cycleStartStr || entryDateOnly > cycleEndStr) return false;
+    } else {
+      const issueDate = new Date(issueDateStr);
+      if (issueDate < startDate || issueDate > endDate) return false;
+    }
 
     // Filter by Ministry
     const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
