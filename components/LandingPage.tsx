@@ -373,13 +373,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   return (
     <div 
-      className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-auto shrink-0 min-h-full h-auto pt-0 sm:pt-1 md:pt-1.5 pb-10 min-[380px]:pb-10.5 md:pb-4"
+      className="animate-landing-premium relative w-full max-w-[1880px] xl:max-w-[1880px] mx-auto flex flex-col justify-start flex-auto shrink-0 min-h-full h-auto pt-0 sm:pt-1 md:pt-1.5 pb-0 sm:pb-3 md:pb-4"
       style={{ minHeight: 'max(100%, max-content)' }}
     >
       {/* Prime Master Institutional Showcase Card */}
       <div 
         id="hero-section" 
-        className="landing-hero-card relative rounded-none pt-3.5 min-[380px]:pt-4 sm:pt-4 px-1.5 sm:px-4 pb-3 sm:pb-4 md:px-5 md:pt-4 md:pb-4 lg:px-7 lg:pt-5 lg:pb-5 transition-all duration-500 animate-fade-in w-full flex-auto shrink-0 flex flex-col justify-between border min-h-full h-auto"
+        className="landing-hero-card relative rounded-none pt-3.5 min-[380px]:pt-4 sm:pt-4 px-2 min-[380px]:px-2.5 sm:px-4 pb-1 sm:pb-4 md:px-5 md:pt-4 md:pb-4 lg:px-7 lg:pt-5 lg:pb-5 transition-all duration-500 animate-fade-in w-full flex-auto shrink-0 flex flex-col justify-between border min-h-full h-auto overflow-hidden"
         style={{ minHeight: 'max(100%, max-content)' }}
       >
         {/* Subtle patterned backdrop */}
@@ -550,21 +550,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
           />
         </div>
 
-      </div>
-
-      {/* MOBILE FIXED BOTTOM BAR (Strictly visible on mobile, fixed at the bottom of the screen) */}
-      <div 
-        id="mobile-fixed-bottom-actions"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full select-none shadow-[0_-4px_16px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom)]"
-      >
-        <div className="w-full flex flex-col h-10 min-[380px]:h-10.5">
-          <div className="flex-1 bg-[#059669] flex items-center justify-center px-2 sm:px-3 overflow-hidden">
-            <span className="text-white font-[950] text-[11px] min-[360px]:text-[11.5px] min-[390px]:text-[12px] sm:text-[12.5px] tracking-tight text-center whitespace-nowrap leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-              {formattedCycleText}
-            </span>
+        {/* MOBILE CYCLE BANNER (Edge-to-edge full width covering left, right, and bottom of the floating card) */}
+        <div 
+          id="mobile-container-clamping-banner"
+          className="md:hidden relative z-20 mt-auto w-[calc(100%+1rem)] min-[380px]:w-[calc(100%+1.25rem)] sm:w-[calc(100%+2rem)] -mx-2 min-[380px]:-mx-2.5 sm:-mx-4 -mb-1 sm:-mb-4 select-none"
+        >
+          <div className="w-full flex flex-col h-11 min-[380px]:h-11.5 bg-gradient-to-r from-[#047857] via-[#059669] to-[#047857] rounded-none shadow-[0_-4px_16px_rgba(4,120,87,0.25),_inset_0_1px_1.5px_rgba(255,255,255,0.45)] border-t border-emerald-400/50 border-x-0 border-b-0 overflow-hidden">
+            <div className="flex-1 flex items-center justify-center px-3 overflow-hidden rounded-none">
+              <span className="text-white font-[950] text-[11.5px] min-[360px]:text-[12px] min-[390px]:text-[12.5px] sm:text-[13px] tracking-tight text-center whitespace-nowrap leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                {formattedCycleText}
+              </span>
+            </div>
+            <div className="h-[2px] bg-emerald-950/30 w-full" />
           </div>
-          <div className="h-[3px] bg-[#047857]" />
         </div>
+
       </div>
     </div>
   );

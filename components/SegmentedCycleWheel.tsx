@@ -142,6 +142,28 @@ function describeSingleRingSegment(
   ].join(' ');
 }
 
+/**
+ * Generates an SVG path along a circular arc for curved text rendering.
+ * flip = true draws counter-clockwise so text heads point outward (upwards on top half).
+ * flip = false draws clockwise so text heads point inward (upwards on bottom half).
+ */
+function describeTextArcPath(
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  flip: boolean = false
+): string {
+  const p1 = polarToCartesian(cx, cy, radius, flip ? endAngle : startAngle);
+  const p2 = polarToCartesian(cx, cy, radius, flip ? startAngle : endAngle);
+  const sweepFlag = flip ? 0 : 1;
+  const arcSpan = Math.abs(endAngle - startAngle);
+  const largeArcFlag = arcSpan > Math.PI ? 1 : 0;
+
+  return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+}
+
 export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
   onSelectFeature,
   isAdmin = false,
@@ -264,7 +286,7 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
           }`} 
         />
 
-        {/* SVG Container for Chevron Arrow Segments - Smooth reliable rotation wrapper */}
+        {/* SVG Container for Chevron Arrow Segments - Smooth continuous rotation */}
         <div 
           className={`absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-500 ${
             !isOpen ? 'cycle-wheel-rotating' : ''
@@ -318,29 +340,40 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
               {/* Render each active chevron segment */}
               {activeItems.map((item, index) => {
                 let pathData = '';
-                let labelPos = { x: cx, y: cy + rMid };
                 let dx = 0;
                 let dy = 0;
+                let midAngle = 0;
 
                 if (count === 1) {
                   pathData = describeSingleRingSegment(cx, cy, rInner, rOuter);
-                  labelPos = polarToCartesian(cx, cy, rMid, Math.PI / 2);
+                  midAngle = -Math.PI / 2;
                 } else {
                   const startAngle = startBaseAngle + index * angleStep + gapAngle / 2;
                   const endAngle = startBaseAngle + (index + 1) * angleStep - gapAngle / 2;
                   pathData = describeChevronSegment(cx, cy, rInner, rOuter, startAngle, endAngle, arrowAngle);
 
                   // Centroid angle for positioning labels and outward explosion
-                  const midAngle = (startAngle + endAngle) / 2 + arrowAngle / 2;
+                  midAngle = (startAngle + endAngle) / 2 + arrowAngle / 2;
                   
                   // Explode translation vector when isOpen = true
                   const explodeDistance = 34; // outward shift in pixels
                   dx = isOpen ? Math.cos(midAngle) * explodeDistance : 0;
                   dy = isOpen ? Math.sin(midAngle) * explodeDistance : 0;
-
-                  // Content label position (Cartesian)
-                  labelPos = polarToCartesian(cx, cy, rMid, midAngle);
                 }
+
+                // Orientation check: Keep text upright (heads point upward towards viewer)
+                const isTopHalf = count > 1 ? Math.sin(midAngle) < 0 : true;
+                const flipArc = isTopHalf;
+
+                // Concentric curved arc paths matching segment's circular curvature ("ঠিক ওই আকারে বাঁকা")
+                const rNum = flipArc ? rMid + 10 : rMid + 12;
+                const rTitle = flipArc ? rMid - 10 : rMid - 8;
+                const arcSpan = count > 1 ? Math.min(angleStep * 0.78, 0.98) : 1.2;
+                const arcStart = midAngle - arcSpan / 2;
+                const arcEnd = midAngle + arcSpan / 2;
+
+                const numArcPath = describeTextArcPath(cx, cy, rNum, arcStart, arcEnd, flipArc);
+                const titleArcPath = describeTextArcPath(cx, cy, rTitle, arcStart, arcEnd, flipArc);
 
                 const isHovered = hoveredItemId === item.id;
                 const segmentTransform = count === 1
@@ -378,31 +411,51 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
                       className="transition-colors duration-200"
                     />
 
-                    {/* Number & Bengali Label within the Segment */}
-                    <g 
-                      transform={`translate(${labelPos.x}, ${labelPos.y})`}
-                      className="pointer-events-none select-none"
+                    {/* Concentric Arc Definition Paths for Curved Text */}
+                    <defs>
+                      <path
+                        id={`arc-num-${item.id}`}
+                        d={numArcPath}
+                        fill="none"
+                        stroke="none"
+                      />
+                      <path
+                        id={`arc-title-${item.id}`}
+                        d={titleArcPath}
+                        fill="none"
+                        stroke="none"
+                      />
+                    </defs>
+
+                    {/* Sequence Number on Outer Curved Arc */}
+                    <text
+                      fill="#ffffff"
+                      className="font-black text-[12.5px] sm:text-[13.5px] pointer-events-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
                     >
-                      {/* Sequence Number */}
-                      <text
-                        y="-4"
+                      <textPath
+                        href={`#arc-num-${item.id}`}
+                        xlinkHref={`#arc-num-${item.id}`}
+                        startOffset="50%"
                         textAnchor="middle"
-                        fill="#ffffff"
-                        className="font-black text-[13px] sm:text-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
                       >
                         {item.numberBn}
-                      </text>
-                      
-                      {/* Short Feature Title in Bengali */}
-                      <text
-                        y="10"
+                      </textPath>
+                    </text>
+
+                    {/* Bengali Short Title on Inner Curved Arc (Following segment shape) */}
+                    <text
+                      fill="#ffffff"
+                      className="font-bold text-[9px] sm:text-[10px] tracking-tight pointer-events-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
+                    >
+                      <textPath
+                        href={`#arc-title-${item.id}`}
+                        xlinkHref={`#arc-title-${item.id}`}
+                        startOffset="50%"
                         textAnchor="middle"
-                        fill="#ffffff"
-                        className="font-bold text-[9px] sm:text-[10px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
                       >
                         {item.shortTitle}
-                      </text>
-                    </g>
+                      </textPath>
+                    </text>
                   </g>
                 );
               })}

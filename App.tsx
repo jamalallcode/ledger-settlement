@@ -1630,7 +1630,7 @@ const App: React.FC = () => {
           ref={mainScrollRef} 
           className={`flex-1 min-h-0 ${
             activeTab === 'landing' 
-              ? 'overflow-y-auto md:overflow-y-auto flex flex-col items-center justify-start p-1 sm:p-3 md:px-6 md:py-3.5 landing-main-container' 
+              ? 'overflow-y-auto md:overflow-y-auto flex flex-col items-center justify-start p-2 sm:p-3 md:px-6 md:py-3.5 landing-main-container' 
               : activeTab === 'return' 
                 ? 'overflow-auto return-main-container' 
                 : activeTab === 'register'
