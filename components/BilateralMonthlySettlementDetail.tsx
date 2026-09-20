@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, Sparkles, ChevronDown, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight, FileText } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
+import { normalizeDatesInText } from '../utils/syncHelper';
 import { format as dateFnsFormat, startOfMonth, endOfMonth } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -196,7 +197,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
 
   const formatTextValue = (val: string | undefined | null) => {
     if (val === undefined || val === null || val.trim() === '') return '-';
-    return toBengaliDigits(val);
+    return normalizeDatesInText(val);
   };
 
   const formatArchiveNoForTable = (val: string | undefined | null) => {

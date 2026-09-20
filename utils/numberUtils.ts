@@ -47,15 +47,16 @@ export const formatBengaliAmount = (num: number, includeDecimals: boolean = fals
 };
 
 /**
- * Formats an ISO date string (YYYY-MM-DD) to Bengali DD/MM/YYYY format.
+ * Formats an ISO date string (YYYY-MM-DD or YYYY/MM/DD) to Bengali DD/MM/YYYY format.
  */
 export const formatDateBN = (iso: string | undefined | null): string => {
   if (!iso || iso === '0000-00-00' || iso.startsWith('0000')) return '';
+  const eng = toEnglishDigits(iso).trim();
   
   // If it's a full ISO string or contains time info
-  if (iso.includes('T') || iso.includes(':')) {
+  if (eng.includes('T') || eng.includes(':')) {
     try {
-      const date = new Date(iso);
+      const date = new Date(eng);
       if (!isNaN(date.getTime())) {
         const d = date.getDate().toString().padStart(2, '0');
         const m = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -65,14 +66,27 @@ export const formatDateBN = (iso: string | undefined | null): string => {
     } catch (e) {}
   }
 
-  // If it's already in DD/MM/YYYY format (contains /), just convert digits
-  if (iso.includes('/')) return toBengaliDigits(iso);
+  // If match YYYY-MM-DD or YYYY/MM/DD
+  const ymdMatch = eng.match(/^(\d{4})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])$/);
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch;
+    return toBengaliDigits(`${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`);
+  }
+
+  // If match DD-MM-YYYY or DD/MM/YYYY
+  const dmyMatch = eng.match(/^(0?[1-9]|[12]\d|3[01])[-\/\.](0?[1-9]|1[0-2])[-\/\.](\d{2,4})$/);
+  if (dmyMatch) {
+    let [, d, m, y] = dmyMatch;
+    if (y.length === 2) y = '20' + y;
+    return toBengaliDigits(`${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`);
+  }
   
-  // If it's ISO YYYY-MM-DD
-  const parts = iso.split('-');
-  if (parts.length === 3) {
-    const day = parts[2].split('T')[0].split(' ')[0];
-    return toBengaliDigits(`${day}/${parts[1]}/${parts[0]}`);
+  // If it's ISO YYYY-MM-DD with extra text
+  const parts = eng.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const day = parts[2].split('T')[0].split(' ')[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    return toBengaliDigits(`${day}/${month}/${parts[0]}`);
   }
   return toBengaliDigits(iso);
 };

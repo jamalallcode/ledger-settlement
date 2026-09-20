@@ -1,5 +1,99 @@
 import { SettlementEntry, CorrespondenceEntry } from '../types';
-import { toBengaliDigits, toEnglishDigits } from './numberUtils';
+import { toBengaliDigits, toEnglishDigits, formatDateBN } from './numberUtils';
+
+/**
+ * Formats any date string (YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY, ISO string)
+ * strictly into Bengali "DD/MM/YYYY" (দিন/মাস/বছর) format (e.g. "১৩/১১/২০২৫").
+ */
+export const formatBengaliDateDMY = (dateInput: string | undefined | null): string => {
+  if (!dateInput || dateInput.trim() === '' || dateInput === '0000-00-00') return '';
+  const eng = toEnglishDigits(dateInput).trim();
+
+  // If match YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+  const ymdMatch = eng.match(/^(\d{4})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])(?:T.*)?$/);
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch;
+    return toBengaliDigits(`${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`);
+  }
+
+  // If match DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  const dmyMatch = eng.match(/^(0?[1-9]|[12]\d|3[01])[-\/\.](0?[1-9]|1[0-2])[-\/\.](\d{2,4})$/);
+  if (dmyMatch) {
+    let [, d, m, y] = dmyMatch;
+    if (y.length === 2) y = '20' + y;
+    return toBengaliDigits(`${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`);
+  }
+
+  // Fallback to formatDateBN
+  const bn = formatDateBN(eng);
+  return bn || toBengaliDigits(dateInput);
+};
+
+/**
+ * Replaces any YYYY-MM-DD or YYYY/MM/DD or DD-MM-YYYY pattern inside a text string
+ * strictly with DD/MM/YYYY (দিন/মাস/বছর) in Bengali digits.
+ * e.g.: "পত্রের তারিখ- ২০২৫-১১-১৩" -> "পত্রের তারিখ- ১৩/১১/২০২৫"
+ *       "ডায়েরির তারিখ- ২০২৬-০৭-২১" -> "ডায়েরির তারিখ- ২১/০৭/২০২৬"
+ */
+export const normalizeDatesInText = (text: string = ''): string => {
+  if (!text) return '';
+  let eng = toEnglishDigits(text);
+
+  // Replace YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD with DD/MM/YYYY
+  eng = eng.replace(/\b(\d{4})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])\b/g, (_match, y, m, d) => {
+    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+  });
+
+  // Replace DD-MM-YYYY with DD/MM/YYYY
+  eng = eng.replace(/\b(0?[1-9]|[12]\d|3[01])[-](0?[1-9]|1[0-2])[-](\d{4})\b/g, (_match, d, m, y) => {
+    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+  });
+
+  return toBengaliDigits(eng);
+};
+
+/**
+ * Normalizes all date fields in a settlement entry to DD/MM/YYYY (দিন/মাস/বছর).
+ */
+export const normalizeSettlementDates = (se: SettlementEntry): { updatedSe: SettlementEntry; hasChanged: boolean } => {
+  if (!se) return { updatedSe: se, hasChanged: false };
+  let hasChanged = false;
+  const updatedSe = { ...se };
+
+  if (updatedSe.letterNoDate) {
+    const norm = normalizeDatesInText(updatedSe.letterNoDate);
+    if (norm !== updatedSe.letterNoDate) {
+      updatedSe.letterNoDate = norm;
+      hasChanged = true;
+    }
+  }
+
+  if (updatedSe.workpaperNoDate) {
+    const norm = normalizeDatesInText(updatedSe.workpaperNoDate);
+    if (norm !== updatedSe.workpaperNoDate) {
+      updatedSe.workpaperNoDate = norm;
+      hasChanged = true;
+    }
+  }
+
+  if (updatedSe.issueLetterNoDate) {
+    const norm = normalizeDatesInText(updatedSe.issueLetterNoDate);
+    if (norm !== updatedSe.issueLetterNoDate) {
+      updatedSe.issueLetterNoDate = norm;
+      hasChanged = true;
+    }
+  }
+
+  if (updatedSe.meetingWorkpaper) {
+    const norm = normalizeDatesInText(updatedSe.meetingWorkpaper);
+    if (norm !== updatedSe.meetingWorkpaper) {
+      updatedSe.meetingWorkpaper = norm;
+      hasChanged = true;
+    }
+  }
+
+  return { updatedSe, hasChanged };
+};
 
 /**
  * Splits a combined info string (e.g. "পত্র নং- ১০৮৯, পত্রের তারিখ- ২৮/০৬/২০২৬")
@@ -131,7 +225,7 @@ export const syncCorrespondenceToSettlements = (
       const finalDate = lDate || existingParts.date;
 
       if (finalNo || finalDate) {
-        const targetLetterStr = `পত্র নং- ${toBengaliDigits(finalNo)}, পত্রের তারিখ- ${toBengaliDigits(finalDate)}`;
+        const targetLetterStr = `পত্র নং- ${toBengaliDigits(finalNo)}, পত্রের তারিখ- ${formatBengaliDateDMY(finalDate)}`;
         if (updatedSe.letterNoDate !== targetLetterStr) {
           updatedSe.letterNoDate = targetLetterStr;
           changed = true;
@@ -156,7 +250,7 @@ export const syncCorrespondenceToSettlements = (
       const finalDDate = dDate || existingParts.date;
 
       if (finalDNo || finalDDate) {
-        const targetDiaryStr = `ডায়েরি নং- ${toBengaliDigits(finalDNo)}, ডায়েরির তারিখ- ${toBengaliDigits(finalDDate)}`;
+        const targetDiaryStr = `ডায়েরি নং- ${toBengaliDigits(finalDNo)}, ডায়েরির তারিখ- ${formatBengaliDateDMY(finalDDate)}`;
         if (updatedSe.workpaperNoDate !== targetDiaryStr) {
           updatedSe.workpaperNoDate = targetDiaryStr;
           changed = true;
@@ -170,6 +264,13 @@ export const syncCorrespondenceToSettlements = (
       changed = true;
     }
 
+    // 5. Always ensure all date strings in updatedSe are normalized to DD/MM/YYYY (দিন/মাস/বছর)
+    const { updatedSe: normalizedSe, hasChanged: normChanged } = normalizeSettlementDates(updatedSe);
+    if (normChanged) {
+      changed = true;
+      Object.assign(updatedSe, normalizedSe);
+    }
+
     if (changed) {
       hasChanges = true;
       return updatedSe;
@@ -178,5 +279,15 @@ export const syncCorrespondenceToSettlements = (
     return se;
   });
 
-  return { updatedSettlements, hasChanges };
+  // Also sweep through all settlements to normalize any dates in YYYY-MM-DD format to DD/MM/YYYY
+  const fullyNormalizedSettlements = updatedSettlements.map(se => {
+    const { updatedSe, hasChanged: normChanged } = normalizeSettlementDates(se);
+    if (normChanged) {
+      hasChanges = true;
+      return updatedSe;
+    }
+    return se;
+  });
+
+  return { updatedSettlements: fullyNormalizedSettlements, hasChanges };
 };

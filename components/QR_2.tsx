@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Lock } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { normalizeDatesInText } from '../utils/syncHelper';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -1691,7 +1692,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const formatTextValue = (val: string | undefined | null) => {
     if (!val || val.trim() === '') return '-';
-    return toBengaliDigits(val);
+    return normalizeDatesInText(val);
   };
 
   const formatArchiveNoForTable = (val: string | undefined | null) => {
