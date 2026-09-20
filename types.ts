@@ -104,6 +104,8 @@ export interface SettlementEntry {
   remarks?: string;
   approvalStatus?: 'approved' | 'pending';
   userEmail?: string | null;
+  correspondenceId?: string;
+  letterId?: string;
 }
 
 export interface CorrespondenceEntry {
