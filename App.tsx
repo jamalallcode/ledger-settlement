@@ -23,6 +23,7 @@ import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { getWheelSettings, saveWheelSettings } from './utils/cycleWheelConfig';
+import { syncCorrespondenceToSettlements } from './utils/syncHelper';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 export const THEMES = [
@@ -918,6 +919,39 @@ const App: React.FC = () => {
     }
   }, [correspondenceEntries, isDataLoaded]);
 
+  // Auto-sync correspondence updates (letter no/date, diary, archive) to linked settlement entries
+  useEffect(() => {
+    if (!isDataLoaded || correspondenceEntries.length === 0) return;
+
+    setEntries(prevEntries => {
+      if (prevEntries.length === 0) return prevEntries;
+      let hasAnyChange = false;
+      let reconciled = prevEntries;
+
+      correspondenceEntries.forEach(corr => {
+        const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(corr, reconciled);
+        if (hasChanges) {
+          reconciled = updatedSettlements;
+          hasAnyChange = true;
+        }
+      });
+
+      if (hasAnyChange) {
+        reconciled.forEach(se => {
+          const orig = prevEntries.find(p => p.id === se.id);
+          if (orig && (orig.letterNoDate !== se.letterNoDate || orig.workpaperNoDate !== se.workpaperNoDate || orig.archiveNo !== se.archiveNo)) {
+            if (navigator.onLine) {
+              supabase.from('settlement_entries').upsert({ id: se.id, content: se });
+            }
+          }
+        });
+        return reconciled;
+      }
+
+      return prevEntries;
+    });
+  }, [correspondenceEntries, isDataLoaded]);
+
   useEffect(() => {
     const syncPrevStats = async () => {
       if (!isDataLoaded) return;
@@ -970,6 +1004,21 @@ const App: React.FC = () => {
       // Add to the correct list
       if (isCorrespondence) {
         setCorrespondenceEntries(prev => [entryToSync, ...prev]);
+        setEntries(prev => {
+          const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(entryToSync, prev);
+          if (hasChanges) {
+            updatedSettlements.forEach(se => {
+              const orig = prev.find(p => p.id === se.id);
+              if (orig && orig !== se) {
+                if (navigator.onLine) {
+                  supabase.from('settlement_entries').upsert({ id: se.id, content: se });
+                }
+              }
+            });
+            return updatedSettlements;
+          }
+          return prev;
+        });
       } else {
         setEntries(prev => [...prev, entryToSync]);
       }
@@ -989,6 +1038,21 @@ const App: React.FC = () => {
       
       if (isCorrespondence) {
         setCorrespondenceEntries(prev => [entryToSync, ...prev]);
+        setEntries(prev => {
+          const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(entryToSync, prev);
+          if (hasChanges) {
+            updatedSettlements.forEach(se => {
+              const orig = prev.find(p => p.id === se.id);
+              if (orig && orig !== se) {
+                if (navigator.onLine) {
+                  supabase.from('settlement_entries').upsert({ id: se.id, content: se });
+                }
+              }
+            });
+            return updatedSettlements;
+          }
+          return prev;
+        });
       } else {
         setEntries(prev => [...prev, entryToSync]);
       }
@@ -1013,6 +1077,21 @@ const App: React.FC = () => {
     
     if (isCorrespondence) {
       setCorrespondenceEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+      setEntries(prev => {
+        const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(updatedEntry, prev);
+        if (hasChanges) {
+          updatedSettlements.forEach(se => {
+            const orig = prev.find(p => p.id === se.id);
+            if (orig && orig !== se) {
+              if (navigator.onLine) {
+                supabase.from('settlement_entries').upsert({ id: se.id, content: se });
+              }
+            }
+          });
+          return updatedSettlements;
+        }
+        return prev;
+      });
     } else {
       setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
     }
