@@ -23,7 +23,7 @@ import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { getWheelSettings, saveWheelSettings } from './utils/cycleWheelConfig';
-import { syncCorrespondenceToSettlements } from './utils/syncHelper';
+import { syncCorrespondenceToSettlements, normalizeSettlementDates } from './utils/syncHelper';
 import { ShieldCheck, CheckCircle2, XCircle, AlertTriangle, ArrowRight, BellRing, Sparkles, Mail, ClipboardList, ArrowRightCircle, ChevronLeft } from 'lucide-react';
 
 export const THEMES = [
@@ -919,27 +919,45 @@ const App: React.FC = () => {
     }
   }, [correspondenceEntries, isDataLoaded]);
 
-  // Auto-sync correspondence updates (letter no/date, diary, archive) to linked settlement entries
+  // Auto-sync correspondence updates (letter no/date, diary, archive) and normalize dates to DD/MM/YYYY
   useEffect(() => {
-    if (!isDataLoaded || correspondenceEntries.length === 0) return;
+    if (!isDataLoaded) return;
 
     setEntries(prevEntries => {
       if (prevEntries.length === 0) return prevEntries;
       let hasAnyChange = false;
       let reconciled = prevEntries;
 
-      correspondenceEntries.forEach(corr => {
-        const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(corr, reconciled);
-        if (hasChanges) {
-          reconciled = updatedSettlements;
+      if (correspondenceEntries && correspondenceEntries.length > 0) {
+        correspondenceEntries.forEach(corr => {
+          const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(corr, reconciled);
+          if (hasChanges) {
+            reconciled = updatedSettlements;
+            hasAnyChange = true;
+          }
+        });
+      }
+
+      // Ensure all settlement entries have dates normalized strictly to DD/MM/YYYY (দিন/মাস/বছর)
+      reconciled = reconciled.map(se => {
+        const { updatedSe, hasChanged } = normalizeSettlementDates(se);
+        if (hasChanged) {
           hasAnyChange = true;
+          return updatedSe;
         }
+        return se;
       });
 
       if (hasAnyChange) {
         reconciled.forEach(se => {
           const orig = prevEntries.find(p => p.id === se.id);
-          if (orig && (orig.letterNoDate !== se.letterNoDate || orig.workpaperNoDate !== se.workpaperNoDate || orig.archiveNo !== se.archiveNo)) {
+          if (orig && (
+            orig.letterNoDate !== se.letterNoDate || 
+            orig.workpaperNoDate !== se.workpaperNoDate || 
+            orig.issueLetterNoDate !== se.issueLetterNoDate ||
+            orig.meetingWorkpaper !== se.meetingWorkpaper ||
+            orig.archiveNo !== se.archiveNo
+          )) {
             if (navigator.onLine) {
               supabase.from('settlement_entries').upsert({ id: se.id, content: se });
             }
