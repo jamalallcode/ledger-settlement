@@ -361,15 +361,6 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                   <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
                     <CalendarDays size={11} /> সাইকেল নির্বাচন
                   </span>
-                  {selectedCycles.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCycles([])}
-                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
-                    >
-                      ক্লিয়ার
-                    </button>
-                  )}
                 </div>
                 <div className="max-h-[220px] overflow-y-auto space-y-0.5">
                   <div
@@ -627,22 +618,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             )}
           </div>
 
-          {/* Reset Filters button if any active */}
-          {(selectedCycles.length > 0 || selectedMinistries.length > 0 || selectedEntities.length > 0) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCycles([]);
-                setSelectedMinistries([]);
-                setSelectedEntities([]);
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs"
-              title="ফিল্টারসমূহ রিসেট করুন"
-            >
-              <X size={12} />
-              <span>ফিল্টার রিসেট</span>
-            </button>
-          )}
+
 
           <button
             type="button"

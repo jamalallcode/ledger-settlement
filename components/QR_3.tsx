@@ -1728,13 +1728,13 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     };
   }, [filteredTable1Data, filteredTable2Data, startDate, endDate, prevMonthDate]);
 
-  const thCls = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding relative whitespace-nowrap";
-  const thClsWithTop = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-t border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding relative whitespace-normal";
-  const thRow3Cls = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding relative whitespace-nowrap";
-  const tdCls = "border-r border-b border-slate-200/90 p-1.5 text-[9px] text-slate-800 align-middle bg-white";
-  const numTdCls = "border-r border-b border-slate-200/90 p-1.5 text-[9px] text-slate-900 text-center align-middle font-bold bg-white";
-  const footerTdCls = "border-r border-b border-slate-800 p-2.5 text-[10px] text-white align-middle bg-slate-950 font-black shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
-  const footerNumTdCls = "border-r border-b border-slate-800 p-2.5 text-[10px] text-white text-center align-middle font-black bg-slate-950 shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
+  const thCls = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[10.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding relative whitespace-nowrap";
+  const thClsWithTop = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-t border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding relative whitespace-normal";
+  const thRow3Cls = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding relative whitespace-nowrap";
+  const tdCls = "border-r border-b border-slate-200/90 p-1.5 text-[10px] text-slate-800 align-middle bg-white";
+  const numTdCls = "border-r border-b border-slate-200/90 p-1.5 text-[10px] text-slate-900 text-center align-middle font-bold bg-white";
+  const footerTdCls = "border-r border-b border-slate-800 p-2.5 text-[10.5px] text-white align-middle bg-slate-950 font-black shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
+  const footerNumTdCls = "border-r border-b border-slate-800 p-2.5 text-[10.5px] text-white text-center align-middle font-black bg-slate-950 shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
 
   const renderTable = (data: any[], tableId: string) => {
     let globalIdx = 1;
@@ -2080,15 +2080,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
                     <CalendarDays size={11} /> সাইকেল নির্বাচন
                   </span>
-                  {selectedCycles.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCycles([])}
-                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
-                    >
-                      ক্লিয়ার
-                    </button>
-                  )}
                 </div>
                 <div className="max-h-[220px] overflow-y-auto space-y-0.5">
                   <div
@@ -2347,21 +2338,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           </div>
 
           {/* Reset Filters button if any active */}
-          {(selectedCycles.length > 0 || selectedMinistries.length > 0 || selectedEntities.length > 0) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCycles([]);
-                setSelectedMinistries([]);
-                setSelectedEntities([]);
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs"
-              title="ফিল্টারসমূহ রিসেট করুন"
-            >
-              <X size={12} />
-              <span>ফিল্টার রিসেট</span>
-            </button>
-          )}
+
 
           <button
             type="button"
