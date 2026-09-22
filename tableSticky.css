@@ -99,6 +99,100 @@
   z-index: 130 !important;
 }
 
+/* QR-1, QR-2, QR-6 Quarterly Return Table Sticky Headers */
+#qr-1-table thead,
+#qr-2-detailed-table thead {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 140 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#qr-1-table thead th,
+#qr-2-detailed-table thead th {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  background-color: #e2e8f0 !important;
+  background-clip: padding-box !important;
+  vertical-align: middle !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+#qr-1-table thead tr:first-child th,
+#qr-2-detailed-table thead tr:first-child th {
+  top: 0px !important;
+  height: 40px !important;
+  z-index: 145 !important;
+}
+
+#qr-1-table thead tr:first-child th[rowspan],
+#qr-1-table thead tr:first-child th[rowSpan],
+#qr-2-detailed-table thead tr:first-child th[rowspan],
+#qr-2-detailed-table thead tr:first-child th[rowSpan] {
+  top: 0px !important;
+  height: 72px !important;
+  z-index: 146 !important;
+}
+
+#qr-1-table thead tr:nth-child(2) th,
+#qr-2-detailed-table thead tr:nth-child(2) th {
+  top: 40px !important;
+  height: 32px !important;
+  z-index: 144 !important;
+}
+
+#qr-1-table thead tr:nth-child(3) th,
+#qr-2-detailed-table thead tr:nth-child(3) th {
+  top: 72px !important;
+  height: 28px !important;
+  z-index: 143 !important;
+  white-space: nowrap !important;
+}
+
+/* QR-6 Quarterly Return Table Sticky Headers */
+#qr-6-table thead,
+#qr-detailed-4-table thead {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 140 !important;
+  background-color: #e2e8f0 !important;
+}
+
+#qr-6-table thead tr:first-child th,
+#qr-detailed-4-table thead tr:first-child th {
+  top: 0px !important;
+  height: 34px !important;
+  z-index: 145 !important;
+}
+
+#qr-6-table thead tr:first-child th[rowspan],
+#qr-6-table thead tr:first-child th[rowSpan],
+#qr-detailed-4-table thead tr:first-child th[rowspan],
+#qr-detailed-4-table thead tr:first-child th[rowSpan] {
+  top: 0px !important;
+  height: 64px !important;
+  z-index: 146 !important;
+}
+
+#qr-6-table thead tr:nth-child(2) th,
+#qr-detailed-4-table thead tr:nth-child(2) th {
+  top: 34px !important;
+  height: 30px !important;
+  z-index: 144 !important;
+}
+
+#qr-6-table thead tr:nth-child(3) th,
+#qr-detailed-4-table thead tr:nth-child(3) th {
+  top: 64px !important;
+  height: 26px !important;
+  z-index: 143 !important;
+  white-space: nowrap !important;
+}
+
 /* Return Summary Table Sticky Headers */
 #table-return-summary thead tr:first-child th,
 #card-report-table-container thead tr:first-child th,

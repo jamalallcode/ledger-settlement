@@ -863,6 +863,36 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span>বিস্তারিত - ২</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩'
+                        ? 'bg-emerald-600 text-white border-emerald-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বিস্তারিত - ৩</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪'
+                        ? 'bg-emerald-600 text-white border-emerald-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বিস্তারিত - ৪</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
                 </div>
               </div>
 

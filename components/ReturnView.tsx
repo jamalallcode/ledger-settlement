@@ -16,6 +16,7 @@ import QR_1 from './QR_1';
 import QR_2 from './QR_2';
 import QR_3 from './QR_3';
 import QR_4 from './QR_4';
+import QR_Detailed_4 from './QR_Detailed_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
 import QR_Detailed_1 from './QR_Detailed_1';
@@ -1361,9 +1362,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
     renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
-    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৩" paraType="নন এসএফআই" />;
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৩" paraType="এসএফআই ও নন-এসএফআই" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') {
-    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৪" paraType="এসএফআই" />;
+    renderedContent = <QR_Detailed_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৪" paraType="এসএফআই ও নন-এসএফআই" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৫') {
     renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৫" paraType="নন এসএফআই" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৬') {

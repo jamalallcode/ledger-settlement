@@ -1,9 +1,10 @@
-import React, { useRef, useLayoutEffect } from 'react';
-import { Sparkles, ChevronDown, BarChart3, FileSpreadsheet } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
+import { Sparkles, ChevronDown, BarChart3, FileSpreadsheet, Building2, Landmark, Check, CalendarDays, X } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
+import { getQuarterlyCycleForDate } from '../utils/cycleHelper';
 
 interface QRProps {
   entries: SettlementEntry[];
@@ -181,6 +182,102 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
   const { formattedRange, priorPeriodEnd, cumPeriodEnd } = getQuarterInfo(activeCycle?.end || new Date());
 
+  // Multi-select filters state (Cycle, Ministry, Entity)
+  const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
+  const [selectedMinistries, setSelectedMinistries] = useState<string[]>([]);
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+
+  const [isCycleOpen, setIsCycleOpen] = useState(false);
+  const [isMinOpen, setIsMinOpen] = useState(false);
+  const [isEntOpen, setIsEntOpen] = useState(false);
+
+  const cycleDropdownRef = useRef<HTMLDivElement>(null);
+  const minDropdownRef = useRef<HTMLDivElement>(null);
+  const entDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target as Node)) {
+        setIsCycleOpen(false);
+      }
+      if (minDropdownRef.current && !minDropdownRef.current.contains(e.target as Node)) {
+        setIsMinOpen(false);
+      }
+      if (entDropdownRef.current && !entDropdownRef.current.contains(e.target as Node)) {
+        setIsEntOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const cycleOptions = useMemo(() => {
+    const list: { label: string; start: Date; end: Date; startStr: string; endStr: string }[] = [];
+    const baseDate = activeCycle?.end ? new Date(activeCycle.end) : new Date();
+    for (let i = -3; i <= 3; i++) {
+      const targetDate = addMonths(baseDate, i * 3);
+      const c = getQuarterlyCycleForDate(targetDate);
+      if (!list.some(item => item.label === c.label)) {
+        list.push({
+          label: c.label,
+          start: c.start,
+          end: c.end,
+          startStr: format(c.start, 'yyyy-MM-dd'),
+          endStr: format(c.end, 'yyyy-MM-dd'),
+        });
+      }
+    }
+    return list;
+  }, [activeCycle]);
+
+  const ministryOptions = useMemo(() => {
+    const set = new Set<string>();
+    allMinistryGroups.forEach(g => set.add(g.ministry));
+    return Array.from(set);
+  }, []);
+
+  const entityOptions = useMemo(() => {
+    const set = new Set<string>();
+    const groups = selectedMinistries.length > 0 
+      ? allMinistryGroups.filter(g => selectedMinistries.includes(g.ministry))
+      : allMinistryGroups;
+    groups.forEach(g => g.entities.forEach(ent => set.add(ent)));
+    return Array.from(set);
+  }, [selectedMinistries]);
+
+  // Filter Table 1 & Table 2 data based on selected ministries/entities
+  const filteredTable1Data = useMemo(() => {
+    return table1Data.map(group => {
+      if (selectedMinistries.length > 0 && !selectedMinistries.includes(group.ministry)) {
+        return null;
+      }
+      const filteredEntities = group.entities.filter(ent => {
+        if (selectedEntities.length > 0 && !selectedEntities.some(se => isEntityMatch(ent, se))) {
+          return false;
+        }
+        return true;
+      });
+      if (filteredEntities.length === 0) return null;
+      return { ...group, entities: filteredEntities };
+    }).filter(Boolean) as typeof table1Data;
+  }, [selectedMinistries, selectedEntities]);
+
+  const filteredTable2Data = useMemo(() => {
+    return table2Data.map(group => {
+      if (selectedMinistries.length > 0 && !selectedMinistries.includes(group.ministry)) {
+        return null;
+      }
+      const filteredEntities = group.entities.filter(ent => {
+        if (selectedEntities.length > 0 && !selectedEntities.some(se => isEntityMatch(ent, se))) {
+          return false;
+        }
+        return true;
+      });
+      if (filteredEntities.length === 0) return null;
+      return { ...group, entities: filteredEntities };
+    }).filter(Boolean) as typeof table2Data;
+  }, [selectedMinistries, selectedEntities]);
+
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
     if (tables.length === 0) return;
@@ -295,7 +392,14 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         const entryDateRaw = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
         const entryDate = entryDateRaw ? entryDateRaw.split('T')[0] : '';
 
-        if (cycleStartStr && cycleEndStr && entryDate) {
+        if (selectedCycles.length > 0) {
+          const matchedCycle = cycleOptions.find(c => selectedCycles.includes(c.label) && entryDate >= c.startStr && entryDate <= c.endStr);
+          if (matchedCycle) {
+            currentRaisedCount += rCount;
+            currentSettledCount += sCount;
+            currentSettledAmount += settledAmt;
+          }
+        } else if (cycleStartStr && cycleEndStr && entryDate) {
           if (entryDate < cycleStartStr) {
             // Prior quarter entry -> carry forward to opening balance of current quarter
             priorRaisedCount += rCount;
@@ -476,11 +580,11 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       window.removeEventListener('resize', updateHeaderStickyOffsets);
       observers.forEach((ro) => ro.disconnect());
     };
-  }, [table1Data, table2Data, priorPeriodEnd, formattedRange, cumPeriodEnd, searchTerm, filterMinistry]);
+  }, [filteredTable1Data, filteredTable2Data, priorPeriodEnd, formattedRange, cumPeriodEnd, searchTerm, filterMinistry]);
 
   // Calculate Table 1 Totals
   const t1Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
-  table1Data.forEach(g => {
+  filteredTable1Data.forEach(g => {
     g.entities.forEach(ent => {
       const d = getEntityData(ent);
       t1Totals.col4 += d.col4; t1Totals.col5 += d.col5; t1Totals.col6 += d.col6;
@@ -492,7 +596,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
 
   // Calculate Table 2 Totals
   const t2Totals = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
-  table2Data.forEach(g => {
+  filteredTable2Data.forEach(g => {
     g.entities.forEach(ent => {
       const d = getEntityData(ent);
       t2Totals.col4 += d.col4; t2Totals.col5 += d.col5; t2Totals.col6 += d.col6;
@@ -520,48 +624,340 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     <div id="qr-detailed-1-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-detailed-1-container" />
 
-      {/* Top Single Row Toolbar (Item 2.4) */}
-      <div className="flex flex-wrap items-center justify-end gap-3 mb-4 bg-slate-50 border border-slate-200 p-2.5 rounded-xl no-print shadow-sm">
-        {/* Right: Cycle Selector, Statistics & Excel Button */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Cycle / Quarterly selector element */}
+      {/* Action Bar (No Print) */}
+      <div className="flex flex-wrap justify-end items-center gap-3 mb-4 no-print">
+        <div className="flex items-center gap-2 flex-wrap">
           {monthPickerElement && (
-            <div className="scale-95 origin-center select-none relative z-[300]">
+            <div className="select-none relative z-[300]">
               {monthPickerElement}
             </div>
           )}
 
-          {/* Statistics Button Dropdown */}
-          <div className="relative group shrink-0 z-[250]">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-xl font-black text-[11px] border border-blue-100 transition-all duration-300 hover:bg-blue-100 hover:border-blue-200"
+          {/* Cycle Multi-Select Filter */}
+          <div className="relative select-none z-[300]" ref={cycleDropdownRef}>
+            <div
+              onClick={() => setIsCycleOpen(!isCycleOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedCycles.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
             >
-              <Sparkles size={13} className="text-blue-500" />
-              পরিসংখ্যান
-              <ChevronDown size={11} className="text-blue-400 transition-transform duration-300 group-hover:rotate-180" />
-            </button>
-            
-            <div className="absolute top-[calc(100%+4px)] right-0 w-[280px] bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-[1000] opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto text-left">
-              <div className="space-y-2 text-slate-700 text-[11px] font-bold">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <BarChart3 size={15} className="text-blue-600" />
-                  <span className="text-blue-900 font-black text-[12px]">বিস্তারিত - ১ পরিসংখ্যান</span>
-                </div>
-                <p className="text-slate-500 text-[10.5px]">টেবিল স্ট্রাকচার প্রস্তুত রয়েছে।</p>
-              </div>
+              <CalendarDays size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedCycles.length === 0
+                  ? 'সকল সাইকেল'
+                  : selectedCycles.length === 1
+                  ? selectedCycles[0]
+                  : `${toBengaliDigits(selectedCycles.length.toString())}টি সাইকেল`}
+              </span>
+              {selectedCycles.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedCycles.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isCycleOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
             </div>
+
+            {isCycleOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[270px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <CalendarDays size={11} /> সাইকেল নির্বাচন
+                  </span>
+                  {selectedCycles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCycles([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => setSelectedCycles([])}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedCycles.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল সাইকেল</span>
+                    {selectedCycles.length === 0 && <Check size={13} />}
+                  </div>
+                  {cycleOptions.map((opt, idx) => {
+                    const isSelected = selectedCycles.includes(opt.label);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedCycles(selectedCycles.filter(c => c !== opt.label));
+                          } else {
+                            setSelectedCycles([...selectedCycles, opt.label]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{opt.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsCycleOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Excel Download Button */}
+          {/* Ministry Multi-Select Filter */}
+          <div className="relative select-none z-[290]" ref={minDropdownRef}>
+            <div
+              onClick={() => setIsMinOpen(!isMinOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedMinistries.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <Building2 size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedMinistries.length === 0
+                  ? 'সকল মন্ত্রণালয়'
+                  : selectedMinistries.length === 1
+                  ? selectedMinistries[0]
+                  : `${toBengaliDigits(selectedMinistries.length.toString())}টি মন্ত্রণালয়`}
+              </span>
+              {selectedMinistries.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedMinistries.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isMinOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
+            </div>
+
+            {isMinOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Building2 size={11} /> মন্ত্রণালয় নির্বাচন
+                  </span>
+                  {selectedMinistries.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMinistries([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => {
+                      setSelectedMinistries([]);
+                    }}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedMinistries.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল মন্ত্রণালয়</span>
+                    {selectedMinistries.length === 0 && <Check size={13} />}
+                  </div>
+                  {ministryOptions.map((m, idx) => {
+                    const isSelected = selectedMinistries.includes(m);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedMinistries(selectedMinistries.filter(item => item !== m));
+                          } else {
+                            setSelectedMinistries([...selectedMinistries, m]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{m}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsMinOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Entity Multi-Select Filter */}
+          <div className="relative select-none z-[280]" ref={entDropdownRef}>
+            <div
+              onClick={() => setIsEntOpen(!isEntOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedEntities.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <Landmark size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedEntities.length === 0
+                  ? 'সকল সংস্থা'
+                  : selectedEntities.length === 1
+                  ? selectedEntities[0]
+                  : `${toBengaliDigits(selectedEntities.length.toString())}টি সংস্থা`}
+              </span>
+              {selectedEntities.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedEntities.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isEntOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
+            </div>
+
+            {isEntOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Landmark size={11} /> সংস্থা নির্বাচন
+                  </span>
+                  {selectedEntities.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEntities([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => {
+                      setSelectedEntities([]);
+                    }}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedEntities.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল সংস্থা</span>
+                    {selectedEntities.length === 0 && <Check size={13} />}
+                  </div>
+                  {entityOptions.map((ent, idx) => {
+                    const isSelected = selectedEntities.includes(ent);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedEntities(selectedEntities.filter(item => item !== ent));
+                          } else {
+                            setSelectedEntities([...selectedEntities, ent]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{ent}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEntOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Reset Filters button if any active */}
+          {(selectedCycles.length > 0 || selectedMinistries.length > 0 || selectedEntities.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCycles([]);
+                setSelectedMinistries([]);
+                setSelectedEntities([]);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs"
+              title="ফিল্টারসমূহ রিসেট করুন"
+            >
+              <X size={12} />
+              <span>ফিল্টার রিসেট</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={downloadExcel}
-            className="flex items-center justify-center h-[38px] px-3 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-100/50 transition-all duration-300 rounded-xl cursor-pointer shrink-0 font-extrabold text-[11.5px] gap-1.5 shadow-sm"
+            className="flex items-center justify-center w-9 h-9 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-100 transition-all rounded-lg cursor-pointer shrink-0 shadow-xs"
             title="এক্সেল ফাইল ডাউনলোড করুন"
           >
             <FileSpreadsheet size={16} className="stroke-[2.5]" />
-            <span>এক্সেল ডাউনলোড</span>
           </button>
         </div>
       </div>
@@ -722,7 +1118,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <tbody>
             {(() => {
               let serialCount = 0;
-              return table1Data.map((group, gIdx) => {
+              return filteredTable1Data.map((group, gIdx) => {
                 const groupSums = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
                 group.entities.forEach(ent => {
                   const d = getEntityData(ent);
@@ -878,7 +1274,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           <tbody>
             {(() => {
               let serialCount = 0;
-              return table2Data.map((group, gIdx) => {
+              return filteredTable2Data.map((group, gIdx) => {
                 const groupSums = { col4: 0, col5: 0, col6: 0, col7: 0, col8: 0, col9: 0, col10: 0, col11: 0, col12: 0, col13: 0 };
                 group.entities.forEach(ent => {
                   const d = getEntityData(ent);

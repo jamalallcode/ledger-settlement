@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { FileSpreadsheet, Building2, Landmark, ChevronDown, X, CalendarDays, Check } from 'lucide-react';
+import { FileSpreadsheet, Printer, RotateCcw, Edit3, Check, Building2, Landmark, ChevronDown, X, CalendarDays, CalendarSearch } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { format, addMonths } from 'date-fns';
 import { SettlementEntry } from '../types';
-import { getQuarterlyCycleForDate } from '../utils/cycleHelper';
+import { MINISTRY_ENTITY_MAP } from '../constants';
+import { getQuarterlyCycleForDate, getCycleForDate } from '../utils/cycleHelper';
 
 interface QRProps {
   entries: SettlementEntry[];
@@ -59,8 +60,8 @@ const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boo
   if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
 
   // Jute & Textiles (Patkol vs Pat)
-  const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
-  const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+  const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট") || normTarget.includes("পাট");
+  const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট") || normEntry.includes("পাট");
   if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
 
   const isBostraTarget = normTarget.includes("বস্ত্র") || normTarget.includes("বিটিএমসি") || normTarget.includes("রেশম");
@@ -76,12 +77,12 @@ const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boo
   return normEntry.includes(normTarget) || normTarget.includes(normEntry);
 };
 
-export const DEFAULT_MINISTRIES = [
+export const DEFAULT_MINISTRIES_DETAILED_4 = [
   {
     sl: 2,
     name: 'বস্ত্র ও পাট মন্ত্রণালয়',
-    entities: ['পাটকল সংস্থা', 'পাট সংস্থা', 'বস্ত্রকল সংস্থা', 'রেশম বোর্ড'],
-    matchKeys: ['পাট', 'বস্ত্র', 'বিজেএমসি', 'বিটিএমসি'],
+    entities: ['পাটকল সংস্থা', 'পাট সংস্থা', 'বস্ত্রকল সংস্থা', 'রেশম বোর্ড', 'বাংলাদেশ জুট মিলস কর্পোরেশন (বিজেএমসি)', 'বাংলাদেশ টেক্সটাইল মিলস কর্পোরেশন (বিটিএমসি)'],
+    matchKeys: ['পাট', 'বস্ত্র', 'বিজেএমসি', 'বিটিএমসি', 'রেশম', 'জুট'],
   },
   {
     sl: 3,
@@ -116,7 +117,7 @@ export const DEFAULT_MINISTRIES = [
   }
 ];
 
-const QR_4: React.FC<QRProps> = ({
+const QR_Detailed_4: React.FC<QRProps> = ({
   entries,
   activeCycle,
   IDBadge,
@@ -124,12 +125,12 @@ const QR_4: React.FC<QRProps> = ({
   filterMinistry = '',
   filterEntity = '',
   monthPickerElement,
-  customTitle = 'বিস্তারিত - ৩',
+  customTitle = 'বিস্তারিত - ৪',
   paraType = 'নন এসএফআই'
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [customValues, setCustomValues] = useState<Record<string, Record<string, number>>>({});
-
+  
   // Multi-select filter states
   const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
   const [selectedMinistries, setSelectedMinistries] = useState<string[]>(
@@ -201,7 +202,7 @@ const QR_4: React.FC<QRProps> = ({
 
   const ministryOptions = useMemo(() => {
     const set = new Set<string>();
-    DEFAULT_MINISTRIES.forEach(m => set.add(m.name));
+    DEFAULT_MINISTRIES_DETAILED_4.forEach(m => set.add(m.name));
     return Array.from(set);
   }, []);
 
@@ -210,7 +211,7 @@ const QR_4: React.FC<QRProps> = ({
     if (selectedMinistries.length > 0) {
       selectedMinistries.forEach(min => {
         const normSelected = robustNormalize(min).toLowerCase();
-        DEFAULT_MINISTRIES.forEach(m => {
+        DEFAULT_MINISTRIES_DETAILED_4.forEach(m => {
           const normM = robustNormalize(m.name).toLowerCase();
           if (normSelected === normM || normSelected.includes(normM) || normM.includes(normSelected)) {
             m.entities.forEach(ent => set.add(ent));
@@ -224,7 +225,7 @@ const QR_4: React.FC<QRProps> = ({
         });
       });
     } else {
-      DEFAULT_MINISTRIES.forEach(m => {
+      DEFAULT_MINISTRIES_DETAILED_4.forEach(m => {
         m.entities.forEach(ent => set.add(ent));
       });
       (entries || []).forEach(e => {
@@ -234,7 +235,7 @@ const QR_4: React.FC<QRProps> = ({
     return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b, 'bn'));
   }, [selectedMinistries, entries]);
 
-  // Cycle range extraction (matching 16th to 15th reporting cycle)
+  // Cycle range extraction
   const getQuarterInfo = (date: Date) => {
     const cycleEndMonth = date.getMonth(); // 0 to 11
     const year = date.getFullYear();
@@ -274,9 +275,8 @@ const QR_4: React.FC<QRProps> = ({
     };
   };
 
-  const { startMonthName, endMonthName, formattedRange, quarterStartMonth, quarterYear } = getQuarterInfo(activeCycle?.end || new Date());
+  const { formattedRange, quarterStartMonth, quarterYear } = getQuarterInfo(activeCycle?.end || new Date());
 
-  // Use the actual selected activeCycle range (e.g. 16/06/2026 to 15/09/2026)
   const cycleStartDate = activeCycle?.start ? new Date(activeCycle.start) : new Date(quarterYear, quarterStartMonth, 16);
   const cycleEndDate = activeCycle?.end ? new Date(activeCycle.end) : new Date(quarterYear, quarterStartMonth + 2, 15);
   cycleStartDate.setHours(0, 0, 0, 0);
@@ -289,7 +289,7 @@ const QR_4: React.FC<QRProps> = ({
     : `${toBengaliDigits(format(cycleStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(cycleEndDate, 'dd/MM/yyyy'))}`;
 
   // Unique storage key for custom cell overrides
-  const storageKey = `qr4_custom_overrides_${quarterCycleStartDateStr}_${quarterCycleEndDateStr}`;
+  const storageKey = `qr_detailed_4_overrides_${quarterCycleStartDateStr}_${quarterCycleEndDateStr}`;
 
   useEffect(() => {
     try {
@@ -336,7 +336,7 @@ const QR_4: React.FC<QRProps> = ({
 
   // Process and aggregate data ministry-wise
   const tableData = useMemo(() => {
-    const isEntryForMinistry = (e: SettlementEntry, minConfig: typeof DEFAULT_MINISTRIES[0]) => {
+    const isEntryForMinistry = (e: SettlementEntry, minConfig: typeof DEFAULT_MINISTRIES_DETAILED_4[0]) => {
       const eMin = robustNormalize(e.ministryName || '');
       const eEnt = robustNormalize(e.entityName || '');
 
@@ -354,14 +354,13 @@ const QR_4: React.FC<QRProps> = ({
       });
     };
 
-    // Filter relevant entries for the current cycle (এসএফআই ও নন-এসএফআই উভয় শাখার সম্মিলিত হিসাব)
+    // Filter relevant entries for the selected cycle(s) (এসএফআই ও নন-এসএফআই উভয় শাখার সম্মিলিত হিসাব)
     const relevantEntries = (entries || []).filter(e => {
       // Do not restrict by paraType so both SFI and Non-SFI are included
-      if (paraType && !['এসএফআই ও নন-এসএফআই', 'সকল', 'নন এসএফআই'].includes(paraType) && e.paraType && robustNormalize(e.paraType) !== robustNormalize(paraType)) {
+      if (paraType && !['এসএফআই ও নন-এসএফআই', 'সকল', 'নন এসএফআই'].includes(paraType) && e.paraType && robustNormalize(e.paraType || '') !== robustNormalize(paraType)) {
         return false;
       }
 
-      // Robust date extraction: check issueDateISO, or parse issueLetterNoDate, or fallback to createdAt
       let issueDateStr = e.issueDateISO || '';
       if (!issueDateStr && e.issueLetterNoDate) {
         const eng = toEnglishDigits(e.issueLetterNoDate);
@@ -408,7 +407,7 @@ const QR_4: React.FC<QRProps> = ({
         const matchesEnt = selectedEntities.some(ent => {
           const normEnt = robustNormalize(ent).toLowerCase();
           return isEntityMatch(e.entityName || '', ent) ||
-            normEntryEnt.includes(normEnt) || normEntryEnt.includes(normEntryEnt);
+            normEntryEnt.includes(normEnt) || normEnt.includes(normEntryEnt);
         });
         if (!matchesEnt) return false;
       }
@@ -426,14 +425,14 @@ const QR_4: React.FC<QRProps> = ({
       return true;
     });
 
-    const targetMinistries = DEFAULT_MINISTRIES.filter(minConfig => {
+    const targetMinistries = DEFAULT_MINISTRIES_DETAILED_4.filter(minConfig => {
       if (selectedMinistries.length === 0 && selectedEntities.length === 0) return true;
 
       if (selectedMinistries.length > 0) {
         const normMinName = robustNormalize(minConfig.name).toLowerCase();
         const matchMin = selectedMinistries.some(m => {
           const normM = robustNormalize(m).toLowerCase();
-          return normMinName === normM || normMinName.includes(normM) || normMinName.includes(normMinName);
+          return normMinName === normM || normMinName.includes(normM) || normM.includes(normMinName);
         });
         if (!matchMin) return false;
       }
@@ -448,16 +447,13 @@ const QR_4: React.FC<QRProps> = ({
       return true;
     });
 
-    return targetMinistries.map(minConfig => {
+    return targetMinistries.map((minConfig, idx) => {
       const matchedEntries = relevantEntries.filter(e => isEntryForMinistry(e, minConfig));
 
-      let matchedCol3 = 0; // উত্থাপিত আপত্তিতে জড়িত টাকা
-      let matchedCol4 = 0; // অডিট কালীন আদায়
-      let matchedCol5 = 0; // অডিট কালীন সমন্বয়
-      let matchedCol6 = 0; // প্রতিবেদনাধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়
-      let matchedCol7 = 0; // প্রতিবেদনাধীন সময়ে উত্থাপিত অর্থের বিপরীতে সমন্বয়
-      let matchedCol8 = 0; // পুরাতন আপত্তিতে জড়িত অর্থ - আদায়
-      let matchedCol9 = 0; // পুরাতন আপত্তিতে জড়িত অর্থ - সমন্বয়
+      let matchedCol4 = 0; // আয়কর ও ভ্যাট - আদায়
+      let matchedCol5 = 0; // আয়কর ও ভ্যাট - সমন্বয়
+      let matchedCol6 = 0; // অন্যান্য - আদায়
+      let matchedCol7 = 0; // অন্যান্য - সমন্বয়
       const remarksList: string[] = [];
 
       matchedEntries.forEach(entry => {
@@ -465,72 +461,80 @@ const QR_4: React.FC<QRProps> = ({
           remarksList.push(entry.remarks.trim());
         }
 
-        // If manual raised amount exists
-        if (entry.manualRaisedAmount) {
-          matchedCol3 += Number(entry.manualRaisedAmount) || 0;
-        }
+        const eItRec = Number(entry.itRec) || 0;
+        const eVatRec = Number(entry.vatRec) || 0;
+        const eOthersRec = Number(entry.othersRec) || 0;
 
-        // Authoritative recovery and adjustment from entry (as in SettlementTable)
-        const entryTotalRec = Number(entry.totalRec) || 0;
-        const entryTotalAdj = Number(entry.totalAdj) || 0;
+        const eItAdj = Number(entry.itAdj) || 0;
+        const eVatAdj = Number(entry.vatAdj) || 0;
+        const eOthersAdj = Number(entry.othersAdj) || 0;
 
-        // Sum paragraph-level or top-level recoveries and adjustments
-        let entRec = 0;
-        let entAdj = 0;
+        let pItRec = 0;
+        let pVatRec = 0;
+        let pOthersRec = 0;
+        let pItAdj = 0;
+        let pVatAdj = 0;
+        let pOthersAdj = 0;
 
         if (entry.paragraphs && entry.paragraphs.length > 0) {
           entry.paragraphs.forEach(p => {
-            const explicitRec = parseBengaliNumber(String(p.recoveredAmount || '0'));
-            const categorizedRec = parseBengaliNumber(String(p.vatRec || '0')) + 
-                                   parseBengaliNumber(String(p.itRec || '0')) + 
-                                   parseBengaliNumber(String(p.othersRec || '0'));
-            const pRec = Math.max(explicitRec, categorizedRec);
+            const explicitItRec = parseBengaliNumber(String(p.itRec || '0'));
+            const explicitVatRec = parseBengaliNumber(String(p.vatRec || '0'));
+            const explicitOthersRec = parseBengaliNumber(String(p.othersRec || '0'));
 
-            const explicitAdj = parseBengaliNumber(String(p.adjustedAmount || '0'));
-            const categorizedAdj = parseBengaliNumber(String(p.vatAdj || '0')) + 
-                                   parseBengaliNumber(String(p.itAdj || '0')) + 
-                                   parseBengaliNumber(String(p.othersAdj || '0'));
-            const pAdj = Math.max(explicitAdj, categorizedAdj);
+            const explicitItAdj = parseBengaliNumber(String(p.itAdj || '0'));
+            const explicitVatAdj = parseBengaliNumber(String(p.vatAdj || '0'));
+            const explicitOthersAdj = parseBengaliNumber(String(p.othersAdj || '0'));
 
-            entRec += pRec;
-            entAdj += pAdj;
+            const catRec = parseBengaliNumber(String(p.recoveredAmount || '0'));
+            const catAdj = parseBengaliNumber(String(p.adjustedAmount || '0'));
+
+            const vRec = explicitVatRec || (p.category === 'ভ্যাট' ? catRec : 0);
+            const vAdj = explicitVatAdj || (p.category === 'ভ্যাট' ? catAdj : 0);
+            const iRec = explicitItRec || (p.category === 'আয়কর' ? catRec : 0);
+            const iAdj = explicitItAdj || (p.category === 'আয়কর' ? catAdj : 0);
+            const oRec = explicitOthersRec || (p.category === 'অন্যান্য' ? catRec : 0);
+            const oAdj = explicitOthersAdj || (p.category === 'অন্যান্য' ? catAdj : 0);
+
+            pVatRec += vRec;
+            pVatAdj += vAdj;
+            pItRec += iRec;
+            pItAdj += iAdj;
+            pOthersRec += oRec;
+            pOthersAdj += oAdj;
           });
         }
 
-        // If paragraph sum was 0, check entry-level fields
-        if (entRec === 0) {
-          entRec = parseBengaliNumber(String(entry.settledAmount || entry.manualSettledAmount || '0')) ||
-            (parseBengaliNumber(String(entry.vatRec || '0')) + parseBengaliNumber(String(entry.itRec || '0')) + parseBengaliNumber(String(entry.othersRec || '0')));
-        }
-        if (entAdj === 0) {
-          entAdj = parseBengaliNumber(String(entry.vatAdj || '0')) + parseBengaliNumber(String(entry.itAdj || '0')) + parseBengaliNumber(String(entry.othersAdj || '0'));
-        }
+        const hasParaBreakdown = (pItRec > 0 || pVatRec > 0 || pOthersRec > 0 || pItAdj > 0 || pVatAdj > 0 || pOthersAdj > 0);
+        const finalItRec = hasParaBreakdown ? pItRec : eItRec;
+        const finalVatRec = hasParaBreakdown ? pVatRec : eVatRec;
+        const finalOthersRec = hasParaBreakdown ? pOthersRec : eOthersRec;
 
-        const finalRec = entryTotalRec > 0 ? entryTotalRec : entRec;
-        const finalAdj = entryTotalAdj > 0 ? entryTotalAdj : entAdj;
+        const finalItAdj = hasParaBreakdown ? pItAdj : eItAdj;
+        const finalVatAdj = hasParaBreakdown ? pVatAdj : eVatAdj;
+        const finalOthersAdj = hasParaBreakdown ? pOthersAdj : eOthersAdj;
 
-        // In commercial audit reporting, settled objections of the reporting quarter are mapped to Col 8 & 9 (পুরাতন আপত্তিতে জড়িত অর্থ)
-        matchedCol8 += finalRec;
-        matchedCol9 += finalAdj;
+        matchedCol4 += (finalItRec + finalVatRec);
+        matchedCol5 += (finalItAdj + finalVatAdj);
+        matchedCol6 += finalOthersRec;
+        matchedCol7 += finalOthersAdj;
       });
 
-      // User custom cell overrides (if manually modified)
       const minOverrides = customValues[minConfig.name] || {};
 
-      const col3 = minOverrides['col3'] !== undefined ? minOverrides['col3'] : matchedCol3;
-      const col4 = minOverrides['col4'] !== undefined ? minOverrides['col4'] : matchedCol4;
-      const col5 = minOverrides['col5'] !== undefined ? minOverrides['col5'] : matchedCol5;
-      const col6 = minOverrides['col6'] !== undefined ? minOverrides['col6'] : matchedCol6;
-      const col7 = minOverrides['col7'] !== undefined ? minOverrides['col7'] : matchedCol7;
+      let col4 = minOverrides['col4'] !== undefined ? minOverrides['col4'] : matchedCol4;
+      let col5 = minOverrides['col5'] !== undefined ? minOverrides['col5'] : matchedCol5;
+      let col6 = minOverrides['col6'] !== undefined ? minOverrides['col6'] : matchedCol6;
+      let col7 = minOverrides['col7'] !== undefined ? minOverrides['col7'] : matchedCol7;
 
-      // Col 8 (পুরাতন আপত্তি - আদায়) and Col 9 (পুরাতন আপত্তি - সমন্বয়) populated from relevant settled entries
-      const col8 = minOverrides['col8'] !== undefined ? minOverrides['col8'] : matchedCol8;
-      const col9 = minOverrides['col9'] !== undefined ? minOverrides['col9'] : matchedCol9;
-
-      // Column 10 (মোট আদায়) = Col 4 + Col 6 + Col 8
-      const col10 = col4 + col6 + col8;
-      // Column 11 (মোট সমন্বয়) = Col 5 + Col 7 + Col 9
-      const col11 = col5 + col7 + col9;
+      // Col 8 = Col 4 + Col 6 (মোট আদায়)
+      const col8 = col4 + col6;
+      // Col 9 = Col 5 + Col 7 (মোট সমন্বয়)
+      const col9 = col5 + col7;
+      // Col 10 = Col 8 + Col 9 (সর্বমোট)
+      const col10 = col8 + col9;
+      // Col 3 = Col 10 (জড়িত টাকা)
+      const col3 = minOverrides['col3'] !== undefined ? minOverrides['col3'] : col10;
 
       return {
         sl: minConfig.sl,
@@ -543,13 +547,12 @@ const QR_4: React.FC<QRProps> = ({
         col8,
         col9,
         col10,
-        col11,
         remarks: remarksList.length > 0 ? Array.from(new Set(remarksList)).join(', ') : '-'
       };
     });
-  }, [entries, paraType, quarterCycleStartDateStr, quarterCycleEndDateStr, filterMinistry, searchTerm, customValues, selectedCycles, selectedMinistries, selectedEntities, cycleOptions]);
+  }, [entries, paraType, quarterCycleStartDateStr, quarterCycleEndDateStr, selectedCycles, selectedMinistries, selectedEntities, cycleOptions, searchTerm, customValues]);
 
-  // Calculate Grand Totals across all columns
+  // Calculate totals across columns
   const totals = useMemo(() => {
     return tableData.reduce((acc, row) => {
       acc.col3 += row.col3;
@@ -560,7 +563,6 @@ const QR_4: React.FC<QRProps> = ({
       acc.col8 += row.col8;
       acc.col9 += row.col9;
       acc.col10 += row.col10;
-      acc.col11 += row.col11;
       return acc;
     }, {
       col3: 0,
@@ -571,7 +573,6 @@ const QR_4: React.FC<QRProps> = ({
       col8: 0,
       col9: 0,
       col10: 0,
-      col11: 0,
     });
   }, [tableData]);
 
@@ -582,14 +583,14 @@ const QR_4: React.FC<QRProps> = ({
 
   // Excel Download Handler
   const downloadExcel = () => {
-    const table = document.querySelector('#qr-detailed-3-table');
+    const table = document.querySelector('#qr-detailed-4-table');
     if (!table) return;
 
     const clonedTable = table.cloneNode(true) as HTMLTableElement;
     const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
     interactiveElements.forEach(el => el.remove());
 
-    const filename = `ত্রৈমাসিক_রিটার্ন_বিস্তারিত_৩_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `ত্রৈমাসিক_রিটার্ন_বিস্তারিত_৪_${format(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -599,8 +600,8 @@ const QR_4: React.FC<QRProps> = ({
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
           table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
           th, td { border: 1px solid #94a3b8 !important; padding: 8px 10px !important; text-align: center; font-size: 11px; vertical-align: middle; }
-          th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
-          .bg-sub { background-color: #e2e8f0 !important; font-weight: bold !important; }
+          th { background-color: #e0f2fe !important; color: #0f172a !important; font-weight: bold !important; }
+          .bg-sub { background-color: #f1f5f9 !important; font-weight: bold !important; }
           .footer-row td { background-color: #000000 !important; color: #ffffff !important; font-weight: bold !important; }
           .text-right { text-align: right !important; }
           .text-left { text-align: left !important; }
@@ -608,10 +609,10 @@ const QR_4: React.FC<QRProps> = ({
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 5px; color: #1e3a8a;">বিস্তারিত - ৩</h2>
+        <h2 style="text-align: center; margin-bottom: 5px; color: #1e3a8a;">বিস্তারিত - ৪</h2>
         <div style="margin-bottom: 12px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between;">
-          <span>বিষয়ঃ অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন ${formattedRange} পর্যন্ত</span>
-          <span style="float: right;">শাখার নামঃ ${paraType} শাখা।</span>
+          <span>মন্ত্রণালয়/সংস্থাভিত্তিক অডিট আপত্তির ${formattedRange} পর্যন্ত মাসের বিবরণ:</span>
+          <span style="float: right;">শাখার নামঃ ${paraType} শাখা</span>
         </div>
         ${clonedTable.outerHTML}
       </body>
@@ -632,24 +633,9 @@ const QR_4: React.FC<QRProps> = ({
   const tableRef = useRef<HTMLTableElement>(null);
 
   useLayoutEffect(() => {
-    const updateHeaderStickyOffsets = () => {
+    const updateStickyOffsets = () => {
       const table = tableRef.current;
       if (!table) return;
-      const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
-      const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
-      if (tr1 && tr2) {
-        const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
-        const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
-        const r2Cell = tr2.querySelector('th') as HTMLElement | null;
-        const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
-
-        if (h1 > 0) {
-          table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
-          if (h2 > 0) {
-            table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
-          }
-        }
-      }
 
       const bottomFooter = table.querySelector('.qr-sticky-footer-bottom') as HTMLElement | null;
       if (bottomFooter) {
@@ -660,27 +646,27 @@ const QR_4: React.FC<QRProps> = ({
       }
     };
 
-    updateHeaderStickyOffsets();
-    const t1 = setTimeout(updateHeaderStickyOffsets, 50);
-    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+    updateStickyOffsets();
+    const t1 = setTimeout(updateStickyOffsets, 50);
+    const t2 = setTimeout(updateStickyOffsets, 200);
 
-    window.addEventListener('resize', updateHeaderStickyOffsets);
+    window.addEventListener('resize', updateStickyOffsets);
 
     let ro: ResizeObserver | null = null;
     if (window.ResizeObserver && tableRef.current) {
-      ro = new ResizeObserver(updateHeaderStickyOffsets);
+      ro = new ResizeObserver(updateStickyOffsets);
       ro.observe(tableRef.current);
     }
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      window.removeEventListener('resize', updateHeaderStickyOffsets);
+      window.removeEventListener('resize', updateStickyOffsets);
       if (ro) ro.disconnect();
     };
   }, [tableData]);
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[10px] font-black text-slate-900 bg-[#e2e8f0] align-middle text-center";
+  const thCls = "border-r border-b border-slate-400 p-2 text-[10.5px] font-black text-slate-900 bg-[#e2e8f0] align-middle text-center";
   const thClsWithTop = thCls + " border-t border-slate-400";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-800 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[11px] text-slate-900 text-right align-middle font-bold tabular-nums";
@@ -692,10 +678,10 @@ const QR_4: React.FC<QRProps> = ({
   };
 
   return (
-    <div id="qr-detailed-3-container" className="w-full mx-auto py-4 px-2 bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
-      <IDBadge id="qr-detailed-3-container" />
+    <div id="qr-detailed-4-container" className="w-full mx-auto py-4 px-2 bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
+      <IDBadge id="qr-detailed-4-container" />
 
-      {/* Action bar (No Print) */}
+      {/* Action Bar (No Print) */}
       <div className="flex flex-wrap justify-end items-center gap-3 mb-4 no-print">
         <div className="flex items-center gap-2 flex-wrap">
           {monthPickerElement && (
@@ -1022,6 +1008,7 @@ const QR_4: React.FC<QRProps> = ({
             </button>
           )}
 
+
           <button
             type="button"
             onClick={downloadExcel}
@@ -1040,24 +1027,31 @@ const QR_4: React.FC<QRProps> = ({
         </h1>
       </div>
 
-      {/* Subheader info: Row 4 from image (Subject on left, Branch Name on right) */}
-      <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[12px] font-bold text-slate-800 px-1">
+      {/* Subheader info: Row 5 from image (Left description, Right Branch Name) */}
+      <div className="mb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[12px] font-bold text-slate-800 px-1">
         <div>
-          বিষয়ঃ অডিট আপত্তির ফলে আদায়কৃত/সমন্বয়কৃত অর্থের ত্রৈমাসিক প্রতিবেদন <span className="font-extrabold text-blue-900">{formattedRange}</span> পর্যন্ত
+          মন্ত্রণালয়/সংস্থাভিত্তিক অডিট আপত্তির <span className="font-black text-blue-900">{formattedRange}</span> পর্যন্ত মাসের বিবরণ:
         </div>
         <div className="text-right">
-          শাখার নামঃ <span className="font-extrabold text-slate-900">{paraType} শাখা।</span>
+          শাখার নামঃ <span className="font-extrabold text-slate-900">{paraType} শাখা</span>
         </div>
       </div>
 
-      {/* Main 12-Column Table */}
+      {/* Main 11-Column Table */}
       <div className="table-container qr-table-container w-full overflow-visible border-t border-l border-slate-400 rounded-xs shadow-xs">
         <style>{`
-          #qr-detailed-3-table {
-            --th-r2-top: 65px;
-            --th-r3-top: 102px;
+          #qr-detailed-4-table {
+            --th-r2-top: 34px;
+            --th-r3-top: 64px;
           }
-          #qr-detailed-3-table thead th {
+          #qr-detailed-4-table thead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0px !important;
+            z-index: 140 !important;
+            background-color: #e2e8f0 !important;
+          }
+          #qr-detailed-4-table thead th {
             position: -webkit-sticky !important;
             position: sticky !important;
             background-color: #e2e8f0 !important;
@@ -1065,62 +1059,64 @@ const QR_4: React.FC<QRProps> = ({
             vertical-align: middle !important;
             opacity: 1 !important;
             box-shadow: none !important;
+            box-sizing: border-box !important;
           }
-          #qr-detailed-3-table thead tr:first-child th {
+          #qr-detailed-4-table thead tr:first-child th {
             top: 0px !important;
-            z-index: 140 !important;
-          }
-          #qr-detailed-3-table thead tr:first-child th[rowspan],
-          #qr-detailed-3-table thead tr:first-child th[rowSpan] {
-            top: 0px !important;
+            height: 34px !important;
             z-index: 145 !important;
           }
-          #qr-detailed-3-table thead tr:nth-child(2) th {
-            top: var(--th-r2-top, 65px) !important;
-            z-index: 135 !important;
+          #qr-detailed-4-table thead tr:first-child th[rowspan],
+          #qr-detailed-4-table thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            height: 64px !important;
+            z-index: 146 !important;
           }
-          #qr-detailed-3-table thead tr:nth-child(3) th {
-            top: var(--th-r3-top, 102px) !important;
-            z-index: 130 !important;
+          #qr-detailed-4-table thead tr:nth-child(2) th {
+            top: 34px !important;
+            height: 30px !important;
+            z-index: 144 !important;
+          }
+          #qr-detailed-4-table thead tr:nth-child(3) th {
+            top: 64px !important;
+            height: 26px !important;
+            z-index: 143 !important;
             white-space: nowrap !important;
           }
         `}</style>
-        <table id="qr-detailed-3-table" ref={tableRef} className="w-full border-separate border-spacing-0 text-center">
-          <thead>
+        <table id="qr-detailed-4-table" ref={tableRef} className="w-full border-separate border-spacing-0 text-center">
+          <thead className="sticky top-0 z-[140] bg-[#e2e8f0] shadow-xs">
             {/* Header Row 1 */}
-            <tr>
+            <tr className="h-[34px]">
               <th rowSpan={2} className={thClsWithTop + " w-[45px]"}>ক্রঃ নং</th>
               <th rowSpan={2} className={thClsWithTop + " min-w-[210px] text-left pl-3"}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={thClsWithTop + " min-w-[140px]"}>প্রতিবেদনাধীন সময়ে উত্থাপিত আপত্তিতে জড়িত টাকার পরিমাণ</th>
-              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>অডিট কালীন আদায়/সমন্বয়</th>
-              <th colSpan={2} className={thClsWithTop + " min-w-[190px]"}>প্রতিবেদনাধীন সময়ে উত্থাপিত অর্থের বিপরীতে আদায়/সমন্বয়</th>
-              <th colSpan={2} className={thClsWithTop + " min-w-[180px]"}>পুরাতন আপত্তিতে জড়িত অর্থ</th>
+              <th rowSpan={2} className={thClsWithTop + " min-w-[125px]"}>জড়িত টাকা</th>
+              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>আয়কর ও ভ্যাট বাবদ</th>
+              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>অন্যান্য বাবদ</th>
               <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>মোট</th>
+              <th rowSpan={2} className={thClsWithTop + " min-w-[125px]"}>সর্বমোট</th>
             </tr>
             {/* Header Row 2 */}
-            <tr>
+            <tr className="h-[30px]">
               <th className={thCls + " min-w-[85px]"}>আদায়</th>
               <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
-              <th className={thCls + " min-w-[95px]"}>আদায়</th>
-              <th className={thCls + " min-w-[95px]"}>সমন্বয়</th>
-              <th className={thCls + " min-w-[90px]"}>আদায়</th>
-              <th className={thCls + " min-w-[90px]"}>সমন্বয়</th>
+              <th className={thCls + " min-w-[85px]"}>আদায়</th>
+              <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
               <th className={thCls + " min-w-[85px]"}>আদায়</th>
               <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
             </tr>
-            {/* Header Row 3: Column Numbers 1 to 11 */}
-            <tr className="bg-[#e2e8f0] font-black text-[9px] text-slate-700">
-              <th className={thCls}>১</th>
-              <th className={thCls}>২</th>
-              <th className={thCls}>৩</th>
-              <th className={thCls}>৪</th>
-              <th className={thCls}>৫</th>
-              <th className={thCls}>৬</th>
-              <th className={thCls}>৭</th>
-              <th className={thCls}>৮</th>
-              <th className={thCls}>৯</th>
-              <th className={thCls}>১০</th>
-              <th className={thCls}>১১</th>
+            {/* Header Row 3: Column Numbers 1 to 10 */}
+            <tr className="h-[26px] bg-[#e2e8f0] font-black text-[9px] text-slate-700">
+              <th className={thCls + " !py-1"}>১</th>
+              <th className={thCls + " !py-1"}>২</th>
+              <th className={thCls + " !py-1"}>৩</th>
+              <th className={thCls + " !py-1"}>৪</th>
+              <th className={thCls + " !py-1"}>৫</th>
+              <th className={thCls + " !py-1"}>৬</th>
+              <th className={thCls + " !py-1"}>৭</th>
+              <th className={thCls + " !py-1"}>৮=৪+৬</th>
+              <th className={thCls + " !py-1"}>৯=৫+৭</th>
+              <th className={thCls + " !py-1"}>১০</th>
             </tr>
           </thead>
           <tbody>
@@ -1129,7 +1125,7 @@ const QR_4: React.FC<QRProps> = ({
                 <td className={tdCls + " text-center font-bold"}>{toBengaliDigits(row.sl.toString())}</td>
                 <td className={tdCls + " text-left pl-3 font-bold text-slate-900"}>{row.ministryName}</td>
                 
-                {/* Col 3 */}
+                {/* Col 3: জড়িত টাকা */}
                 <td className={numTdCls}>
                   {isEditMode ? (
                     <input
@@ -1143,7 +1139,7 @@ const QR_4: React.FC<QRProps> = ({
                   )}
                 </td>
 
-                {/* Col 4 */}
+                {/* Col 4: আয়কর ও ভ্যাট - আদায় */}
                 <td className={numTdCls}>
                   {isEditMode ? (
                     <input
@@ -1157,7 +1153,7 @@ const QR_4: React.FC<QRProps> = ({
                   )}
                 </td>
 
-                {/* Col 5 */}
+                {/* Col 5: আয়কর ও ভ্যাট - সমন্বয় */}
                 <td className={numTdCls}>
                   {isEditMode ? (
                     <input
@@ -1171,7 +1167,7 @@ const QR_4: React.FC<QRProps> = ({
                   )}
                 </td>
 
-                {/* Col 6 */}
+                {/* Col 6: অন্যান্য - আদায় */}
                 <td className={numTdCls}>
                   {isEditMode ? (
                     <input
@@ -1185,7 +1181,7 @@ const QR_4: React.FC<QRProps> = ({
                   )}
                 </td>
 
-                {/* Col 7 */}
+                {/* Col 7: অন্যান্য - সমন্বয় */}
                 <td className={numTdCls}>
                   {isEditMode ? (
                     <input
@@ -1199,47 +1195,24 @@ const QR_4: React.FC<QRProps> = ({
                   )}
                 </td>
 
-                {/* Col 8 */}
-                <td className={numTdCls}>
-                  {isEditMode ? (
-                    <input
-                      type="text"
-                      value={toBengaliDigits(row.col8.toString())}
-                      onChange={(e) => handleCellChange(row.ministryName, 'col8', e.target.value)}
-                      className="w-full text-right px-1 py-0.5 border border-amber-300 rounded text-[11px] font-bold bg-amber-50/50"
-                    />
-                  ) : (
-                    renderNumber(row.col8)
-                  )}
-                </td>
-
-                {/* Col 9 */}
-                <td className={numTdCls}>
-                  {isEditMode ? (
-                    <input
-                      type="text"
-                      value={toBengaliDigits(row.col9.toString())}
-                      onChange={(e) => handleCellChange(row.ministryName, 'col9', e.target.value)}
-                      className="w-full text-right px-1 py-0.5 border border-amber-300 rounded text-[11px] font-bold bg-amber-50/50"
-                    />
-                  ) : (
-                    renderNumber(row.col9)
-                  )}
-                </td>
-
-                {/* Col 10 (মোট আদায় = ৪ + ৬ + ৮) */}
+                {/* Col 8: মোট আদায় = ৪ + ৬ */}
                 <td className={numTdCls + " font-black bg-slate-50/60"}>
+                  {renderNumber(row.col8)}
+                </td>
+
+                {/* Col 9: মোট সমন্বয় = ৫ + ৭ */}
+                <td className={numTdCls + " font-black bg-slate-50/60"}>
+                  {renderNumber(row.col9)}
+                </td>
+
+                {/* Col 10: সর্বমোট = ৮ + ৯ */}
+                <td className={numTdCls + " font-black bg-blue-50/40 text-blue-950"}>
                   {renderNumber(row.col10)}
-                </td>
-
-                {/* Col 11 (মোট সমন্বয় = ৫ + ৭ + ৯) */}
-                <td className={numTdCls + " font-black bg-slate-50/60"}>
-                  {renderNumber(row.col11)}
                 </td>
               </tr>
             ))}
 
-            {/* Totals Row */}
+            {/* Footer Row (মোট) */}
             <tr className="footer-row font-black h-[32px] bg-black text-white no-hover-row">
               <td colSpan={2} className={footerTdCls + " text-center tracking-wide"}>মোট</td>
               <td className={footerNumTdCls}>{renderNumber(totals.col3)}</td>
@@ -1250,7 +1223,6 @@ const QR_4: React.FC<QRProps> = ({
               <td className={footerNumTdCls}>{renderNumber(totals.col8)}</td>
               <td className={footerNumTdCls}>{renderNumber(totals.col9)}</td>
               <td className={footerNumTdCls}>{renderNumber(totals.col10)}</td>
-              <td className={footerNumTdCls}>{renderNumber(totals.col11)}</td>
             </tr>
           </tbody>
         </table>
@@ -1259,4 +1231,4 @@ const QR_4: React.FC<QRProps> = ({
   );
 };
 
-export default QR_4;
+export default QR_Detailed_4;

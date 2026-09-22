@@ -231,7 +231,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
 
   const formatAmountBengali = (num: number | undefined | null) => {
     if (num === undefined || num === null || isNaN(num) || num === 0) return '-';
-    const str = Math.round(num).toLocaleString('bn-BD');
+    const str = Math.round(num).toLocaleString('en-IN');
     return toBengaliDigits(str) + '/-';
   };
 

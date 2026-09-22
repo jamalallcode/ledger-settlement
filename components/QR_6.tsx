@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
@@ -741,8 +741,44 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     );
   };
 
-  const thCls = "p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const thClsWithTop = thCls;
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useLayoutEffect(() => {
+    const updateStickyOffsets = () => {
+      const table = tableRef.current;
+      if (!table) return;
+
+      const bottomFooter = table.querySelector('.qr-sticky-footer-bottom') as HTMLElement | null;
+      if (bottomFooter) {
+        const hBottom = bottomFooter.getBoundingClientRect().height;
+        if (hBottom > 0) {
+          table.style.setProperty('--qr-footer-bottom-h', `${Math.round(hBottom)}px`);
+        }
+      }
+    };
+
+    updateStickyOffsets();
+    const t1 = setTimeout(updateStickyOffsets, 50);
+    const t2 = setTimeout(updateStickyOffsets, 200);
+
+    window.addEventListener('resize', updateStickyOffsets);
+
+    let ro: ResizeObserver | null = null;
+    if (window.ResizeObserver && tableRef.current) {
+      ro = new ResizeObserver(updateStickyOffsets);
+      ro.observe(tableRef.current);
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', updateStickyOffsets);
+      if (ro) ro.disconnect();
+    };
+  }, [filteredData]);
+
+  const thCls = "border-r border-b border-slate-300 p-2 text-[9px] font-black text-slate-800 bg-[#e2e8f0] align-middle text-center";
+  const thClsWithTop = thCls + " border-t border-slate-300";
   const tdCls = "p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
   const footerTdCls = "p-2 text-[10px] text-white align-middle bg-black";
@@ -816,32 +852,85 @@ const QR_6: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         <p><span className="text-slate-500">মাসের নামঃ</span> {formattedRange}</p>
       </div>
 
-      <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[850px] !table-auto border-l border-slate-400">
-          <thead className="bg-slate-100">
-            <tr className="h-[42px]">
-              <th rowSpan={2} className={`${thClsWithTop} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thClsWithTop} w-[calc(12%-2px)]`}>মন্ত্রণালয়ের নাম</th>
-              <th rowSpan={2} className={thClsWithTop}>জড়িত টাকা</th>
-              <th colSpan={2} className={thClsWithTop}>আয়কর ও ভ্যাট বাবদ</th>
-              <th colSpan={2} className={thClsWithTop}>অন্যান্য বাবদ</th>
-              <th colSpan={2} className={thClsWithTop}>সর্বমোট</th>
-              <th rowSpan={2} className={thClsWithTop}>মন্তব্য</th>
+      <div className="table-container qr-table-container w-full overflow-visible border-t border-l border-slate-400 rounded-xs shadow-xs">
+        <style>{`
+          #qr-6-table {
+            --th-r2-top: 34px;
+            --th-r3-top: 64px;
+          }
+          #qr-6-table thead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0px !important;
+            z-index: 140 !important;
+            background-color: #e2e8f0 !important;
+          }
+          #qr-6-table thead th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            vertical-align: middle !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+          }
+          #qr-6-table thead tr:first-child th {
+            top: 0px !important;
+            height: 34px !important;
+            z-index: 145 !important;
+          }
+          #qr-6-table thead tr:first-child th[rowspan],
+          #qr-6-table thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            height: 64px !important;
+            z-index: 146 !important;
+          }
+          #qr-6-table thead tr:nth-child(2) th {
+            top: 34px !important;
+            height: 30px !important;
+            z-index: 144 !important;
+          }
+          #qr-6-table thead tr:nth-child(3) th {
+            top: 64px !important;
+            height: 26px !important;
+            z-index: 143 !important;
+            white-space: nowrap !important;
+          }
+        `}</style>
+        <table id="qr-6-table" ref={tableRef} className="w-full border-separate border-spacing-0 text-center">
+          <thead className="sticky top-0 z-[140] bg-[#e2e8f0] shadow-xs">
+            {/* Header Row 1 */}
+            <tr className="h-[34px]">
+              <th rowSpan={2} className={thClsWithTop + " w-[45px]"}>ক্রঃ নং</th>
+              <th rowSpan={2} className={thClsWithTop + " min-w-[210px] text-left pl-3"}>মন্ত্রণালয়ের নাম</th>
+              <th rowSpan={2} className={thClsWithTop + " min-w-[125px]"}>জড়িত টাকা</th>
+              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>আয়কর ও ভ্যাট বাবদ</th>
+              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>অন্যান্য বাবদ</th>
+              <th colSpan={2} className={thClsWithTop + " min-w-[170px]"}>সর্বমোট</th>
+              <th rowSpan={2} className={thClsWithTop + " min-w-[85px]"}>মন্তব্য</th>
             </tr>
-            <tr className="h-[38px]">
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
+            {/* Header Row 2 */}
+            <tr className="h-[30px]">
+              <th className={thCls + " min-w-[85px]"}>আদায়</th>
+              <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
+              <th className={thCls + " min-w-[85px]"}>আদায়</th>
+              <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
+              <th className={thCls + " min-w-[85px]"}>আদায়</th>
+              <th className={thCls + " min-w-[85px]"}>সমন্বয়</th>
             </tr>
-            <tr className="h-[32px]">
-              {[1, 2, 3, 4, 5, 6, 7, '৮=৪+৬', '৯=৫+৭', 10].map((n, i) => (
-                <th key={i} className={thCls + " text-[9px] font-bold text-slate-500"}>
-                  {typeof n === 'string' ? toBengaliDigits(n) : toBengaliDigits(n.toString())}
-                </th>
-              ))}
+            {/* Header Row 3: Column Numbers 1 to 10 */}
+            <tr className="h-[26px] bg-[#e2e8f0] font-black text-[9px] text-slate-700">
+              <th className={thCls + " !py-1"}>১</th>
+              <th className={thCls + " !py-1"}>২</th>
+              <th className={thCls + " !py-1"}>৩</th>
+              <th className={thCls + " !py-1"}>৪</th>
+              <th className={thCls + " !py-1"}>৫</th>
+              <th className={thCls + " !py-1"}>৬</th>
+              <th className={thCls + " !py-1"}>৭</th>
+              <th className={thCls + " !py-1"}>৮=৪+৬</th>
+              <th className={thCls + " !py-1"}>৯=৫+৭</th>
+              <th className={thCls + " !py-1"}>১০</th>
             </tr>
           </thead>
           <tbody>

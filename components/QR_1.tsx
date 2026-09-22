@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, X } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Printer, Sparkles, ChevronDown, BarChart3, FileSpreadsheet, X, Building2, Landmark, Check, CalendarDays } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
+import { MINISTRY_ENTITY_MAP } from '../constants';
+import { getQuarterlyCycleForDate } from '../utils/cycleHelper';
 
 interface QRProps {
   entries: SettlementEntry[];
@@ -13,9 +15,10 @@ interface QRProps {
   searchTerm?: string;
   filterMinistry?: string;
   monthPickerElement?: React.ReactNode;
+  customTitle?: string;
 }
 
-const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement }) => {
+const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '', filterMinistry = '', monthPickerElement, customTitle }) => {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   // Standard calendar quarter date calculation:
   // Quarters: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
@@ -83,7 +86,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       `;
     });
 
-    const filename = `ত্রৈমাসিক_রিটার্ন_১_${format(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `ত্রৈমাসিক_রিটার্ন_১_দ্বিপক্ষীয়_সভা_${format(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -116,7 +119,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ১</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ১: দ্বিপক্ষীয় সভা (কাযবিবরনী)</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -141,6 +144,95 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
+  const isEntityMatch = (entryEntity: string = '', targetEntity: string = ''): boolean => {
+    const normEntry = robustNormalize(entryEntity);
+    const normTarget = robustNormalize(targetEntity);
+    if (!normEntry || !normTarget) return false;
+    if (normEntry === normTarget) return true;
+    if (normEntry.includes(normTarget) || normTarget.includes(normEntry)) return true;
+    return false;
+  };
+
+  // Multi-select filters state (Cycle, Ministry, Entity)
+  const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
+  const [selectedMinistries, setSelectedMinistries] = useState<string[]>([]);
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+
+  const [isCycleOpen, setIsCycleOpen] = useState(false);
+  const [isMinOpen, setIsMinOpen] = useState(false);
+  const [isEntOpen, setIsEntOpen] = useState(false);
+
+  const cycleDropdownRef = useRef<HTMLDivElement>(null);
+  const minDropdownRef = useRef<HTMLDivElement>(null);
+  const entDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cycleDropdownRef.current && !cycleDropdownRef.current.contains(e.target as Node)) {
+        setIsCycleOpen(false);
+      }
+      if (minDropdownRef.current && !minDropdownRef.current.contains(e.target as Node)) {
+        setIsMinOpen(false);
+      }
+      if (entDropdownRef.current && !entDropdownRef.current.contains(e.target as Node)) {
+        setIsEntOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const cycleOptions = useMemo(() => {
+    const list: { label: string; start: Date; end: Date; startStr: string; endStr: string }[] = [];
+    const baseDate = activeCycle?.end ? new Date(activeCycle.end) : new Date();
+    for (let i = -3; i <= 3; i++) {
+      const targetDate = addMonths(baseDate, i * 3);
+      const c = getQuarterlyCycleForDate(targetDate);
+      if (!list.some(item => item.label === c.label)) {
+        list.push({
+          label: c.label,
+          start: c.start,
+          end: c.end,
+          startStr: format(c.start, 'yyyy-MM-dd'),
+          endStr: format(c.end, 'yyyy-MM-dd')
+        });
+      }
+    }
+    return list;
+  }, [activeCycle]);
+
+  const ministryOptions = useMemo(() => {
+    const set = new Set<string>();
+    Object.keys(MINISTRY_ENTITY_MAP).forEach(m => set.add(m));
+    entries.forEach(e => {
+      if (e.ministryName && e.ministryName.trim()) {
+        set.add(e.ministryName.trim());
+      }
+    });
+    return Array.from(set);
+  }, [entries]);
+
+  const entityOptions = useMemo(() => {
+    const set = new Set<string>();
+    const ministriesToInclude = selectedMinistries.length > 0 ? selectedMinistries : ministryOptions;
+    
+    ministriesToInclude.forEach(m => {
+      if (MINISTRY_ENTITY_MAP[m]) {
+        MINISTRY_ENTITY_MAP[m].forEach(ent => set.add(ent));
+      }
+      entries.forEach(e => {
+        if (e.entityName && e.entityName.trim()) {
+          const matchMin = selectedMinistries.length === 0 || 
+            selectedMinistries.some(sm => robustNormalize(e.ministryName || '').includes(robustNormalize(sm)));
+          if (matchMin) {
+            set.add(e.entityName.trim());
+          }
+        }
+      });
+    });
+    return Array.from(set);
+  }, [selectedMinistries, ministryOptions, entries]);
+
   const filteredData = entries.filter(e => {
     // Filter by Non-SFI
     if (robustNormalize(e.paraType) !== robustNormalize('নন এসএফআই')) return false;
@@ -151,14 +243,17 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                         mType.includes(robustNormalize('দ্বিপাক্ষিক'));
     if (!isValidType) return false;
 
-    // Filter by Date Range (Issue Date based on activeCycle)
+    // Filter by Date Range (Issue Date based on activeCycle or selectedCycles)
     const issueDateStr = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
     if (!issueDateStr) return false;
+    const entryDateOnly = issueDateStr.split('T')[0];
     
-    if (activeCycle?.start && activeCycle?.end) {
+    if (selectedCycles.length > 0) {
+      const matchedCycle = cycleOptions.find(c => selectedCycles.includes(c.label) && entryDateOnly >= c.startStr && entryDateOnly <= c.endStr);
+      if (!matchedCycle) return false;
+    } else if (activeCycle?.start && activeCycle?.end) {
       const cycleStartStr = format(activeCycle.start, 'yyyy-MM-dd');
       const cycleEndStr = format(activeCycle.end, 'yyyy-MM-dd');
-      const entryDateOnly = issueDateStr.split('T')[0];
       if (entryDateOnly < cycleStartStr || entryDateOnly > cycleEndStr) return false;
     } else {
       const issueDate = new Date(issueDateStr);
@@ -166,7 +261,19 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     }
 
     // Filter by Ministry
-    const matchMinistry = filterMinistry === '' || robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
+    let matchMinistry = true;
+    if (selectedMinistries.length > 0) {
+      matchMinistry = selectedMinistries.some(m => robustNormalize(e.ministryName || '').includes(robustNormalize(m)) || robustNormalize(m).includes(robustNormalize(e.ministryName || '')));
+    } else if (filterMinistry !== '') {
+      matchMinistry = robustNormalize(e.ministryName).includes(robustNormalize(filterMinistry));
+    }
+    if (!matchMinistry) return false;
+
+    // Filter by Entity
+    if (selectedEntities.length > 0) {
+      const matchEntity = selectedEntities.some(ent => isEntityMatch(e.entityName || '', ent));
+      if (!matchEntity) return false;
+    }
     
     // Filter by Search Term
     const matchSearch = searchTerm === '' || 
@@ -174,7 +281,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       robustNormalize(e.entityName).toLowerCase().includes(searchTerm.toLowerCase()) ||
       robustNormalize(e.remarks || '').toLowerCase().includes(searchTerm.toLowerCase());
       
-    return matchMinistry && matchSearch;
+    return matchSearch;
   });
 
   const totals = filteredData.reduce((acc, curr) => {
@@ -199,7 +306,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     };
   }, { sentPara: 0, recommendedPara: 0, settledPara: 0, amount: 0, recovery: 0, adjustment: 0, involvedAmount: 0, others: 0 });
 
-  const thCls = "border-r border-b border-slate-400 p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
+  const thCls = "border-r border-b border-slate-400 p-1.5 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-tight";
   const thClsWithTop = thCls + " border-t border-slate-400";
   const tdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "border-r border-b border-slate-400 p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
@@ -210,38 +317,351 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     <div id="qr-1-container" className="w-full mx-auto py-4 px-[4px] bg-white rounded-xl relative animate-in fade-in duration-500 font-sans">
       <IDBadge id="qr-1-container" />
 
-      <div className="flex justify-end mb-4 no-print">
-        <button
-          type="button"
-          onClick={downloadExcel}
-          className="flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0"
-          title="এক্সেল ফাইল ডাউনলোড করুন"
-        >
-          <FileSpreadsheet size={16} className="stroke-[2.5]" />
-        </button>
+      {/* Action Bar (No Print) */}
+      <div className="flex flex-wrap justify-end items-center gap-3 mb-4 no-print">
+        <div className="flex items-center gap-2 flex-wrap">
+          {monthPickerElement && (
+            <div className="select-none relative z-[300]">
+              {monthPickerElement}
+            </div>
+          )}
+
+          {/* Cycle Multi-Select Filter */}
+          <div className="relative select-none z-[300]" ref={cycleDropdownRef}>
+            <div
+              onClick={() => setIsCycleOpen(!isCycleOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedCycles.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <CalendarDays size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedCycles.length === 0
+                  ? 'সকল সাইকেল'
+                  : selectedCycles.length === 1
+                  ? selectedCycles[0]
+                  : `${toBengaliDigits(selectedCycles.length.toString())}টি সাইকেল`}
+              </span>
+              {selectedCycles.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedCycles.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isCycleOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
+            </div>
+
+            {isCycleOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[270px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <CalendarDays size={11} /> সাইকেল নির্বাচন
+                  </span>
+                  {selectedCycles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCycles([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => setSelectedCycles([])}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedCycles.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল সাইকেল</span>
+                    {selectedCycles.length === 0 && <Check size={13} />}
+                  </div>
+                  {cycleOptions.map((opt, idx) => {
+                    const isSelected = selectedCycles.includes(opt.label);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedCycles(selectedCycles.filter(c => c !== opt.label));
+                          } else {
+                            setSelectedCycles([...selectedCycles, opt.label]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{opt.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsCycleOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Ministry Multi-Select Filter */}
+          <div className="relative select-none z-[290]" ref={minDropdownRef}>
+            <div
+              onClick={() => setIsMinOpen(!isMinOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedMinistries.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <Building2 size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedMinistries.length === 0
+                  ? 'সকল মন্ত্রণালয়'
+                  : selectedMinistries.length === 1
+                  ? selectedMinistries[0]
+                  : `${toBengaliDigits(selectedMinistries.length.toString())}টি মন্ত্রণালয়`}
+              </span>
+              {selectedMinistries.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedMinistries.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isMinOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
+            </div>
+
+            {isMinOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Building2 size={11} /> মন্ত্রণালয় নির্বাচন
+                  </span>
+                  {selectedMinistries.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMinistries([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => {
+                      setSelectedMinistries([]);
+                    }}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedMinistries.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল মন্ত্রণালয়</span>
+                    {selectedMinistries.length === 0 && <Check size={13} />}
+                  </div>
+                  {ministryOptions.map((m, idx) => {
+                    const isSelected = selectedMinistries.includes(m);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedMinistries(selectedMinistries.filter(item => item !== m));
+                          } else {
+                            setSelectedMinistries([...selectedMinistries, m]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{m}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsMinOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Entity Multi-Select Filter */}
+          <div className="relative select-none z-[280]" ref={entDropdownRef}>
+            <div
+              onClick={() => setIsEntOpen(!isEntOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs ${
+                selectedEntities.length > 0
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <Landmark size={13} className="text-blue-600 shrink-0" />
+              <span className="truncate max-w-[130px]">
+                {selectedEntities.length === 0
+                  ? 'সকল সংস্থা'
+                  : selectedEntities.length === 1
+                  ? selectedEntities[0]
+                  : `${toBengaliDigits(selectedEntities.length.toString())}টি সংস্থা`}
+              </span>
+              {selectedEntities.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-600 text-white rounded-full text-[9px]">
+                  {toBengaliDigits(selectedEntities.length.toString())}
+                </span>
+              )}
+              <ChevronDown
+                size={12}
+                className={`text-slate-400 transition-transform duration-200 ${isEntOpen ? 'rotate-180 text-blue-600' : ''}`}
+              />
+            </div>
+
+            {isEntOpen && (
+              <div className="absolute top-[calc(100%+4px)] right-0 w-[260px] bg-white border border-slate-200 rounded-xl shadow-xl z-[9999] p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Landmark size={11} /> সংস্থা নির্বাচন
+                  </span>
+                  {selectedEntities.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEntities([])}
+                      className="text-[10px] text-red-600 hover:underline cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-y-auto space-y-0.5">
+                  <div
+                    onClick={() => {
+                      setSelectedEntities([]);
+                    }}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                      selectedEntities.length === 0
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <span>সকল সংস্থা</span>
+                    {selectedEntities.length === 0 && <Check size={13} />}
+                  </div>
+                  {entityOptions.map((ent, idx) => {
+                    const isSelected = selectedEntities.includes(ent);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedEntities(selectedEntities.filter(item => item !== ent));
+                          } else {
+                            setSelectedEntities([...selectedEntities, ent]);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-[11px] font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-800'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate">{ent}</span>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEntOpen(false)}
+                    className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md hover:bg-blue-700 cursor-pointer shadow-xs"
+                  >
+                    সম্পন্ন
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Reset Filters button if any active */}
+          {(selectedCycles.length > 0 || selectedMinistries.length > 0 || selectedEntities.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCycles([]);
+                setSelectedMinistries([]);
+                setSelectedEntities([]);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all rounded-lg cursor-pointer text-[11px] font-bold shadow-xs"
+              title="ফিল্টারসমূহ রিসেট করুন"
+            >
+              <X size={12} />
+              <span>ফিল্টার রিসেট</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={downloadExcel}
+            className="flex items-center justify-center w-9 h-9 bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-100 transition-all rounded-lg cursor-pointer shrink-0 shadow-xs"
+            title="এক্সেল ফাইল ডাউনলোড করুন"
+          >
+            <FileSpreadsheet size={16} className="stroke-[2.5]" />
+          </button>
+        </div>
       </div>
 
       {/* Header Section */}
       <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            ত্রৈমাসিক রিটার্ন - ১
+            {customTitle ? `${customTitle}: দ্বিপক্ষীয় সভা (কাযবিবরনী)` : "ত্রৈমাসিক রিটার্ন: দ্বিপক্ষীয় সভা (কাযবিবরনী)"}
           </h1>
 
-          {/* Date Range Pill */}
-          <div className="mt-1 mb-2 flex items-center justify-center gap-3 no-print flex-wrap">
-            <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 border border-blue-100 rounded-full shadow-sm scale-95 origin-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              <span className="text-blue-700 font-bold text-[12px]">
-                ত্রৈমাসিক রিটার্ন - ১ | {activeCycle.label}
-              </span>
-            </div>
-            {monthPickerElement && (
-              <div className="scale-95 origin-center select-none relative z-[300]">
-                {monthPickerElement}
-              </div>
-            )}
-          </div>
           <div className="flex items-center justify-center gap-4 mb-2">
             <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-slate-400"></div>
             <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
@@ -256,7 +676,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       {/* Info Section + Lowered statistics button */}
       <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-x-4 gap-y-2 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p><span className="text-slate-500">বিষয়ঃ</span> AIR এ আপত্তি নিষ্পত্তির অগ্রগতি ও সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
+          <p><span className="text-slate-500">বিষয়ঃ</span> দ্বিপক্ষীয় সভা (কাযবিবরনী) - AIR এ আপত্তি নিষ্পত্তির অগ্রগতি ও সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
@@ -338,9 +758,71 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
 
       {/* Table Section */}
       <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
+        <style>{`
+          #qr-1-table thead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0px !important;
+            z-index: 140 !important;
+            background-color: #e2e8f0 !important;
+          }
+          #qr-1-table thead th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            vertical-align: middle !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+          }
+          #qr-1-table thead tr:first-child th {
+            top: 0px !important;
+            height: 40px !important;
+            z-index: 145 !important;
+          }
+          #qr-1-table thead tr:first-child th[rowspan],
+          #qr-1-table thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            height: 72px !important;
+            z-index: 146 !important;
+          }
+          #qr-1-table thead tr:nth-child(2) th {
+            top: 40px !important;
+            height: 32px !important;
+            z-index: 144 !important;
+          }
+          #qr-1-table thead tr:nth-child(3) th {
+            top: 72px !important;
+            height: 28px !important;
+            z-index: 143 !important;
+            white-space: nowrap !important;
+          }
+          #qr-1-table thead tr:first-child th:nth-child(9) {
+            width: 90px !important;
+            max-width: 95px !important;
+            line-height: 1.25 !important;
+          }
+          #qr-1-table thead tr:nth-child(2) th:nth-child(1),
+          #qr-1-table thead tr:nth-child(2) th:nth-child(2),
+          #qr-1-table thead tr:nth-child(2) th:nth-child(3) {
+            width: 78px !important;
+            min-width: 78px !important;
+          }
+          #qr-1-table thead tr:nth-child(3) th:nth-child(9) {
+            width: 90px !important;
+            max-width: 95px !important;
+          }
+          #qr-1-table thead tr:nth-child(3) th:nth-child(10),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(11),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(12) {
+            width: 78px !important;
+            min-width: 78px !important;
+          }
+        `}</style>
+        <table id="qr-1-table" className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
           <thead className="bg-slate-100">
-            <tr className="h-[42px]">
+            <tr className="h-[40px]">
               <th rowSpan={2} className={`${thClsWithTop} w-[34px]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[62px]`}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
@@ -349,20 +831,22 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <th rowSpan={2} className={thClsWithTop}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
               <th rowSpan={2} className={thClsWithTop}>কার্য বিবরণী প্রাপ্তির তারিখ</th>
               <th rowSpan={2} className={thClsWithTop}>মীমাংসাপত্র জারীর তারিখ</th>
-              <th rowSpan={2} className={thClsWithTop}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[90px] max-w-[95px] leading-tight`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
               <th colSpan={3} className={thClsWithTop}>সভার প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
               <th rowSpan={2} className={`${thClsWithTop.replace('p-2', 'p-1')} w-[42px]`}>মন্তব্য</th>
             </tr>
-            <tr className="h-[38px]">
-              <th className={thCls}>আদায়</th>
-              <th className={thCls}>সমন্বয়</th>
-              <th className={thCls}>অন্যান্য</th>
-            </tr>
             <tr className="h-[32px]">
+              <th className={`${thCls} w-[78px] min-w-[78px]`}>আদায়</th>
+              <th className={`${thCls} w-[78px] min-w-[78px]`}>সমন্বয়</th>
+              <th className={`${thCls} w-[78px] min-w-[78px]`}>অন্যান্য</th>
+            </tr>
+            <tr className="h-[28px]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
                 <th key={n} className={`${
                   n === 13 ? thCls.replace('p-2', 'p-1') + " w-[42px]" : 
                   (n === 3 || n === 5) ? thCls + " w-[62px]" :
+                  n === 9 ? thCls + " w-[90px] max-w-[95px]" :
+                  (n === 10 || n === 11 || n === 12) ? thCls + " w-[78px] min-w-[78px]" :
                   thCls
                 } text-[10px] font-bold text-slate-500`}>{toBengaliDigits(n.toString())}</th>
               ))}
@@ -401,7 +885,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 <td className={numTdCls}>{toBengaliDigits(row.meetingRecommendedParaCount || row.meetingSettledParaCount || '০')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.meetingResponseDate || '')}</td>
                 <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
-                <td className={numTdCls}>
+                <td className={`${numTdCls} w-[90px] max-w-[95px]`}>
                   {toBengaliDigits(
                     (row.paragraphs && row.paragraphs.length > 0
                       ? row.paragraphs
@@ -410,9 +894,9 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                     ).toString()
                   )}
                 </td>
-                <td className={numTdCls}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
-                <td className={numTdCls}></td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px]`}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px]`}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px]`}></td>
                 <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}>{row.remarks}</td>
               </tr>
             ))}
@@ -432,16 +916,16 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               </td>
               <td className={footerNumTdCls}></td>
               <td className={footerNumTdCls}></td>
-              <td className={footerNumTdCls}>
+              <td className={`${footerNumTdCls} w-[90px] max-w-[95px]`}>
                 {toBengaliDigits(totals.amount.toString())}
               </td>
-              <td className={footerNumTdCls}>
+              <td className={`${footerNumTdCls} w-[78px] min-w-[78px]`}>
                 {toBengaliDigits(totals.recovery.toString())}
               </td>
-              <td className={footerNumTdCls}>
+              <td className={`${footerNumTdCls} w-[78px] min-w-[78px]`}>
                 {toBengaliDigits(totals.adjustment.toString())}
               </td>
-              <td className={footerNumTdCls}></td>
+              <td className={`${footerNumTdCls} w-[78px] min-w-[78px]`}></td>
               <td className={footerTdCls + " w-[42px]"}></td>
             </tr>
           </tfoot>

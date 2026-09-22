@@ -34,6 +34,7 @@ import {
   EyeOff,
   Building,
   Building2,
+  Landmark,
   Hash,
   Globe,
   BarChart3,
@@ -47,9 +48,18 @@ import {
 import HighlightText from "./HighlightText";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import SettledMinistryDetailModal, { SettledMinistryItem } from "./SettledMinistryDetailModal";
-import { OFFICE_HEADER } from "../constants.ts";
+import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from "../constants.ts";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper.ts";
 import { format, addMonths } from "date-fns";
+
+const robustNormalize = (str: string = "") => {
+  if (!str) return "";
+  return str
+    .normalize("NFC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
 interface SettlementTableProps {
   entries: SettlementEntry[];
@@ -109,6 +119,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const branchDropdownRef = useRef<HTMLDivElement>(null);
     const typeDropdownRef = useRef<HTMLDivElement>(null);
     const statusDropdownRef = useRef<HTMLDivElement>(null);
+    const ministryDropdownRef = useRef<HTMLDivElement>(null);
+    const entityDropdownRef = useRef<HTMLDivElement>(null);
     const summaryRef = useRef<HTMLDivElement>(null);
     const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -116,9 +128,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [filterParaType, setFilterParaType] = useState("");
     const [filterType, setFilterType] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
-    const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(
-      null,
-    );
+    const [filterMinistries, setFilterMinistries] = useState<string[]>([]);
+    const [filterEntities, setFilterEntities] = useState<string[]>([]);
+    const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
       id: string;
@@ -134,6 +146,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+    const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+    const [isEntityDropdownOpen, setIsEntityDropdownOpen] = useState(false);
 
     const [expandedEntries, setExpandedEntries] = useState<Set<string>>(
       new Set(),
@@ -154,7 +168,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         setFilterParaType("");
         setFilterType("");
         setFilterStatus("");
-        setSelectedCycleDate(null);
+        setFilterMinistries([]);
+        setFilterEntities([]);
+        setSelectedCycles([]);
       }
       return () => {
         if (highlightSearch) onClearHighlight?.();
@@ -187,6 +203,16 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         )
           setIsStatusDropdownOpen(false);
         if (
+          ministryDropdownRef.current &&
+          !ministryDropdownRef.current.contains(e.target as Node)
+        )
+          setIsMinistryDropdownOpen(false);
+        if (
+          entityDropdownRef.current &&
+          !entityDropdownRef.current.contains(e.target as Node)
+        )
+          setIsEntityDropdownOpen(false);
+        if (
           summaryRef.current &&
           !summaryRef.current.contains(e.target as Node) &&
           summaryButtonRef.current &&
@@ -204,28 +230,69 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       setFilterParaType("");
       setFilterType("");
       setFilterStatus("");
-      setSelectedCycleDate(null);
+      setFilterMinistries([]);
+      setFilterEntities([]);
+      setSelectedCycles([]);
     };
 
-    const cycleOptions = useMemo(() => {
-      const options = [];
-      const banglaMonths: Record<string, string> = {
-        January: "জানুয়ারি",
-        February: "ফেব্রুয়ারি",
-        March: "মার্চ",
-        April: "এপ্রিল",
-        May: "মে",
-        June: "জুন",
-        July: "জুলাই",
-        August: "আগস্ট",
-        September: "সেপ্টেম্বর",
-        October: "অক্টোবর",
-        November: "নভেম্বর",
-        December: "ডিসেম্বর",
-      };
+    const ministryOptions = useMemo(() => {
+      const set = new Set<string>();
+      Object.keys(MINISTRY_ENTITY_MAP).forEach((m) => {
+        if (m.trim()) set.add(m.trim());
+      });
+      // Separate "বস্ত্র" and "পাট" as requested
+      (entries || []).forEach((e) => {
+        const m = (e.ministryName || "").trim();
+        if (m && m !== "বস্ত্র ও পাট মন্ত্রণালয়") {
+          set.add(m);
+        }
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "bn"));
+    }, [entries]);
 
+    const entityOptions = useMemo(() => {
+      const set = new Set<string>();
+      if (filterMinistries.length > 0) {
+        filterMinistries.forEach((selectedMin) => {
+          const normSelectedMin = robustNormalize(selectedMin).toLowerCase();
+          Object.entries(MINISTRY_ENTITY_MAP).forEach(([mName, ents]) => {
+            const normM = robustNormalize(mName).toLowerCase();
+            if (normSelectedMin.includes(normM) || normM.includes(normSelectedMin)) {
+              ents.forEach((ent) => {
+                if (ent.trim()) set.add(ent.trim());
+              });
+            }
+          });
+          (entries || []).forEach((e) => {
+            const normEntryMin = robustNormalize(e.ministryName || "").toLowerCase();
+            if (normSelectedMin.includes(normEntryMin) || normEntryMin.includes(normSelectedMin)) {
+              if (e.entityName && e.entityName.trim()) {
+                set.add(e.entityName.trim());
+              }
+            }
+          });
+        });
+      } else {
+        Object.values(MINISTRY_ENTITY_MAP).forEach((ents) => {
+          ents.forEach((ent) => {
+            if (ent.trim()) set.add(ent.trim());
+          });
+        });
+        (entries || []).forEach((e) => {
+          if (e.entityName && e.entityName.trim()) {
+            set.add(e.entityName.trim());
+          }
+        });
+      }
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "bn"));
+    }, [filterMinistries, entries]);
+
+    const cycleOptions = useMemo(() => {
+      const options: { date: Date; label: string; cycleLabel: string }[] = [];
       const today = new Date();
-      for (let i = 0; i < 24; i++) {
+
+      const startOffset = today.getDate() >= 16 ? -1 : 0;
+      for (let i = startOffset; i < 24; i++) {
         const refDate = addMonths(today, -i);
         const firstOfTargetMonth = new Date(
           refDate.getFullYear(),
@@ -233,22 +300,56 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           1,
         );
         const cycle = getCycleForDate(firstOfTargetMonth);
-        const monthNameEng = format(firstOfTargetMonth, "MMMM");
-        const yearEng = format(firstOfTargetMonth, "yyyy");
-        const label = `${banglaMonths[monthNameEng]} ${toBengaliDigits(yearEng)} সাইকেল`;
-        options.push({
-          date: firstOfTargetMonth,
-          label,
-          cycleLabel: cycle.label,
-        });
+        const label = `${toBengaliDigits(format(cycle.start, "dd/MM/yyyy"))} হতে ${toBengaliDigits(format(cycle.end, "dd/MM/yyyy"))}`;
+        if (!options.some((o) => o.cycleLabel === cycle.label)) {
+          options.push({
+            date: firstOfTargetMonth,
+            label,
+            cycleLabel: cycle.label,
+          });
+        }
       }
+
+      // Also ensure any cycle present in entries is included
+      entries.forEach((entry) => {
+        let entryDate = entry.issueDateISO;
+        if (!entryDate && entry.createdAt) {
+          const d = new Date(entry.createdAt);
+          if (!isNaN(d.getTime())) entryDate = d.toISOString().split("T")[0];
+        }
+        if (entryDate) {
+          try {
+            const dateObj = new Date(entryDate);
+            if (!isNaN(dateObj.getTime())) {
+              const cycle = getCycleForDate(dateObj);
+              if (!options.some((o) => o.cycleLabel === cycle.label)) {
+                const label = `${toBengaliDigits(format(cycle.start, "dd/MM/yyyy"))} হতে ${toBengaliDigits(format(cycle.end, "dd/MM/yyyy"))}`;
+                options.push({
+                  date: dateObj,
+                  label,
+                  cycleLabel: cycle.label,
+                });
+              }
+            }
+          } catch (e) {}
+        }
+      });
+
+      options.sort((a, b) => {
+        const cA = getCycleForDate(a.date).start.getTime();
+        const cB = getCycleForDate(b.date).start.getTime();
+        return cB - cA;
+      });
+
       return options;
-    }, []);
+    }, [entries]);
 
     const activeCycle = useMemo(() => {
-      if (!selectedCycleDate) return null;
-      return getCycleForDate(selectedCycleDate);
-    }, [selectedCycleDate]);
+      if (selectedCycles.length === 0) return null;
+      const opt = cycleOptions.find((o) => o.cycleLabel === selectedCycles[0]);
+      if (!opt) return null;
+      return getCycleForDate(opt.date);
+    }, [selectedCycles, cycleOptions]);
 
     const toggleExpand = (id: string) => {
       const next = new Set(expandedEntries);
@@ -277,15 +378,21 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     };
 
     const filteredEntries = useMemo(() => {
-      const activeLabelCanon = activeCycle ? toEnglishDigits(activeCycle.label).trim() : "";
       return entries
         .filter((entry) => {
           let entryDate = entry.issueDateISO || "";
-          const matchDate =
-            !activeCycle ||
-            (entryDate !== "" &&
-              entryDate >= format(activeCycle.start, "yyyy-MM-dd") &&
-              entryDate <= format(activeCycle.end, "yyyy-MM-dd"));
+          const matchDate = (() => {
+            if (selectedCycles.length === 0) return true;
+            if (!entryDate) return false;
+            return selectedCycles.some((cLabel) => {
+              const opt = cycleOptions.find((o) => o.cycleLabel === cLabel);
+              if (!opt) return false;
+              const c = getCycleForDate(opt.date);
+              const startStr = format(c.start, "yyyy-MM-dd");
+              const endStr = format(c.end, "yyyy-MM-dd");
+              return entryDate >= startStr && entryDate <= endStr;
+            });
+          })();
 
           const normalizedSearch = toEnglishDigits(
             searchTerm.trim().toLowerCase(),
@@ -368,6 +475,46 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             (filterStatus === "no-paras" &&
               (!entry.paragraphs || entry.paragraphs.length === 0));
 
+          // Ministry Filter (Multi-select + separate পাট vs বস্ত্র)
+          const matchMinistry = (() => {
+            if (filterMinistries.length === 0) return true;
+            const normEntryMin = robustNormalize(entry.ministryName || "").toLowerCase();
+            const normEntryEnt = robustNormalize(entry.entityName || "").toLowerCase();
+
+            return filterMinistries.some((min) => {
+              const normMin = robustNormalize(min).toLowerCase();
+
+              // Special handling for separate পাট vs বস্ত্র:
+              if (normMin.includes("পাট")) {
+                if (normEntryMin.includes("পাট") && !normEntryMin.includes("বস্ত্র")) return true;
+                if (normEntryEnt.includes("পাট") || normEntryEnt.includes("বিজেএমসি") || normEntryEnt.includes("জুট")) return true;
+                if (normEntryMin.includes("বস্ত্র ও পাট") && (normEntryEnt.includes("পাট") || normEntryEnt.includes("বিজেএমসি"))) return true;
+                return false;
+              }
+
+              if (normMin.includes("বস্ত্র")) {
+                if (normEntryMin.includes("বস্ত্র") && !normEntryMin.includes("পাট")) return true;
+                if (normEntryEnt.includes("বস্ত্র") || normEntryEnt.includes("বিটিএমসি") || normEntryEnt.includes("রেশম")) return true;
+                if (normEntryMin.includes("বস্ত্র ও পাট") && (normEntryEnt.includes("বস্ত্র") || normEntryEnt.includes("রেশম") || normEntryEnt.includes("বিটিএমসি"))) return true;
+                return false;
+              }
+
+              if (normMin === normEntryMin) return true;
+              return normEntryMin.includes(normMin) || normMin.includes(normEntryMin);
+            });
+          })();
+
+          // Entity Filter (Multi-select)
+          const matchEntity = (() => {
+            if (filterEntities.length === 0) return true;
+            const normEntryEnt = robustNormalize(entry.entityName || "").toLowerCase();
+            return filterEntities.some((ent) => {
+              const normEnt = robustNormalize(ent).toLowerCase();
+              if (normEnt === normEntryEnt) return true;
+              return normEntryEnt.includes(normEnt) || normEnt.includes(normEntryEnt);
+            });
+          })();
+
           const hasRaisedCount =
             entry.manualRaisedCount !== null &&
             entry.manualRaisedCount !== "" &&
@@ -383,11 +530,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
           // If we have a search term and it matches, we should show it regardless of "meaningful content"
           if (searchTerm !== "" && matchSearch)
-            return matchDate && matchType && matchParaType && matchStatus;
+            return matchDate && matchType && matchParaType && matchStatus && matchMinistry && matchEntity;
 
           // If filtering for no paragraphs, show even if it doesn't have "meaningful content"
           if (filterStatus === "no-paras" && matchStatus)
-            return matchDate && matchType && matchParaType;
+            return matchDate && matchType && matchParaType && matchMinistry && matchEntity;
 
           if (!hasMeaningfulContent && !isAdminView) return false;
 
@@ -396,7 +543,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             matchSearch &&
             matchType &&
             matchParaType &&
-            matchStatus
+            matchStatus &&
+            matchMinistry &&
+            matchEntity
           );
         })
         .sort((a, b) => {
@@ -414,7 +563,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       filterParaType,
       filterType,
       filterStatus,
-      activeCycle,
+      filterMinistries,
+      filterEntities,
+      selectedCycles,
+      cycleOptions,
     ]);
 
     const { cycleStats, groupedEntries } = useMemo(() => {
@@ -1294,10 +1446,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         {!isAdminView && (
           <div
             id="register-filters"
-            className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg space-y-3 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
+            className="!bg-white p-2.5 md:p-3 rounded-xl border border-slate-200 shadow-lg no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
           >
             <IDBadge id="register-filters" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
               {/* Cycle Selection */}
               <div className="space-y-1" ref={cycleDropdownRef}>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">
@@ -1309,11 +1461,11 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 >
                   <CalendarDays size={14} className="text-blue-600 shrink-0" />
                   <span className="font-bold text-[11px] text-slate-900 truncate">
-                    {!selectedCycleDate
+                    {selectedCycles.length === 0
                       ? "সকল সাইকেল"
-                      : cycleOptions.find(
-                          (o) => o.cycleLabel === activeCycle?.label,
-                        )?.label || toBengaliDigits(activeCycle?.label || "")}
+                      : selectedCycles.length === 1
+                        ? cycleOptions.find((o) => o.cycleLabel === selectedCycles[0])?.label || toBengaliDigits(selectedCycles[0])
+                        : `${toBengaliDigits(selectedCycles.length.toString())}টি সাইকেল`}
                   </span>
                   <ChevronDown
                     size={12}
@@ -1321,44 +1473,66 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   />
 
                   {isCycleDropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                    <div className="absolute top-[calc(100%+12px)] left-0 w-[260px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
                       <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-center sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
                           <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
                             <CalendarSearch size={12} /> সাইকেল নির্বাচন
                           </span>
+                          {selectedCycles.length > 0 && (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                              {toBengaliDigits(selectedCycles.length.toString())}টি
+                            </span>
+                          )}
                         </div>
                         <div className="p-2 space-y-1">
                           <div
                             key="all"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedCycleDate(null);
-                              setIsCycleDropdownOpen(false);
+                              setSelectedCycles([]);
                             }}
-                            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${selectedCycles.length === 0 ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
                           >
-                            <span className="text-[13px]">সকল সাইকেল</span>
-                            {!selectedCycleDate && (
-                              <Check size={16} strokeWidth={3} />
+                            <span className="text-[12px]">সকল</span>
+                            {selectedCycles.length === 0 && (
+                              <Check size={14} strokeWidth={3} />
                             )}
                           </div>
-                          {cycleOptions.map((opt, idx) => (
-                            <div
-                              key={idx}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCycleDate(opt.date);
-                                setIsCycleDropdownOpen(false);
-                              }}
-                              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${opt.cycleLabel === activeCycle?.label ? "!bg-blue-600 !text-white shadow-lg" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
-                            >
-                              <span className="text-[13px]">{opt.label}</span>
-                              {opt.cycleLabel === activeCycle?.label && (
-                                <Check size={16} strokeWidth={3} />
-                              )}
-                            </div>
-                          ))}
+                          {cycleOptions.map((opt, idx) => {
+                            const isSelected = selectedCycles.includes(opt.cycleLabel);
+                            return (
+                              <div
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCycles((prev) =>
+                                    prev.includes(opt.cycleLabel)
+                                      ? prev.filter((c) => c !== opt.cycleLabel)
+                                      : [...prev, opt.cycleLabel]
+                                  );
+                                }}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                              >
+                                <span className="text-[12px] whitespace-nowrap">{opt.label}</span>
+                                {isSelected && (
+                                  <Check size={14} strokeWidth={3} />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="p-2 border-t border-slate-100 sticky bottom-0 bg-white z-[2010]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsCycleDropdownOpen(false);
+                            }}
+                            className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                          >
+                            সম্পন্ন
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1555,6 +1729,184 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                               )}
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ministry Selection */}
+              <div className="space-y-1" ref={ministryDropdownRef}>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">
+                  মন্ত্রণালয়
+                </label>
+                <div
+                  onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+                  className={customDropdownCls(isMinistryDropdownOpen)}
+                >
+                  <Building2 className="text-blue-600 shrink-0" size={14} />
+                  <span className="font-bold text-[11px] text-slate-900 truncate">
+                    {filterMinistries.length === 0
+                      ? "সকল মন্ত্রণালয়"
+                      : filterMinistries.length === 1
+                        ? filterMinistries[0]
+                        : `${toBengaliDigits(filterMinistries.length.toString())}টি মন্ত্রণালয়`}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isMinistryDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                  />
+
+                  {isMinistryDropdownOpen && (
+                    <div className="absolute top-[calc(100%+12px)] left-0 w-full min-w-[220px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                            <Building2 size={12} /> মন্ত্রণালয় নির্বাচন
+                          </span>
+                          {filterMinistries.length > 0 && (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                              {toBengaliDigits(filterMinistries.length.toString())}টি
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-2 space-y-1">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterMinistries([]);
+                            }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterMinistries.length === 0 ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          >
+                            <span className="text-[12px] truncate">সকল মন্ত্রণালয়</span>
+                            {filterMinistries.length === 0 && (
+                              <Check size={14} strokeWidth={3} />
+                            )}
+                          </div>
+                          {ministryOptions.map((m, idx) => {
+                            const isSelected = filterMinistries.includes(m);
+                            return (
+                              <div
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFilterMinistries((prev) =>
+                                    prev.includes(m)
+                                      ? prev.filter((x) => x !== m)
+                                      : [...prev, m]
+                                  );
+                                }}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                              >
+                                <span className="text-[12px] truncate">{m}</span>
+                                {isSelected && (
+                                  <Check size={14} strokeWidth={3} />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="p-2 border-t border-slate-100 sticky bottom-0 bg-white z-[2010]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsMinistryDropdownOpen(false);
+                            }}
+                            className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                          >
+                            সম্পন্ন
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Entity Selection */}
+              <div className="space-y-1" ref={entityDropdownRef}>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">
+                  সংস্থা
+                </label>
+                <div
+                  onClick={() => setIsEntityDropdownOpen(!isEntityDropdownOpen)}
+                  className={customDropdownCls(isEntityDropdownOpen)}
+                >
+                  <Landmark className="text-blue-600 shrink-0" size={14} />
+                  <span className="font-bold text-[11px] text-slate-900 truncate">
+                    {filterEntities.length === 0
+                      ? "সকল সংস্থা"
+                      : filterEntities.length === 1
+                        ? filterEntities[0]
+                        : `${toBengaliDigits(filterEntities.length.toString())}টি সংস্থা`}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`text-slate-400 ml-auto transition-transform duration-300 shrink-0 ${isEntityDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+                  />
+
+                  {isEntityDropdownOpen && (
+                    <div className="absolute top-[calc(100%+12px)] right-0 w-full min-w-[240px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
+                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                            <Landmark size={12} /> সংস্থা নির্বাচন
+                          </span>
+                          {filterEntities.length > 0 && (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                              {toBengaliDigits(filterEntities.length.toString())}টি
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-2 space-y-1">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterEntities([]);
+                            }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${filterEntities.length === 0 ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                          >
+                            <span className="text-[12px] truncate">সকল সংস্থা</span>
+                            {filterEntities.length === 0 && (
+                              <Check size={14} strokeWidth={3} />
+                            )}
+                          </div>
+                          {entityOptions.map((ent, idx) => {
+                            const isSelected = filterEntities.includes(ent);
+                            return (
+                              <div
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFilterEntities((prev) =>
+                                    prev.includes(ent)
+                                      ? prev.filter((x) => x !== ent)
+                                      : [...prev, ent]
+                                  );
+                                }}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                              >
+                                <span className="text-[12px] truncate">{ent}</span>
+                                {isSelected && (
+                                  <Check size={14} strokeWidth={3} />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="p-2 border-t border-slate-100 sticky bottom-0 bg-white z-[2010]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsEntityDropdownOpen(false);
+                            }}
+                            className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                          >
+                            সম্পন্ন
+                          </button>
                         </div>
                       </div>
                     </div>
