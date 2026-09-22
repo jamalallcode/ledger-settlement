@@ -742,55 +742,53 @@ const Sidebar: React.FC<SidebarProps> = ({
                               transition={{ duration: 0.2, ease: "easeInOut" }}
                               className="pl-3 py-1 space-y-1 overflow-hidden"
                             >
+                              {/* ত্রৈমাসিক - ১ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ২')}
                                 className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
-                                বিএসআর
+                                ত্রৈমাসিক - ১
                               </button>
+
+                              {/* ত্রৈমাসিক - ২ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ১')}
                                 className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
-                                দ্বিপক্ষীয়
+                                ত্রৈমাসিক - ২
                               </button>
 
-                              {/* বিস্তারিত এবং এর ৪টি সাব-আইটেম */}
+                              {/* ত্রৈমাসিক - ৩ */}
                               <button 
-                                onClick={() => setIsDetailedExpanded(!isDetailedExpanded)}
-                                className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isDetailedExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
-                                <div className="flex items-center gap-1.5">
-                                  <span>বিস্তারিত</span>
-                                </div>
-                                <ChevronDown size={6} className={`transition-transform duration-300 ${isDetailedExpanded ? 'rotate-180' : ''}`} />
+                                ত্রৈমাসিক - ৩
                               </button>
 
-                              <AnimatePresence>
-                                {isDetailedExpanded && (
-                                  <motion.div 
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                    className="pl-3 py-1 space-y-1 overflow-hidden"
-                                  >
-                                    {['১', '২'].map((num) => {
-                                      const key = `ত্রৈমাসিক রিটার্ন - বিস্তারিত - ${num}`;
-                                      const isSelected = reportType === key;
-                                      return (
-                                        <button 
-                                          key={num}
-                                          onClick={() => setActiveTab('return', null, key)}
-                                          className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isSelected ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                        >
-                                          বিস্তারিত - {num}
-                                        </button>
-                                      );
-                                    })}
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
+                              {/* ত্রৈমাসিক - ৪ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ত্রৈমাসিক - ৪
+                              </button>
+
+                              {/* ত্রৈমাসিক - ৫ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ত্রৈমাসিক - ৫
+                              </button>
+
+                              {/* ত্রৈমাসিক - ৬ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ত্রৈমাসিক - ৬
+                              </button>
                             </motion.div>
                           )}
                         </AnimatePresence>

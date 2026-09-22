@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Printer, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { format, subMonths, addMonths, setDate } from 'date-fns';
@@ -814,8 +814,59 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
     );
   };
 
-  const thCls = "p-2 text-[8px] font-black text-slate-800 bg-slate-100 align-middle text-center";
-  const thClsWithTop = thCls;
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useLayoutEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      const table = tableRef.current;
+      if (!table) return;
+      const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
+      const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
+      if (tr1 && tr2) {
+        const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
+        const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
+        const r2Cell = tr2.querySelector('th') as HTMLElement | null;
+        const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
+
+        if (h1 > 0) {
+          table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
+          if (h2 > 0) {
+            table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
+          }
+        }
+      }
+
+      const bottomFooter = table.querySelector('.qr-sticky-footer-bottom') as HTMLElement | null;
+      if (bottomFooter) {
+        const hBottom = bottomFooter.getBoundingClientRect().height;
+        if (hBottom > 0) {
+          table.style.setProperty('--qr-footer-bottom-h', `${Math.round(hBottom)}px`);
+        }
+      }
+    };
+
+    updateHeaderStickyOffsets();
+    const t1 = setTimeout(updateHeaderStickyOffsets, 50);
+    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+
+    let ro: ResizeObserver | null = null;
+    if (window.ResizeObserver && tableRef.current) {
+      ro = new ResizeObserver(updateHeaderStickyOffsets);
+      ro.observe(tableRef.current);
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+      if (ro) ro.disconnect();
+    };
+  }, [filteredData]);
+
+  const thCls = "border-r border-b border-slate-300 p-2 text-[9px] font-black text-slate-800 bg-[#e2e8f0] align-middle text-center";
+  const thClsWithTop = thCls + " border-t border-slate-300";
   const tdCls = "p-2 text-[9px] text-slate-700 align-middle";
   const numTdCls = "p-2 text-[9px] text-slate-700 text-center align-middle font-bold";
   const footerTdCls = "p-2 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
@@ -890,8 +941,41 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       </div>
 
       <div className="table-container qr-table-container overflow-visible shadow-sm rounded-lg">
-        <table className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
-          <thead className="bg-slate-100">
+        <style>{`
+          #qr-5-table {
+            --th-r2-top: 42px;
+            --th-r3-top: 80px;
+          }
+          #qr-5-table thead th {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            vertical-align: middle !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+          }
+          #qr-5-table thead tr:first-child th {
+            top: 0px !important;
+            z-index: 140 !important;
+          }
+          #qr-5-table thead tr:first-child th[rowspan],
+          #qr-5-table thead tr:first-child th[rowSpan] {
+            top: 0px !important;
+            z-index: 145 !important;
+          }
+          #qr-5-table thead tr:nth-child(2) th {
+            top: var(--th-r2-top, 42px) !important;
+            z-index: 135 !important;
+          }
+          #qr-5-table thead tr:nth-child(3) th {
+            top: var(--th-r3-top, 80px) !important;
+            z-index: 130 !important;
+            white-space: nowrap !important;
+          }
+        `}</style>
+        <table id="qr-5-table" ref={tableRef} className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto">
+          <thead className="bg-[#e2e8f0]">
             <tr className="h-[42px]">
               <th rowSpan={2} className={`${thClsWithTop} w-[calc(5%-2px)]`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[calc(15%-2px)]`}>মন্ত্রণালয়ের নাম</th>
@@ -912,9 +996,9 @@ const QR_5: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <th className={`${thCls} w-[7%]`}>আদায়</th>
               <th className={`${thCls} w-[7%]`}>সমন্বয়</th>
             </tr>
-            <tr className="h-[32px]">
+            <tr className="h-[32px] bg-[#e2e8f0]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
-                <th key={n} className={thCls + " text-[9px] font-bold text-slate-500"}>{toBengaliDigits(n.toString())}</th>
+                <th key={n} className={thCls + " text-[9px] font-bold text-slate-700"}>{toBengaliDigits(n.toString())}</th>
               ))}
             </tr>
           </thead>
