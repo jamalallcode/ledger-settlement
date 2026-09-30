@@ -147,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2">
           <button onClick={onToggleSidebar} className={`p-1 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white ${isSidebarOpen ? 'hidden lg:hidden' : 'flex'}`}><Menu size={16} /></button>
           
-          {hasHistory && onGoBack && activeTab !== 'landing' && activeTab !== 'dashboard' && (
+          {onGoBack && activeTab !== 'landing' && activeTab !== 'dashboard' && (
             <button 
               id="navbar-back-btn"
               onClick={onGoBack} 
@@ -901,19 +901,19 @@ const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-[9.5px] font-black text-cyan-400 uppercase tracking-wider block px-1">
                   📈 ষাণ্মাসিক, বাৎসরিক ও অন্যান্য রিপোর্ট
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   <button
                     onClick={() => {
-                      setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                      setActiveTab('return', null, 'ষাণ্মাসিক - ১');
                       setIsMobileMenuOpen(false);
                     }}
                     className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                      reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                      reportType === 'ষাণ্মাসিক - ১'
                         ? 'bg-cyan-600 text-white border-cyan-500'
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>ষাণ্মাসিক রিটার্ণ</span>
+                    <span>ষাণ্মাসিক - ১</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 

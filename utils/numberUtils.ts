@@ -29,7 +29,13 @@ export const toEnglishDigits = (input: string | number | undefined | null): stri
  */
 export const parseBengaliNumber = (input: string | number | undefined | null): number => {
   if (input === undefined || input === null || input === '') return 0;
-  const englishString = toEnglishDigits(input).replace(/[^0-9.]/g, '');
+  let eng = toEnglishDigits(input).trim();
+  if (eng.includes(',') && eng.includes('.')) {
+    eng = eng.replace(/,/g, '');
+  } else if (eng.includes(',')) {
+    eng = eng.replace(/,/g, '.');
+  }
+  const englishString = eng.replace(/[^0-9.]/g, '');
   const parsed = parseFloat(englishString);
   return isNaN(parsed) ? 0 : parsed;
 };

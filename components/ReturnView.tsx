@@ -5,7 +5,7 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
-import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate } from '../utils/cycleHelper';
+import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
@@ -20,6 +20,11 @@ import QR_Detailed_4 from './QR_Detailed_4';
 import QR_5 from './QR_5';
 import QR_6 from './QR_6';
 import QR_Detailed_1 from './QR_Detailed_1';
+import HR_1 from './HR_1';
+import HR_2 from './HR_2';
+import HR_3 from './HR_3';
+import HR_4 from './HR_4';
+import HR_5 from './HR_5';
 import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
 import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
 import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
@@ -97,6 +102,21 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [selectedReportType]);
   
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [cycleDropdownAlign, setCycleDropdownAlign] = useState<'left' | 'right'>('left');
+
+  useEffect(() => {
+    if (isCycleDropdownOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceRight = window.innerWidth - rect.left;
+      // If right space is limited (less than 320px) and left space has more room, align to right
+      if (spaceRight < 320 && rect.right > spaceRight) {
+        setCycleDropdownAlign('right');
+      } else {
+        setCycleDropdownAlign('left');
+      }
+    }
+  }, [isCycleDropdownOpen]);
+
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('');
@@ -277,6 +297,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     const today = new Date();
     const currentCycle = getCurrentCycle(today);
     const currentQuarter = getQuarterlyCycleForDate(today);
+    const currentHalfYear = getHalfYearlyCycleForDate(today);
     
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
     const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
@@ -329,38 +350,26 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
       }
     } else if (isHalfYearly) {
-      // Half-Yearly: 6-month cycles (Jan to Jun, Jul to Dec)
+      // Half-Yearly: 6-month cycles (16 Jan - 15 Jun, 16 Jul - 15 Dec)
       for (let i = 0; i < 36; i++) {
         const refDate = addMonths(today, -i);
         const month = refDate.getMonth();
         const year = refDate.getFullYear();
 
-        let halfStartMonth = 0;
-        let halfEndMonth = 5;
-        if (month >= 6) {
-          halfStartMonth = 6;
-          halfEndMonth = 11;
-        }
+        const isH1 = month <= 5;
+        const halfStartMonth = isH1 ? 0 : 6;
+        const reprDate = new Date(year, halfStartMonth, 16);
+        const cycle = getHalfYearlyCycleForDate(reprDate);
 
-        const startMonthName = BENGALI_MONTHS[halfStartMonth];
-        const endMonthName = BENGALI_MONTHS[halfEndMonth];
-
-        const startYearShort = dateFnsFormat(new Date(year, halfStartMonth, 1), 'yy');
-        const endYearShort = dateFnsFormat(new Date(year, halfEndMonth, 1), 'yy');
-
-        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
-
-        if (!seen.has(label)) {
-          if (year < 2025 || (year === 2025 && halfStartMonth < 5)) {
+        if (!seen.has(cycle.label)) {
+          if (year < 2025) {
             continue;
           }
-          const reprDate = new Date(year, halfStartMonth, 16);
-          const cycle = getCycleForDate(reprDate);
-          if (cycle.start.getTime() > currentCycle.start.getTime()) {
+          if (cycle.start.getTime() > currentHalfYear.start.getTime()) {
             continue;
           }
-          seen.add(label);
-          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+          seen.add(cycle.label);
+          options.push({ date: reprDate, label: cycle.subLabel, cycleLabel: cycle.label });
         }
       }
     } else if (isYearly) {
@@ -414,8 +423,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
 
   const activeCycle = useMemo(() => {
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
     if (isQuarterly) {
       return getQuarterlyCycleForDate(selectedCycleDate);
+    }
+    if (isHalfYearly) {
+      return getHalfYearlyCycleForDate(selectedCycleDate);
     }
     return getCycleForDate(selectedCycleDate);
   }, [selectedCycleDate, selectedReportType]);
@@ -630,12 +643,18 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [calculateRecursiveOpening, activeCycle.start, prevStats]);
 
   useEffect(() => {
-    if (isSetupMode) {
+    if (isSetupMode && !isEditingSetup) {
+      let savedLocalStats: Record<string, MinistryPrevStats> = {};
+      try {
+        const stored = localStorage.getItem('opening_balance_setup_stats_v1');
+        if (stored) savedLocalStats = JSON.parse(stored);
+      } catch {}
+
       const rawMasterStats: Record<string, MinistryPrevStats> = {};
       ministryGroups.forEach(m => {
         const entities = MINISTRY_ENTITY_MAP[m] || [];
         entities.forEach(ent => {
-          const existing = prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent];
+          const existing = savedLocalStats[ent] || prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent];
           if (existing) {
             rawMasterStats[ent] = {
               ...existing,
@@ -654,9 +673,56 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           }
         });
       });
+
+      // Half-Yearly 7 Categories
+      const halfYearlyCategoryNames = [
+        'চুরি', 'আত্মসাৎ', 'ঘাটতি', 'অপচয়', 'বিধি বহির্ভূত পরিশোধ', 'সরকারি অর্থ আদায়ে ব্যর্থতা', 'অন্যান্য অনিয়ম'
+      ];
+      const defaultHalfYearlyBaselines: Record<string, { count: number; amount: number }> = {
+        'বিধি বহির্ভূত পরিশোধ': { count: 688, amount: 793.9882 },
+        'সরকারি অর্থ আদায়ে ব্যর্থতা': { count: 844, amount: 994.4385 },
+        'অন্যান্য অনিয়ম': { count: 1027, amount: 1192.7909 }
+      };
+
+      halfYearlyCategoryNames.forEach(catName => {
+        const existing = savedLocalStats[catName] || prevStats?.entitiesSFI?.[catName] || prevStats?.entitiesNonSFI?.[catName];
+        const base = defaultHalfYearlyBaselines[catName];
+        if (existing) {
+          rawMasterStats[catName] = { 
+            ...existing,
+            halfYearlyPrevUnsettledCount: existing.halfYearlyPrevUnsettledCount !== undefined && existing.halfYearlyPrevUnsettledCount !== 0 && existing.halfYearlyPrevUnsettledCount !== '' 
+              ? existing.halfYearlyPrevUnsettledCount 
+              : (base ? base.count : 0),
+            halfYearlyPrevUnsettledAmount: existing.halfYearlyPrevUnsettledAmount !== undefined && existing.halfYearlyPrevUnsettledAmount !== 0 && existing.halfYearlyPrevUnsettledAmount !== ''
+              ? existing.halfYearlyPrevUnsettledAmount
+              : (base ? base.amount : 0)
+          };
+        } else {
+          rawMasterStats[catName] = { 
+            unsettledCount: 0, 
+            unsettledAmount: 0, 
+            settledCount: 0, 
+            settledAmount: 0,
+            halfYearlyPrevUnsettledCount: base ? base.count : 0,
+            halfYearlyPrevUnsettledAmount: base ? base.amount : 0,
+            halfYearlyRaisedCount: 0,
+            halfYearlyRaisedAmount: 0,
+            halfYearlySettledCount: 0,
+            halfYearlySettledAmount: 0
+          };
+        }
+      });
+
+      // Also copy any other previously saved entities
+      Object.keys(savedLocalStats).forEach(k => {
+        if (!rawMasterStats[k]) {
+          rawMasterStats[k] = savedLocalStats[k];
+        }
+      });
+
       setTempPrevStats(rawMasterStats);
     }
-  }, [isSetupMode, prevStats, ministryGroups]);
+  }, [isSetupMode, isEditingSetup, prevStats, ministryGroups]);
 
   const reportData = useMemo(() => {
     const isExcludedReport = !selectedReportType || 
@@ -1118,7 +1184,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const { statsReportData, statsGrandTotals } = statsDataTuple;
 
   const handleSaveSetup = () => {
-    setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
+    try {
+      localStorage.setItem('opening_balance_setup_stats_v1', JSON.stringify(tempPrevStats));
+    } catch (e) {
+      console.error("Failed to save opening balance setup to localStorage:", e);
+    }
+    try {
+      setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
+    } catch (e) {
+      console.error("Failed to setPrevStats:", e);
+    }
     setIsEditingSetup(false);
   };
 
@@ -1169,7 +1244,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
       <div 
         onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-xl cursor-pointer transition-all duration-300 shadow-md group ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100' : 'border-sky-100'}`}
+        className={`flex items-center gap-1.5 px-2.5 h-9 bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-none cursor-pointer transition-all duration-300 shadow-xs group ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100' : 'border-sky-200'}`}
       >
          <CalendarDays size={14} className="text-sky-600 shrink-0" />
          <span className="text-sky-600 font-bold text-[11px] sm:text-[11.5px]">সাইকেল:</span> 
@@ -1182,9 +1257,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         <div 
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="absolute top-[calc(100%+4px)] left-0 sm:left-auto sm:right-0 w-[260px] max-w-[calc(100vw-32px)] bg-white border border-slate-200 rounded-3xl shadow-2xl z-[9999] p-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className={`absolute top-[calc(100%+4px)] ${cycleDropdownAlign === 'right' ? 'right-0' : 'left-0'} w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] p-2 animate-in fade-in slide-in-from-top-2 duration-150 box-border`}
         >
-          <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-2">
+          <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-1.5">
             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
               <CalendarDays size={11} className="text-blue-500" /> মাস / সাইকেল নির্বাচন
             </span>
@@ -1200,17 +1275,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                     setSelectedCycleDate(opt.date);
                     setIsCycleDropdownOpen(false);
                   }}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer transition-all duration-200 ${
                     matchesActive 
                       ? "bg-blue-600 text-white font-extrabold shadow-md"
                       : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
                   }`}
                 >
-                  <div className="flex flex-col text-left">
-                    <span className="text-[11.5px] font-extrabold">{opt.cycleLabel}</span>
-                    <span className={`text-[9.5px] ${matchesActive ? 'text-blue-100' : 'text-slate-400'}`}>{opt.label}</span>
+                  <div className="flex flex-col text-left min-w-0 pr-1">
+                    <span className="text-[11.5px] font-extrabold whitespace-nowrap leading-tight">{opt.cycleLabel}</span>
+                    <span className={`text-[9.5px] whitespace-nowrap leading-tight ${matchesActive ? 'text-blue-100' : 'text-slate-400'}`}>{opt.label}</span>
                   </div>
-                  {matchesActive && <Check size={13} className="text-white stroke-[3.5]" />}
+                  {matchesActive && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
                 </div>
               );
             })}
@@ -1352,7 +1427,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       IDBadge={IDBadge} 
       setupType={selectedReportType || ''} 
       originalStats={prevStats.entitiesSFI}
+      entries={entries}
+      activeCycle={activeCycle}
     />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ১' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ১') {
+    renderedContent = <HR_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ১" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ২' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ২') {
+    renderedContent = <HR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ২" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৩' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৩') {
+    renderedContent = <HR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৩" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৪' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৪') {
+    renderedContent = <HR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৪" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৫' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৫') {
+    renderedContent = <HR_5 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৫" />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') {
     renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
   } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {

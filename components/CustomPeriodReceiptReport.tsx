@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, FileText, User, Users, BookOpen, Printer, Search, RefreshCw, 
   ChevronLeft, LayoutGrid, Sparkles, FileSpreadsheet, ArrowRight,
-  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown, Clock, X
+  ShieldCheck, Mail, Info, FileEdit, ArrowUpDown, Clock, X,
+  ChevronDown, Check, Tag, Building2
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { isSFI, isNonSFI, getCleanLetterTypeDisplay } from '../utils/branchUtils';
@@ -653,6 +654,55 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
   const [filterAuditor, setFilterAuditor] = useState('সকল');
   const [keywordSearch, setKeywordSearch] = useState('');
   const [filterMinistry, setFilterMinistry] = useState('সকল');
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isLetterTypeDropdownOpen, setIsLetterTypeDropdownOpen] = useState(false);
+  const [isAuditorDropdownOpen, setIsAuditorDropdownOpen] = useState(false);
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const letterTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const auditorDropdownRef = useRef<HTMLDivElement>(null);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+        setIsBranchDropdownOpen(false);
+      }
+      if (letterTypeDropdownRef.current && !letterTypeDropdownRef.current.contains(e.target as Node)) {
+        setIsLetterTypeDropdownOpen(false);
+      }
+      if (auditorDropdownRef.current && !auditorDropdownRef.current.contains(e.target as Node)) {
+        setIsAuditorDropdownOpen(false);
+      }
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(e.target as Node)) {
+        setIsMinistryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const letterTypeOptions = useMemo(() => {
+    const list: { id: string; label: string }[] = [
+      { id: 'সকল', label: 'সকল চিঠি' },
+      { id: 'বিএসআর', label: 'বিএসআর (BSR)' }
+    ];
+    if (filterBranch !== 'এসএফআই') {
+      list.push(
+        { id: 'দ্বিপক্ষীয়', label: 'দ্বিপক্ষীয় সভা' },
+        { id: 'কার্যপত্র (দ্বি-সভা)', label: 'কার্যপত্র (দ্বি-সভা)' }
+      );
+    }
+    if (filterBranch !== 'নন এসএফআই') {
+      list.push(
+        { id: 'ত্রিপক্ষীয়', label: 'ত্রিপক্ষীয় সভা' },
+        { id: 'কার্যপত্র (ত্রি-সভা)', label: 'কার্যপত্র (ত্রি-সভা)' }
+      );
+    }
+    list.push({ id: 'অন্যান্য', label: 'অন্যান্য' });
+    return list;
+  }, [filterBranch]);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [activeReportMode, setActiveReportMode] = useState<'correspondence' | 'settlement' | 'pending'>('correspondence');
   const [expandedParasMap, setExpandedParasMap] = useState<Record<string, boolean>>({});
@@ -1470,7 +1520,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               শুরুর তারিখ
             </label>
-            <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
+            <div className="relative w-full h-11 flex items-center border border-slate-300 rounded-none bg-white focus-within:border-slate-400 text-xs shadow-xs">
               <div className="flex items-center w-full px-2 h-full justify-center gap-1.5">
                 <div className="flex items-center justify-center gap-0.5 font-bold text-slate-800">
                   <input 
@@ -1526,7 +1576,7 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               শেষের তারিখ
             </label>
-            <div className="relative w-full h-11 flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all text-xs shadow-sm">
+            <div className="relative w-full h-11 flex items-center border border-slate-300 rounded-none bg-white focus-within:border-slate-400 text-xs shadow-xs">
               <div className="flex items-center w-full px-2 h-full justify-center gap-1.5">
                 <div className="flex items-center justify-center gap-0.5 font-bold text-slate-800">
                   <input 
@@ -1578,88 +1628,181 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
           </div>
 
           {/* Branch Filter */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" ref={branchDropdownRef}>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               শাখা নির্বাচন
             </label>
-            <div className="relative">
-              <select 
-                value={filterBranch}
-                onChange={(e) => setFilterBranch(e.target.value)}
-                className="w-full h-11 pl-3 pr-7 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+            <div className="relative z-[50]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBranchDropdownOpen(!isBranchDropdownOpen);
+                  setIsLetterTypeDropdownOpen(false);
+                  setIsAuditorDropdownOpen(false);
+                  setIsMinistryDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between gap-1.5 px-3 h-11 bg-white border border-slate-300 hover:border-slate-400 rounded-none text-xs font-black text-slate-800 shadow-xs transition-all cursor-pointer box-border"
               >
-                <option value="সকল">সকল শাখা</option>
-                <option value="এসএফআই">এসএফআই (SFI)</option>
-                <option value="নন এসএফআই">নন এসএফআই (Non-SFI)</option>
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Tag size={13} className="text-indigo-600 shrink-0" />
+                  <span className="truncate">
+                    {filterBranch === 'সকল' ? 'সকল শাখা' : filterBranch === 'এসএফআই' ? 'এসএফআই (SFI)' : 'নন এসএফআই (Non-SFI)'}
+                  </span>
+                </div>
+                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isBranchDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              </button>
+
+              {isBranchDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] p-1.5 space-y-1 box-border">
+                  {[
+                    { id: 'সকল', label: 'সকল শাখা' },
+                    { id: 'এসএফআই', label: 'এসএফআই (SFI)' },
+                    { id: 'নন এসএফআই', label: 'নন এসএফআই (Non-SFI)' }
+                  ].map(b => {
+                    const isSelected = filterBranch === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterBranch(b.id);
+                          setIsBranchDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                            : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                        }`}
+                      >
+                        <span className="truncate">{b.label}</span>
+                        {isSelected && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Search Term / Letter Type */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" ref={letterTypeDropdownRef}>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               চিঠির ধরন নির্বাচন
             </label>
-            <div className="relative">
-              <select 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+            <div className="relative z-[50]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLetterTypeDropdownOpen(!isLetterTypeDropdownOpen);
+                  setIsBranchDropdownOpen(false);
+                  setIsAuditorDropdownOpen(false);
+                  setIsMinistryDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between gap-1.5 px-3 h-11 bg-white border border-slate-300 hover:border-slate-400 rounded-none text-xs font-black text-slate-800 shadow-xs transition-all cursor-pointer box-border"
               >
-                <option value="সকল">সকল চিঠি</option>
-                <option value="বিএসআর">বিএসআর (BSR)</option>
-                {filterBranch !== 'এসএফআই' && (
-                  <>
-                    <option value="দ্বিপক্ষীয়">দ্বিপক্ষীয় সভা</option>
-                    <option value="কার্যপত্র (দ্বি-সভা)">কার্যপত্র (দ্বি-সভা)</option>
-                  </>
-                )}
-                {filterBranch !== 'নন এসএফআই' && (
-                  <>
-                    <option value="ত্রিপক্ষীয়">ত্রিপক্ষীয় সভা</option>
-                    <option value="কার্যপত্র (ত্রি-সভা)">কার্যপত্র (ত্রি-সভা)</option>
-                  </>
-                )}
-                <option value="অন্যান্য">অন্যান্য</option>
-              </select>
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <FileText size={13} className="text-blue-600 shrink-0" />
+                  <span className="truncate">
+                    {letterTypeOptions.find(o => o.id === searchTerm)?.label || (searchTerm === 'সকল' ? 'সকল চিঠি' : searchTerm)}
+                  </span>
+                </div>
+                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isLetterTypeDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              </button>
+
+              {isLetterTypeDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] max-h-72 overflow-y-auto p-1.5 space-y-1 box-border">
+                  {letterTypeOptions.map(opt => {
+                    const isSelected = searchTerm === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(opt.id);
+                          setIsLetterTypeDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                            : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                        }`}
+                      >
+                        <span className="truncate">{opt.label}</span>
+                        {isSelected && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Auditor Filter */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" ref={auditorDropdownRef}>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               অডিটর নির্বাচন
             </label>
-            <div className="relative">
-              <select 
-                value={filterAuditor}
-                onChange={(e) => setFilterAuditor(e.target.value)}
-                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+            <div className="relative z-[50]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAuditorDropdownOpen(!isAuditorDropdownOpen);
+                  setIsBranchDropdownOpen(false);
+                  setIsLetterTypeDropdownOpen(false);
+                  setIsMinistryDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between gap-1.5 px-3 h-11 bg-white border border-slate-300 hover:border-slate-400 rounded-none text-xs font-black text-slate-800 shadow-xs transition-all cursor-pointer box-border"
               >
-                <option value="সকল">সকল অডিটর</option>
-                {auditorOptionsWithCounts.map((auditor, idx) => (
-                  <option key={idx} value={auditor.name}>
-                    {auditor.name} ({toBengaliDigits(auditor.count)} টি)
-                  </option>
-                ))}
-              </select>
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <User size={13} className="text-emerald-600 shrink-0" />
+                  <span className="truncate">
+                    {filterAuditor === 'সকল' ? 'সকল অডিটর' : filterAuditor}
+                  </span>
+                </div>
+                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isAuditorDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              </button>
+
+              {isAuditorDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] max-h-72 overflow-y-auto p-1.5 space-y-1 box-border">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterAuditor('সকল');
+                      setIsAuditorDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                      filterAuditor === 'সকল'
+                        ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                        : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                    }`}
+                  >
+                    <span>সকল অডিটর</span>
+                    {filterAuditor === 'সকল' && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                  </button>
+
+                  {auditorOptionsWithCounts.map((auditor, idx) => {
+                    const isSelected = filterAuditor === auditor.name;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setFilterAuditor(auditor.name);
+                          setIsAuditorDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                            : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                        }`}
+                      >
+                        <span className="truncate">{auditor.name} ({toBengaliDigits(auditor.count)} টি)</span>
+                        {isSelected && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1674,34 +1817,78 @@ export const CustomPeriodReceiptReport: React.FC<CustomPeriodReceiptReportProps>
                 placeholder="সোনালী ব্যাংক, অগ্রণী ব্যাংক বা ডায়রি নং..."
                 value={keywordSearch}
                 onChange={(e) => setKeywordSearch(e.target.value)}
-                className="w-full h-11 pl-9 pr-3 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs placeholder:text-slate-400"
+                className="w-full h-11 pl-9 pr-3 border border-slate-300 rounded-none font-bold bg-white text-slate-900 outline-none focus:border-slate-400 shadow-xs transition-all text-xs placeholder:text-slate-400"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             </div>
           </div>
 
           {/* Ministry Filter */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" ref={ministryDropdownRef}>
             <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               মন্ত্রণালয় নির্বাচন
             </label>
-            <div className="relative">
-              <select 
-                value={filterMinistry}
-                onChange={(e) => setFilterMinistry(e.target.value)}
-                className="w-full h-11 pl-9 pr-8 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-xs cursor-pointer appearance-none"
+            <div className="relative z-[50]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMinistryDropdownOpen(!isMinistryDropdownOpen);
+                  setIsBranchDropdownOpen(false);
+                  setIsLetterTypeDropdownOpen(false);
+                  setIsAuditorDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between gap-1.5 px-3 h-11 bg-white border border-slate-300 hover:border-slate-400 rounded-none text-xs font-black text-slate-800 shadow-xs transition-all cursor-pointer box-border"
               >
-                <option value="সকল">সকল মন্ত্রণালয়</option>
-                {MINISTRIES.map((min, idx) => (
-                  <option key={idx} value={min}>{min}</option>
-                ))}
-              </select>
-              <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Building2 size={13} className="text-blue-600 shrink-0" />
+                  <span className="truncate">
+                    {filterMinistry === 'সকল' ? 'সকল মন্ত্রণালয়' : filterMinistry}
+                  </span>
+                </div>
+                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isMinistryDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+              </button>
+
+              {isMinistryDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] max-h-72 overflow-y-auto p-1.5 space-y-1 box-border">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterMinistry('সকল');
+                      setIsMinistryDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                      filterMinistry === 'সকল'
+                        ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                        : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                    }`}
+                  >
+                    <span>সকল মন্ত্রণালয়</span>
+                    {filterMinistry === 'সকল' && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                  </button>
+
+                  {MINISTRIES.map((min, idx) => {
+                    const isSelected = filterMinistry === min;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setFilterMinistry(min);
+                          setIsMinistryDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs rounded-none transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                            : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white'
+                        }`}
+                      >
+                        <span className="truncate">{min}</span>
+                        {isSelected && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -182,6 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
+  const [isHalfYearlyExpanded, setIsHalfYearlyExpanded] = useState(false);
   const [isDetailedExpanded, setIsDetailedExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   const [isLinksExpanded, setIsLinksExpanded] = useState(false);
@@ -202,6 +203,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (reportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
       setIsDetailedExpanded(true);
       setIsQuarterlyExpanded(true);
+    }
+    if (reportType?.includes('ষাণ্মাসিক')) {
+      setIsHalfYearlyExpanded(true);
     }
   }, [activeTab, reportType]);
 
@@ -435,12 +439,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           <IDBadge id="sidebar-container" />
           <div id="sidebar-header" className="px-1.5 flex items-center justify-between relative bg-slate-900/45 h-[45px] shrink-0">
             <IDBadge id="sidebar-header" />
-            <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1.5 relative cursor-pointer select-none active:scale-95 transition-all duration-300 group">
+            <div id="sidebar-logo" onClick={handleLogoClick} className="flex items-center gap-1 min-w-0 relative cursor-pointer select-none active:scale-95 transition-all duration-300 group">
               <IDBadge id="sidebar-logo" />
-              <div className="relative flex items-center justify-center w-5.5 h-5.5 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-md shadow-xs shrink-0 group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(245,158,11,0.6)] transition-all duration-300">
+              <div className="relative flex items-center justify-center w-5 h-5 bg-gradient-to-br from-indigo-700 via-blue-800 to-emerald-800 text-white rounded-md shadow-xs shrink-0 group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(245,158,11,0.6)] transition-all duration-300">
                 <Landmark size={11} className="stroke-[2.5] text-white" />
               </div>
-              <span className="font-black text-slate-200 tracking-tight text-[10px] group-hover:text-white transition-colors">অডিট রেজিস্টার</span>
+              <span className="font-black text-slate-200 tracking-tight text-[9.5px] whitespace-nowrap leading-none group-hover:text-white transition-colors">অডিট রেজিস্টার</span>
             </div>
             <button onClick={onToggleVisibility} className="group/toggle w-5.5 h-5.5 flex items-center justify-center bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-slate-700/60 rounded-md transition-all duration-300 text-slate-400 hover:text-amber-400 relative cursor-pointer active:scale-90 hover:shadow-[0_0_8px_rgba(245,158,11,0.25)]">
               <IDBadge id="btn-sidebar-toggle" />
@@ -793,13 +797,37 @@ const Sidebar: React.FC<SidebarProps> = ({
                           )}
                         </AnimatePresence>
 
-                        {/* ৩. ষাণ্মাসিক */}
+                        {/* ৩. ষাণ্মাসিক (Toggle) */}
                         <button 
-                          onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                          className={getSubItemCls(reportType === 'ষাণ্মাসিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                          onClick={() => setIsHalfYearlyExpanded(!isHalfYearlyExpanded)}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isHalfYearlyExpanded ? 'bg-slate-800 text-cyan-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                         >
-                          <span>ষাণ্মাসিক</span>
+                          <div className="flex items-center gap-2">
+                            <span>ষাণ্মাসিক</span>
+                          </div>
+                          <ChevronDown size={6} className={`transition-transform duration-300 ${isHalfYearlyExpanded ? 'rotate-180' : ''}`} />
                         </button>
+
+                        {/* Half-Yearly Sub-items */}
+                        <AnimatePresence>
+                          {isHalfYearlyExpanded && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeInOut" }}
+                              className="pl-3 py-1 space-y-1 overflow-hidden"
+                            >
+                              {/* ষাণ্মাসিক - ১ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক - ১')}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ষাণ্মাসিক - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                ষাণ্মাসিক - ১
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* ৪. বাৎসরিক */}
                         <button 

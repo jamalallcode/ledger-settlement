@@ -1,4 +1,5 @@
 import { format, isAfter, isBefore, addMonths } from 'date-fns';
+import { toBengaliDigits } from './numberUtils';
 
 /**
  * Normalizes a date to the very beginning of the day (00:00:00.000)
@@ -114,6 +115,54 @@ export const getQuarterlyCycleForDate = (date: Date): { start: Date; end: Date; 
     start: s,
     end: e,
     label: `${format(s, 'dd/MM/yyyy')} হতে ${format(e, 'dd/MM/yyyy')}`
+  };
+};
+
+/**
+ * Returns half-yearly cycle information for a given date.
+ * H1 (Jan-Jun ending): 16/12/(YYYY-1) to 15/06/YYYY
+ * H2 (Jul-Dec ending): 16/06/YYYY to 15/12/YYYY
+ */
+export const getHalfYearlyCycleForDate = (date: Date): { start: Date; end: Date; label: string; subLabel: string } => {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0 to 11
+  const day = date.getDate();
+
+  let start: Date;
+  let end: Date;
+  let subLabel: string;
+
+  // H1: 16 Dec of (targetYear - 1) to 15 Jun of targetYear
+  // H2: 16 Jun of targetYear to 15 Dec of targetYear
+  if (month === 11 && day >= 16) {
+    // 16-31 Dec belongs to next year's H1 (e.g. 16/12/2024 to 15/06/2025)
+    const targetYear = year + 1;
+    start = new Date(year, 11, 16);
+    end = new Date(targetYear, 5, 15);
+    const yrShort = format(end, 'yy');
+    subLabel = `জানুয়ারি/${toBengaliDigits(yrShort)} হতে জুন/${toBengaliDigits(yrShort)}`;
+  } else if (month <= 4 || (month === 5 && day <= 15)) {
+    // 1 Jan to 15 Jun belongs to this year's H1 (e.g. 16/12/2024 to 15/06/2025)
+    start = new Date(year - 1, 11, 16);
+    end = new Date(year, 5, 15);
+    const yrShort = format(end, 'yy');
+    subLabel = `জানুয়ারি/${toBengaliDigits(yrShort)} হতে জুন/${toBengaliDigits(yrShort)}`;
+  } else {
+    // 16 Jun to 15 Dec belongs to this year's H2 (e.g. 16/06/2025 to 15/12/2025)
+    start = new Date(year, 5, 16);
+    end = new Date(year, 11, 15);
+    const yrShort = format(end, 'yy');
+    subLabel = `জুলাই/${toBengaliDigits(yrShort)} হতে ডিসেম্বর/${toBengaliDigits(yrShort)}`;
+  }
+
+  const s = startOfDay(start);
+  const e = endOfDay(end);
+
+  return {
+    start: s,
+    end: e,
+    label: `${toBengaliDigits(format(s, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(e, 'dd/MM/yyyy'))}`,
+    subLabel
   };
 };
 

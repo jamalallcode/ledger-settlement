@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
+/* UNIVERSAL ZERO BORDER-RADIUS: সমস্ত উপাদান সম্পূর্ণ চারকোনা (Square) */
+*, *::before, *::after {
+  border-radius: 0px !important;
+}
+
 @theme {
-  --font-sans: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Noto Sans Bengali", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
