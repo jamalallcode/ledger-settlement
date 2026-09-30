@@ -121,20 +121,37 @@ export const HR_1: React.FC<HRProps> = ({
 
   // Available ministries
   const ministryList = useMemo(() => {
-    return Object.keys(MINISTRY_ENTITY_MAP);
+    return [
+      'আর্থিক প্রতিষ্ঠান বিভাগ',
+      'বস্ত্র ও পাট মন্ত্রণালয়',
+      'শিল্প মন্ত্রণালয়',
+      'বাণিজ্য মন্ত্রণালয়',
+      'বিমান ও পর্যটন মন্ত্রণালয়'
+    ];
   }, []);
 
   // Available entities for the selected ministry and branch type
   const availableEntities = useMemo(() => {
     const set = new Set<string>();
+    const isTextileJute = selectedMinistry && (selectedMinistry.includes('বস্ত্র') || selectedMinistry.includes('পাট'));
 
-    if (selectedMinistry && MINISTRY_ENTITY_MAP[selectedMinistry]) {
+    if (isTextileJute) {
+      (MINISTRY_ENTITY_MAP['পাট মন্ত্রণালয়'] || []).forEach(ent => set.add(ent));
+      (MINISTRY_ENTITY_MAP['বস্ত্র মন্ত্রণালয়'] || []).forEach(ent => set.add(ent));
+    } else if (selectedMinistry && MINISTRY_ENTITY_MAP[selectedMinistry]) {
       MINISTRY_ENTITY_MAP[selectedMinistry].forEach(ent => set.add(ent));
     }
 
     (entries || []).forEach(e => {
       if (e.entityName && e.entityName.trim()) {
-        if (!selectedMinistry || selectedMinistry === 'সকল' || (e.ministryName && e.ministryName.includes(selectedMinistry))) {
+        const eMin = (e.ministryName || '').trim();
+        const eIsTextileJute = eMin.includes('বস্ত্র') || eMin.includes('পাট');
+
+        const matchesMin = !selectedMinistry || selectedMinistry === 'সকল' ||
+          (isTextileJute && eIsTextileJute) ||
+          eMin.includes(selectedMinistry);
+
+        if (matchesMin) {
           if (selectedBranchType && selectedBranchType !== 'সকল' && selectedBranchType !== 'সকল শাখা') {
             const isSFI = selectedBranchType.includes('এসএফআই') && !selectedBranchType.includes('নন');
             const eParaType = (e.paraType || '').trim();
