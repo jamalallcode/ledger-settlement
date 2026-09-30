@@ -36,18 +36,6 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'rec' | 'adj'>('all');
 
-  // Set initial tab based on clicked category
-  useEffect(() => {
-    if (categoryId === 6) {
-      setActiveTab('rec');
-    } else if (categoryId === 5) {
-      setActiveTab('adj');
-    } else {
-      setActiveTab('all');
-    }
-    setSearchTerm('');
-  }, [categoryId, isOpen]);
-
   // Close modal on ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -117,6 +105,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
       entrySl: number;
       ministryName: string;
       entityName: string;
+      branchName: string;
       auditYear: string;
       paraNo: string;
       status: string;
@@ -188,6 +177,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
             entrySl: e.sl || 0,
             ministryName: e.ministryName || '',
             entityName: entity,
+            branchName: e.branchName || '',
             auditYear: yr,
             paraNo: p.paraNo || `${pIdx + 1}`,
             status: p.status || 'পূর্ণাঙ্গ',
@@ -208,6 +198,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
           entrySl: e.sl || 0,
           ministryName: e.ministryName || '',
           entityName: entity,
+          branchName: e.branchName || '',
           auditYear: yr,
           paraNo: '১',
           status: 'পূর্ণাঙ্গ',
@@ -236,6 +227,20 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
     };
   }, [settledItems]);
 
+  // Set initial tab based on clicked category and available data
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (categoryId === 6) {
+      setActiveTab(tabCounts.rec > 0 ? 'rec' : (tabCounts.all > 0 ? 'all' : 'rec'));
+    } else if (categoryId === 5) {
+      setActiveTab(tabCounts.adj > 0 ? 'adj' : (tabCounts.all > 0 ? 'all' : 'adj'));
+    } else {
+      setActiveTab('all');
+    }
+    setSearchTerm('');
+  }, [categoryId, isOpen, tabCounts.rec, tabCounts.adj, tabCounts.all]);
+
   // Filter items by tab and search
   const filteredItems = useMemo(() => {
     return settledItems.filter(item => {
@@ -248,6 +253,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
         const q = searchTerm.toLowerCase();
         const match =
           item.entityName.toLowerCase().includes(q) ||
+          item.branchName.toLowerCase().includes(q) ||
           item.auditYear.toLowerCase().includes(q) ||
           item.paraNo.toLowerCase().includes(q) ||
           item.letterNoDate.toLowerCase().includes(q) ||
@@ -281,6 +287,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
       groupId: string;
       entryId: string;
       entityName: string;
+      branchName: string;
       auditYear: string;
       letterNoDate: string;
       meetingType: string;
@@ -312,6 +319,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
           groupId: `${item.entryId}_${idx}`,
           entryId: item.entryId,
           entityName: item.entityName,
+          branchName: item.branchName,
           auditYear: item.auditYear,
           letterNoDate: item.letterNoDate,
           meetingType: item.meetingType,
@@ -542,15 +550,15 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
             <table className="w-full text-center border-collapse border-b border-slate-300 text-xs">
               <thead className="sticky top-0 z-20 shadow-xs">
                 <tr className="border-b border-slate-300 text-[10.5px] font-bold text-slate-800 bg-slate-100">
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-12 min-w-[45px] max-w-[50px]">ক্র:</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-12 min-w-[45px] max-w-[50px]">ক্রমিক</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-left w-[170px] min-w-[150px] max-w-[190px]">প্রতিষ্ঠান / দপ্তর</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-44 min-w-[145px] whitespace-nowrap">অর্থবছর</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-20 min-w-[75px]">অনুচ্ছেদ নং</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-28 min-w-[95px]">অবস্থা</th>
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-right w-32 min-w-[115px]">জড়িত টাকা</th>
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-right w-36 min-w-[140px]">আদায়কৃত টাকা</th>
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-right w-36 min-w-[140px]">সমন্বিত টাকা</th>
-                  <th className="p-2 border-b border-slate-300 bg-slate-100 text-left min-w-[260px]">সভার ধরন / স্মারক ও তারিখ</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-32 min-w-[115px]">জড়িত টাকা</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-36 min-w-[140px]">আদায়কৃত টাকা</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-36 min-w-[140px]">সমন্বিত টাকা</th>
+                  <th className="p-2 border-b border-slate-300 bg-slate-100 text-center min-w-[260px]">সভার ধরন / স্মারক ও তারিখ</th>
                 </tr>
                 {/* কলাম ক্রমিক নম্বর সারি (Column Serial Row) */}
                 <tr className="border-b border-slate-300 text-[10px] font-bold text-slate-600 bg-slate-200/90">
@@ -593,7 +601,12 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                                   className="p-2 border-r border-slate-200 text-left font-bold text-slate-900 w-[170px] max-w-[190px] break-words bg-white align-top"
                                 >
                                   <div className="sticky top-[60px]">
-                                    {group.entityName}
+                                    <div>{group.entityName}</div>
+                                    {group.branchName && (
+                                      <div className="text-[10.5px] font-semibold text-slate-600 mt-1 leading-snug">
+                                        {group.branchName}
+                                      </div>
+                                    )}
                                   </div>
                                 </td>
                               )}
@@ -629,17 +642,17 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                               </td>
 
                               {/* কলাম ৬: জড়িত টাকা */}
-                              <td className="p-2 border-r border-slate-200 text-right font-semibold text-slate-800 tabular-nums">
+                              <td className="p-2 border-r border-slate-200 text-center font-semibold text-slate-800 tabular-nums">
                                 {item.involvedAmount > 0 ? toBengaliDigits(item.involvedAmount.toLocaleString('bn-BD')) : '০'}
                               </td>
 
                               {/* কলাম ৭: আদায়কৃত টাকা */}
-                              <td className="p-2 border-r border-slate-200 text-right font-black text-emerald-700 tabular-nums bg-emerald-50/20">
+                              <td className="p-2 border-r border-slate-200 text-center font-black text-emerald-700 tabular-nums bg-emerald-50/20">
                                 {item.recoveryAmount > 0 ? toBengaliDigits(item.recoveryAmount.toLocaleString('bn-BD')) : '০'}
                               </td>
 
                               {/* কলাম ৮: সমন্বিত টাকা */}
-                              <td className="p-2 border-r border-slate-200 text-right font-black text-indigo-700 tabular-nums bg-indigo-50/20">
+                              <td className="p-2 border-r border-slate-200 text-center font-black text-indigo-700 tabular-nums bg-indigo-50/20">
                                 {item.adjustmentAmount > 0 ? toBengaliDigits(item.adjustmentAmount.toLocaleString('bn-BD')) : '০'}
                               </td>
 
@@ -647,7 +660,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                               {itemIdx === 0 && (
                                 <td
                                   rowSpan={group.items.length}
-                                  className="p-2.5 text-left text-[11px] text-slate-700 font-medium bg-white align-top"
+                                  className="p-2.5 text-center text-[11px] text-slate-700 font-medium bg-white align-top"
                                 >
                                   <div className="sticky top-[60px]">
                                     <div className="font-bold text-slate-900">{group.meetingType}</div>
@@ -685,17 +698,17 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                               )}
                             </div>
                           </td>
-                          <td className="p-2 text-right tabular-nums font-black text-slate-900 border-r border-slate-300 bg-slate-100">
+                          <td className="p-2 text-center tabular-nums font-black text-slate-900 border-r border-slate-300 bg-slate-100">
                             {toBengaliDigits(group.totalInvolved.toLocaleString('bn-BD'))}
                           </td>
-                          <td className="p-2 text-right tabular-nums font-black text-emerald-800 border-r border-slate-300 bg-emerald-50/60">
+                          <td className="p-2 text-center tabular-nums font-black text-emerald-800 border-r border-slate-300 bg-emerald-50/60">
                             {toBengaliDigits(group.totalRecovered.toLocaleString('bn-BD'))}
                           </td>
-                          <td className="p-2 text-right tabular-nums font-black text-indigo-800 border-r border-slate-300 bg-indigo-50/60">
+                          <td className="p-2 text-center tabular-nums font-black text-indigo-800 border-r border-slate-300 bg-indigo-50/60">
                             {toBengaliDigits(group.totalAdjusted.toLocaleString('bn-BD'))}
                           </td>
-                          <td className="p-2 text-left text-[10px] text-slate-600 bg-slate-100 font-semibold">
-                            <span className="text-slate-700 font-bold">{group.meetingType}</span>
+                          <td className="p-2 text-center text-[10px] text-slate-600 bg-slate-100 font-semibold">
+                            <span className="text-slate-700 font-bold block">{group.meetingType}</span>
                             <span className="block text-slate-500 text-[9.5px]">
                               {toBengaliDigits(group.fullCount.toString())} টি পূর্ণাঙ্গ নিষ্পন্ন
                             </span>
@@ -708,19 +721,19 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
               </tbody>
               <tfoot className="bg-slate-900 text-white font-black sticky bottom-0 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.25)]">
                 <tr className="border-t-2 border-slate-700 text-[11px] bg-slate-900">
-                  <td colSpan={5} className="p-2 text-right uppercase tracking-wider text-slate-200">
+                  <td colSpan={5} className="p-2 text-center uppercase tracking-wider text-slate-200">
                     সর্বমোট:
                   </td>
-                  <td className="p-2 text-right tabular-nums text-white">
+                  <td className="p-2 text-center tabular-nums text-white">
                     {toBengaliDigits(totals.involved.toLocaleString('bn-BD'))}
                   </td>
-                  <td className="p-2 text-right tabular-nums text-emerald-300">
+                  <td className="p-2 text-center tabular-nums text-emerald-300">
                     {toBengaliDigits(totals.recovered.toLocaleString('bn-BD'))}
                   </td>
-                  <td className="p-2 text-right tabular-nums text-indigo-300">
+                  <td className="p-2 text-center tabular-nums text-indigo-300">
                     {toBengaliDigits(totals.adjusted.toLocaleString('bn-BD'))}
                   </td>
-                  <td className="p-2 text-left text-slate-300 text-[10px]">
+                  <td className="p-2 text-center text-slate-300 text-[10px]">
                     <div>মোট {toBengaliDigits(totals.count.toString())} টি অনুচ্ছেদ</div>
                     {partialItemsCount > 0 && (
                       <div className="text-amber-300 text-[9px] font-normal">
