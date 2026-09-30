@@ -22,6 +22,18 @@ export interface MinistryPrevStats {
   recoveryAdjustmentQuarterlyAmount?: number;
   settledCount: number;
   settledAmount: number;
+  // Half-Yearly Opening Balance Fields
+  halfYearlyPrevUnsettledCount?: number;
+  halfYearlyPrevUnsettledAmount?: number | string;
+  halfYearlyRaisedCount?: number;
+  halfYearlyRaisedAmount?: number | string;
+  halfYearlySettledCount?: number;
+  halfYearlySettledAmount?: number | string;
+  // Yearly Opening Balance Fields
+  yearlyPrevUnsettledCount?: number;
+  yearlyPrevUnsettledAmount?: number | string;
+  yearlySettledCount?: number;
+  yearlySettledAmount?: number | string;
 }
 
 export interface CumulativeStats {

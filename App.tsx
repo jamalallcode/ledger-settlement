@@ -307,7 +307,34 @@ const App: React.FC = () => {
   }, [allPrevStats, reportType]);
 
   const handleSetCurrentPrevStats = (stats: CumulativeStats) => {
-    setAllPrevStats(prev => ({ ...prev, monthly: stats, quarterly: stats }));
+    setAllPrevStats(prev => {
+      const updated = {
+        monthly: stats,
+        quarterly: stats,
+        halfYearly: stats,
+        yearly: stats
+      };
+      try {
+        localStorage.setItem(PREV_STATS_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error("Failed to save prev stats to localStorage:", e);
+      }
+      return updated;
+    });
+
+    if (isSupabaseConfigured && supabase && typeof supabase.from === 'function' && navigator.onLine) {
+      Promise.resolve(
+        supabase.from('settlement_entries').upsert({
+          id: 'system_metadata_prev_stats',
+          content: {
+            monthly: stats,
+            quarterly: stats,
+            halfYearly: stats,
+            yearly: stats
+          }
+        })
+      ).catch(err => console.warn("Supabase prev_stats sync error:", err));
+    }
   };
 
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -414,22 +441,55 @@ const App: React.FC = () => {
     });
   };
 
-  const goBack = () => {
-    if (navHistory.length === 0) return;
-    
-    // Pop the last state
-    const previousState = navHistory[navHistory.length - 1];
-    setNavHistory(prev => prev.slice(0, -1));
+  const handleSetReportType = (newReportType: string | null) => {
+    if (newReportType !== reportType) {
+      pushHistory();
+      setReportType(newReportType);
+    }
+  };
 
-    // Restore the state
-    if (previousState.activeTab !== undefined) setActiveTab(previousState.activeTab);
-    if (previousState.entryModule !== undefined) setEntryModule(previousState.entryModule);
-    if (previousState.registerSubModule !== undefined) setRegisterSubModule(previousState.registerSubModule);
-    if (previousState.reportType !== undefined) setReportType(previousState.reportType);
-    if (previousState.editingEntry !== undefined) setEditingEntry(previousState.editingEntry);
-    if (previousState.showPendingOnly !== undefined) setShowPendingOnly(previousState.showPendingOnly);
-    if (previousState.highlightSearch !== undefined) setHighlightSearch(previousState.highlightSearch);
-    if (previousState.showRegisterFilters !== undefined) setShowRegisterFilters(previousState.showRegisterFilters);
+  const goBack = () => {
+    // 1. Dispatch custom event for active modal to handle back action
+    const event = new CustomEvent('app:goback', { cancelable: true });
+    const wasHandled = !window.dispatchEvent(event);
+    if (wasHandled) {
+      return;
+    }
+
+    // 2. Clear single entry modal if open
+    if (viewSingleEntryId) {
+      setViewSingleEntryId(null);
+      return;
+    }
+
+    // 3. Clear editing entry if active
+    if (editingEntry) {
+      setEditingEntry(null);
+      return;
+    }
+
+    // 4. Pop the last state from history stack
+    if (navHistory.length > 0) {
+      const previousState = navHistory[navHistory.length - 1];
+      setNavHistory(prev => prev.slice(0, -1));
+
+      // Restore the state
+      if (previousState.activeTab !== undefined) setActiveTab(previousState.activeTab);
+      if (previousState.entryModule !== undefined) setEntryModule(previousState.entryModule);
+      if (previousState.registerSubModule !== undefined) setRegisterSubModule(previousState.registerSubModule);
+      if (previousState.reportType !== undefined) setReportType(previousState.reportType);
+      if (previousState.editingEntry !== undefined) setEditingEntry(previousState.editingEntry);
+      if (previousState.showPendingOnly !== undefined) setShowPendingOnly(previousState.showPendingOnly);
+      if (previousState.highlightSearch !== undefined) setHighlightSearch(previousState.highlightSearch);
+      if (previousState.showRegisterFilters !== undefined) setShowRegisterFilters(previousState.showRegisterFilters);
+    } else {
+      // 5. Fallback: If no history, and inside a specific report, go back to report overview, or go to landing
+      if (activeTab === 'return' && reportType) {
+        setReportType(null);
+      } else if (activeTab !== 'landing') {
+        setActiveTab('landing');
+      }
+    }
   };
 
   const handleTabChange = (tab: string, subModule?: 'settlement' | 'correspondence', rType?: string, searchTerm?: string) => {
@@ -1929,7 +1989,7 @@ const App: React.FC = () => {
                   setPrevStats={handleSetCurrentPrevStats} 
                   isAdmin={isAdmin} 
                   selectedReportType={reportType} 
-                  setSelectedReportType={setReportType}
+                  setSelectedReportType={handleSetReportType}
                   showFilters={showRegisterFilters}
                   setShowFilters={setShowRegisterFilters}
                   activeTab={activeTab}
