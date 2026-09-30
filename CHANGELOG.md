@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-30] - Settled Paragraphs Modal: ক্রমিক Header, Branch Name & Center Alignments
+
+### 🚀 Enhanced & Refined
+- **Table Headers & Branch Name Display (`HRSettledParagraphsModal.tsx`)**:
+  - টেবিলের ১ম কলামের শিরোনাম `ক্র:` পরিবর্তন করে পূর্ণাঙ্গ রূপ **`ক্রমিক`** করা হয়েছে।
+  - ২ নং কলামে প্রতিষ্ঠানের নামের ঠিক নিচে সংশ্লিষ্ট শাখার নাম (যেমন: *বিসিক শিল্পনগরী, যশোর*) মার্জিতভাবে প্রদর্শিত হচ্ছে।
+  - ৯ নং কলাম (সভার ধরন / স্মারক ও তারিখ)-এর শিরোনাম ও ডেটা সারি, জারিপত্র মোট সারি এবং সর্বমোট সারির কন্টেন্ট কলামের মাঝখানে (`text-center`) বিন্যস্ত করা হয়েছে।
+  - সর্বমোট (Grand Total) সারির `সর্বমোট:` শিরোনামটি মার্জকৃত ৫টি কলামের ঠিক কেন্দ্রস্থলে (`text-center`) স্থাপন করা হয়েছে।
+
+## [2026-09-30] - Center Align Amount Columns in Settled Paragraphs Drill-Down Modal
+
+### 🚀 Enhanced
+- **Center Alignment of Financial Amount Columns (`HRSettledParagraphsModal.tsx`)**:
+  - আলোচ্য ৬ মাসে নিষ্পন্ন অনুচ্ছেদসমূহের বিস্তারিত বিবরণী টেবিলের ৬ নং (জড়িত টাকা), ৭ নং (আদায়কৃত টাকা) এবং ৮ নং (সমন্বিত টাকা) কলামের ডেটা সারি, জারিপত্র মোট (Subtotal) সারি এবং সর্বমোট (Grand Total) সারির সকল সংখ্যা কলামের ঠিক মাঝখানে (`text-center`) বিন্যস্ত করা হয়েছে।
+
+## [2026-09-30] - Smart Initial Tab Selection in Settled Paragraphs Drill-Down Modal
+
+### 🚀 Fixed & Enhanced
+- **Smart Initial Tab Selection in Settled Paragraphs Drill-Down Modal (`HRSettledParagraphsModal.tsx`)**:
+  - শিল্প মন্ত্রণালয় (বা অন্য কোনো মন্ত্রণালয়)-এর টেবিলে নিষ্পত্তির সংখ্যা বোতামে (যেমন: "১") ক্লিক করলে মোডালটি ক্যাটাগরি অনুযায়ী খোলার পর সংশ্লিষ্ট সাব-ট্যাবে ডেটা না থাকলে যাতে খালি ("কোনো নিষ্পন্ন অনুচ্ছেদ পাওয়া যায়নি") না দেখায়, সেজন্য স্মার্ট ফলব্যাক লজিক যুক্ত করা হয়েছে।
+  - এখন নির্দিষ্ট সাব-ট্যাব শূন্য থাকলে স্বয়ংক্রিয়ভাবে `সকল অনুচ্ছেদ` অথবা ডেটা সমৃদ্ধ ট্যাবে মোডাল ওপেন হবে এবং ব্যবহারকারী তাৎক্ষণিকভাবে নিষ্পন্ন অনুচ্ছেদ, প্রতিষ্ঠান, অর্থবছর, জড়িত ও আদায়/সমন্বয়কৃত টাকার বিবরণ দেখতে পাবেন।
+
 ## [2026-09-30] - Robust Opening Balance Support for Industry & All Ministries in HR_1
 
 ### 🚀 Fixed & Enhanced
