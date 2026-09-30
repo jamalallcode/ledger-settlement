@@ -280,6 +280,96 @@ export function calculateSettlementsForHalfYearly(
  * 
  * Next cycle's Col 3 & 4 = Previous cycle's Col 9 & 10
  */
+/**
+ * Robustly retrieves saved opening stats for any ministry and category, handling
+ * Unicode normalization variations, key separators, combined ministries, and fallbacks.
+ */
+export function getSavedStatsForMinistryAndCategory(
+  savedStats: Record<string, any> | undefined,
+  ministry: string | undefined,
+  catName: string,
+  catId?: number
+): any {
+  if (!savedStats) return undefined;
+
+  const targetMin = (ministry && ministry !== 'সকল' ? ministry : 'আর্থিক প্রতিষ্ঠান বিভাগ')
+    .normalize('NFC')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const targetCat = catName.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+  // 1. Direct key match: `${targetMin}_${targetCat}`
+  if (savedStats[`${targetMin}_${targetCat}`]) {
+    return savedStats[`${targetMin}_${targetCat}`];
+  }
+
+  // 2. Direct key match with original strings
+  if (ministry && savedStats[`${ministry}_${catName}`]) {
+    return savedStats[`${ministry}_${catName}`];
+  }
+
+  // 3. Ministry classifications
+  const isFinancial = targetMin.includes('আর্থিক');
+  const isTextileJute = targetMin.includes('বস্ত্র') || targetMin.includes('পাট');
+  const isIndustry = targetMin.includes('শিল্প');
+  const isCommerce = targetMin.includes('বাণিজ্য');
+  const isAviation = targetMin.includes('বিমান') || targetMin.includes('পর্যটন');
+
+  // If Textile & Jute, check combined or individual keys
+  if (isTextileJute) {
+    if (savedStats[`বস্ত্র ও পাট মন্ত্রণালয়_${catName}`]) return savedStats[`বস্ত্র ও পাট মন্ত্রণালয়_${catName}`];
+    const j = savedStats[`পাট মন্ত্রণালয়_${catName}`];
+    const t = savedStats[`বস্ত্র মন্ত্রণালয়_${catName}`];
+    if (j || t) {
+      return {
+        halfYearlyPrevUnsettledCount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledCount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledCount) || 0),
+        halfYearlyPrevUnsettledAmount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledAmount) || 0),
+        halfYearlyRaisedCount: (parseBengaliNumber(j?.halfYearlyRaisedCount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedCount) || 0),
+        halfYearlyRaisedAmount: (parseBengaliNumber(j?.halfYearlyRaisedAmount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedAmount) || 0),
+        halfYearlySettledCount: (parseBengaliNumber(j?.halfYearlySettledCount) || 0) + (parseBengaliNumber(t?.halfYearlySettledCount) || 0),
+        halfYearlySettledAmount: (parseBengaliNumber(j?.halfYearlySettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlySettledAmount) || 0),
+      };
+    }
+  }
+
+  // If Civil Aviation, check all variations
+  if (isAviation) {
+    if (savedStats[`বেসামরিক বিমান, পরিবহন ও পর্যটন মন্ত্রণালয়_${catName}`]) {
+      return savedStats[`বেসামরিক বিমান, পরিবহন ও পর্যটন মন্ত্রণালয়_${catName}`];
+    }
+    if (savedStats[`বিমান ও পর্যটন মন্ত্রণালয়_${catName}`]) {
+      return savedStats[`বিমান ও পর্যটন মন্ত্রণালয়_${catName}`];
+    }
+  }
+
+  // 4. Scan all keys in savedStats with robust normalization
+  for (const [key, val] of Object.entries(savedStats)) {
+    if (!val || typeof val !== 'object') continue;
+    const parts = key.split('_');
+    if (parts.length >= 2) {
+      const kMin = parts[0].normalize('NFC').replace(/\s+/g, ' ').trim();
+      const kCat = parts.slice(1).join('_').normalize('NFC').replace(/\s+/g, ' ').trim();
+
+      if (kCat === targetCat || kCat.includes(targetCat) || targetCat.includes(kCat)) {
+        if (isIndustry && kMin.includes('শিল্প')) return val;
+        if (isCommerce && kMin.includes('বাণিজ্য')) return val;
+        if (isAviation && (kMin.includes('বিমান') || kMin.includes('পর্যটন'))) return val;
+        if (isTextileJute && (kMin.includes('বস্ত্র') || kMin.includes('পাট'))) return val;
+        if (isFinancial && kMin.includes('আর্থিক')) return val;
+        if (kMin === targetMin || kMin.includes(targetMin) || targetMin.includes(kMin)) return val;
+      }
+    }
+  }
+
+  // 5. Fallback for Financial Institutions: directly by category name
+  if (isFinancial) {
+    if (savedStats[catName]) return savedStats[catName];
+    if (savedStats[targetCat]) return savedStats[targetCat];
+  }
+
+  return undefined;
+}
+
 export function getHalfYearlyRollingData(
   targetDate: Date,
   entries: SettlementEntry[],
@@ -292,37 +382,41 @@ export function getHalfYearlyRollingData(
   const currentRolling: Record<number, { count: number; amount: number }> = {};
   const normMin = selectedMinistry && selectedMinistry !== 'সকল' ? selectedMinistry.normalize('NFC').trim() : 'আর্থিক প্রতিষ্ঠান বিভাগ';
   const isFinancialInst = normMin.includes('আর্থিক প্রতিষ্ঠান');
-  const isTextileJute = normMin.includes('বস্ত্র') || normMin.includes('পাট');
 
   HR1_CATEGORIES.forEach(cat => {
-    // Check ministry-specific key first: `${normMin}_${cat.name}`
-    let saved = savedStats?.[`${normMin}_${cat.name}`];
-    if (!saved && isTextileJute) {
-      saved = savedStats?.[`বস্ত্র ও পাট মন্ত্রণালয়_${cat.name}`];
-      if (!saved) {
-        const j = savedStats?.[`পাট মন্ত্রণালয়_${cat.name}`];
-        const t = savedStats?.[`বস্ত্র মন্ত্রণালয়_${cat.name}`];
-        if (j || t) {
-          saved = {
-            halfYearlyPrevUnsettledCount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledCount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledCount) || 0),
-            halfYearlyPrevUnsettledAmount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledAmount) || 0),
-          };
-        }
-      }
-    } else if (!saved && isFinancialInst) {
-      saved = savedStats?.[cat.name];
-    }
-    
-    // Default baseline figures are specifically for Financial Institutions Division (June 2025 record)
+    const saved = getSavedStatsForMinistryAndCategory(savedStats, selectedMinistry, cat.name, cat.id);
+
     let baseCount = isFinancialInst ? (DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.count || 0) : 0;
     let baseAmount = isFinancialInst ? (DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.amount || 0) : 0;
 
     if (saved) {
-      if (saved.halfYearlyPrevUnsettledCount !== undefined && saved.halfYearlyPrevUnsettledCount !== '') {
-        baseCount = parseBengaliNumber(saved.halfYearlyPrevUnsettledCount) || 0;
+      const pCount = (saved.halfYearlyPrevUnsettledCount !== undefined && saved.halfYearlyPrevUnsettledCount !== '')
+        ? (parseBengaliNumber(saved.halfYearlyPrevUnsettledCount) || 0)
+        : (saved.unsettledCount !== undefined && saved.unsettledCount !== '' ? (parseBengaliNumber(saved.unsettledCount) || 0) : 0);
+
+      const pAmount = (saved.halfYearlyPrevUnsettledAmount !== undefined && saved.halfYearlyPrevUnsettledAmount !== '')
+        ? (parseBengaliNumber(saved.halfYearlyPrevUnsettledAmount) || 0)
+        : (saved.unsettledAmount !== undefined && saved.unsettledAmount !== '' ? (parseBengaliNumber(saved.unsettledAmount) || 0) : 0);
+
+      const rCount = parseBengaliNumber(saved.halfYearlyRaisedCount) || 0;
+      const rAmount = parseBengaliNumber(saved.halfYearlyRaisedAmount) || 0;
+      const sCount = parseBengaliNumber(saved.halfYearlySettledCount) || 0;
+      const sAmount = parseBengaliNumber(saved.halfYearlySettledAmount) || 0;
+
+      // Closing of June 2025 = (Opening + Raised) - Settled
+      const closingCount = (pCount + rCount) - sCount;
+      const closingAmount = Number(((pAmount + rAmount) - sAmount).toFixed(4));
+
+      if (closingCount !== 0 || rCount !== 0 || sCount !== 0) {
+        baseCount = Math.max(0, closingCount);
+      } else if (pCount > 0) {
+        baseCount = pCount;
       }
-      if (saved.halfYearlyPrevUnsettledAmount !== undefined && saved.halfYearlyPrevUnsettledAmount !== '') {
-        baseAmount = parseBengaliNumber(saved.halfYearlyPrevUnsettledAmount) || 0;
+
+      if (closingAmount !== 0 || rAmount !== 0 || sAmount !== 0) {
+        baseAmount = Math.max(0, closingAmount);
+      } else if (pAmount > 0) {
+        baseAmount = pAmount;
       }
     }
 

@@ -126,7 +126,7 @@ export const HR_1: React.FC<HRProps> = ({
       'বস্ত্র ও পাট মন্ত্রণালয়',
       'শিল্প মন্ত্রণালয়',
       'বাণিজ্য মন্ত্রণালয়',
-      'বিমান ও পর্যটন মন্ত্রণালয়'
+      'বেসামরিক বিমান, পরিবহন ও পর্যটন মন্ত্রণালয়'
     ];
   }, []);
 
@@ -203,20 +203,20 @@ export const HR_1: React.FC<HRProps> = ({
 
   // Rolling data computed dynamically from baseline & Settlement Register entries
   const rollingData = useMemo(() => {
-    let savedStats: Record<string, any> | undefined;
+    let localStats: Record<string, any> = {};
     try {
       const local = localStorage.getItem('opening_balance_setup_stats_v1');
-      if (local) savedStats = JSON.parse(local);
+      if (local) localStats = JSON.parse(local);
     } catch {}
-    if (!savedStats) {
-      if (selectedBranchType === 'এসএফআই') {
-        savedStats = prevStats?.entitiesSFI;
-      } else {
-        savedStats = prevStats?.entitiesNonSFI || prevStats?.entitiesSFI;
-      }
-    }
+
+    const propStats = selectedBranchType === 'এসএফআই'
+      ? (prevStats?.entitiesSFI || {})
+      : (prevStats?.entitiesNonSFI || prevStats?.entitiesSFI || {});
+
+    const mergedStats = { ...propStats, ...localStats };
+
     const cycleDate = activeCycle?.start ? new Date(activeCycle.start) : new Date();
-    return getHalfYearlyRollingData(cycleDate, entries || [], savedStats, selectedMinistry, selectedBranchType, selectedEntity);
+    return getHalfYearlyRollingData(cycleDate, entries || [], mergedStats, selectedMinistry, selectedBranchType, selectedEntity);
   }, [activeCycle, entries, prevStats, selectedMinistry, selectedBranchType, selectedEntity]);
 
   // Modal state for viewing settled paragraphs
