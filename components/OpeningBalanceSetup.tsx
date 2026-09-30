@@ -1,9 +1,17 @@
-import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
-import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
+import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2, ChevronDown, Check } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats, SettlementEntry } from '../types';
 import { HR1_CATEGORIES, getHalfYearlyRollingData } from '../utils/halfYearlyHelper';
+
+export const HALF_YEARLY_MINISTRIES = [
+  'আর্থিক প্রতিষ্ঠান বিভাগ',
+  'বস্ত্র ও পাট মন্ত্রণালয়',
+  'শিল্প মন্ত্রণালয়',
+  'বাণিজ্য মন্ত্রণালয়',
+  'বেসামরিক বিমান, পরিবহন ও পর্যটন মন্ত্রণালয়'
+];
 
 interface OpeningBalanceSetupProps {
   ministryGroups: string[];
@@ -43,6 +51,57 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   activeCycle
 }) => {
   const [activeTab, setActiveTab] = useState<BalanceTab>('monthly');
+  const [selectedHalfYearlyMinistry, setSelectedHalfYearlyMinistry] = useState<string>('আর্থিক প্রতিষ্ঠান বিভাগ');
+  const [isHalfYearlyMenuOpen, setIsHalfYearlyMenuOpen] = useState<boolean>(false);
+  const halfYearlyMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (halfYearlyMenuRef.current && !halfYearlyMenuRef.current.contains(e.target as Node)) {
+        setIsHalfYearlyMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getHalfYearlyStats = (catName: string) => {
+    const isFinancialInst = selectedHalfYearlyMinistry.includes('আর্থিক প্রতিষ্ঠান');
+    const isTextileJute = selectedHalfYearlyMinistry.includes('বস্ত্র') || selectedHalfYearlyMinistry.includes('পাট');
+    const specificKey = `${selectedHalfYearlyMinistry}_${catName}`;
+
+    if (tempPrevStats[specificKey]) {
+      return tempPrevStats[specificKey];
+    }
+    if (isFinancialInst && tempPrevStats[catName]) {
+      return tempPrevStats[catName];
+    }
+    if (isTextileJute) {
+      const combined = tempPrevStats[`বস্ত্র ও পাট মন্ত্রণালয়_${catName}`];
+      if (combined) return combined;
+
+      const j = tempPrevStats[`পাট মন্ত্রণালয়_${catName}`];
+      const t = tempPrevStats[`বস্ত্র মন্ত্রণালয়_${catName}`];
+      if (j || t) {
+        const pCount = (parseBengaliNumber(j?.halfYearlyPrevUnsettledCount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledCount) || 0);
+        const pAmount = (parseBengaliNumber(j?.halfYearlyPrevUnsettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledAmount) || 0);
+        const rCount = (parseBengaliNumber(j?.halfYearlyRaisedCount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedCount) || 0);
+        const rAmount = (parseBengaliNumber(j?.halfYearlyRaisedAmount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedAmount) || 0);
+        const sCount = (parseBengaliNumber(j?.halfYearlySettledCount) || 0) + (parseBengaliNumber(t?.halfYearlySettledCount) || 0);
+        const sAmount = (parseBengaliNumber(j?.halfYearlySettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlySettledAmount) || 0);
+        return {
+          halfYearlyPrevUnsettledCount: toBengaliDigits(pCount),
+          halfYearlyPrevUnsettledAmount: toBengaliDigits(pAmount),
+          halfYearlyRaisedCount: toBengaliDigits(rCount),
+          halfYearlyRaisedAmount: toBengaliDigits(rAmount),
+          halfYearlySettledCount: toBengaliDigits(sCount),
+          halfYearlySettledAmount: toBengaliDigits(sAmount),
+        };
+      }
+    }
+    return {};
+  };
+
   const [customMonthText, setCustomMonthText] = useState<string>(() => {
     return localStorage.getItem('opening_balance_custom_month_text') || '১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫';
   });
@@ -137,15 +196,30 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           ? toBengaliDigits(trimmed.replace(/,/g, '.'))
           : parseBengaliNumber(trimmed);
 
-        newStats[entityName] = {
-          ...(newStats[entityName] || {
-            unsettledCount: 0,
-            unsettledAmount: 0,
-            settledCount: 0,
-            settledAmount: 0
-          }),
-          [fieldName]: value
-        };
+        if (activeTab === 'halfYearly') {
+          const isFinancialInst = selectedHalfYearlyMinistry.includes('আর্থিক প্রতিষ্ঠান');
+          const specificKey = `${selectedHalfYearlyMinistry}_${entityName}`;
+          newStats[specificKey] = {
+            ...(newStats[specificKey] || {}),
+            [fieldName]: value
+          };
+          if (isFinancialInst) {
+            newStats[entityName] = {
+              ...(newStats[entityName] || {}),
+              [fieldName]: value
+            };
+          }
+        } else {
+          newStats[entityName] = {
+            ...(newStats[entityName] || {
+              unsettledCount: 0,
+              unsettledAmount: 0,
+              settledCount: 0,
+              settledAmount: 0
+            }),
+            [fieldName]: value
+          };
+        }
       });
     });
 
@@ -162,8 +236,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
     } else if (customMonthText.includes('২০২৬') && (customMonthText.includes('০১') || customMonthText.includes('০৬'))) {
       targetDate = new Date(2026, 2, 1);
     }
-    return getHalfYearlyRollingData(targetDate, entries || [], tempPrevStats);
-  }, [activeCycle, customMonthText, entries, tempPrevStats]);
+    return getHalfYearlyRollingData(targetDate, entries || [], tempPrevStats, selectedHalfYearlyMinistry);
+  }, [activeCycle, customMonthText, entries, tempPrevStats, selectedHalfYearlyMinistry]);
 
   // Half-yearly category-specific totals
   const halfYearlyTotals = useMemo(() => {
@@ -171,7 +245,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       const calc = halfYearlyCalculatedData[cat.id] || {
         col3_pCount: 0, col4_pAmount: 0, col5_cCount: 0, col6_cAmount: 0, col7_sCount: 0, col8_sAmount: 0, col9_finalCount: 0, col10_finalAmount: 0
       };
-      const s = tempPrevStats[cat.name] || {};
+      const s = getHalfYearlyStats(cat.name);
 
       const pCount = isEditingSetup
         ? (parseBengaliNumber(s.halfYearlyPrevUnsettledCount) || 0)
@@ -205,7 +279,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       acc.hyFA += fAmount;
       return acc;
     }, { hyPUC: 0, hyPUA: 0, hyRC: 0, hyRA: 0, hySC: 0, hySA: 0, hyFC: 0, hyFA: 0 });
-  }, [tempPrevStats, isEditingSetup, halfYearlyCalculatedData]);
+  }, [tempPrevStats, isEditingSetup, halfYearlyCalculatedData, selectedHalfYearlyMinistry]);
 
   // Calculated totals across all ministries and entities
   const totalStats = ministryGroups.reduce((acc, m) => {
@@ -268,22 +342,22 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       )}
 
       {/* Header Bar: Left Title | Left-aligned "জের-এর মাস" | 4 Individual Buttons | Right Edit/Save (Scrolls up naturally) */}
-      <div id="container-setup-controls" className="flex flex-col xl:flex-row items-center justify-between bg-white p-3 md:p-4 rounded-none border border-slate-300 shadow-xs gap-3 no-print relative mb-2">
+      <div id="container-setup-controls" className="flex flex-wrap items-center justify-between bg-white p-2.5 md:p-3 rounded-none border border-slate-300 shadow-xs gap-2 md:gap-3 no-print relative mb-2 w-full box-border">
         <IDBadge id="container-setup-controls" />
         
         {/* Left Side: Back button + Title */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button 
             type="button"
             onClick={() => { setIsSetupMode(false); setSelectedReportType(null); }} 
-            className="p-2 bg-slate-100 border border-slate-300 rounded-none hover:bg-slate-200 text-slate-700 shadow-xs transition-all cursor-pointer"
+            className="p-1.5 md:p-2 bg-slate-100 border border-slate-300 rounded-none hover:bg-slate-200 text-slate-700 shadow-xs transition-all cursor-pointer"
             title="ফিরে যান"
           >
             <ChevronLeft size={18} />
           </button>
           <div className="flex flex-col">
-            <h2 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">
-              <Settings2 size={20} className="text-blue-600 shrink-0" /> 
+            <h2 className="text-sm md:text-base font-black text-slate-900 flex items-center gap-1.5">
+              <Settings2 size={18} className="text-blue-600 shrink-0" /> 
               <span>পূর্ব জের সেটআপ</span>
             </h2>
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">সমন্বিত (UNIFIED) ব্যালেন্স ইনপুট উইন্ডো</span>
@@ -291,11 +365,11 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
 
         {/* Moved Left: জের-এর মাস */}
-        <div className={`flex items-center gap-2 rounded-none px-3 py-1.5 shadow-xs text-xs transition-all shrink-0 ${
+        <div className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 shadow-xs text-xs transition-all shrink-0 ${
           isEditingSetup ? 'bg-amber-100/90 border-2 border-amber-400 ring-2 ring-amber-400/30' : 'bg-amber-50/90 border border-amber-300/90'
         }`}>
-          <Calendar size={16} className="text-amber-700 shrink-0" />
-          <span className="font-extrabold text-amber-950 text-[12px] whitespace-nowrap">জের-এর মাস:</span>
+          <Calendar size={15} className="text-amber-700 shrink-0" />
+          <span className="font-extrabold text-amber-950 text-[11px] md:text-[12px] whitespace-nowrap">জের-এর মাস:</span>
           <input
             type="text"
             placeholder="যেমন: ১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫"
@@ -307,7 +381,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
               setCustomMonthText(val);
               localStorage.setItem('opening_balance_custom_month_text', val);
             }}
-            className={`rounded-none px-2 py-1 font-bold text-[12px] outline-none w-56 transition-all shadow-xs ${
+            className={`rounded-none px-2 py-0.5 font-bold text-[11px] md:text-[12px] outline-none w-48 transition-all shadow-xs ${
               isEditingSetup
                 ? 'bg-white border-2 border-amber-400 text-slate-900 focus:ring-2 focus:ring-amber-500/30 placeholder:text-slate-400 cursor-text'
                 : 'bg-amber-100/70 border border-amber-200/80 text-amber-950 cursor-not-allowed select-none font-extrabold'
@@ -319,8 +393,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 border border-slate-300 rounded-none shrink-0">
           <button
             type="button"
-            onClick={() => setActiveTab('monthly')}
-            className={`px-3 py-1.5 rounded-none font-black text-[12px] transition-all cursor-pointer ${
+            onClick={() => { setActiveTab('monthly'); setIsHalfYearlyMenuOpen(false); }}
+            className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
               activeTab === 'monthly'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white'
@@ -330,8 +404,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('quarterly')}
-            className={`px-3 py-1.5 rounded-none font-black text-[12px] transition-all cursor-pointer ${
+            onClick={() => { setActiveTab('quarterly'); setIsHalfYearlyMenuOpen(false); }}
+            className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
               activeTab === 'quarterly'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white'
@@ -339,21 +413,57 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           >
             ত্রৈমাসিক জের
           </button>
+          {/* ষাণ্মাসিক জের Tab with Ministry Dropdown */}
+          <div className="relative" ref={halfYearlyMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsHalfYearlyMenuOpen(prev => !prev);
+              }}
+              className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer flex items-center gap-1 ${
+                activeTab === 'halfYearly'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white'
+              }`}
+            >
+              <span>ষাণ্মাসিক জের</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isHalfYearlyMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isHalfYearlyMenuOpen && (
+              <div className="absolute left-0 mt-1 w-64 bg-white border border-slate-300 shadow-2xl z-[99999] py-1">
+                <div className="px-3 py-1.5 text-[11px] font-black text-slate-500 border-b border-slate-100 bg-slate-50">
+                  মন্ত্রণালয় নির্বাচন করুন
+                </div>
+                {HALF_YEARLY_MINISTRIES.map(min => {
+                  const isSelected = activeTab === 'halfYearly' && selectedHalfYearlyMinistry === min;
+                  return (
+                    <button
+                      key={min}
+                      type="button"
+                      onClick={() => {
+                        setSelectedHalfYearlyMinistry(min);
+                        setActiveTab('halfYearly');
+                        setIsHalfYearlyMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-600 text-white font-black'
+                          : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+                      }`}
+                    >
+                      <span>{min}</span>
+                      {isSelected && <Check size={14} className="stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => setActiveTab('halfYearly')}
-            className={`px-3 py-1.5 rounded-none font-black text-[12px] transition-all cursor-pointer ${
-              activeTab === 'halfYearly'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            ষাণ্মাসিক জের
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('yearly')}
-            className={`px-3 py-1.5 rounded-none font-black text-[12px] transition-all cursor-pointer ${
+            onClick={() => { setActiveTab('yearly'); setIsHalfYearlyMenuOpen(false); }}
+            className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
               activeTab === 'yearly'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-white'
@@ -364,12 +474,12 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         </div>
 
         {/* Action Button: Edit / Save */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {!isEditingSetup ? (
             <button 
               type="button"
               onClick={() => setIsEditingSetup(true)} 
-              className="px-5 py-2 rounded-none font-black text-xs md:text-sm flex items-center gap-2 transition-all border-b-2 bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:scale-95 shadow-xs cursor-pointer"
+              className="px-4 py-2 rounded-none font-black text-xs md:text-sm flex items-center gap-1.5 transition-all border-b-2 bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:scale-95 shadow-xs cursor-pointer whitespace-nowrap"
             >
               <Pencil size={15} />
               <span>এডিট করুন</span>
@@ -395,11 +505,38 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                   setShowSavedToast(false);
                 }, 3500);
               }} 
-              className="px-6 py-2 rounded-none font-black text-xs md:text-sm flex items-center gap-2 transition-all border-b-2 bg-emerald-600 text-white border-emerald-800 hover:bg-emerald-700 active:scale-95 shadow-md cursor-pointer"
+              className="px-5 py-2 rounded-none font-black text-xs md:text-sm flex items-center gap-1.5 transition-all border-b-2 bg-emerald-600 text-white border-emerald-800 hover:bg-emerald-700 active:scale-95 shadow-md cursor-pointer whitespace-nowrap"
             >
               <CheckCircle2 size={16} className="text-emerald-100 animate-pulse" />
               <span>সংরক্ষণ করুন</span>
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table Name Strip (Always present with fixed height so table never jitters/shakes) */}
+      <div className="flex items-center justify-between bg-white border border-slate-300 px-3 py-1.5 mb-2 rounded-none shadow-xs h-9">
+        <div className="flex items-center gap-2">
+          <span className="font-black text-slate-800 text-xs md:text-sm">টেবিলের নাম:</span>
+          {activeTab === 'halfYearly' ? (
+            <div className="flex items-center gap-1.5 text-xs md:text-sm">
+              <span className="font-bold text-slate-700">ষাণ্মাসিক জের:</span>
+              <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 border border-blue-200">
+                {selectedHalfYearlyMinistry}
+              </span>
+            </div>
+          ) : activeTab === 'monthly' ? (
+            <span className="font-bold text-slate-700 text-xs md:text-sm">
+              মাসিক পূর্ব জের
+            </span>
+          ) : activeTab === 'quarterly' ? (
+            <span className="font-bold text-slate-700 text-xs md:text-sm">
+              ত্রৈমাসিক পূর্ব জের
+            </span>
+          ) : (
+            <span className="font-bold text-slate-700 text-xs md:text-sm">
+              বাৎসরিক পূর্ব জের
+            </span>
           )}
         </div>
       </div>
@@ -836,7 +973,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                 const calc = halfYearlyCalculatedData[cat.id] || {
                   col3_pCount: 0, col4_pAmount: 0, col5_cCount: 0, col6_cAmount: 0, col7_sCount: 0, col8_sAmount: 0, col9_finalCount: 0, col10_finalAmount: 0
                 };
-                const s = tempPrevStats[cat.name] || {};
+                const s = getHalfYearlyStats(cat.name);
 
                 const pCount = parseBengaliNumber(s.halfYearlyPrevUnsettledCount) || 0;
                 const pAmount = parseBengaliNumber(s.halfYearlyPrevUnsettledAmount) || 0;
@@ -866,10 +1003,10 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                               className="w-full h-11 text-center font-bold text-[14px] md:text-[15px] outline-none border-0 transition-all bg-white text-slate-900 cursor-text hover:bg-indigo-50/50 focus:bg-amber-50 focus:ring-2 focus:ring-blue-500 rounded-lg" 
                               placeholder="০" 
                               value={
-                                tempPrevStats[cat.name]?.[f.key] !== undefined &&
-                                tempPrevStats[cat.name]![f.key] !== '' &&
-                                tempPrevStats[cat.name]![f.key] !== 0
-                                  ? toBengaliDigits(tempPrevStats[cat.name]![f.key])
+                                s[f.key] !== undefined &&
+                                s[f.key] !== '' &&
+                                s[f.key] !== 0
+                                  ? toBengaliDigits(s[f.key])
                                   : ''
                               } 
                               onPaste={(e) => handleTabPaste(e, cat.name, f.key, halfYearlyFields)} 
@@ -880,13 +1017,22 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                                   return;
                                 }
                                 const valToStore = raw === '' ? 0 : toBengaliDigits(raw);
-                                setTempPrevStats(prev => ({ 
-                                  ...prev, 
-                                  [cat.name]: { 
-                                    ...(prev[cat.name] || {}), 
-                                    [f.key]: valToStore 
-                                  } 
-                                })); 
+                                const isFinancialInst = selectedHalfYearlyMinistry.includes('আর্থিক প্রতিষ্ঠান');
+                                const specificKey = `${selectedHalfYearlyMinistry}_${cat.name}`;
+                                setTempPrevStats(prev => {
+                                  const next = { ...prev };
+                                  next[specificKey] = {
+                                    ...(next[specificKey] || {}),
+                                    [f.key]: valToStore
+                                  };
+                                  if (isFinancialInst) {
+                                    next[cat.name] = {
+                                      ...(next[cat.name] || {}),
+                                      [f.key]: valToStore
+                                    };
+                                  }
+                                  return next;
+                                });
                               }} 
                             />
                           </td>

@@ -159,7 +159,17 @@ export function calculateSettlementsForHalfYearly(
 
     if (normTargetMinistry) {
       const eMin = (e.ministryName || '').normalize('NFC').replace(/\s+/g, ' ').trim();
-      if (eMin && !eMin.includes(normTargetMinistry) && !normTargetMinistry.includes(eMin)) {
+      const isTextileJute = (normTargetMinistry.includes('বস্ত্র') || normTargetMinistry.includes('পাট'));
+      const eIsTextileJute = (eMin.includes('বস্ত্র') || eMin.includes('পাট'));
+
+      const isCivilAviation = (normTargetMinistry.includes('বিমান') || normTargetMinistry.includes('পর্যটন'));
+      const eIsCivilAviation = (eMin.includes('বিমান') || eMin.includes('পর্যটন'));
+
+      if (isTextileJute && eIsTextileJute) {
+        // match! বস্ত্র ও পাট মন্ত্রণালয় একসাথে
+      } else if (isCivilAviation && eIsCivilAviation) {
+        // match!
+      } else if (eMin && !eMin.includes(normTargetMinistry) && !normTargetMinistry.includes(eMin)) {
         return;
       }
     }
@@ -280,10 +290,32 @@ export function getHalfYearlyRollingData(
 ): Record<number, HRRowData> {
   // Step 1: Base Opening (June 2025)
   const currentRolling: Record<number, { count: number; amount: number }> = {};
+  const normMin = selectedMinistry && selectedMinistry !== 'সকল' ? selectedMinistry.normalize('NFC').trim() : 'আর্থিক প্রতিষ্ঠান বিভাগ';
+  const isFinancialInst = normMin.includes('আর্থিক প্রতিষ্ঠান');
+  const isTextileJute = normMin.includes('বস্ত্র') || normMin.includes('পাট');
+
   HR1_CATEGORIES.forEach(cat => {
-    const saved = savedStats?.[cat.name];
-    let baseCount = DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.count || 0;
-    let baseAmount = DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.amount || 0;
+    // Check ministry-specific key first: `${normMin}_${cat.name}`
+    let saved = savedStats?.[`${normMin}_${cat.name}`];
+    if (!saved && isTextileJute) {
+      saved = savedStats?.[`বস্ত্র ও পাট মন্ত্রণালয়_${cat.name}`];
+      if (!saved) {
+        const j = savedStats?.[`পাট মন্ত্রণালয়_${cat.name}`];
+        const t = savedStats?.[`বস্ত্র মন্ত্রণালয়_${cat.name}`];
+        if (j || t) {
+          saved = {
+            halfYearlyPrevUnsettledCount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledCount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledCount) || 0),
+            halfYearlyPrevUnsettledAmount: (parseBengaliNumber(j?.halfYearlyPrevUnsettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledAmount) || 0),
+          };
+        }
+      }
+    } else if (!saved && isFinancialInst) {
+      saved = savedStats?.[cat.name];
+    }
+    
+    // Default baseline figures are specifically for Financial Institutions Division (June 2025 record)
+    let baseCount = isFinancialInst ? (DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.count || 0) : 0;
+    let baseAmount = isFinancialInst ? (DEFAULT_HR_BASELINE_JUNE_2025[cat.id]?.amount || 0) : 0;
 
     if (saved) {
       if (saved.halfYearlyPrevUnsettledCount !== undefined && saved.halfYearlyPrevUnsettledCount !== '') {
