@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
-import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2, ChevronDown, Check } from 'lucide-react';
+import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2, ChevronDown, Check, X } from 'lucide-react';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats, SettlementEntry } from '../types';
@@ -106,6 +106,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
     return localStorage.getItem('opening_balance_custom_month_text') || '১৬/০৫/২০২৫ হতে ১৫/০৬/২০২৫';
   });
   const [showSavedToast, setShowSavedToast] = useState<boolean>(false);
+  const [isToastFading, setIsToastFading] = useState<boolean>(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Dynamic header offset measurement to prevent header breaking on scroll
@@ -247,22 +248,22 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       };
       const s = getHalfYearlyStats(cat.name);
 
-      const pCount = isEditingSetup
+      const pCount = (s.halfYearlyPrevUnsettledCount !== undefined && s.halfYearlyPrevUnsettledCount !== '')
         ? (parseBengaliNumber(s.halfYearlyPrevUnsettledCount) || 0)
         : (calc.col3_pCount ?? 0);
-      const pAmount = isEditingSetup
+      const pAmount = (s.halfYearlyPrevUnsettledAmount !== undefined && s.halfYearlyPrevUnsettledAmount !== '')
         ? (parseBengaliNumber(s.halfYearlyPrevUnsettledAmount) || 0)
         : (calc.col4_pAmount ?? 0);
-      const rCount = isEditingSetup
+      const rCount = (s.halfYearlyRaisedCount !== undefined && s.halfYearlyRaisedCount !== '')
         ? (parseBengaliNumber(s.halfYearlyRaisedCount) || 0)
         : (calc.col5_cCount ?? 0);
-      const rAmount = isEditingSetup
+      const rAmount = (s.halfYearlyRaisedAmount !== undefined && s.halfYearlyRaisedAmount !== '')
         ? (parseBengaliNumber(s.halfYearlyRaisedAmount) || 0)
         : (calc.col6_cAmount ?? 0);
-      const sCount = isEditingSetup
+      const sCount = (s.halfYearlySettledCount !== undefined && s.halfYearlySettledCount !== '')
         ? (parseBengaliNumber(s.halfYearlySettledCount) || 0)
         : (calc.col7_sCount ?? 0);
-      const sAmount = isEditingSetup
+      const sAmount = (s.halfYearlySettledAmount !== undefined && s.halfYearlySettledAmount !== '')
         ? (parseBengaliNumber(s.halfYearlySettledAmount) || 0)
         : (calc.col8_sAmount ?? 0);
 
@@ -327,19 +328,6 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto py-1 px-2 font-sans rounded-none pb-0 mb-0">
       <IDBadge id="section-prev-stats-setup" />
-
-      {/* Floating Success Toast */}
-      {showSavedToast && (
-        <div className="fixed top-6 right-6 z-[10000] flex items-center gap-3.5 bg-emerald-600 text-white px-6 py-4 rounded-none shadow-2xl border-2 border-emerald-300 animate-in slide-in-from-top-6 fade-in duration-300">
-          <div className="bg-white/20 p-2 rounded-none shrink-0">
-            <CheckCircle2 size={24} className="text-white animate-bounce" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-sm text-white tracking-wide">ডাটা সফলভাবে সংরক্ষিত হয়েছে!</span>
-            <span className="text-[11px] font-extrabold text-emerald-100">সকল তথ্য ও জের সফলভাবে লক করা হয়েছে।</span>
-          </div>
-        </div>
-      )}
 
       {/* Header Bar: Left Title | Left-aligned "জের-এর মাস" | 4 Individual Buttons | Right Edit/Save (Scrolls up naturally) */}
       <div id="container-setup-controls" className="flex flex-wrap items-center justify-between bg-white p-2.5 md:p-3 rounded-none border border-slate-300 shadow-xs gap-2 md:gap-3 no-print relative mb-2 w-full box-border">
@@ -501,8 +489,13 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                 }
                 setIsEditingSetup(false);
                 setShowSavedToast(true);
+                setIsToastFading(false);
+                setTimeout(() => {
+                  setIsToastFading(true);
+                }, 2200);
                 setTimeout(() => {
                   setShowSavedToast(false);
+                  setIsToastFading(false);
                 }, 3500);
               }} 
               className="px-5 py-2 rounded-none font-black text-xs md:text-sm flex items-center gap-1.5 transition-all border-b-2 bg-emerald-600 text-white border-emerald-800 hover:bg-emerald-700 active:scale-95 shadow-md cursor-pointer whitespace-nowrap"
@@ -516,7 +509,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
       {/* Table Name Strip (Always present with fixed height so table never jitters/shakes) */}
       <div className="flex items-center justify-between bg-white border border-slate-300 px-3 py-1.5 mb-2 rounded-none shadow-xs h-9">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="font-black text-slate-800 text-xs md:text-sm">টেবিলের নাম:</span>
           {activeTab === 'halfYearly' ? (
             <div className="flex items-center gap-1.5 text-xs md:text-sm">
@@ -539,6 +532,18 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
             </span>
           )}
         </div>
+
+        {/* 2nd Marked Place: Success message in 1 single line that smoothly fades away */}
+        {showSavedToast && (
+          <div
+            className={`flex items-center gap-1.5 text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 text-xs font-black shadow-2xs transition-opacity duration-1000 ease-out ${
+              isToastFading ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+            <span className="whitespace-nowrap">ডাটা সফলভাবে সংরক্ষিত হয়েছে!</span>
+          </div>
+        )}
       </div>
 
       {/* Scoped Strict Sticky CSS (Solves Header Breaking on Scroll & Fixes Footer at Screen Bottom) */}
@@ -1048,28 +1053,64 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                     ) : (
                       <>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-slate-50 font-bold text-slate-800 text-[13px]">
-                          {toBengaliDigits(calc.col3_pCount)}
+                          {toBengaliDigits(
+                            s.halfYearlyPrevUnsettledCount !== undefined && s.halfYearlyPrevUnsettledCount !== ''
+                              ? (parseBengaliNumber(s.halfYearlyPrevUnsettledCount) || 0)
+                              : (calc.col3_pCount || 0)
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-slate-50 font-bold text-slate-800 text-[13px]">
-                          {toBengaliDigits(calc.col4_pAmount.toFixed(4).replace(/\.?0+$/, ''))}
+                          {toBengaliDigits(
+                            (s.halfYearlyPrevUnsettledAmount !== undefined && s.halfYearlyPrevUnsettledAmount !== ''
+                              ? (parseBengaliNumber(s.halfYearlyPrevUnsettledAmount) || 0)
+                              : (calc.col4_pAmount || 0)
+                            ).toFixed(4).replace(/\.?0+$/, '')
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-amber-50/30 font-bold text-amber-900 text-[13px]">
-                          {toBengaliDigits(calc.col5_cCount)}
+                          {toBengaliDigits(
+                            s.halfYearlyRaisedCount !== undefined && s.halfYearlyRaisedCount !== ''
+                              ? (parseBengaliNumber(s.halfYearlyRaisedCount) || 0)
+                              : (calc.col5_cCount || 0)
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-amber-50/30 font-bold text-amber-900 text-[13px]">
-                          {toBengaliDigits(calc.col6_cAmount.toFixed(4).replace(/\.?0+$/, ''))}
+                          {toBengaliDigits(
+                            (s.halfYearlyRaisedAmount !== undefined && s.halfYearlyRaisedAmount !== ''
+                              ? (parseBengaliNumber(s.halfYearlyRaisedAmount) || 0)
+                              : (calc.col6_cAmount || 0)
+                            ).toFixed(4).replace(/\.?0+$/, '')
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-emerald-50/40 font-extrabold text-emerald-900 text-[13px]">
-                          {toBengaliDigits(calc.col7_sCount)}
+                          {toBengaliDigits(
+                            s.halfYearlySettledCount !== undefined && s.halfYearlySettledCount !== ''
+                              ? (parseBengaliNumber(s.halfYearlySettledCount) || 0)
+                              : (calc.col7_sCount || 0)
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-emerald-50/40 font-extrabold text-emerald-900 text-[13px]">
-                          {toBengaliDigits(calc.col8_sAmount.toFixed(4).replace(/\.?0+$/, ''))}
+                          {toBengaliDigits(
+                            (s.halfYearlySettledAmount !== undefined && s.halfYearlySettledAmount !== ''
+                              ? (parseBengaliNumber(s.halfYearlySettledAmount) || 0)
+                              : (calc.col8_sAmount || 0)
+                            ).toFixed(4).replace(/\.?0+$/, '')
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-indigo-50/50 font-black text-indigo-950 text-[13px]">
-                          {toBengaliDigits(calc.col9_finalCount)}
+                          {toBengaliDigits(
+                            editFinalCount !== 0 || s.halfYearlyPrevUnsettledCount !== undefined || s.halfYearlyRaisedCount !== undefined || s.halfYearlySettledCount !== undefined
+                              ? editFinalCount
+                              : (calc.col9_finalCount || 0)
+                          )}
                         </td>
                         <td className="p-2 text-center align-middle h-14 border-r border-b border-slate-200 bg-indigo-50/50 font-black text-indigo-950 text-[13px]">
-                          {toBengaliDigits(calc.col10_finalAmount.toFixed(4).replace(/\.?0+$/, ''))}
+                          {toBengaliDigits(
+                            (editFinalAmount !== 0 || s.halfYearlyPrevUnsettledAmount !== undefined || s.halfYearlyRaisedAmount !== undefined || s.halfYearlySettledAmount !== undefined
+                              ? editFinalAmount
+                              : (calc.col10_finalAmount || 0)
+                            ).toFixed(4).replace(/\.?0+$/, '')
+                          )}
                         </td>
                       </>
                     )}

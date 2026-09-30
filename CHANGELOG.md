@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-30] - Fixed Ministry View-Mode Data Visibility & Inline Fading Toast
+
+### 🚀 Fixed & Enhanced
+- **View-Mode Data Visibility for Ministries (`OpeningBalanceSetup.tsx`)**:
+  - শিল্প মন্ত্রণালয় (এবং অন্যান্য মন্ত্রণালয়)-এ এডিট মোডে এন্ট্রি ও সংরক্ষিত ডাটা দেখা গেলেও ভিউ মোডে প্রদর্শিত না হওয়ার সমস্যাটি পুরোপুরি সংশোধন করা হয়েছে। এখন এডিট ও ভিউ উভয় মোডেই সংরক্ষিত ডাটা এবং মোট (Totals) ১০০% নির্ভুলভাবে দৃশ্যমান থাকবে।
+- **Inline Success Message with Smooth Fade-Out (`OpeningBalanceSetup.tsx`)**:
+  - ব্যবহারকারীর দ্বিতীয় মার্ক করা নির্দিষ্ট স্থানে (টেবিলের নামের স্ট্রিপের ঠিক ডান পাশে) সফলতার বার্তাটি (`ডাটা সফলভাবে সংরক্ষিত হয়েছে!`) একটি মাত্র স্লিম লাইনে স্থাপন করা হয়েছে।
+  - এটি সংরক্ষণ করার পর নির্দিষ্ট সময় পর ধীরে ধীরে মসৃণভাবে ফেইড হয়ে (`transition-opacity duration-1000 ease-out`) স্বয়ংক্রিয়ভাবে অদৃশ্য হয়ে যাবে এবং স্ক্রিনের কোনো অংশই আর আড়াল হবে না।
+
+## [2026-09-30] - Redesigned Non-Intrusive Floating Success Toast
+
+### 🚀 Enhanced & Refined
+- **Professional Bottom-Center Success Notification (`OpeningBalanceSetup.tsx`)**:
+  - সফলতার মেসেজটি (Toast) আগে স্ক্রিনের উপরে ডানে থাকায় ট্যাব, কন্ট্রোল বাটন ও অন্যান্য অপশনকে ঢেকে ফেলছিল।
+  - এটিকে স্ক্রিনের নিচে মাঝামাঝি স্থানে (`fixed bottom-6 left-1/2 -translate-x-1/2`) স্থানান্তরিত করা হয়েছে, যাতে কোনো বাটন বা অপশন আড়াল না হয়।
+  - স্লিম ও পেশাদার ডার্ক-গ্লাস ডিজাইন (`bg-slate-900/95`, `border-emerald-500/80`, `backdrop-blur-md`), মসৃণ পালস আইকন এবং তাৎক্ষণিক বন্ধ করার জন্য একটি ক্লোজ বাটন (`X`) যুক্ত করা হয়েছে।
+
 ## [2026-09-30] - Combined Textile & Jute Ministry and Added 'ষাণ্মাসিক জের:' Prefix
 
 ### 🚀 Changed & Enhanced
