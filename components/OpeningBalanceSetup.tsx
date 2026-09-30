@@ -3,7 +3,7 @@ import { Settings2, ChevronLeft, Pencil, LayoutGrid, Calendar, CheckCircle2, Che
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP } from '../constants';
 import { MinistryPrevStats, SettlementEntry } from '../types';
-import { HR1_CATEGORIES, getHalfYearlyRollingData } from '../utils/halfYearlyHelper';
+import { HR1_CATEGORIES, getHalfYearlyRollingData, getSavedStatsForMinistryAndCategory } from '../utils/halfYearlyHelper';
 
 export const HALF_YEARLY_MINISTRIES = [
   'আর্থিক প্রতিষ্ঠান বিভাগ',
@@ -66,39 +66,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   }, []);
 
   const getHalfYearlyStats = (catName: string) => {
-    const isFinancialInst = selectedHalfYearlyMinistry.includes('আর্থিক প্রতিষ্ঠান');
-    const isTextileJute = selectedHalfYearlyMinistry.includes('বস্ত্র') || selectedHalfYearlyMinistry.includes('পাট');
-    const specificKey = `${selectedHalfYearlyMinistry}_${catName}`;
-
-    if (tempPrevStats[specificKey]) {
-      return tempPrevStats[specificKey];
-    }
-    if (isFinancialInst && tempPrevStats[catName]) {
-      return tempPrevStats[catName];
-    }
-    if (isTextileJute) {
-      const combined = tempPrevStats[`বস্ত্র ও পাট মন্ত্রণালয়_${catName}`];
-      if (combined) return combined;
-
-      const j = tempPrevStats[`পাট মন্ত্রণালয়_${catName}`];
-      const t = tempPrevStats[`বস্ত্র মন্ত্রণালয়_${catName}`];
-      if (j || t) {
-        const pCount = (parseBengaliNumber(j?.halfYearlyPrevUnsettledCount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledCount) || 0);
-        const pAmount = (parseBengaliNumber(j?.halfYearlyPrevUnsettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlyPrevUnsettledAmount) || 0);
-        const rCount = (parseBengaliNumber(j?.halfYearlyRaisedCount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedCount) || 0);
-        const rAmount = (parseBengaliNumber(j?.halfYearlyRaisedAmount) || 0) + (parseBengaliNumber(t?.halfYearlyRaisedAmount) || 0);
-        const sCount = (parseBengaliNumber(j?.halfYearlySettledCount) || 0) + (parseBengaliNumber(t?.halfYearlySettledCount) || 0);
-        const sAmount = (parseBengaliNumber(j?.halfYearlySettledAmount) || 0) + (parseBengaliNumber(t?.halfYearlySettledAmount) || 0);
-        return {
-          halfYearlyPrevUnsettledCount: toBengaliDigits(pCount),
-          halfYearlyPrevUnsettledAmount: toBengaliDigits(pAmount),
-          halfYearlyRaisedCount: toBengaliDigits(rCount),
-          halfYearlyRaisedAmount: toBengaliDigits(rAmount),
-          halfYearlySettledCount: toBengaliDigits(sCount),
-          halfYearlySettledAmount: toBengaliDigits(sAmount),
-        };
-      }
-    }
+    const found = getSavedStatsForMinistryAndCategory(tempPrevStats, selectedHalfYearlyMinistry, catName);
+    if (found) return found;
     return {};
   };
 

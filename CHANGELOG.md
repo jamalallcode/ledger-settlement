@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-30] - Robust Opening Balance Support for Industry & All Ministries in HR_1
+
+### 🚀 Fixed & Enhanced
+- **Universal Multi-Ministry Opening Balance Support (`halfYearlyHelper.ts`, `HR_1.tsx`, `OpeningBalanceSetup.tsx`)**:
+  - শিল্প মন্ত্রণালয় (এবং বাণিজ্য ও অন্যান্য সকল মন্ত্রণালয়)-এর পূর্ব জের ডাটা ষাণ্মাসিক রিটার্ন (HR_1)-এ লোড না হয়ে ০ হিসেবে নেগেটিভ সংখ্যা প্রদর্শিত হওয়ার সমস্যা সমাধান করা হয়েছে।
+  - `getSavedStatsForMinistryAndCategory` ফাংশন যুক্ত করে ইউনিকোড স্বাভাবিকীকরণ (NFC), বিভিন্ন বানানের ভ্যারিয়েশন (যেমন: য় vs য+়, বিমান ও পর্যটন ইত্যাদি) এবং প্রপ্স ও লোকালস্টোরেজ মার্জ করে ডাটা রিট্রিভ করার ব্যবস্থা করা হয়েছে। ফলে আর্থিক প্রতিষ্ঠান ও বস্ত্র ও পাট মন্ত্রণালয়ের পাশাপাশি শিল্প, বাণিজ্য ও অন্যান্য সকল মন্ত্রণালয়ের পূর্ব জের ও রোলিং ডাটা শতভাগ নির্ভুলভাবে প্রদর্শিত হচ্ছে।
+
 ## [2026-09-30] - Fixed Ministry View-Mode Data Visibility & Inline Fading Toast
 
 ### 🚀 Fixed & Enhanced
