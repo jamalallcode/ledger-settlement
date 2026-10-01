@@ -159,19 +159,12 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
     };
   }, [settledItems]);
 
-  // Set initial tab based on clicked category and available data
+  // Set initial tab to 'all' whenever modal opens or category changes so all category paragraphs are shown
   useEffect(() => {
     if (!isOpen) return;
-
-    if (categoryId === 6 && tabCounts.rec > 0) {
-      setActiveTab('rec');
-    } else if (categoryId === 5 && tabCounts.adj > 0) {
-      setActiveTab('adj');
-    } else {
-      setActiveTab('all');
-    }
+    setActiveTab('all');
     setSearchTerm('');
-  }, [categoryId, isOpen, tabCounts.rec, tabCounts.adj, tabCounts.all]);
+  }, [categoryId, isOpen]);
 
   // Filter items by tab and search
   const filteredItems = useMemo(() => {
