@@ -1012,7 +1012,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       }
 
       return (
-        <div className="w-full space-y-1 text-left pt-3 pb-1">
+        <div className="w-full space-y-1 text-left pt-0.5 pb-1">
             {hasNoParas && (
               <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter mb-1.5">
                 উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)
@@ -2358,20 +2358,22 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   return (
                                     <tr key={p.id} className="bg-rose-50/60 transition-all duration-500 animate-pulse">
                                       {pIdx === 0 && (
-                                        <>
-                                          <td rowSpan={paras.length} className={tdBase + " font-black bg-rose-50/30 text-rose-600 !align-top pt-4"}>
-                                            <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
-                                              {toBengaliDigits(idx + 1)}
-                                            </div>
-                                          </td>
-                                          <td rowSpan={paras.length} className={tdBase + " bg-rose-50/30 text-rose-600 p-3 pt-4 !align-top"}>
-                                            <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
-                                              <div className="text-center font-bold text-[10px]">
-                                                বিবরণ লোড হচ্ছে...
-                                              </div>
-                                            </div>
-                                          </td>
-                                        </>
+                                         <>
+                                           <td rowSpan={paras.length} className={tdBase + " font-black bg-rose-50/30 text-rose-600 !align-top p-1 pt-2"}>
+                                             <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"} flex justify-center pt-0.5`}>
+                                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-rose-300 bg-rose-100/80 text-rose-700 text-[9.5px] font-black shadow-xs">
+                                                 {toBengaliDigits(idx + 1)}
+                                               </span>
+                                             </div>
+                                           </td>
+                                           <td rowSpan={paras.length} className={tdBase + " bg-rose-50/30 text-rose-600 p-3 pt-2 !align-top"}>
+                                             <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
+                                               <div className="text-center font-bold text-[10px]">
+                                                 বিবরণ লোড হচ্ছে...
+                                               </div>
+                                             </div>
+                                           </td>
+                                         </>
                                       )}
                                       <td colSpan={12} className="py-4 px-2 text-center text-rose-600 font-extrabold text-[11px] border border-rose-250">
                                         <div className="flex items-center justify-center gap-2">
@@ -2392,17 +2394,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     <>
                                       <td
                                         rowSpan={paras.length}
-                                        className={tdBase + " font-black !align-top bg-white pt-4"}
+                                        className={tdBase + " font-black !align-top bg-white p-1 pt-2"}
                                       >
-                                        <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
-                                          {toBengaliDigits(idx + 1)}
+                                        <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"} flex justify-center pt-0.5`}>
+                                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 bg-slate-100 text-slate-800 text-[9.5px] font-black shadow-xs">
+                                            {toBengaliDigits(idx + 1)}
+                                          </span>
                                         </div>
                                       </td>
                                       <td
                                         rowSpan={paras.length}
                                         className={
                                           tdBase +
-                                          " text-left p-3 pt-4 !align-top bg-white"
+                                          " text-left p-3 pt-2 !align-top bg-white"
                                         }
                                       >
                                         <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
@@ -2615,7 +2619,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                 className={`transition-colors group bg-white ${isAdminView ? "hover:bg-amber-100/50" : "hover:bg-blue-50/30"}`}
                               >
                                 <td className={tdBase + " font-black"}>
-                                  {toBengaliDigits(idx + 1)}
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 bg-slate-100 text-slate-800 text-[9.5px] font-black shadow-xs">
+                                    {toBengaliDigits(idx + 1)}
+                                  </span>
                                 </td>
                                 <td
                                   className={
