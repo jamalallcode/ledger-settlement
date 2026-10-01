@@ -1012,7 +1012,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       }
 
       return (
-        <div className="w-full space-y-1 text-left">
+        <div className="w-full space-y-1 text-left pt-3 pb-1">
             {hasNoParas && (
               <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter mb-1.5">
                 উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)
@@ -2359,12 +2359,16 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     <tr key={p.id} className="bg-rose-50/60 transition-all duration-500 animate-pulse">
                                       {pIdx === 0 && (
                                         <>
-                                          <td rowSpan={paras.length} className={tdBase + " font-black bg-rose-50/30 text-rose-600"}>
-                                            {toBengaliDigits(idx + 1)}
+                                          <td rowSpan={paras.length} className={tdBase + " font-black bg-rose-50/30 text-rose-600 !align-top pt-4"}>
+                                            <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
+                                              {toBengaliDigits(idx + 1)}
+                                            </div>
                                           </td>
-                                          <td rowSpan={paras.length} className={tdBase + " bg-rose-50/30 text-rose-600 p-3"}>
-                                            <div className="text-center font-bold text-[10px]">
-                                              বিবরণ লোড হচ্ছে...
+                                          <td rowSpan={paras.length} className={tdBase + " bg-rose-50/30 text-rose-600 p-3 pt-4 !align-top"}>
+                                            <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
+                                              <div className="text-center font-bold text-[10px]">
+                                                বিবরণ লোড হচ্ছে...
+                                              </div>
                                             </div>
                                           </td>
                                         </>
@@ -2388,18 +2392,22 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     <>
                                       <td
                                         rowSpan={paras.length}
-                                        className={tdBase + " font-black"}
+                                        className={tdBase + " font-black !align-top bg-white pt-4"}
                                       >
-                                        {toBengaliDigits(idx + 1)}
+                                        <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
+                                          {toBengaliDigits(idx + 1)}
+                                        </div>
                                       </td>
                                       <td
                                         rowSpan={paras.length}
                                         className={
                                           tdBase +
-                                          " text-left p-3"
+                                          " text-left p-3 pt-4 !align-top bg-white"
                                         }
                                       >
-                                        {renderCellDescription(entry, isExpanded)}
+                                        <div className={`sticky ${showCycleHeaders ? (isCycleStatsExpanded ? "top-[290px]" : "top-[162px]") : "top-[104px]"}`}>
+                                          {renderCellDescription(entry, isExpanded)}
+                                        </div>
                                       </td>
                                     </>
                                   )}

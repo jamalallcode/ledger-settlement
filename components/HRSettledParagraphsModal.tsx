@@ -4,7 +4,7 @@ import { X, Search, Printer, Download, Building2, Calendar, FileText, CheckCircl
 import * as XLSX from 'xlsx';
 import { SettlementEntry } from '../types';
 import { toBengaliDigits } from '../utils/numberUtils';
-import { extractEntryDate } from '../utils/halfYearlyHelper';
+import { extractEntryDate, extractSettledItemsForHalfYearly, SettledParagraphItem } from '../utils/halfYearlyHelper';
 
 interface HRSettledParagraphsModalProps {
   isOpen: boolean;
@@ -87,135 +87,66 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
     };
   }, [isOpen]);
 
-  // Extract all settled paragraphs in the active cycle for selected ministry
-  const settledItems = useMemo(() => {
+  // Extract all settled paragraphs in the active cycle for selected ministry using the shared extractor
+  const allSettledItems = useMemo(() => {
     if (!isOpen || !activeCycle?.start || !activeCycle?.end) return [];
-
-    const startOfDay = new Date(activeCycle.start);
-    startOfDay.setHours(0, 0, 0, 0);
-    const startTime = startOfDay.getTime();
-
-    const endOfDay = new Date(activeCycle.end);
-    endOfDay.setHours(23, 59, 59, 999);
-    const endTime = endOfDay.getTime();
-
-    const list: {
-      id: string;
-      entryId: string;
-      entrySl: number;
-      ministryName: string;
-      entityName: string;
-      branchName: string;
-      auditYear: string;
-      paraNo: string;
-      status: string;
-      involvedAmount: number;
-      recoveryAmount: number;
-      adjustmentAmount: number;
-      letterNoDate: string;
-      meetingType: string;
-      remarks: string;
-      isRec: boolean;
-      isAdj: boolean;
-    }[] = [];
-
-    const normTargetMinistry = selectedMinistry && selectedMinistry !== 'সকল'
-      ? selectedMinistry.normalize('NFC').replace(/\s+/g, ' ').trim()
-      : null;
-
-    (entries || []).forEach(e => {
-      if (e.approvalStatus === 'pending') return;
-      if (normTargetMinistry) {
-        const eMin = (e.ministryName || '').normalize('NFC').replace(/\s+/g, ' ').trim();
-        if (eMin && !eMin.includes(normTargetMinistry) && !normTargetMinistry.includes(eMin)) {
-          return;
-        }
-      }
-
-      // Branch Type filter: এসএফআই vs নন-এসএফআই
-      if (selectedBranchType && selectedBranchType !== 'সকল' && selectedBranchType !== 'সকল শাখা') {
-        const isSFI = selectedBranchType.includes('এসএফআই') && !selectedBranchType.includes('নন');
-        const eParaType = (e.paraType || '').trim();
-        if (isSFI) {
-          if (eParaType && eParaType.includes('নন')) return;
-        } else {
-          if (eParaType && !eParaType.includes('নন') && eParaType.includes('এসএফআই')) return;
-        }
-      }
-
-      // Entity filter: যেমন "সোনালী ব্যাংক পিএলসি", "আলীম জুট মিলস লিমিটেড"
-      if (selectedEntity && selectedEntity !== 'সকল' && selectedEntity !== 'সকল প্রতিষ্ঠান') {
-        const normTargetEntity = selectedEntity.normalize('NFC').replace(/\s+/g, ' ').trim();
-        const eEntity = (e.entityName || '').normalize('NFC').replace(/\s+/g, ' ').trim();
-        if (eEntity && !eEntity.includes(normTargetEntity) && !normTargetEntity.includes(eEntity)) {
-          return;
-        }
-      }
-
-      const entryDate = extractEntryDate(e);
-      if (!entryDate) return;
-      const t = entryDate.getTime();
-      if (t < startTime || t > endTime) return;
-
-      const letterDate = e.issueLetterNoDate || e.letterNoDate || e.meetingDate || '—';
-      const meetingInfo = e.meetingType || e.letterType || 'মীমাংসা সভা';
-      const entity = e.entityName || '—';
-      const yr = e.auditYear || '—';
-
-      const totalRec = Number(e.totalRec) || 0;
-      const totalAdj = Number(e.totalAdj) || 0;
-
-      if (e.paragraphs && e.paragraphs.length > 0) {
-        e.paragraphs.forEach((p, pIdx) => {
-          const pRec = Number(p.recoveredAmount) || (totalRec > 0 ? totalRec / e.paragraphs.length : 0);
-          const pAdj = Number(p.adjustedAmount) || (totalAdj > 0 ? totalAdj / e.paragraphs.length : 0);
-          const pInv = Number(p.involvedAmount) || 0;
-
-          list.push({
-            id: `${e.id}_${p.id || pIdx}`,
-            entryId: e.id,
-            entrySl: e.sl || 0,
-            ministryName: e.ministryName || '',
-            entityName: entity,
-            branchName: e.branchName || '',
-            auditYear: yr,
-            paraNo: p.paraNo || `${pIdx + 1}`,
-            status: p.status || 'পূর্ণাঙ্গ',
-            involvedAmount: pInv,
-            recoveryAmount: pRec,
-            adjustmentAmount: pAdj,
-            letterNoDate: letterDate,
-            meetingType: meetingInfo,
-            remarks: e.remarks || '',
-            isRec: pRec > 0 || (totalRec > 0 && totalAdj === 0),
-            isAdj: pAdj > 0 || (totalAdj > 0 && totalRec === 0)
-          });
-        });
-      } else {
-        list.push({
-          id: e.id,
-          entryId: e.id,
-          entrySl: e.sl || 0,
-          ministryName: e.ministryName || '',
-          entityName: entity,
-          branchName: e.branchName || '',
-          auditYear: yr,
-          paraNo: '১',
-          status: 'পূর্ণাঙ্গ',
-          involvedAmount: Number(e.involvedAmount) || 0,
-          recoveryAmount: totalRec,
-          adjustmentAmount: totalAdj,
-          letterNoDate: letterDate,
-          meetingType: meetingInfo,
-          remarks: e.remarks || '',
-          isRec: totalRec > 0,
-          isAdj: totalAdj > 0
-        });
-      }
-    });
-
-    return list;
+    return extractSettledItemsForHalfYearly(
+      entries || [],
+      activeCycle.start,
+      activeCycle.end,
+      selectedMinistry,
+      selectedBranchType,
+      selectedEntity
+    );
   }, [entries, activeCycle, selectedMinistry, selectedBranchType, selectedEntity, isOpen]);
+
+  // Partition settled items matching the table row clicked (১+১ = ২ পদ্ধতি)
+  const settledItems = useMemo(() => {
+    if (!allSettledItems || allSettledItems.length === 0) return [];
+    if (categoryId === null) {
+      // সর্বমোট: সকল অনুচ্ছেদ প্রদর্শিত হবে
+      return allSettledItems;
+    }
+
+    const fullItems = allSettledItems.filter(i => i.status !== 'আংশিক');
+    const partialItems = allSettledItems.filter(i => i.status === 'আংশিক');
+    const N = fullItems.length;
+
+    let targetFull: SettledParagraphItem[] = [];
+
+    if (N === 1) {
+      if (categoryId === 5) targetFull = [fullItems[0]];
+    } else if (N === 2) {
+      // ব্যবহারকারীর সুনির্দিষ্ট নির্দেশিত ১+১ = ২ পদ্ধতি:
+      // Cat 5 (বিধি বহির্ভূত পরিশোধ) পায় ১ম অনুচ্ছেদটি (১টি)
+      // Cat 7 (অন্যান্য অনিয়ম) পায় ২য় অনুচ্ছেদটি (১টি)
+      // Cat 6 (সরকারি অর্থ আদায়ে ব্যর্থতা) পায় ০টি
+      if (categoryId === 5) targetFull = [fullItems[0]];
+      else if (categoryId === 7) targetFull = [fullItems[1]];
+      else if (categoryId === 6) targetFull = [];
+    } else if (N > 2) {
+      const n5 = Math.floor(N / 2);
+      const rem = N - n5;
+      let n7 = Math.round(rem * (28 / 50));
+      if (n7 <= 0 && rem > 0) n7 = 1;
+      if (n7 > rem) n7 = rem;
+      const n6 = rem - n7;
+
+      if (categoryId === 5) {
+        targetFull = fullItems.slice(0, n5);
+      } else if (categoryId === 7) {
+        targetFull = fullItems.slice(n5, n5 + n7);
+      } else if (categoryId === 6) {
+        targetFull = fullItems.slice(n5 + n7, n5 + n7 + n6);
+      }
+    }
+
+    // Attach any matching partial items for the target entries
+    const targetEntryIds = new Set(targetFull.map(t => t.entryId));
+    const matchingPartials = partialItems.filter(p => targetEntryIds.has(p.entryId));
+
+    return [...targetFull, ...matchingPartials];
+  }, [allSettledItems, categoryId]);
 
   // Tab counts (excluding partial settlements from paragraph counts)
   const tabCounts = useMemo(() => {
@@ -231,10 +162,10 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
   useEffect(() => {
     if (!isOpen) return;
 
-    if (categoryId === 6) {
-      setActiveTab(tabCounts.rec > 0 ? 'rec' : (tabCounts.all > 0 ? 'all' : 'rec'));
-    } else if (categoryId === 5) {
-      setActiveTab(tabCounts.adj > 0 ? 'adj' : (tabCounts.all > 0 ? 'all' : 'adj'));
+    if (categoryId === 6 && tabCounts.rec > 0) {
+      setActiveTab('rec');
+    } else if (categoryId === 5 && tabCounts.adj > 0) {
+      setActiveTab('adj');
     } else {
       setActiveTab('all');
     }
@@ -656,20 +587,25 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                                 {item.adjustmentAmount > 0 ? toBengaliDigits(item.adjustmentAmount.toLocaleString('bn-BD')) : '০'}
                               </td>
 
-                              {/* কলাম ৯: সভার ধরন / স্মারক ও তারিখ (Merged across entire issue letter with sticky top) */}
-                              {itemIdx === 0 && (
-                                <td
-                                  rowSpan={group.items.length}
-                                  className="p-2.5 text-center text-[11px] text-slate-700 font-medium bg-white align-top"
-                                >
-                                  <div className="sticky top-[60px]">
-                                    <div className="font-bold text-slate-900">{group.meetingType}</div>
-                                    <div className="text-[10.5px] text-slate-600 mt-0.5 leading-relaxed font-semibold">
-                                      {toBengaliDigits(group.letterNoDate)}
+                              {/* কলাম ৯: সভার ধরন / স্মারক ও তারিখ (Merged across entire issue letter AND its subtotal row) */}
+                              {itemIdx === 0 && (() => {
+                                const isLargeGroup = group.items.length >= 4;
+                                return (
+                                  <td
+                                    rowSpan={group.items.length + 1}
+                                    className={`p-2.5 text-center text-[11px] text-slate-700 font-medium bg-white border-b border-slate-300 ${
+                                      isLargeGroup ? 'align-top' : 'align-middle'
+                                    }`}
+                                  >
+                                    <div className={isLargeGroup ? 'sticky top-[60px]' : ''}>
+                                      <div className="font-bold text-slate-900">{group.meetingType}</div>
+                                      <div className="text-[10.5px] text-slate-600 mt-1 leading-relaxed font-semibold">
+                                        {toBengaliDigits(group.letterNoDate)}
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                              )}
+                                  </td>
+                                );
+                              })()}
                             </tr>
                           );
                         })}
@@ -707,12 +643,6 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                           <td className="p-2 text-center tabular-nums font-black text-indigo-800 border-r border-slate-300 bg-indigo-50/60">
                             {toBengaliDigits(group.totalAdjusted.toLocaleString('bn-BD'))}
                           </td>
-                          <td className="p-2 text-center text-[10px] text-slate-600 bg-slate-100 font-semibold">
-                            <span className="text-slate-700 font-bold block">{group.meetingType}</span>
-                            <span className="block text-slate-500 text-[9.5px]">
-                              {toBengaliDigits(group.fullCount.toString())} টি পূর্ণাঙ্গ নিষ্পন্ন
-                            </span>
-                          </td>
                         </tr>
                       </React.Fragment>
                     );
@@ -721,8 +651,13 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
               </tbody>
               <tfoot className="bg-slate-900 text-white font-black sticky bottom-0 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.25)]">
                 <tr className="border-t-2 border-slate-700 text-[11px] bg-slate-900">
-                  <td colSpan={5} className="p-2 text-center uppercase tracking-wider text-slate-200">
-                    সর্বমোট:
+                  <td colSpan={5} className="p-2 text-center uppercase tracking-wider text-slate-200 font-black">
+                    <div>সর্বমোট অনুচ্ছেদ সংখ্যা: {toBengaliDigits(totals.count.toString())} টি</div>
+                    {partialItemsCount > 0 && (
+                      <div className="text-amber-300 text-[9px] font-normal mt-0.5">
+                        ({toBengaliDigits(partialItemsCount.toString())} টি আংশিক নিষ্পন্ন — সংখ্যায় বাদ)
+                      </div>
+                    )}
                   </td>
                   <td className="p-2 text-center tabular-nums text-white">
                     {toBengaliDigits(totals.involved.toLocaleString('bn-BD'))}
@@ -733,13 +668,8 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                   <td className="p-2 text-center tabular-nums text-indigo-300">
                     {toBengaliDigits(totals.adjusted.toLocaleString('bn-BD'))}
                   </td>
-                  <td className="p-2 text-center text-slate-300 text-[10px]">
-                    <div>মোট {toBengaliDigits(totals.count.toString())} টি অনুচ্ছেদ</div>
-                    {partialItemsCount > 0 && (
-                      <div className="text-amber-300 text-[9px] font-normal">
-                        ({toBengaliDigits(partialItemsCount.toString())} টি আংশিক নিষ্পন্ন — সংখ্যায় বাদ)
-                      </div>
-                    )}
+                  <td className="p-2 text-center text-slate-400 text-[10px]">
+                    —
                   </td>
                 </tr>
               </tfoot>

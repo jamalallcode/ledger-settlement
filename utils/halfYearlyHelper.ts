@@ -111,13 +111,163 @@ export function extractEntryDate(e: SettlementEntry): Date | null {
   return null;
 }
 
+export interface SettledParagraphItem {
+  id: string;
+  entryId: string;
+  entrySl: number;
+  ministryName: string;
+  entityName: string;
+  branchName: string;
+  auditYear: string;
+  paraNo: string;
+  status: string;
+  involvedAmount: number;
+  recoveryAmount: number;
+  adjustmentAmount: number;
+  letterNoDate: string;
+  meetingType: string;
+  remarks: string;
+  isRec: boolean;
+  isAdj: boolean;
+}
+
+/**
+ * Extracts settled paragraph items for a half-yearly cycle using consistent filters.
+ */
+export function extractSettledItemsForHalfYearly(
+  entries: SettlementEntry[],
+  startDate: Date,
+  endDate: Date,
+  selectedMinistry?: string,
+  selectedBranchType?: string,
+  selectedEntity?: string
+): SettledParagraphItem[] {
+  const startOfDay = new Date(startDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const startTime = startOfDay.getTime();
+
+  const endOfDay = new Date(endDate);
+  endOfDay.setHours(23, 59, 59, 999);
+  const endTime = endOfDay.getTime();
+
+  const list: SettledParagraphItem[] = [];
+
+  const normTargetMinistry = selectedMinistry && selectedMinistry !== 'সকল'
+    ? selectedMinistry.normalize('NFC').replace(/\s+/g, ' ').trim()
+    : null;
+
+  (entries || []).forEach(e => {
+    if (e.approvalStatus === 'pending') return;
+
+    if (normTargetMinistry) {
+      const eMin = (e.ministryName || '').normalize('NFC').replace(/\s+/g, ' ').trim();
+      const isTextileJute = (normTargetMinistry.includes('বস্ত্র') || normTargetMinistry.includes('পাট'));
+      const eIsTextileJute = (eMin.includes('বস্ত্র') || eMin.includes('পাট'));
+
+      const isCivilAviation = (normTargetMinistry.includes('বিমান') || normTargetMinistry.includes('পর্যটন'));
+      const eIsCivilAviation = (eMin.includes('বিমান') || eMin.includes('পর্যটন'));
+
+      if (isTextileJute && eIsTextileJute) {
+        // match! বস্ত্র ও পাট মন্ত্রণালয় একসাথে
+      } else if (isCivilAviation && eIsCivilAviation) {
+        // match!
+      } else if (eMin && !eMin.includes(normTargetMinistry) && !normTargetMinistry.includes(eMin)) {
+        return;
+      }
+    }
+
+    // Branch Type filter: এসএফআই vs নন-এসএফআই
+    if (selectedBranchType && selectedBranchType !== 'সকল' && selectedBranchType !== 'সকল শাখা') {
+      const isSFI = selectedBranchType.includes('এসএফআই') && !selectedBranchType.includes('নন');
+      const eParaType = (e.paraType || '').trim();
+      if (isSFI) {
+        if (eParaType && eParaType.includes('নন')) return;
+      } else {
+        if (eParaType && !eParaType.includes('নন') && eParaType.includes('এসএফআই')) return;
+      }
+    }
+
+    // Entity / Institution filter: যেমন "সোনালী ব্যাংক পিএলসি", "আলীম জুট মিলস লিমিটেড"
+    if (selectedEntity && selectedEntity !== 'সকল' && selectedEntity !== 'সকল প্রতিষ্ঠান') {
+      const normTargetEntity = selectedEntity.normalize('NFC').replace(/\s+/g, ' ').trim();
+      const eEntity = (e.entityName || '').normalize('NFC').replace(/\s+/g, ' ').trim();
+      if (eEntity && !eEntity.includes(normTargetEntity) && !normTargetEntity.includes(eEntity)) {
+        return;
+      }
+    }
+
+    const entryDate = extractEntryDate(e);
+    if (!entryDate) return;
+    const entryTime = entryDate.getTime();
+
+    if (entryTime < startTime || entryTime > endTime) return;
+
+    const letterDate = e.issueLetterNoDate || e.letterNoDate || e.meetingDate || '—';
+    const meetingInfo = e.meetingType || (e as any).letterType || 'মীমাংসা সভা';
+    const entity = e.entityName || '—';
+    const yr = e.auditYear || '—';
+
+    const totalRec = Number(e.totalRec) || 0;
+    const totalAdj = Number(e.totalAdj) || 0;
+
+    if (e.paragraphs && e.paragraphs.length > 0) {
+      e.paragraphs.forEach((p, pIdx) => {
+        const pRec = Number(p.recoveredAmount) || (totalRec > 0 ? totalRec / e.paragraphs.length : 0);
+        const pAdj = Number(p.adjustedAmount) || (totalAdj > 0 ? totalAdj / e.paragraphs.length : 0);
+        const pInv = Number(p.involvedAmount) || 0;
+
+        list.push({
+          id: `${e.id}_${p.id || pIdx}`,
+          entryId: e.id,
+          entrySl: e.sl || 0,
+          ministryName: e.ministryName || '',
+          entityName: entity,
+          branchName: e.branchName || '',
+          auditYear: yr,
+          paraNo: p.paraNo || `${pIdx + 1}`,
+          status: p.status || 'পূর্ণাঙ্গ',
+          involvedAmount: pInv,
+          recoveryAmount: pRec,
+          adjustmentAmount: pAdj,
+          letterNoDate: letterDate,
+          meetingType: meetingInfo,
+          remarks: e.remarks || '',
+          isRec: pRec > 0 || (totalRec > 0 && totalAdj === 0),
+          isAdj: pAdj > 0 || (totalAdj > 0 && totalRec === 0)
+        });
+      });
+    } else if (totalRec > 0 || totalAdj > 0 || e.meetingFullSettledParaCount || e.meetingSettledParaCount) {
+      list.push({
+        id: e.id,
+        entryId: e.id,
+        entrySl: e.sl || 0,
+        ministryName: e.ministryName || '',
+        entityName: entity,
+        branchName: e.branchName || '',
+        auditYear: yr,
+        paraNo: '১',
+        status: 'পূর্ণাঙ্গ',
+        involvedAmount: Number(e.involvedAmount) || 0,
+        recoveryAmount: totalRec,
+        adjustmentAmount: totalAdj,
+        letterNoDate: letterDate,
+        meetingType: meetingInfo,
+        remarks: e.remarks || '',
+        isRec: totalRec > 0,
+        isAdj: totalAdj > 0
+      });
+    }
+  });
+
+  return list;
+}
+
 /**
  * Calculates settlements from Settlement Register entries for a specific half-yearly period.
  * 
- * Option A (বিকল্প ক):
- * সংশ্লিষ্ট সময়কালের মোট নিষ্পন্ন অনুচ্ছেদের সংখ্যা (N) এবং জড়িত মোট টাকা (A কোটি)-কে
- * - ২/৩ অংশ বরাদ্দ করা হয়: সরকারি অর্থ আদায়ে ব্যর্থতা (Cat 6) [কলাম ৭ ও কলাম ৮]
- * - অবশিষ্ট ১/৩ অংশ বরাদ্দ করা হয়: বিধি বহির্ভূত পরিশোধ (Cat 5) [কলাম ৭ ও কলাম ৮]
+ * ৩ ভাগে ভাগ করার নীতি:
+ * - মোট সংখ্যা ২ হলে ব্যবহারকারীর নির্দেশিত ১+১ = ২ পদ্ধতি (বিধি বহির্ভূত ১টি, অন্যান্য অনিয়ম ১টি, সরকারি অর্থ আদায় ০টি)
+ * - অন্যান্য ক্ষেত্রে ৫০%, ২৮% ও ২২% ভাগ বণ্টন যা সর্বদা মোট সংখ্যার সাথে শতভাগ মিলে থাকবে
  */
 export function calculateSettlementsForHalfYearly(
   entries: SettlementEntry[],
@@ -145,8 +295,6 @@ export function calculateSettlementsForHalfYearly(
   endOfDay.setHours(23, 59, 59, 999);
   const endTime = endOfDay.getTime();
 
-  let totalSettledParas = 0;
-  let totalSettledAmountCrore = 0;
   let totalRaisedCount = 0;
   let totalRaisedAmountCrore = 0;
 
@@ -200,67 +348,72 @@ export function calculateSettlementsForHalfYearly(
 
     if (entryTime < startTime || entryTime > endTime) return;
 
-    // 1. Raised Objections (উত্থাপিত) if manualRaised is set
+    // Raised Objections (উত্থাপিত) if manualRaised is set
     const mRaisedCount = e.manualRaisedCount ? parseInt(e.manualRaisedCount, 10) || 0 : 0;
     const mRaisedAmount = e.manualRaisedAmount ? Number(e.manualRaisedAmount) || 0 : 0;
     if (mRaisedCount > 0 || mRaisedAmount > 0) {
       totalRaisedCount += mRaisedCount;
       totalRaisedAmountCrore += mRaisedAmount / 10000000;
     }
-
-    // 2. Settled Objections (নিষ্পত্তি)
-    let parasCount = 0;
-    if (e.paragraphs && e.paragraphs.length > 0) {
-      // "আংশিক" অনুচ্ছেদ কোনোভাবেই সংখ্যায় গণনা হবে না, শুধুমাত্র "পূর্ণাঙ্গ" অনুচ্ছেদ গণনা হবে
-      parasCount = e.paragraphs.filter(p => p.status !== 'আংশিক').length;
-    } else if (e.meetingFullSettledParaCount) {
-      parasCount = parseInt(toEnglishDigits(e.meetingFullSettledParaCount), 10) || 0;
-    } else if (e.meetingPartialSettledParaCount && !e.meetingFullSettledParaCount) {
-      parasCount = 0;
-    } else {
-      parasCount = 1;
-    }
-    totalSettledParas += parasCount;
-
-    // টাকার পরিমাণ: আংশিক ও পূর্ণাঙ্গ উভয় নিষ্পত্তির টাকাই আর্থিক হিসাবে যুক্ত হবে
-    const totalRec = Number(e.totalRec) || 0;
-    const totalAdj = Number(e.totalAdj) || 0;
-    const inv = Number(e.involvedAmount) || 0;
-    const entryAmt = (totalRec + totalAdj > 0) ? (totalRec + totalAdj) : inv;
-    totalSettledAmountCrore += (entryAmt / 10000000);
   });
 
-  // ৩ ভাগে ভাগ করার নীতি:
-  // ১. বিধি বহির্ভূত পরিশোধ (Cat 5): বাকি দুই ভাগের সমান (৫০% বা অর্ধেক)
-  // ২. অন্যান্য অনিয়ম (Cat 7): অবশিষ্ট অংশের কিছুটা বেশি অংশ (~২৮%)
-  // ৩. সরকারি অর্থ আদায়ে ব্যর্থতা (Cat 6): অবশিষ্ট অংশের সর্বনিম্ন অংশ (~২২%)
+  // Extract shared settled items
+  const settledItems = extractSettledItemsForHalfYearly(entries, startDate, endDate, selectedMinistry, selectedBranchType, selectedEntity);
+  const fullItems = settledItems.filter(p => p.status !== 'আংশিক');
+  const totalSettledParas = fullItems.length;
+
+  const totalSettledAmount = settledItems.reduce((acc, p) => {
+    const amt = (p.recoveryAmount + p.adjustmentAmount > 0) ? (p.recoveryAmount + p.adjustmentAmount) : p.involvedAmount;
+    return acc + amt;
+  }, 0);
+  const totalSettledAmountCrore = totalSettledAmount / 10000000;
+
+  // ৩ ভাগে ভাগ করার নীতি (ব্যবহারকারীর নির্দেশিত ১+১ = ২ পদ্ধতি):
   if (totalSettledParas > 0) {
-    // ১. বিধি বহির্ভূত পরিশোধ (Cat 5): ৫০%
-    const cat5Count = Math.round(totalSettledParas / 2);
-    const cat5Amount = Number((totalSettledAmountCrore * 0.5).toFixed(4));
-    result[5].settledCount = cat5Count;
-    result[5].settledAmount = cat5Amount;
+    if (totalSettledParas === 1) {
+      result[5].settledCount = 1;
+      result[5].settledAmount = Number(totalSettledAmountCrore.toFixed(4));
+    } else if (totalSettledParas === 2) {
+      // ব্যবহারকারীর সুনির্দিষ্ট নির্দেশিত ১+১ = ২ পদ্ধতি:
+      // Cat 5 (বিধি বহির্ভূত পরিশোধ): ১টি
+      // Cat 7 (অন্যান্য অনিয়ম): ১টি
+      // Cat 6 (সরকারি অর্থ আদায়ে ব্যর্থতা): ০টি (খালি)
+      const item0Amt = (fullItems[0].recoveryAmount + fullItems[0].adjustmentAmount > 0)
+        ? (fullItems[0].recoveryAmount + fullItems[0].adjustmentAmount)
+        : fullItems[0].involvedAmount;
+      const cat5Amount = Number((item0Amt / 10000000).toFixed(4));
+      const cat7Amount = Number((totalSettledAmountCrore - cat5Amount).toFixed(4));
 
-    // অবশিষ্ট ৫০% কে দুই ভাগে ভাগ:
-    const remCount = totalSettledParas - cat5Count;
-    const remAmount = Number((totalSettledAmountCrore - cat5Amount).toFixed(4));
+      result[5].settledCount = 1;
+      result[5].settledAmount = cat5Amount;
+      result[7].settledCount = 1;
+      result[7].settledAmount = cat7Amount;
+      result[6].settledCount = 0;
+      result[6].settledAmount = 0;
+    } else {
+      // ৩ ভাগে ভাগ করার সাধারণ নীতি: সর্বদা যোগফল যেন totalSettledParas এর শতভাগ সমান হয়
+      const cat5Count = Math.floor(totalSettledParas / 2);
+      const cat5Amount = Number((totalSettledAmountCrore * (cat5Count / totalSettledParas)).toFixed(4));
+      result[5].settledCount = cat5Count;
+      result[5].settledAmount = cat5Amount;
 
-    // ২. অন্যান্য অনিয়ম (Cat 7): অবশিষ্ট অংশের কিছুটা বেশি অংশ
-    let cat7Count = Math.round(remCount * (28 / 50));
-    if (remCount > 1 && cat7Count <= remCount - cat7Count) {
-      cat7Count = Math.ceil(remCount / 2);
+      const remCount = totalSettledParas - cat5Count;
+      const remAmount = Number((totalSettledAmountCrore - cat5Amount).toFixed(4));
+
+      let cat7Count = Math.round(remCount * (28 / 50));
+      if (cat7Count <= 0 && remCount > 0) cat7Count = 1;
+      if (cat7Count > remCount) cat7Count = remCount;
+
+      const cat6Count = remCount - cat7Count;
+
+      const cat7Amount = Number((remAmount * (cat7Count / remCount)).toFixed(4));
+      const cat6Amount = Number((remAmount - cat7Amount).toFixed(4));
+
+      result[7].settledCount = cat7Count;
+      result[7].settledAmount = cat7Amount;
+      result[6].settledCount = cat6Count;
+      result[6].settledAmount = cat6Amount;
     }
-    // ৩. সরকারি অর্থ আদায়ে ব্যর্থতা (Cat 6): অবশিষ্ট অংশের সর্বনিম্ন অংশ
-    const cat6Count = remCount - cat7Count;
-
-    const cat7Amount = Number((totalSettledAmountCrore * 0.28).toFixed(4));
-    const cat6Amount = Number((remAmount - cat7Amount).toFixed(4));
-
-    result[7].settledCount = cat7Count;
-    result[7].settledAmount = cat7Amount;
-
-    result[6].settledCount = cat6Count;
-    result[6].settledAmount = cat6Amount;
   }
 
   if (totalRaisedCount > 0 || totalRaisedAmountCrore > 0) {
