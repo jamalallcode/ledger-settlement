@@ -35,6 +35,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'rec' | 'adj'>('all');
+  const [sortOrder, setSortOrder] = useState<'oldest' | 'newest'>('oldest');
 
   // Close modal on ESC key
   useEffect(() => {
@@ -217,6 +218,8 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
     const groups: {
       groupId: string;
       entryId: string;
+      entrySl: number;
+      entryTime: number;
       entityName: string;
       branchName: string;
       auditYear: string;
@@ -249,6 +252,8 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
         currentGroup = {
           groupId: `${item.entryId}_${idx}`,
           entryId: item.entryId,
+          entrySl: item.entrySl || 0,
+          entryTime: item.entryTime || 0,
           entityName: item.entityName,
           branchName: item.branchName,
           auditYear: item.auditYear,
@@ -265,8 +270,18 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
       }
     });
 
-    return groups;
-  }, [filteredItems]);
+    return [...groups].sort((a, b) => {
+      const timeA = a.entryTime || 0;
+      const timeB = b.entryTime || 0;
+      if (sortOrder === 'newest') {
+        if (timeB !== timeA) return timeB - timeA;
+        return (b.entrySl || 0) - (a.entrySl || 0);
+      } else {
+        if (timeA !== timeB) return timeA - timeB;
+        return (a.entrySl || 0) - (b.entrySl || 0);
+      }
+    });
+  }, [filteredItems, sortOrder]);
 
   const getYearSpans = (items: typeof filteredItems) => {
     const spans: number[] = new Array(items.length).fill(1);
@@ -430,6 +445,34 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
               </button>
             </div>
 
+            {/* Sort Order Toggle (পুরানো হতে নতুন / নতুন হতে পুরানো) */}
+            <div className="flex items-center border border-slate-300 bg-white shadow-2xs divide-x divide-slate-200">
+              <button
+                type="button"
+                onClick={() => setSortOrder('oldest')}
+                className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  sortOrder === 'oldest'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                title="তারিখ অনুযায়ী পুরানো হতে নতুন সাজান"
+              >
+                <span>পুরানো হতে নতুন</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortOrder('newest')}
+                className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  sortOrder === 'newest'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                title="তারিখ অনুযায়ী নতুন হতে পুরানো সাজান"
+              >
+                <span>নতুন হতে পুরানো</span>
+              </button>
+            </div>
+
             {/* Search Box */}
             <div className="relative w-full sm:w-64">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -482,8 +525,8 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
               <thead className="sticky top-0 z-20 shadow-xs">
                 <tr className="border-b border-slate-300 text-[10.5px] font-bold text-slate-800 bg-slate-100">
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-12 min-w-[45px] max-w-[50px]">ক্রমিক</th>
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-left w-[170px] min-w-[150px] max-w-[190px]">প্রতিষ্ঠান / দপ্তর</th>
-                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-44 min-w-[145px] whitespace-nowrap">অর্থবছর</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-left w-[240px] min-w-[220px] max-w-[260px]">প্রতিষ্ঠান / দপ্তর</th>
+                  <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-[106px] min-w-[95px] max-w-[115px] whitespace-nowrap">অর্থবছর</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-20 min-w-[75px]">অনুচ্ছেদ নং</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 w-28 min-w-[95px]">অবস্থা</th>
                   <th className="p-2 border-r border-b border-slate-300 bg-slate-100 text-center w-32 min-w-[115px]">জড়িত টাকা</th>
@@ -529,7 +572,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                               {itemIdx === 0 && (
                                 <td
                                   rowSpan={group.items.length}
-                                  className="p-2 border-r border-slate-200 text-left font-bold text-slate-900 w-[170px] max-w-[190px] break-words bg-white align-top"
+                                  className="p-2 border-r border-slate-200 text-left font-bold text-slate-900 w-[240px] min-w-[220px] max-w-[260px] break-words bg-white align-top"
                                 >
                                   <div className="sticky top-[60px]">
                                     <div>{group.entityName}</div>
@@ -546,7 +589,7 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
                               {yearSpans[itemIdx] > 0 && (
                                 <td
                                   rowSpan={yearSpans[itemIdx]}
-                                  className="p-2 border-r border-slate-200 font-semibold text-slate-700 bg-white align-top whitespace-nowrap"
+                                  className="p-2 border-r border-slate-200 font-semibold text-slate-700 bg-white align-top whitespace-nowrap w-[106px] min-w-[95px] max-w-[115px]"
                                 >
                                   <div className="sticky top-[60px]">
                                     {toBengaliDigits(item.auditYear)}
@@ -579,12 +622,12 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
 
                               {/* কলাম ৭: আদায়কৃত টাকা */}
                               <td className="p-2 border-r border-slate-200 text-center font-black text-emerald-700 tabular-nums bg-emerald-50/20">
-                                {item.recoveryAmount > 0 ? toBengaliDigits(item.recoveryAmount.toLocaleString('bn-BD')) : '০'}
+                                {item.recoveryAmount > 0 ? toBengaliDigits(item.recoveryAmount.toLocaleString('bn-BD')) : '-'}
                               </td>
 
                               {/* কলাম ৮: সমন্বিত টাকা */}
                               <td className="p-2 border-r border-slate-200 text-center font-black text-indigo-700 tabular-nums bg-indigo-50/20">
-                                {item.adjustmentAmount > 0 ? toBengaliDigits(item.adjustmentAmount.toLocaleString('bn-BD')) : '০'}
+                                {item.adjustmentAmount > 0 ? toBengaliDigits(item.adjustmentAmount.toLocaleString('bn-BD')) : '-'}
                               </td>
 
                               {/* কলাম ৯: সভার ধরন / স্মারক ও তারিখ (Merged across entire issue letter AND its subtotal row) */}
@@ -612,11 +655,14 @@ export const HRSettledParagraphsModal: React.FC<HRSettledParagraphsModalProps> =
 
                         {/* সংশ্লিষ্ট জারিপত্রের অধীন সকল ডাটার নিচে একটি মোট সারি (Subtotal Row) */}
                         <tr className="bg-slate-100/95 font-bold border-b-2 border-slate-300 text-slate-800 text-[11px]">
-                          {/* জারিপত্র মোট লেখাটি আরো বাম পাশে বিন্যস্ত */}
+                          {/* মোট মীমাংসিত টাকা লেখা ও মোট আদায়+মোট সমন্বয়কৃত টাকার যোগফল */}
                           <td colSpan={4} className="p-2.5 text-left pl-4 font-black text-slate-800 bg-slate-200/80 border-r border-slate-300">
-                            <div className="flex items-center justify-start gap-2">
-                              <span className="text-blue-900 font-black text-xs">জারিপত্র মোট:</span>
-                              <span className="text-[10.5px] text-slate-700 font-semibold">
+                            <div className="flex items-center justify-start gap-2 flex-wrap">
+                              <span className="text-blue-900 font-black text-xs">মোট মীমাংসিত টাকা:</span>
+                              <span className="text-emerald-800 font-black text-xs bg-emerald-100/80 px-2 py-0.5 border border-emerald-300">
+                                ৳ {toBengaliDigits((group.totalRecovered + group.totalAdjusted).toLocaleString('bn-BD'))}
+                              </span>
+                              <span className="text-[10.5px] text-slate-600 font-semibold">
                                 ({toBengaliDigits(group.letterNoDate.split(',')[0] || '')})
                               </span>
                             </div>
