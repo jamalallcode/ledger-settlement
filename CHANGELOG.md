@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-01] - Circular Cycle Wheel Center Plus Button
+
+### 🚀 Enhanced & Refined
+- **Perfect Circular Center Plus Button (`SegmentedCycleWheel.tsx`, `style.css`)**:
+  - ব্যবহারকারীর সুনির্দিষ্ট ও কঠোর নির্দেশনা অনুযায়ী, চক্রের কেন্দ্রের প্লাস (`+`) বাটনটিকে সম্পূর্ণ গোল (Circular / Round `rounded-full`) রূপ দেওয়া হয়েছে।
+  - গ্লোবাল জিরো বর্ডার-রেডিয়াসের মধ্যে সুনির্দিষ্টভাবে `#cycle-wheel-center-btn` ও এর বৃত্তাকার অরার জন্য ব্যতিক্রম নির্ধারণ করে দেওয়া হয়েছে, ফলে এটি এখন সব ডিভাইসে সুন্দরভাবে নিখুঁত বৃত্তাকার দেখাবে।
+- **Complete Isolation & Zero Side Effects**:
+  - ব্যবহারকারীর কঠোর নির্দেশনা মেনে অন্য কোনো উপাদান বা লজিকে বিন্দুমাত্র স্পর্শ করা হয়নি।
+
 ## [2026-10-01] - Category Settled Details Modal Fix (All Category Paragraphs Shown by Default)
 
 ### 🐛 Fixed & Polished
