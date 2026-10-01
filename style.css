@@ -5,6 +5,13 @@
   border-radius: 0px !important;
 }
 
+/* চক্রের কেন্দ্রের প্লাস বাটনটি সম্পূর্ণ গোল (Round / Circular) রাখার সুনির্দিষ্ট ব্যতিক্রম */
+#cycle-wheel-center-btn,
+#cycle-wheel-center-btn *,
+.cycle-wheel-center-aura {
+  border-radius: 9999px !important;
+}
+
 @theme {
   --font-sans: "Noto Sans Bengali", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
 }

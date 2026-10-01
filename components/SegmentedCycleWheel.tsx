@@ -468,11 +468,20 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
           className="absolute z-20 flex items-center justify-center"
           style={{ width: centerHubRadius * 2, height: centerHubRadius * 2 }}
         >
+          <style>{`
+            #cycle-wheel-center-btn,
+            #cycle-wheel-center-btn *,
+            .cycle-wheel-center-aura {
+              border-radius: 9999px !important;
+            }
+          `}</style>
+
           {/* Circular ring aura */}
           <div 
-            className={`absolute inset-0 rounded-full border-2 border-emerald-400/40 transition-all duration-500 pointer-events-none ${
+            className={`cycle-wheel-center-aura absolute inset-0 rounded-full border-2 border-emerald-400/40 transition-all duration-500 pointer-events-none ${
               isOpen ? 'scale-125 opacity-100 bg-emerald-500/15 animate-ping' : 'scale-100 opacity-60'
             }`}
+            style={{ borderRadius: '9999px' }}
           />
 
           <button
@@ -481,7 +490,8 @@ export const SegmentedCycleWheel: React.FC<SegmentedCycleWheelProps> = ({
               setIsOpen(!isOpen);
               setHoveredItemId(null);
             }}
-            className={`relative z-30 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer shadow-xl ${
+            style={{ borderRadius: '9999px' }}
+            className={`relative z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 text-white border-2 border-white flex items-center justify-center active:scale-95 transition-all duration-300 cursor-pointer shadow-xl ${
               isOpen 
                 ? 'shadow-emerald-700/60 ring-4 ring-emerald-400/30' 
                 : 'shadow-emerald-600/40 hover:scale-105 hover:shadow-2xl'
