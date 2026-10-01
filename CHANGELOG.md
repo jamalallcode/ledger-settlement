@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-01] - Category Settled Details Modal Fix (All Category Paragraphs Shown by Default)
+
+### 🐛 Fixed & Polished
+- **Default to 'All' Tab on Category Click (`HRSettledParagraphsModal.tsx`)**:
+  - পূর্বে ৫ নং শ্রেণী (“বিধি বহির্ভূত পরিশোধ”)-এ ক্লিক করলে মডালটি স্বয়ংক্রিয়ভাবে “সমন্বয়” সাব-ট্যাবে চলে যেত, ফলে সংশ্লিষ্ট ২১টি অনুচ্ছেদের মধ্যে ১৮টি আদায়কৃত অনুচ্ছেদ লুকিয়ে গিয়ে কেবল ৩টি সমন্বিত অনুচ্ছেদ দেখাচ্ছিল।
+  - এই সমস্যা স্থায়ীভাবে দূর করা হয়েছে। এখন যেকোনো শ্রেণীর (২১, ১০, ১২ বা অন্য যেকোনো সংখ্যা) উপর ক্লিক করলে মডালটি ডিফল্টভাবে **“সকল অনুচ্ছেদ”** ট্যাবে খুলবে এবং ওই শ্রেণীর সম্পূর্ণ অনুচ্ছেদগুলো (যেমন: ২১টিতে ক্লিক করলে হুবহু ২১টি অনুচ্ছেদ) সাথে সাথে প্রদর্শিত হবে।
+- **Complete Isolation & Zero Side Effects**:
+  - কোনো আর্থিক হিসাব বা ফিল্টারিং নীতিতে নেতিবাচক প্রভাব পড়েনি।
+
 ## [2026-09-30] - Exact Paragraph-Level Recovery & Adjustment Amount Fix (No Averaging / No Artifacts)
 
 ### 🐛 Fixed & Polished
