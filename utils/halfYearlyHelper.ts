@@ -115,6 +115,7 @@ export interface SettledParagraphItem {
   id: string;
   entryId: string;
   entrySl: number;
+  entryTime?: number;
   ministryName: string;
   entityName: string;
   branchName: string;
@@ -212,14 +213,15 @@ export function extractSettledItemsForHalfYearly(
 
     if (e.paragraphs && e.paragraphs.length > 0) {
       e.paragraphs.forEach((p, pIdx) => {
-        const pRec = Number(p.recoveredAmount) || (totalRec > 0 ? totalRec / e.paragraphs.length : 0);
-        const pAdj = Number(p.adjustedAmount) || (totalAdj > 0 ? totalAdj / e.paragraphs.length : 0);
+        const pRec = Number(p.recoveredAmount) || 0;
+        const pAdj = Number(p.adjustedAmount) || 0;
         const pInv = Number(p.involvedAmount) || 0;
 
         list.push({
           id: `${e.id}_${p.id || pIdx}`,
           entryId: e.id,
           entrySl: e.sl || 0,
+          entryTime: entryTime,
           ministryName: e.ministryName || '',
           entityName: entity,
           branchName: e.branchName || '',
@@ -232,8 +234,8 @@ export function extractSettledItemsForHalfYearly(
           letterNoDate: letterDate,
           meetingType: meetingInfo,
           remarks: e.remarks || '',
-          isRec: pRec > 0 || (totalRec > 0 && totalAdj === 0),
-          isAdj: pAdj > 0 || (totalAdj > 0 && totalRec === 0)
+          isRec: pRec > 0,
+          isAdj: pAdj > 0
         });
       });
     } else if (totalRec > 0 || totalAdj > 0 || e.meetingFullSettledParaCount || e.meetingSettledParaCount) {
@@ -241,6 +243,7 @@ export function extractSettledItemsForHalfYearly(
         id: e.id,
         entryId: e.id,
         entrySl: e.sl || 0,
+        entryTime: entryTime,
         ministryName: e.ministryName || '',
         entityName: entity,
         branchName: e.branchName || '',
