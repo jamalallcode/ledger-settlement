@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-30] - Circular Serial Number Badge & Halved Top Padding in Settlement Register
+
+### 🚀 Enhanced & Refined
+- **Circular Serial Number Badge & Baseline Alignment (`SettlementTable.tsx`)**:
+  - ব্যবহারকারীর সুনির্দিষ্ট নির্দেশনা অনুযায়ী, ক্রমিক নম্বরটিকে একটি মার্জিত বৃত্তাকার ব্যাজের (`w-5 h-5 rounded-full border border-slate-300 bg-slate-100 text-slate-800`) মধ্যে বসানো হয়েছে।
+  - এটিকে সামান্য নিচে নামিয়ে ডান পাশের বিস্তারিত বিবরণের প্রথম লাইনের (“১. শাখা ধরণ: ...”) বেসলাইনের সাথে নিখুঁতভাবে সমান্তরাল করা হয়েছে।
+- **Halved Top Whitespace (`SettlementTable.tsx`)**:
+  - ব্যবহারকারীর অনুরোধে বিস্তারিত বিবরণের উপরের ফাঁকা জায়গার অতিরিক্ত উচ্চতা অর্ধেক কমানো হয়েছে (`pt-4` থেকে কমিয়ে `pt-2` ও ভেতরের প্যাডিং কম করা হয়েছে), ফলে স্পেসিংটি এখন অত্যন্ত ভারসাম্যপূর্ণ ও পরিমিত দেখাচ্ছে।
+- **Complete Isolation & Zero Side Effects**:
+  - মূল ডাটাবেজ, আর্থিক ক্যালকুলেশন বা অন্যান্য রেজিস্টারে কোনো পরিবর্তন আনা হয়নি।
+
 ## [2026-09-30] - Reverted Columns 5 & 6 (Raised Objection) to Natural In-Line Alignment
 
 ### 🚀 Enhanced & Refined
