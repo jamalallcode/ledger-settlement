@@ -131,6 +131,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [filterMinistries, setFilterMinistries] = useState<string[]>([]);
     const [filterEntities, setFilterEntities] = useState<string[]>([]);
     const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
+    const [isCustomDateActive, setIsCustomDateActive] = useState<boolean>(false);
+    const [filterStartDate, setFilterStartDate] = useState<string>("");
+    const [filterEndDate, setFilterEndDate] = useState<string>("");
+    const [dateTab, setDateTab] = useState<'cycle' | 'custom'>('cycle');
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
       id: string;
@@ -382,6 +386,12 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         .filter((entry) => {
           let entryDate = entry.issueDateISO || "";
           const matchDate = (() => {
+            if (isCustomDateActive && (filterStartDate || filterEndDate)) {
+              if (!entryDate) return false;
+              if (filterStartDate && entryDate < filterStartDate) return false;
+              if (filterEndDate && entryDate > filterEndDate) return false;
+              return true;
+            }
             if (selectedCycles.length === 0) return true;
             if (!entryDate) return false;
             return selectedCycles.some((cLabel) => {
@@ -567,6 +577,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       filterEntities,
       selectedCycles,
       cycleOptions,
+      isCustomDateActive,
+      filterStartDate,
+      filterEndDate,
     ]);
 
     const { cycleStats, groupedEntries } = useMemo(() => {
@@ -1450,10 +1463,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           >
             <IDBadge id="register-filters" />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-              {/* Cycle Selection */}
+              {/* Cycle / Custom Date Selection */}
               <div className="space-y-1" ref={cycleDropdownRef}>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">
-                  সাইকেল
+                  সাইকেল / সময়কাল
                 </label>
                 <div
                   onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
@@ -1461,11 +1474,13 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 >
                   <CalendarDays size={14} className="text-blue-600 shrink-0" />
                   <span className="font-bold text-[11px] text-slate-900 truncate">
-                    {selectedCycles.length === 0
-                      ? "সকল সাইকেল"
-                      : selectedCycles.length === 1
-                        ? cycleOptions.find((o) => o.cycleLabel === selectedCycles[0])?.label || toBengaliDigits(selectedCycles[0])
-                        : `${toBengaliDigits(selectedCycles.length.toString())}টি সাইকেল`}
+                    {isCustomDateActive && (filterStartDate || filterEndDate)
+                      ? `${filterStartDate ? toBengaliDigits(format(new Date(filterStartDate), 'dd/MM/yyyy')) : ''} হতে ${filterEndDate ? toBengaliDigits(format(new Date(filterEndDate), 'dd/MM/yyyy')) : ''}`
+                      : selectedCycles.length === 0
+                        ? "সকল সাইকেল"
+                        : selectedCycles.length === 1
+                          ? cycleOptions.find((o) => o.cycleLabel === selectedCycles[0])?.label || toBengaliDigits(selectedCycles[0])
+                          : `${toBengaliDigits(selectedCycles.length.toString())}টি সাইকেল`}
                   </span>
                   <ChevronDown
                     size={12}
@@ -1473,68 +1488,213 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                   />
 
                   {isCycleDropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] left-0 w-[260px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out">
-                      <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
-                        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                            <CalendarSearch size={12} /> সাইকেল নির্বাচন
-                          </span>
-                          {selectedCycles.length > 0 && (
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                              {toBengaliDigits(selectedCycles.length.toString())}টি
+                    <div className="absolute top-[calc(100%+12px)] left-0 w-[280px] sm:w-[310px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out select-none">
+                      <div className="p-2 border-b border-slate-100 flex items-center gap-1 bg-slate-50">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDateTab('cycle');
+                          }}
+                          className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                            dateTab === 'cycle'
+                              ? 'bg-white text-blue-700 shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          সাইকেল তালিকা
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDateTab('custom');
+                          }}
+                          className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                            dateTab === 'custom'
+                              ? 'bg-white text-blue-700 shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          হতে - থেকে ডেট
+                        </button>
+                      </div>
+
+                      {dateTab === 'cycle' && (
+                        <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                          <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                              <CalendarSearch size={12} /> সাইকেল নির্বাচন
                             </span>
-                          )}
-                        </div>
-                        <div className="p-2 space-y-1">
-                          <div
-                            key="all"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCycles([]);
-                            }}
-                            className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${selectedCycles.length === 0 ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
-                          >
-                            <span className="text-[12px]">সকল</span>
-                            {selectedCycles.length === 0 && (
-                              <Check size={14} strokeWidth={3} />
+                            {selectedCycles.length > 0 && (
+                              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                {toBengaliDigits(selectedCycles.length.toString())}টি
+                              </span>
                             )}
                           </div>
-                          {cycleOptions.map((opt, idx) => {
-                            const isSelected = selectedCycles.includes(opt.cycleLabel);
-                            return (
-                              <div
-                                key={idx}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCycles((prev) =>
-                                    prev.includes(opt.cycleLabel)
-                                      ? prev.filter((c) => c !== opt.cycleLabel)
-                                      : [...prev, opt.cycleLabel]
-                                  );
+                          <div className="p-2 space-y-1">
+                            <div
+                              key="all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCycles([]);
+                                setIsCustomDateActive(false);
+                              }}
+                              className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${selectedCycles.length === 0 && !isCustomDateActive ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                            >
+                              <span className="text-[12px]">সকল</span>
+                              {selectedCycles.length === 0 && !isCustomDateActive && (
+                                <Check size={14} strokeWidth={3} />
+                              )}
+                            </div>
+                            {cycleOptions.map((opt, idx) => {
+                              const isSelected = selectedCycles.includes(opt.cycleLabel) && !isCustomDateActive;
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsCustomDateActive(false);
+                                    setSelectedCycles((prev) =>
+                                      prev.includes(opt.cycleLabel)
+                                        ? prev.filter((c) => c !== opt.cycleLabel)
+                                        : [...prev, opt.cycleLabel]
+                                    );
+                                  }}
+                                  className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                                >
+                                  <span className="text-[12px] whitespace-nowrap">{opt.label}</span>
+                                  {isSelected && (
+                                    <Check size={14} strokeWidth={3} />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="p-2 border-t border-slate-100 sticky bottom-0 bg-white z-[2010]">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsCycleDropdownOpen(false);
+                              }}
+                              className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                            >
+                              সম্পন্ন
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {dateTab === 'custom' && (
+                        <div className="p-3 space-y-3 bg-white" onClick={(e) => e.stopPropagation()}>
+                          <div className="text-[11px] font-black text-slate-800 flex items-center gap-1.5">
+                            <CalendarDays size={13} className="text-blue-600" />
+                            <span>কাংখিত সময়কাল নির্ধারণ (হতে - থেকে)</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                শুরুর তারিখ (হতে):
+                              </label>
+                              <input
+                                type="date"
+                                value={filterStartDate}
+                                onChange={(e) => {
+                                  setFilterStartDate(e.target.value);
+                                  setIsCustomDateActive(true);
                                 }}
-                                className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
-                              >
-                                <span className="text-[12px] whitespace-nowrap">{opt.label}</span>
-                                {isSelected && (
-                                  <Check size={14} strokeWidth={3} />
-                                )}
-                              </div>
-                            );
-                          })}
+                                className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                                শেষের তারিখ (পর্যন্ত):
+                              </label>
+                              <input
+                                type="date"
+                                value={filterEndDate}
+                                onChange={(e) => {
+                                  setFilterEndDate(e.target.value);
+                                  setIsCustomDateActive(true);
+                                }}
+                                className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quick Presets */}
+                          <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const now = new Date();
+                                const s = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd');
+                                const e = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd');
+                                setFilterStartDate(s);
+                                setFilterEndDate(e);
+                                setIsCustomDateActive(true);
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                            >
+                              চলতি মাস
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const now = new Date();
+                                const s = format(new Date(now.getFullYear(), now.getMonth() - 1, 1), 'yyyy-MM-dd');
+                                const e = format(new Date(now.getFullYear(), now.getMonth(), 0), 'yyyy-MM-dd');
+                                setFilterStartDate(s);
+                                setFilterEndDate(e);
+                                setIsCustomDateActive(true);
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                            >
+                              বিগত মাস
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const now = new Date();
+                                const s = format(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+                                const e = format(now, 'yyyy-MM-dd');
+                                setFilterStartDate(s);
+                                setFilterEndDate(e);
+                                setIsCustomDateActive(true);
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                            >
+                              গত ৩০ দিন
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFilterStartDate("");
+                                setFilterEndDate("");
+                                setIsCustomDateActive(false);
+                              }}
+                              className="px-2.5 py-1 text-slate-500 hover:text-rose-600 rounded text-xs font-bold cursor-pointer"
+                            >
+                              মুছুন
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomDateActive(true);
+                                setIsCycleDropdownOpen(false);
+                              }}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-xs cursor-pointer"
+                            >
+                              প্রয়োগ করুন
+                            </button>
+                          </div>
                         </div>
-                        <div className="p-2 border-t border-slate-100 sticky bottom-0 bg-white z-[2010]">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsCycleDropdownOpen(false);
-                            }}
-                            className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
-                          >
-                            সম্পন্ন
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -407,6 +407,10 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
   const [filterReceiver, setFilterReceiver] = useState("");
   const [filterStatus, setFilterStatus] = useState(""); // "", "চলমান", "নিষ্পন্ন"
   const [selectedCycleDate, setSelectedCycleDate] = useState<Date | null>(null);
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
+  const [isCustomDateActive, setIsCustomDateActive] = useState<boolean>(false);
+  const [dateTab, setDateTab] = useState<'cycle' | 'custom'>('custom');
 
   const [cycleDetailModal, setCycleDetailModal] = useState<{
     isOpen: boolean;
@@ -690,7 +694,15 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         const matchReceiver = !filterReceiver || entry.receiverName === filterReceiver;
 
         let matchCycle = true;
-        if (activeCycle && entry.diaryDate) {
+        if (isCustomDateActive && (filterStartDate || filterEndDate)) {
+          if (!entry.diaryDate) {
+            matchCycle = false;
+          } else {
+            const dStr = toEnglishDigits(entry.diaryDate).trim();
+            if (filterStartDate && dStr < filterStartDate) matchCycle = false;
+            if (filterEndDate && dStr > filterEndDate) matchCycle = false;
+          }
+        } else if (activeCycle && entry.diaryDate) {
           matchCycle =
             entry.diaryDate >= format(activeCycle.start, "yyyy-MM-dd") &&
             entry.diaryDate <= format(activeCycle.end, "yyyy-MM-dd");
@@ -723,7 +735,7 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
         }
         return dateB.localeCompare(dateA);
       });
-  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, filterStatus, activeCycle]);
+  }, [entries, searchTerm, filterParaType, filterType, filterReceiver, filterStatus, activeCycle, isCustomDateActive, filterStartDate, filterEndDate]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -1382,7 +1394,222 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             id="correspondence-filters"
             className="!bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4 no-print mb-6 animate-in slide-in-from-top-4 duration-300 relative z-[1000] isolate"
           >
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Cycle & Date Selection */}
+          <div className="space-y-1.5" ref={cycleDropdownRef}>
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+              সময়কাল / সাইকেল
+            </label>
+            <div
+              onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
+              className={customDropdownCls(isCycleDropdownOpen)}
+            >
+              <CalendarDays className="text-blue-600" size={16} />
+              <span className="font-bold text-[13px] text-slate-900 truncate">
+                {isCustomDateActive && (filterStartDate || filterEndDate)
+                  ? `${filterStartDate ? toBengaliDigits(format(new Date(filterStartDate), 'dd/MM/yyyy')) : ''} হতে ${filterEndDate ? toBengaliDigits(format(new Date(filterEndDate), 'dd/MM/yyyy')) : ''}`
+                  : selectedCycleDate
+                  ? toBengaliDigits(activeCycle?.label || "")
+                  : "সকল সময়কাল"}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 ml-auto transition-transform duration-300 ${isCycleDropdownOpen ? "rotate-180 text-blue-600" : ""}`}
+              />
+
+              {isCycleDropdownOpen && (
+                <div className="absolute top-[calc(100%+12px)] left-0 w-[280px] sm:w-[310px] !bg-white border-2 border-slate-200 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-[2000] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300 ease-out select-none">
+                  <div className="p-2 border-b border-slate-100 flex items-center gap-1 bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDateTab('custom');
+                      }}
+                      className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                        dateTab === 'custom'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      হতে - থেকে ডেট
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDateTab('cycle');
+                      }}
+                      className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                        dateTab === 'cycle'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      মাসিক সাইকেল
+                    </button>
+                  </div>
+
+                  {dateTab === 'custom' && (
+                    <div className="p-3 space-y-3 bg-white" onClick={(e) => e.stopPropagation()}>
+                      <div className="text-[11px] font-black text-slate-800 flex items-center gap-1.5">
+                        <CalendarDays size={13} className="text-blue-600" />
+                        <span>কাংখিত সময়কাল নির্ধারণ (হতে - থেকে)</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                            শুরুর তারিখ (হতে):
+                          </label>
+                          <input
+                            type="date"
+                            value={filterStartDate}
+                            onChange={(e) => {
+                              setFilterStartDate(e.target.value);
+                              setIsCustomDateActive(true);
+                            }}
+                            className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                            শেষের তারিখ (পর্যন্ত):
+                          </label>
+                          <input
+                            type="date"
+                            value={filterEndDate}
+                            onChange={(e) => {
+                              setFilterEndDate(e.target.value);
+                              setIsCustomDateActive(true);
+                            }}
+                            className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date();
+                            const s = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd');
+                            const e = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd');
+                            setFilterStartDate(s);
+                            setFilterEndDate(e);
+                            setIsCustomDateActive(true);
+                          }}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          চলতি মাস
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date();
+                            const s = format(new Date(now.getFullYear(), now.getMonth() - 1, 1), 'yyyy-MM-dd');
+                            const e = format(new Date(now.getFullYear(), now.getMonth(), 0), 'yyyy-MM-dd');
+                            setFilterStartDate(s);
+                            setFilterEndDate(e);
+                            setIsCustomDateActive(true);
+                          }}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          বিগত মাস
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date();
+                            const s = format(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+                            const e = format(now, 'yyyy-MM-dd');
+                            setFilterStartDate(s);
+                            setFilterEndDate(e);
+                            setIsCustomDateActive(true);
+                          }}
+                          className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          গত ৩০ দিন
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterStartDate("");
+                            setFilterEndDate("");
+                            setIsCustomDateActive(false);
+                            setSelectedCycleDate(null);
+                          }}
+                          className="px-2.5 py-1 text-slate-500 hover:text-rose-600 rounded text-xs font-bold cursor-pointer"
+                        >
+                          মুছুন
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomDateActive(true);
+                            setIsCycleDropdownOpen(false);
+                          }}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-xs cursor-pointer"
+                        >
+                          প্রয়োগ করুন
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {dateTab === 'cycle' && (
+                    <div className="max-h-[320px] overflow-y-auto no-scrollbar !bg-white !bg-opacity-100 flex flex-col">
+                      <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between sticky top-0 !bg-white !bg-opacity-100 z-[2010]">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                          <CalendarSearch size={12} /> সাইকেল নির্বাচন
+                        </span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCycleDate(null);
+                            setIsCustomDateActive(false);
+                            setIsCycleDropdownOpen(false);
+                          }}
+                          className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${!selectedCycleDate && !isCustomDateActive ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                        >
+                          <span className="text-[12px]">সকল</span>
+                          {!selectedCycleDate && !isCustomDateActive && (
+                            <Check size={14} strokeWidth={3} />
+                          )}
+                        </div>
+                        {cycleOptions.map((opt, idx) => {
+                          const isSelected = selectedCycleDate && opt.date.getTime() === selectedCycleDate.getTime() && !isCustomDateActive;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCycleDate(opt.date);
+                                setIsCustomDateActive(false);
+                                setIsCycleDropdownOpen(false);
+                              }}
+                              className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all !bg-opacity-100 ${isSelected ? "!bg-blue-600 !text-white shadow-lg font-black" : "hover:bg-slate-100 text-slate-700 font-bold bg-white"}`}
+                            >
+                              <span className="text-[12px] whitespace-nowrap">{opt.label}</span>
+                              {isSelected && (
+                                <Check size={14} strokeWidth={3} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           {/* Status Selection (চলমান / সকল / নিষ্পন্ন) */}
           <div className="space-y-1.5" ref={statusDropdownRef}>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">

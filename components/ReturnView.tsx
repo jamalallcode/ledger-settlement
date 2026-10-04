@@ -3,7 +3,7 @@ import React from 'react';
 import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
-import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet, Calendar } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
 import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
@@ -81,6 +81,12 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const [showDetailedBilateralView, setShowDetailedBilateralView] = useState(true);
   const [showDetailedOnlineBsrView, setShowDetailedOnlineBsrView] = useState(true);
   const [showDetailedOnlineBilateralView, setShowDetailedOnlineBilateralView] = useState(true);
+
+  const [isCustomRangeActive, setIsCustomRangeActive] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState<Date>(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [customEndDate, setCustomEndDate] = useState<Date>(() => new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+  const [selectingCustomDateType, setSelectingCustomDateType] = useState<'start' | 'end'>('start');
+  const [customTab, setCustomTab] = useState<'cycles' | 'custom'>('cycles');
   
   useEffect(() => {
     setCurrentViewDate(new Date(selectedCycleDate));
@@ -422,6 +428,19 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   }, [selectedReportType]);
 
   const activeCycle = useMemo(() => {
+    if (isCustomRangeActive && customStartDate && customEndDate) {
+      const start = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0);
+      const end = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999);
+      const startStr = toBengaliDigits(dateFnsFormat(start, 'dd/MM/yyyy'));
+      const endStr = toBengaliDigits(dateFnsFormat(end, 'dd/MM/yyyy'));
+      const label = `${startStr} হতে ${endStr}`;
+      return {
+        start,
+        end,
+        label,
+        subLabel: `সময়কাল: ${label}`
+      };
+    }
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
     const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
     if (isQuarterly) {
@@ -431,7 +450,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       return getHalfYearlyCycleForDate(selectedCycleDate);
     }
     return getCycleForDate(selectedCycleDate);
-  }, [selectedCycleDate, selectedReportType]);
+  }, [selectedCycleDate, selectedReportType, isCustomRangeActive, customStartDate, customEndDate]);
 
   const robustNormalize = (str: string = '') => {
     if (!str) return '';
@@ -1240,60 +1259,407 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     );
   };
 
-  const monthPickerElement = (
-    <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
-      <div 
-        onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
-        className={`flex items-center gap-1.5 px-2.5 h-9 bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-none cursor-pointer transition-all duration-300 shadow-xs group ${isCycleDropdownOpen ? 'border-sky-400 ring-2 ring-sky-100' : 'border-sky-200'}`}
-      >
-         <CalendarDays size={14} className="text-sky-600 shrink-0" />
-         <span className="text-sky-600 font-bold text-[11px] sm:text-[11.5px]">সাইকেল:</span> 
-         <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-900 tracking-tight shrink-0 leading-none">
-           {toBengaliDigits(activeCycle.label)}
-         </span>
-         <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
-      </div>
-      {isCycleDropdownOpen && (
+  const monthPickerElement = (() => {
+    const calYear = currentViewDate.getFullYear();
+    const calMonth = currentViewDate.getMonth();
+    const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
+    const firstDayOffset = (firstDayOfMonth + 1) % 7;
+    const totalDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const daysArray = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
+
+    const isSameDay = (d1: Date, d2: Date) =>
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+
+    const startOfDayTs = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate()).getTime();
+    const endOfDayTs = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59).getTime();
+
+    return (
+      <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
+        {/* Trigger Button */}
         <div 
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          className={`absolute top-[calc(100%+4px)] ${cycleDropdownAlign === 'right' ? 'right-0' : 'left-0'} w-full min-w-full bg-white border border-slate-200 rounded-none shadow-2xl z-[99999] p-2 animate-in fade-in slide-in-from-top-2 duration-150 box-border`}
+          onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+          className={`flex items-center gap-1.5 px-3 h-9 bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-xl cursor-pointer transition-all duration-300 shadow-xs group ${isCycleDropdownOpen ? 'border-sky-500 ring-2 ring-sky-100 bg-white' : 'border-sky-200'}`}
+          title={isCustomRangeActive 
+            ? `সময়কাল: ${toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}`
+            : `সাইকেল: ${toBengaliDigits(activeCycle.label)}`}
         >
-          <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-[10] mb-1.5">
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
-              <CalendarDays size={11} className="text-blue-500" /> মাস / সাইকেল নির্বাচন
-            </span>
-          </div>
-          <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
-            {cycleOptions.map((opt, idx) => {
-              const matchesActive = opt.cycleLabel === activeCycle.label;
-              return (
-                <div
-                  key={idx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedCycleDate(opt.date);
-                    setIsCycleDropdownOpen(false);
-                  }}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer transition-all duration-200 ${
-                    matchesActive 
-                      ? "bg-blue-600 text-white font-extrabold shadow-md"
-                      : "hover:bg-slate-50 text-slate-700 hover:text-blue-600 font-bold bg-white"
-                  }`}
-                >
-                  <div className="flex flex-col text-left min-w-0 pr-1">
-                    <span className="text-[11.5px] font-extrabold whitespace-nowrap leading-tight">{opt.cycleLabel}</span>
-                    <span className={`text-[9.5px] whitespace-nowrap leading-tight ${matchesActive ? 'text-blue-100' : 'text-slate-400'}`}>{opt.label}</span>
-                  </div>
-                  {matchesActive && <Check size={13} className="text-white stroke-[3.5] shrink-0" />}
-                </div>
-              );
-            })}
-          </div>
+           <CalendarDays size={14} className="text-sky-600 shrink-0" />
+           <span className="text-sky-600 font-bold text-[11px] sm:text-[11.5px] shrink-0">
+             {isCustomRangeActive ? 'সময়কাল:' : 'সাইকেল:'}
+           </span> 
+           <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-900 tracking-tight shrink-0 leading-none">
+             {isCustomRangeActive
+               ? `${toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}`
+               : toBengaliDigits(activeCycle.label)}
+           </span>
+           <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
         </div>
-      )}
-    </div>
-  );
+
+        {/* Dropdown Popover */}
+        {isCycleDropdownOpen && (
+          <div 
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            className={`absolute top-[calc(100%+6px)] ${cycleDropdownAlign === 'right' ? 'right-0' : 'left-0 sm:left-auto sm:right-0 lg:left-0'} w-[330px] sm:w-[360px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-3.5 animate-in fade-in slide-in-from-top-2 duration-150 box-border select-none`}
+          >
+            {/* Popover Header */}
+            <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <CalendarDays size={14} className="text-sky-600" />
+                <span>রিপোর্ট সময়কাল নির্ধারণ</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsCycleDropdownOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                title="বন্ধ করুন"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Mode Tabs */}
+            <div className="flex p-0.5 bg-slate-100 rounded-xl mb-3 border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setCustomTab('cycles')}
+                className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                  customTab === 'cycles'
+                    ? 'bg-white text-sky-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                মাস / সাইকেল
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomTab('custom');
+                  setIsCustomRangeActive(true);
+                }}
+                className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  customTab === 'custom'
+                    ? 'bg-white text-sky-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>কাংখিত সময়কাল (হতে-থেকে)</span>
+                {isCustomRangeActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+              </button>
+            </div>
+
+            {/* Tab 1: Predefined Cycles / Months */}
+            {customTab === 'cycles' && (
+              <div>
+                <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
+                  {cycleOptions.map((opt, idx) => {
+                    const matchesActive = !isCustomRangeActive && opt.cycleLabel === activeCycle.label;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCycleDate(opt.date);
+                          setIsCustomRangeActive(false);
+                          setIsCycleDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-150 ${
+                          matchesActive 
+                            ? "bg-sky-600 text-white font-extrabold shadow-md"
+                            : "hover:bg-sky-50 text-slate-700 hover:text-sky-700 font-bold bg-white"
+                        }`}
+                      >
+                        <div className="flex flex-col text-left min-w-0 pr-1">
+                          <span className="text-[11.5px] font-extrabold whitespace-nowrap leading-tight">{opt.cycleLabel}</span>
+                          <span className={`text-[9.5px] whitespace-nowrap leading-tight ${matchesActive ? 'text-sky-100' : 'text-slate-400'}`}>{opt.label}</span>
+                        </div>
+                        {matchesActive && <Check size={14} className="text-white stroke-[3.5] shrink-0" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Custom Date Range (হতে - থেকে) */}
+            {customTab === 'custom' && (
+              <div>
+                {/* Start & End Date Selection Cards */}
+                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                  {/* Start Date Card */}
+                  <div
+                    onClick={() => {
+                      setSelectingCustomDateType('start');
+                      setCurrentViewDate(new Date(customStartDate.getFullYear(), customStartDate.getMonth(), 1));
+                    }}
+                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectingCustomDateType === 'start'
+                        ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="font-extrabold text-xs text-slate-800">
+                        {toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))}
+                      </span>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={dateFnsFormat(customStartDate, 'yyyy-MM-dd')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-').map(Number);
+                              const newD = new Date(y, m - 1, d);
+                              setCustomStartDate(newD);
+                              if (newD > customEndDate) setCustomEndDate(newD);
+                              setIsCustomRangeActive(true);
+                              setCurrentViewDate(new Date(y, m - 1, 1));
+                            }
+                          }}
+                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                          title="শুরুর তারিখ পরিবর্তন করুন"
+                        />
+                        <Calendar size={13} className="text-sky-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* End Date Card */}
+                  <div
+                    onClick={() => {
+                      setSelectingCustomDateType('end');
+                      setCurrentViewDate(new Date(customEndDate.getFullYear(), customEndDate.getMonth(), 1));
+                    }}
+                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectingCustomDateType === 'end'
+                        ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="font-extrabold text-xs text-slate-800">
+                        {toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}
+                      </span>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={dateFnsFormat(customEndDate, 'yyyy-MM-dd')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-').map(Number);
+                              const newD = new Date(y, m - 1, d);
+                              setCustomEndDate(newD);
+                              if (newD < customStartDate) setCustomStartDate(newD);
+                              setIsCustomRangeActive(true);
+                              setCurrentViewDate(new Date(y, m - 1, 1));
+                            }
+                          }}
+                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                          title="শেষের তারিখ পরিবর্তন করুন"
+                        />
+                        <Calendar size={13} className="text-sky-600" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getFullYear(), now.getMonth(), 1);
+                      const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    চলতি মাস
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                      const e = new Date(now.getFullYear(), now.getMonth(), 0);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    বিগত মাস
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+                      setCustomStartDate(s);
+                      setCustomEndDate(now);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    গত ৩০ দিন
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const yr = now.getFullYear();
+                      const fyStartYear = now.getMonth() >= 6 ? yr : yr - 1;
+                      const s = new Date(fyStartYear, 6, 1);
+                      const e = new Date(fyStartYear + 1, 5, 30);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    চলতি অর্থবছর
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getFullYear(), 0, 1);
+                      const e = new Date(now.getFullYear(), 11, 31);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    চলতি বছর
+                  </button>
+                </div>
+
+                {/* Calendar Navigation */}
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-sky-700 transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  
+                  <span className="font-extrabold text-[12.5px] text-slate-800">
+                    {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-sky-700 transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                {/* Weekdays Header */}
+                <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                  {BENGALI_WEEKDAYS.map((w, idx) => (
+                    <span key={idx} className="text-[10px] font-bold text-slate-400">
+                      {w}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Calendar Days Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: firstDayOffset }).map((_, i) => (
+                    <div key={`empty-${i}`} className="h-7" />
+                  ))}
+
+                  {daysArray.map((d) => {
+                    const thisDate = new Date(calYear, calMonth, d);
+                    const thisTime = thisDate.getTime();
+                    const isStart = isSameDay(thisDate, customStartDate);
+                    const isEnd = isSameDay(thisDate, customEndDate);
+                    const inRange = thisTime >= startOfDayTs && thisTime <= endOfDayTs;
+
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectingCustomDateType === 'start') {
+                            setCustomStartDate(thisDate);
+                            if (thisDate > customEndDate) {
+                              setCustomEndDate(thisDate);
+                            }
+                            setSelectingCustomDateType('end');
+                          } else {
+                            if (thisDate < customStartDate) {
+                              setCustomStartDate(thisDate);
+                            } else {
+                              setCustomEndDate(thisDate);
+                            }
+                          }
+                          setIsCustomRangeActive(true);
+                        }}
+                        className={`h-7 w-full rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
+                          isStart || isEnd
+                            ? 'bg-sky-600 text-white font-black shadow-xs ring-2 ring-sky-200'
+                            : inRange
+                            ? 'bg-sky-50 text-sky-800 font-extrabold'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {toBengaliDigits(d.toString())}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Apply Button */}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-bold text-slate-500 truncate">
+                    {toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} - {toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCustomRangeActive(true);
+                      setIsCycleDropdownOpen(false);
+                    }}
+                    className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-black transition-all shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+                  >
+                    <Check size={12} strokeWidth={3} />
+                    <span>প্রয়োগ করুন</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  })();
 
   const historicalFilterElement = (
     <div className="flex items-center gap-1.5 no-print shrink-0">

@@ -236,18 +236,27 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   onBack,
   IDBadge,
 }) => {
-  // Initialize month and year based on activeCycle or current system date
-  const initialDate = useMemo(() => {
+  // Initialize start and end date based on activeCycle or current system date
+  const [startDate, setStartDate] = useState<Date>(() => {
     if (activeCycle?.end) {
       const d = parseDate(activeCycle.end);
-      if (d) return d;
+      if (d) return new Date(d.getFullYear(), d.getMonth(), 1);
     }
-    return new Date();
-  }, [activeCycle]);
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(initialDate.getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(initialDate.getFullYear());
-  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
+  const [endDate, setEndDate] = useState<Date>(() => {
+    if (activeCycle?.end) {
+      const d = parseDate(activeCycle.end);
+      if (d) return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    }
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  });
+
+  const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(startDate.getFullYear(), startDate.getMonth(), 1));
 
   const [filterBranch, setFilterBranch] = useState<string>('নন এসএফআই');
   const [filterLetterType, setFilterLetterType] = useState<string>('সকল');
@@ -262,12 +271,12 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   const branchRef = useRef<HTMLDivElement>(null);
   const letterTypeRef = useRef<HTMLDivElement>(null);
 
-  // Sync viewDate when popover opens or month/year changes
+  // Sync viewDate when popover opens or startDate changes
   useEffect(() => {
     if (isMonthOpen) {
-      setCurrentViewDate(new Date(selectedYear, selectedMonth, 1));
+      setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
     }
-  }, [isMonthOpen, selectedYear, selectedMonth]);
+  }, [isMonthOpen]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -286,23 +295,31 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Compute start date (1st of selected month) and end date (last day of selected month)
-  const { startDate, endDate, dateRangeTitleBN, monthLabelBN } = useMemo(() => {
-    const start = new Date(selectedYear, selectedMonth, 1);
-    const end = new Date(selectedYear, selectedMonth + 1, 0); // Last day of the selected month
-    
-    const startHyphenBN = formatDateWithHyphensBN(start);
-    const endHyphenBN = formatDateWithHyphensBN(end);
-    const monthNameBN = BENGALI_MONTHS.find(m => m.index === selectedMonth)?.name || '';
-    const yearBN = toBengaliDigits(selectedYear.toString());
+  // Compute start date, end date, and titles
+  const { dateRangeTitleBN, displayRangeLabelBN, isFullMonth, fullMonthNameBN } = useMemo(() => {
+    const startHyphenBN = formatDateWithHyphensBN(startDate);
+    const endHyphenBN = formatDateWithHyphensBN(endDate);
+
+    const isStartFirst = startDate.getDate() === 1;
+    const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+    const isEndLast = endDate.getDate() === lastDayOfMonth;
+    const isSameMonthAndYear = startDate.getFullYear() === endDate.getFullYear() && startDate.getMonth() === endDate.getMonth();
+    const fullMonth = isStartFirst && isEndLast && isSameMonthAndYear;
+
+    const monthNameBN = BENGALI_MONTHS.find(m => m.index === startDate.getMonth())?.name || '';
+    const yearBN = toBengaliDigits(startDate.getFullYear().toString());
+    const mLabel = `${monthNameBN}, ${yearBN}`;
+
+    const shortStartBN = `${toBengaliDigits(String(startDate.getDate()).padStart(2, '0'))}/${toBengaliDigits(String(startDate.getMonth() + 1).padStart(2, '0'))}/${toBengaliDigits(startDate.getFullYear().toString())}`;
+    const shortEndBN = `${toBengaliDigits(String(endDate.getDate()).padStart(2, '0'))}/${toBengaliDigits(String(endDate.getMonth() + 1).padStart(2, '0'))}/${toBengaliDigits(endDate.getFullYear().toString())}`;
 
     return {
-      startDate: start,
-      endDate: end,
       dateRangeTitleBN: `${startHyphenBN} হতে ${endHyphenBN} খ্রিঃ তারিখ পর্যন্ত`,
-      monthLabelBN: `${monthNameBN}, ${yearBN}`,
+      displayRangeLabelBN: `${shortStartBN} হতে ${shortEndBN}`,
+      isFullMonth: fullMonth,
+      fullMonthNameBN: mLabel
     };
-  }, [selectedMonth, selectedYear]);
+  }, [startDate, endDate]);
 
   // Letter type options dynamically based on branch
   const letterTypeOptions = useMemo(() => {
@@ -594,7 +611,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
     interactiveElements.forEach(el => el.remove());
 
-    const filename = `Responsible_Party_প্রাপ্ত_পত্রাদির_প্রতিবেদন_${monthLabelBN.replace(/[\s,]+/g, '_')}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
+    const filename = `Responsible_Party_প্রাপ্ত_পত্রাদির_প্রতিবেদন_${(isFullMonth ? fullMonthNameBN : displayRangeLabelBN).replace(/[\s,\/:]+/g, '_')}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
 
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -635,21 +652,11 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   };
 
   const handlePrevMonth = () => {
-    if (selectedMonth === 0) {
-      setSelectedMonth(11);
-      setSelectedYear(prev => prev - 1);
-    } else {
-      setSelectedMonth(prev => prev - 1);
-    }
+    setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
-    if (selectedMonth === 11) {
-      setSelectedMonth(0);
-      setSelectedYear(prev => prev + 1);
-    } else {
-      setSelectedMonth(prev => prev + 1);
-    }
+    setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
   const handleResetFilters = () => {
@@ -718,7 +725,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Left: Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Simple Month Calendar Control */}
+            {/* Date Range (হতে - থেকে) Calendar Control */}
             <div className="relative shrink-0 select-none" ref={monthRef}>
               {/* Main Trigger Button */}
               <button
@@ -727,33 +734,213 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                 className={`flex items-center gap-2 px-3 h-[38px] bg-slate-50 border rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
                   isMonthOpen ? 'border-emerald-600 ring-2 ring-emerald-100 bg-white' : 'border-slate-300 hover:border-emerald-400'
                 }`}
+                title={`${toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}`}
               >
-                <Calendar size={14} className="text-emerald-600" />
-                <span className="text-slate-600 font-semibold">মাস:</span>
-                <span className="text-slate-900 font-black">{monthLabelBN}</span>
-                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isMonthOpen ? 'rotate-180 text-emerald-600' : ''}`} />
+                <Calendar size={14} className="text-emerald-600 shrink-0" />
+                <span className="text-slate-600 font-semibold shrink-0">সময়কাল:</span>
+                <span className="text-slate-900 font-black truncate max-w-[220px] sm:max-w-none">{displayRangeLabelBN}</span>
+                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isMonthOpen ? 'rotate-180 text-emerald-600' : ''}`} />
               </button>
 
-              {/* Simple Standard Calendar Popover */}
+              {/* Comprehensive Date Range Popover */}
               {isMonthOpen && (
-                <div className="absolute top-full left-0 mt-2 w-[280px] sm:w-[295px] bg-white border border-slate-200 rounded-2xl shadow-xl p-3.5 z-[1200] animate-in fade-in duration-150 select-none">
-                  {/* Calendar Header with < Month Year > */}
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[350px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-3.5 z-[1200] animate-in fade-in duration-150 select-none">
+                  {/* Popover Header */}
+                  <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                      <Calendar size={13} className="text-emerald-600" />
+                      <span>সময়কাল নির্বাচন (হতে - থেকে)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsMonthOpen(false)}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="বন্ধ করুন"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {/* Start & End Date Selection Tabs / Cards */}
+                  <div className="grid grid-cols-2 gap-2 mb-2.5">
+                    {/* Start Date Card */}
+                    <div
+                      onClick={() => {
+                        setSelectingDateType('start');
+                        setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+                      }}
+                      className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                        selectingDateType === 'start'
+                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="font-extrabold text-xs text-slate-800">
+                          {toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))}
+                        </span>
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={dateFnsFormat(startDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const [y, m, d] = val.split('-').map(Number);
+                                const newD = new Date(y, m - 1, d);
+                                setStartDate(newD);
+                                if (newD > endDate) setEndDate(newD);
+                                setCurrentViewDate(new Date(y, m - 1, 1));
+                              }
+                            }}
+                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                            title="শুরুর তারিখ পরিবর্তন করুন"
+                          />
+                          <Calendar size={13} className="text-emerald-600" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* End Date Card */}
+                    <div
+                      onClick={() => {
+                        setSelectingDateType('end');
+                        setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
+                      }}
+                      className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                        selectingDateType === 'end'
+                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="font-extrabold text-xs text-slate-800">
+                          {toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}
+                        </span>
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={dateFnsFormat(endDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const [y, m, d] = val.split('-').map(Number);
+                                const newD = new Date(y, m - 1, d);
+                                setEndDate(newD);
+                                if (newD < startDate) setStartDate(newD);
+                                setCurrentViewDate(new Date(y, m - 1, 1));
+                              }
+                            }}
+                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                            title="শেষের তারিখ পরিবর্তন করুন"
+                          />
+                          <Calendar size={13} className="text-emerald-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    >
+                      চলতি মাস
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        const e = new Date(now.getFullYear(), now.getMonth(), 0);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    >
+                      বিগত মাস
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = new Date(now.getFullYear(), 0, 1);
+                        const e = new Date(now.getFullYear(), 11, 31);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    >
+                      চলতি বছর
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+                        setStartDate(s);
+                        setEndDate(now);
+                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    >
+                      গত ৩০ দিন
+                    </button>
+                  </div>
+
+                  {/* Calendar Header with Navigation */}
+                  <div className="flex items-center justify-between mb-2">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
                       }}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
                       title="পূর্ববর্তী মাস"
                     >
                       <ChevronLeft size={16} />
                     </button>
 
-                    <span className="font-black text-sm text-slate-800">
-                      {BENGALI_MONTHS[currentViewDate.getMonth()].name} {toBengaliDigits(currentViewDate.getFullYear().toString())}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={currentViewDate.getMonth()}
+                        onChange={(e) => {
+                          const m = parseInt(e.target.value, 10);
+                          setCurrentViewDate(new Date(currentViewDate.getFullYear(), m, 1));
+                        }}
+                        className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-emerald-500"
+                      >
+                        {BENGALI_MONTHS.map(m => (
+                          <option key={m.index} value={m.index}>{m.name}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={currentViewDate.getFullYear()}
+                        onChange={(e) => {
+                          const y = parseInt(e.target.value, 10);
+                          setCurrentViewDate(new Date(y, currentViewDate.getMonth(), 1));
+                        }}
+                        className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-emerald-500"
+                      >
+                        {[2024, 2025, 2026, 2027, 2028].map(y => (
+                          <option key={y} value={y}>{toBengaliDigits(y.toString())}</option>
+                        ))}
+                      </select>
+                    </div>
 
                     <button
                       type="button"
@@ -761,7 +948,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         e.stopPropagation();
                         setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
                       }}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
                       title="পরবর্তী মাস"
                     >
                       <ChevronRight size={16} />
@@ -769,15 +956,15 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                   </div>
 
                   {/* Weekday Headers */}
-                  <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+                  <div className="grid grid-cols-7 gap-1 text-center mb-1">
                     {BENGALI_WEEKDAYS.map((wd, i) => (
-                      <span key={i} className="text-[11px] font-black text-slate-400 py-0.5">
+                      <span key={i} className="text-[10px] font-black text-slate-400 py-0.5">
                         {wd}
                       </span>
                     ))}
                   </div>
 
-                  {/* Days Grid */}
+                  {/* Days Grid with Range Selection */}
                   <div className="grid grid-cols-7 gap-1">
                     {(() => {
                       const Y = currentViewDate.getFullYear();
@@ -813,73 +1000,98 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         cells.push({ day: d, isCurrentMonth: false, dateObj });
                       }
 
-                      const today = new Date();
-                      const todayDateStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+                      const startStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
+                      const endStr = dateFnsFormat(endDate, 'yyyy-MM-dd');
 
                       return cells.map((cell, idx) => {
-                        const isSelectedMonth = cell.dateObj.getFullYear() === selectedYear && cell.dateObj.getMonth() === selectedMonth;
-                        const cellDateStr = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`;
-                        const isToday = cellDateStr === todayDateStr;
+                        const cellDateStr = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd');
+                        const isStart = cellDateStr === startStr;
+                        const isEnd = cellDateStr === endStr;
+                        const isInRange = cellDateStr > startStr && cellDateStr < endStr;
 
-                        let cellCls = "text-[12px] font-bold h-7.5 flex items-center justify-center rounded-lg transition-all cursor-pointer relative ";
-                        if (cell.isCurrentMonth && isSelectedMonth && cell.day === 1) {
-                          cellCls += "bg-emerald-600 text-white font-extrabold shadow-sm";
-                        } else if (cell.isCurrentMonth && isSelectedMonth) {
-                          cellCls += "bg-emerald-50 text-emerald-800 font-extrabold";
+                        let cellCls = "text-[11.5px] font-bold h-7 flex items-center justify-center transition-all cursor-pointer relative ";
+                        if (isStart && isEnd) {
+                          cellCls += "bg-emerald-600 text-white font-black rounded-lg shadow-sm z-10";
+                        } else if (isStart) {
+                          cellCls += "bg-emerald-600 text-white font-black rounded-l-lg shadow-sm z-10";
+                        } else if (isEnd) {
+                          cellCls += "bg-emerald-600 text-white font-black rounded-r-lg shadow-sm z-10";
+                        } else if (isInRange) {
+                          cellCls += "bg-emerald-100/70 text-emerald-950 font-extrabold rounded-none";
                         } else if (cell.isCurrentMonth) {
-                          cellCls += "text-slate-800 hover:bg-emerald-50 hover:text-emerald-700";
+                          cellCls += "text-slate-800 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg";
                         } else {
-                          cellCls += "text-slate-300 hover:bg-slate-50 hover:text-slate-500";
+                          cellCls += "text-slate-300 hover:bg-slate-50 hover:text-slate-400 rounded-lg";
                         }
 
                         return (
-                          <button
+                          <div
                             key={idx}
-                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedYear(cell.dateObj.getFullYear());
-                              setSelectedMonth(cell.dateObj.getMonth());
-                              setIsMonthOpen(false);
+                              const clickedDate = cell.dateObj;
+                              if (selectingDateType === 'start') {
+                                if (clickedDate > endDate) {
+                                  setStartDate(clickedDate);
+                                  setEndDate(clickedDate);
+                                  setSelectingDateType('end');
+                                } else {
+                                  setStartDate(clickedDate);
+                                  setSelectingDateType('end');
+                                }
+                              } else {
+                                // selectingDateType === 'end'
+                                if (clickedDate < startDate) {
+                                  setStartDate(clickedDate);
+                                  setSelectingDateType('end');
+                                } else {
+                                  setEndDate(clickedDate);
+                                }
+                              }
                             }}
                             className={cellCls}
                           >
                             <span>{toBengaliDigits(cell.day.toString())}</span>
-                            {isToday && !isSelectedMonth && (
-                              <span className="absolute bottom-[2px] w-1 h-1 bg-emerald-600 rounded-full" />
-                            )}
-                          </button>
+                          </div>
                         );
                       });
                     })()}
                   </div>
 
                   {/* Bottom Footer Actions */}
-                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const now = new Date();
-                        setSelectedYear(now.getFullYear());
-                        setSelectedMonth(now.getMonth());
-                        setIsMonthOpen(false);
-                      }}
-                      className="text-[11px] font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
-                    >
-                      চলতি মাস
-                    </button>
+                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <div className="text-[10.5px] font-bold text-slate-600">
+                      <span>{toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))}</span>
+                      <span className="mx-1 text-slate-400">হতে</span>
+                      <span>{toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsMonthOpen(false);
-                      }}
-                      className="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                    >
-                      বন্ধ করুন
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const now = new Date();
+                          const s = new Date(now.getFullYear(), now.getMonth(), 1);
+                          const eDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                          setStartDate(s);
+                          setEndDate(eDate);
+                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                          setSelectingDateType('start');
+                        }}
+                        className="px-2 py-1 text-[10.5px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      >
+                        রিসেট
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMonthOpen(false)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] transition-all shadow-xs flex items-center gap-1 cursor-pointer active:scale-95"
+                      >
+                        <Check size={12} className="stroke-[3]" />
+                        <span>প্রয়োগ করুন</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
