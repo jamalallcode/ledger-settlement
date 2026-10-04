@@ -380,18 +380,17 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     }
   }, [activeCycle.start]);
 
-  const [startDate, setStartDate] = useState<Date>(() => {
-    return new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1);
-  });
-  const [endDate, setEndDate] = useState<Date>(() => new Date(reportingLimitDate));
+  const [startDate, setStartDate] = useState<Date>(() => new Date(2025, 5, 16));
+  const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
-  const [selectedReportingDate, setSelectedReportingDate] = useState<string>(format(reportingLimitDate, 'yyyy-MM-dd'));
-  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(reportingLimitDate));
+  const [selectedReportingDate, setSelectedReportingDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date());
 
   useEffect(() => {
-    setEndDate(new Date(reportingLimitDate));
-    setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
-    setCurrentViewDate(new Date(reportingLimitDate));
+    const now = new Date();
+    setEndDate(now);
+    setSelectedReportingDate(format(now, 'yyyy-MM-dd'));
+    setCurrentViewDate(now);
   }, [reportingLimitDate]);
 
   const parseDate = (dateStr: string | null | undefined) => {
@@ -824,7 +823,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 </button>
 
                 {isCalendarOpen && (
-                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 lg:left-1/2 lg:-translate-x-1/2 mt-2 w-[320px] sm:w-[350px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200 select-none">
+                  <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[350px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200 select-none">
                     {/* Calendar Top Header with Title & Close */}
                     <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                       <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
@@ -1139,13 +1138,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </div>
 
-              {(format(startDate, 'yyyy-MM-dd') !== format(new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1), 'yyyy-MM-dd') ||
-                format(endDate, 'yyyy-MM-dd') !== format(reportingLimitDate, 'yyyy-MM-dd')) && (
+              {(format(startDate, 'yyyy-MM-dd') !== '2025-06-16' ||
+                format(endDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd')) && (
                 <button 
                   onClick={() => {
-                    setStartDate(new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1));
-                    setEndDate(new Date(reportingLimitDate));
-                    setCurrentViewDate(new Date(reportingLimitDate));
+                    const now = new Date();
+                    setStartDate(new Date(2025, 5, 16));
+                    setEndDate(now);
+                    setCurrentViewDate(now);
                   }}
                   className="p-2 bg-slate-50 border border-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[38px] flex items-center justify-center cursor-pointer"
                   title="ডিফল্ট সময়সীমায় ফিরুন"
