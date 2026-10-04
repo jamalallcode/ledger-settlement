@@ -380,10 +380,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     }
   }, [activeCycle.start]);
 
+  const [startDate, setStartDate] = useState<Date>(() => {
+    return new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1);
+  });
+  const [endDate, setEndDate] = useState<Date>(() => new Date(reportingLimitDate));
+  const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
   const [selectedReportingDate, setSelectedReportingDate] = useState<string>(format(reportingLimitDate, 'yyyy-MM-dd'));
   const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(reportingLimitDate));
 
   useEffect(() => {
+    setEndDate(new Date(reportingLimitDate));
     setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
     setCurrentViewDate(new Date(reportingLimitDate));
   }, [reportingLimitDate]);
@@ -459,8 +465,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const filteredEntries = useMemo(() => {
     let data = entries || [];
     
-    const reportingDateObj = parseDate(selectedReportingDate);
-    if (!reportingDateObj) return data;
+    const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+    const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999).getTime();
 
     data = data.filter(e => {
       // 1. Check if it's settled (has valid issue no AND date)
@@ -481,8 +487,8 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       if (hasValidIssueNo && hasValidIssueDate) {
         const iDate = parseDate(e.issueLetterDate);
         if (iDate) {
-          // If issued on or before reporting date, it's SETTLED (not pending)
-          if (iDate.getTime() <= reportingDateObj.getTime()) {
+          // If issued on or before end date, it's SETTLED (not pending)
+          if (iDate.getTime() <= endMidnight) {
             return false; 
           }
         }
@@ -492,8 +498,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       const dDate = parseDate(e.diaryDate);
       if (!dDate) return false;
       
-      // 3. Must be received ON OR BEFORE reportingDateObj
-      if (dDate.getTime() > reportingDateObj.getTime()) return false;
+      // 3. Must be received within startDate and endDate
+      const dTime = dDate.getTime();
+      if (dTime < startMidnight || dTime > endMidnight) return false;
       
       return true; // Still Pending
     });
@@ -509,8 +516,9 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
       data = data.filter(e => e.paraType === filterBranch);
     }
 
+    const endStr = format(endDate, 'yyyy-MM-dd');
     return data.map(e => {
-      const hist = getHistoricalPresentation(e, selectedReportingDate);
+      const hist = getHistoricalPresentation(e, endStr);
       return {
         ...e,
         presentationDate: hist.isPresented ? e.presentationDate : null,
@@ -518,7 +526,7 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
         presentedToName: hist.position
       };
     });
-  }, [entries, filterAuditor, filterBranch, selectedReportingDate]);
+  }, [entries, filterAuditor, filterBranch, startDate, endDate]);
 
   const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -580,9 +588,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     return Object.entries(stats).map(([key, data]) => ({ name: data.rawName, ...data }));
   }, [filteredEntries]);
 
-  const reportingDate = new Date(selectedReportingDate);
+  const reportingDate = endDate;
 
-  const reportingDateBN = toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'));
+  const isSameDate = startDate.getFullYear() === endDate.getFullYear() &&
+                     startDate.getMonth() === endDate.getMonth() &&
+                     startDate.getDate() === endDate.getDate();
+
+  const reportingDateBN = isSameDate
+    ? toBengaliDigits(format(endDate, 'dd/MM/yyyy'))
+    : `${toBengaliDigits(format(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(endDate, 'dd/MM/yyyy'))}`;
+
   const reportingMonthBN = toBengaliDigits(format(reportingDate, 'MMMM/yy'))
     .replace('January', 'জানুয়ারি').replace('February', 'ফেব্রুয়ারি').replace('March', 'মার্চ')
     .replace('April', 'এপ্রিল').replace('May', 'মে').replace('June', 'জুন')
@@ -789,69 +804,253 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
           {/* Right Group: Date Picker, Filters & Statistics on a single row */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap xl:flex-nowrap justify-center xl:justify-end shrink-0 select-none no-print">
             
-            {/* Reporting Date with Elegant Custom Calendar picker */}
+            {/* Reporting Date Range with Elegant Custom Calendar picker (হতে - থেকে) */}
             <div className="flex items-center justify-center gap-2">
-              <div className="relative" ref={calendarRef}>
+              <div className="relative shrink-0 select-none z-[400]" ref={calendarRef}>
                 <button
+                  type="button"
                   onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                  className="flex items-center gap-2 bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl hover:border-blue-500 hover:ring-4 hover:ring-blue-100 hover:bg-white transition-all duration-300 shadow-sm font-bold text-slate-700 h-[38px] cursor-pointer"
+                  className={`flex items-center gap-2 px-3 h-[38px] bg-slate-50 border rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
+                    isCalendarOpen ? 'border-blue-600 ring-2 ring-blue-100 bg-white' : 'border-slate-300 hover:border-blue-400'
+                  }`}
+                  title={`${toBengaliDigits(format(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(endDate, 'dd/MM/yyyy'))}`}
                 >
-                  <Calendar size={14} className="text-blue-600 animate-pulse" />
-                  <span className="text-[11.5px] font-black text-slate-800">
-                    তারিখ: {toBengaliDigits(format(reportingDate, 'dd/MM/yyyy'))}
+                  <Calendar size={14} className="text-blue-600 shrink-0" />
+                  <span className="text-slate-600 font-semibold shrink-0">সময়কাল:</span>
+                  <span className="text-slate-900 font-black truncate max-w-[200px] sm:max-w-none">
+                    {toBengaliDigits(format(startDate, 'dd/MM/yyyy'))} হতে {toBengaliDigits(format(endDate, 'dd/MM/yyyy'))}
                   </span>
-                  <ChevronDown size={13} className={`text-slate-400 transition-transform duration-300 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                  <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isCalendarOpen ? 'rotate-180 text-blue-600' : ''}`} />
                 </button>
 
                 {isCalendarOpen && (
-                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 lg:left-1/2 lg:-translate-x-1/2 mt-2 w-[300px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-                    {/* Calendar Header */}
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="absolute top-full left-0 sm:left-auto sm:right-0 lg:left-1/2 lg:-translate-x-1/2 mt-2 w-[320px] sm:w-[350px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200 select-none">
+                    {/* Calendar Top Header with Title & Close */}
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                        <Calendar size={13} className="text-blue-600" />
+                        <span>রিপোর্টিং সময়কাল নির্বাচন (হতে - থেকে)</span>
+                      </div>
                       <button
+                        type="button"
+                        onClick={() => setIsCalendarOpen(false)}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="বন্ধ করুন"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    {/* Start & End Date Selection Cards */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {/* Start Date Card */}
+                      <div
+                        onClick={() => {
+                          setSelectingDateType('start');
+                          setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+                        }}
+                        className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                          selectingDateType === 'start'
+                            ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                        }`}
+                      >
+                        <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="font-extrabold text-xs text-slate-800">
+                            {toBengaliDigits(format(startDate, 'dd/MM/yyyy'))}
+                          </span>
+                          <div className="relative">
+                            <input
+                              type="date"
+                              value={format(startDate, 'yyyy-MM-dd')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const [y, m, d] = val.split('-').map(Number);
+                                  const newD = new Date(y, m - 1, d);
+                                  setStartDate(newD);
+                                  if (newD > endDate) setEndDate(newD);
+                                  setCurrentViewDate(new Date(y, m - 1, 1));
+                                }
+                              }}
+                              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                              title="শুরুর তারিখ পরিবর্তন করুন"
+                            />
+                            <Calendar size={13} className="text-blue-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* End Date Card */}
+                      <div
+                        onClick={() => {
+                          setSelectingDateType('end');
+                          setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
+                        }}
+                        className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                          selectingDateType === 'end'
+                            ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                        }`}
+                      >
+                        <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="font-extrabold text-xs text-slate-800">
+                            {toBengaliDigits(format(endDate, 'dd/MM/yyyy'))}
+                          </span>
+                          <div className="relative">
+                            <input
+                              type="date"
+                              value={format(endDate, 'yyyy-MM-dd')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const [y, m, d] = val.split('-').map(Number);
+                                  const newD = new Date(y, m - 1, d);
+                                  setEndDate(newD);
+                                  if (newD < startDate) setStartDate(newD);
+                                  setCurrentViewDate(new Date(y, m - 1, 1));
+                                }
+                              }}
+                              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                              title="শেষের তারিখ পরিবর্তন করুন"
+                            />
+                            <Calendar size={13} className="text-blue-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="flex flex-wrap gap-1 mb-3 pb-2.5 border-b border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const s = new Date(now.getFullYear(), now.getMonth(), 1);
+                          const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                          setStartDate(s);
+                          setEndDate(e);
+                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                        }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      >
+                        চলতি মাস
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                          const e = new Date(now.getFullYear(), now.getMonth(), 0);
+                          setStartDate(s);
+                          setEndDate(e);
+                          setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                        }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      >
+                        বিগত মাস
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const s = new Date(now.getFullYear(), 0, 1);
+                          const e = new Date(now.getFullYear(), 11, 31);
+                          setStartDate(s);
+                          setEndDate(e);
+                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                        }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      >
+                        চলতি বছর
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const s = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+                          setStartDate(s);
+                          setEndDate(now);
+                          setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                        }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      >
+                        গত ৩০ দিন
+                      </button>
+                    </div>
+
+                    {/* Calendar Header with Navigation */}
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
                         }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                        type="button"
+                        className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
+                        title="পূর্ববর্তী মাস"
                       >
                         <ChevronLeft size={16} />
                       </button>
-                      
-                      <span className="font-extrabold text-[14px] text-slate-800">
-                        {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
-                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={currentViewDate.getMonth()}
+                          onChange={(e) => {
+                            const m = parseInt(e.target.value, 10);
+                            setCurrentViewDate(new Date(currentViewDate.getFullYear(), m, 1));
+                          }}
+                          className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-blue-500"
+                        >
+                          {BENGALI_MONTHS.map((mName, mIdx) => (
+                            <option key={mIdx} value={mIdx}>{mName}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={currentViewDate.getFullYear()}
+                          onChange={(e) => {
+                            const y = parseInt(e.target.value, 10);
+                            setCurrentViewDate(new Date(y, currentViewDate.getMonth(), 1));
+                          }}
+                          className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-blue-500"
+                        >
+                          {[2024, 2025, 2026, 2027, 2028].map(y => (
+                            <option key={y} value={y}>{toBengaliDigits(y.toString())}</option>
+                          ))}
+                        </select>
+                      </div>
 
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
                         }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                        type="button"
+                        className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
+                        title="পরবর্তী মাস"
                       >
                         <ChevronRight size={16} />
                       </button>
                     </div>
 
                     {/* Calendar Week Days */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
                       {BENGALI_WEEKDAYS.map((wd, i) => (
-                        <span key={i} className="text-[11px] font-black text-slate-400">
+                        <span key={i} className="text-[10px] font-black text-slate-400 py-0.5">
                           {wd}
                         </span>
                       ))}
                     </div>
 
-                    {/* Calendar Days Grid */}
+                    {/* Calendar Days Grid with Range Highlight */}
                     <div className="grid grid-cols-7 gap-1">
                       {(() => {
                         const Y = currentViewDate.getFullYear();
                         const M = currentViewDate.getMonth();
                         const firstDay = new Date(Y, M, 1);
                         
-                        // Map day: Sunday is 0, Monday is 1... Saturday is 6.
-                        // Let's align Saturday to index 0, Sunday to index 1... Friday to index 6.
                         let startOffset = (firstDay.getDay() + 1) % 7; 
                         
                         const daysInMonth = new Date(Y, M + 1, 0).getDate();
@@ -873,43 +1072,64 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                         }
                         
                         // Lead days
-                        const remaining = 42 - cells.length;
+                        const totalCells = cells.length > 35 ? 42 : 35;
+                        const remaining = totalCells - cells.length;
                         for (let d = 1; d <= remaining; d++) {
                           const dateObj = new Date(Y, M + 1, d);
                           cells.push({ day: d, isCurrentMonth: false, dateObj });
                         }
 
+                        const startStr = format(startDate, 'yyyy-MM-dd');
+                        const endStr = format(endDate, 'yyyy-MM-dd');
+
                         return cells.map((cell, idx) => {
                           const dateStr = format(cell.dateObj, 'yyyy-MM-dd');
-                          const isSelected = dateStr === selectedReportingDate;
-                          
-                          let cellCls = "text-[12px] font-bold h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer ";
-                          if (isSelected) {
-                            cellCls += "bg-blue-600 text-white font-extrabold shadow-md";
-                          } else if (cell.isCurrentMonth) {
-                            cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-600";
-                          } else {
-                            cellCls += "text-slate-400 hover:bg-slate-50";
-                          }
+                          const isStart = dateStr === startStr;
+                          const isEnd = dateStr === endStr;
+                          const isInRange = dateStr > startStr && dateStr < endStr;
 
-                          // Check if today
-                          const todayStr = format(new Date(), 'yyyy-MM-dd');
-                          const isToday = dateStr === todayStr;
+                          let cellCls = "text-[11.5px] font-bold h-7 flex items-center justify-center transition-all cursor-pointer relative ";
+                          if (isStart && isEnd) {
+                            cellCls += "bg-blue-600 text-white font-black rounded-lg shadow-sm z-10";
+                          } else if (isStart) {
+                            cellCls += "bg-blue-600 text-white font-black rounded-l-lg shadow-sm z-10";
+                          } else if (isEnd) {
+                            cellCls += "bg-blue-600 text-white font-black rounded-r-lg shadow-sm z-10";
+                          } else if (isInRange) {
+                            cellCls += "bg-blue-100/70 text-blue-950 font-extrabold rounded-none";
+                          } else if (cell.isCurrentMonth) {
+                            cellCls += "text-slate-800 hover:bg-blue-50 hover:text-blue-700 rounded-lg";
+                          } else {
+                            cellCls += "text-slate-300 hover:bg-slate-50 hover:text-slate-400 rounded-lg";
+                          }
 
                           return (
                             <div
                               key={idx}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedReportingDate(dateStr);
-                                setIsCalendarOpen(false);
+                                const clickedDate = cell.dateObj;
+                                if (selectingDateType === 'start') {
+                                  if (clickedDate > endDate) {
+                                    setStartDate(clickedDate);
+                                    setEndDate(clickedDate);
+                                    setSelectingDateType('end');
+                                  } else {
+                                    setStartDate(clickedDate);
+                                    setSelectingDateType('end');
+                                  }
+                                } else {
+                                  if (clickedDate < startDate) {
+                                    setStartDate(clickedDate);
+                                    setSelectingDateType('end');
+                                  } else {
+                                    setEndDate(clickedDate);
+                                  }
+                                }
                               }}
-                              className={`${cellCls} relative`}
+                              className={cellCls}
                             >
                               <span>{toBengaliDigits(cell.day.toString())}</span>
-                              {isToday && !isSelected && (
-                                <span className="absolute bottom-[2px] w-1 h-1 bg-blue-600 rounded-full"></span>
-                              )}
                             </div>
                           );
                         });
@@ -919,14 +1139,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                 )}
               </div>
 
-              {selectedReportingDate !== format(reportingLimitDate, 'yyyy-MM-dd') && (
+              {(format(startDate, 'yyyy-MM-dd') !== format(new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1), 'yyyy-MM-dd') ||
+                format(endDate, 'yyyy-MM-dd') !== format(reportingLimitDate, 'yyyy-MM-dd')) && (
                 <button 
                   onClick={() => {
-                    setSelectedReportingDate(format(reportingLimitDate, 'yyyy-MM-dd'));
-                    setIsCalendarOpen(false);
+                    setStartDate(new Date(reportingLimitDate.getFullYear(), reportingLimitDate.getMonth(), 1));
+                    setEndDate(new Date(reportingLimitDate));
+                    setCurrentViewDate(new Date(reportingLimitDate));
                   }}
                   className="p-2 bg-slate-50 border border-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 rounded-xl transition-all shadow-sm h-[38px] flex items-center justify-center cursor-pointer"
-                  title="ডিফল্ট তারিখে ফিরুন"
+                  title="ডিফল্ট সময়সীমায় ফিরুন"
                 >
                   <RotateCcw size={14} />
                 </button>

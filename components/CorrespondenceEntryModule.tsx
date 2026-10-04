@@ -2007,10 +2007,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
       }
       if (descriptionRef.current && !descriptionRef.current.contains(event.target as Node)) {
         setShowDescriptionDropdown(false);
+        setIsAddingNewDesc(false);
+        setIsAddingNewPatkol(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
   }, []);
 
   const handleNumericInput = (field: string, val: string) => {
@@ -2382,22 +2384,36 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
             </div>
 
             {/* Field Description - একক লাইনে সম্পূর্ন (Full Width) */}
-            <div className={`${colWrapper} border-emerald-100 col-span-full`} ref={descriptionRef}>
+            <div className={`${colWrapper} border-emerald-100 col-span-full`}>
               <IDBadge id="corr-field-1" />
               <label className={labelCls}>
                 <span className={numBadge}>{getSerial()}</span> 
                 <FileText size={14} className="text-emerald-600" /> 
                 পত্রের বিবরণ:
               </label>
-              <div className="relative group">
+              <div className="relative group" ref={descriptionRef}>
                 <input 
                   ref={descriptionInputRef}
                   type="text" 
                   required 
                   className={`${inputCls} ${formData.description ? 'border-emerald-500 !pr-12' : 'border-red-500'}`} 
                   value={formData.description} 
+                  onClick={() => {
+                    setShowDescriptionDropdown(true);
+                  }}
                   onFocus={() => {
                     setShowDescriptionDropdown(true);
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setShowDescriptionDropdown(false);
+                      setIsAddingNewDesc(false);
+                      setIsAddingNewPatkol(false);
+                      checkAuditYear(formData.description);
+                    } else if (e.key === 'Escape') {
+                      setShowDescriptionDropdown(false);
+                    }
                   }}
                   onBlur={() => {
                     checkAuditYear(formData.description);
@@ -2405,15 +2421,12 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   onChange={e => {
                     const val = e.target.value;
                     setFormData({...formData, description: val});
+                    setShowDescriptionDropdown(true);
                     checkAuditYear(val);
                   }}
                   placeholder="বিবরণ লিখুন"
                   autoComplete="off"
                 />
-
-                {hasStartedFilling && (!formData.description || !formData.description.trim()) && (
-                  <UnfilledMessage message="পত্রের বিবরণ লেখেননি।" />
-                )}
 
                 {showDescriptionDropdown && (
                   formData.entityName === 'পাটকল সংস্থা' ? (
@@ -2610,6 +2623,9 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
                   )
                 )}
               </div>
+              {hasStartedFilling && (!formData.description || !formData.description.trim()) && (
+                <UnfilledMessage message="পত্রের বিবরণ লেখেননি।" />
+              )}
             </div>
 
             {/* Field Audit Year - নিরীক্ষা সাল (পত্র নং- এর পূর্বে) */}
@@ -2711,7 +2727,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 
                 <div className={`${colWrapper} border-emerald-100`}>
                   <IDBadge id="corr-field-recommended-paras" />
-                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</label>
+                  <label className={`${labelCls} !gap-1.5 whitespace-nowrap tracking-tight`}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> <span className="truncate">সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</span></label>
                   <input 
                     type="text" className={`${inputCls} ${rawInputs.meetingRecommendedParaCount ? 'border-emerald-500' : 'border-red-500'}`} 
                     value={rawInputs.meetingRecommendedParaCount || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount || ''))} 
