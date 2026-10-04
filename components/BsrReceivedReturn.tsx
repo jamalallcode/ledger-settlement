@@ -236,23 +236,15 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   onBack,
   IDBadge,
 }) => {
-  // Initialize start and end date based on activeCycle or current system date
+  // Initialize start and end date to the previous calendar month by default
   const [startDate, setStartDate] = useState<Date>(() => {
-    if (activeCycle?.end) {
-      const d = parseDate(activeCycle.end);
-      if (d) return new Date(d.getFullYear(), d.getMonth(), 1);
-    }
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    return new Date(now.getFullYear(), now.getMonth() - 1, 1);
   });
 
   const [endDate, setEndDate] = useState<Date>(() => {
-    if (activeCycle?.end) {
-      const d = parseDate(activeCycle.end);
-      if (d) return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    }
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return new Date(now.getFullYear(), now.getMonth(), 0);
   });
 
   const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
@@ -1072,11 +1064,11 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           const now = new Date();
-                          const s = new Date(now.getFullYear(), now.getMonth(), 1);
-                          const eDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                          const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                          const eDate = new Date(now.getFullYear(), now.getMonth(), 0);
                           setStartDate(s);
                           setEndDate(eDate);
-                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                          setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
                           setSelectingDateType('start');
                         }}
                         className="px-2 py-1 text-[10.5px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
