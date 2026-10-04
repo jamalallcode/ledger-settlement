@@ -516,15 +516,24 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     }
 
     const endStr = format(endDate, 'yyyy-MM-dd');
-    return data.map(e => {
-      const hist = getHistoricalPresentation(e, endStr);
-      return {
-        ...e,
-        presentationDate: hist.isPresented ? e.presentationDate : null,
-        presentationDateFormatted: hist.presentationDateFormatted,
-        presentedToName: hist.position
-      };
-    });
+    return [...data]
+      .sort((a, b) => {
+        const dateA = parseDate(a.diaryDate)?.getTime() ?? 0;
+        const dateB = parseDate(b.diaryDate)?.getTime() ?? 0;
+        if (dateA !== dateB) return dateA - dateB;
+        const noA = parseInt(toEnglishDigits(String(a.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+        const noB = parseInt(toEnglishDigits(String(b.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+        return noA - noB;
+      })
+      .map(e => {
+        const hist = getHistoricalPresentation(e, endStr);
+        return {
+          ...e,
+          presentationDate: hist.isPresented ? e.presentationDate : null,
+          presentationDateFormatted: hist.presentationDateFormatted,
+          presentedToName: hist.position
+        };
+      });
   }, [entries, filterAuditor, filterBranch, startDate, endDate]);
 
   const [showAuditorStatsModal, setShowAuditorStatsModal] = useState(false);
@@ -662,7 +671,14 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
     const sorted = [...filteredEntries].sort((a, b) => {
       const audA = getDisplayName(a.receiverName || a.presentedToName);
       const audB = getDisplayName(b.receiverName || b.presentedToName);
-      return audA.localeCompare(audB);
+      const audCompare = audA.localeCompare(audB);
+      if (audCompare !== 0) return audCompare;
+      const dateA = parseDate(a.diaryDate)?.getTime() ?? 0;
+      const dateB = parseDate(b.diaryDate)?.getTime() ?? 0;
+      if (dateA !== dateB) return dateA - dateB;
+      const noA = parseInt(toEnglishDigits(String(a.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      const noB = parseInt(toEnglishDigits(String(b.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      return noA - noB;
     });
 
     const groups: { auditor: string; rawAuditor: string; rows: any[] }[] = [];
