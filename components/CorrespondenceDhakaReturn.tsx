@@ -537,12 +537,22 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       }
     }
 
-    if (!searchTerm.trim()) return data;
-    return data.filter(entry => 
-      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (searchTerm.trim()) {
+      data = data.filter(entry => 
+        (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return [...data].sort((a, b) => {
+      const dateA = parseDate(a.diaryDate)?.getTime() ?? 0;
+      const dateB = parseDate(b.diaryDate)?.getTime() ?? 0;
+      if (dateA !== dateB) return dateA - dateB;
+      const noA = parseInt(toEnglishDigits(String(a.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      const noB = parseInt(toEnglishDigits(String(b.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      return noA - noB;
+    });
   }, [correspondenceEntries, searchTerm, filterParaType, filterLetterType, startDate, endDate]);
 
   const excludedEntries = useMemo(() => {
@@ -589,12 +599,22 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       data = data.filter(e => e.paraType === filterParaType);
     }
 
-    if (!searchTerm.trim()) return data;
-    return data.filter(entry =>
-      (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (searchTerm.trim()) {
+      data = data.filter(entry =>
+        (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (entry.diaryNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (entry.letterNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return [...data].sort((a, b) => {
+      const dateA = parseDate(a.diaryDate)?.getTime() ?? 0;
+      const dateB = parseDate(b.diaryDate)?.getTime() ?? 0;
+      if (dateA !== dateB) return dateA - dateB;
+      const noA = parseInt(toEnglishDigits(String(a.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      const noB = parseInt(toEnglishDigits(String(b.diaryNo || '')).replace(/\D/g, ''), 10) || 0;
+      return noA - noB;
+    });
   }, [correspondenceEntries, searchTerm, filterParaType, startDate, endDate]);
 
   const thS = "px-1 py-1 font-black text-center text-[10px] bg-slate-200 text-slate-900 leading-tight align-middle h-full bg-clip-border";
