@@ -657,6 +657,18 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
     let no = '';
     let d = '', m = '', y = '';
     
+    if (parts.length === 1 && /তারিখ/.test(parts[0])) {
+      const cleanDateRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
+      const dateStr = parts[0].replace(cleanDateRegex, '').trim();
+      const dateParts = toEnglishDigits(dateStr).split(/[\/\-]/);
+      if (dateParts.length === 3) {
+        d = toBengaliDigits(dateParts[0]);
+        m = toBengaliDigits(dateParts[1]);
+        y = toBengaliDigits(dateParts[2]);
+      }
+      return { no: '', d, m, y };
+    }
+
     if (parts.length >= 1) {
       // Clean all possible number prefixes globally to handle corrupted data
       const cleanRegex = /(কার্যপত্রের|কার্যপত্র|জারিপত্রের|জারিপত্র|ডায়েরির|ডায়েরি|পত্রের|পত্র|তারিখের|তারিখ|নং|ও|ের|র)[\s:\-–—]*/g;
@@ -762,6 +774,15 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       
       if (initialEntry.manualRaisedCount) newRaw['entry-raised-count'] = toBengaliDigits(initialEntry.manualRaisedCount);
       if (initialEntry.manualRaisedAmount) newRaw['entry-raised-amount'] = toBengaliDigits(initialEntry.manualRaisedAmount);
+      if (initialEntry.meetingSentParaCount !== undefined && initialEntry.meetingSentParaCount !== null && initialEntry.meetingSentParaCount !== '') {
+        newRaw['direct-meetingSentParaCount'] = toBengaliDigits(String(initialEntry.meetingSentParaCount));
+      }
+      if (initialEntry.meetingDiscussedParaCount !== undefined && initialEntry.meetingDiscussedParaCount !== null && initialEntry.meetingDiscussedParaCount !== '') {
+        newRaw['direct-meetingDiscussedParaCount'] = toBengaliDigits(String(initialEntry.meetingDiscussedParaCount));
+      }
+      if (initialEntry.meetingRecommendedParaCount !== undefined && initialEntry.meetingRecommendedParaCount !== null && initialEntry.meetingRecommendedParaCount !== '') {
+        newRaw['direct-meetingRecommendedParaCount'] = toBengaliDigits(String(initialEntry.meetingRecommendedParaCount));
+      }
 
       setRawInputs(newRaw);
       setWizardStep('details');
@@ -837,6 +858,7 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
   }, [issueNoPart, dayPart, monthPart, yearPart, currentIssueISO]);
 
   useEffect(() => {
+    if (initialEntry) return;
     if (!correspondenceEntries || correspondenceEntries.length === 0) return;
 
     const norm = (s?: string) => toEnglishDigits(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -929,8 +951,14 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       });
     } else if (id === 'direct') {
        setRawInputs(prev => ({ ...prev, [`direct-${field}`]: bDigits }));
-       const isNumericField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas', 'meetingUnsettledAmount', 'totalInvolvedAmount', 'sentParaInvolvedAmount'].includes(field);
-       setFormData(prev => ({ ...prev, [field]: isNumericField ? engNum : (val.includes('.') ? engNum : bDigits) } as any));
+       const isStringCountField = ['meetingSentParaCount', 'meetingDiscussedParaCount', 'meetingRecommendedParaCount', 'meetingSettledParaCount', 'meetingUnsettledParas'].includes(field);
+       const isNumericField = ['meetingUnsettledAmount', 'totalInvolvedAmount', 'sentParaInvolvedAmount'].includes(field);
+       setFormData(prev => ({
+         ...prev,
+         [field]: isStringCountField
+           ? (val.trim() === '' ? '' : String(engNum))
+           : (isNumericField ? engNum : (val.includes('.') ? engNum : bDigits))
+       } as any));
     } else {
       setRawInputs(prev => ({ ...prev, [`${id}-${field}`]: bDigits }));
       setParagraphs(prev => prev.map(p => {
@@ -1083,11 +1111,11 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
       const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
 
-      // Auto-mapping fallback from correspondenceEntries
-      let mappedSentParaCount = formData.meetingSentParaCount || '';
+      // Auto-mapping fallback from correspondenceEntries (only when creating a new entry, not overriding edits)
+      let mappedSentParaCount = formData.meetingSentParaCount !== undefined && formData.meetingSentParaCount !== null ? String(formData.meetingSentParaCount) : '';
       let mappedInvolvedAmount = formData.sentParaInvolvedAmount || 0;
 
-      if ((!mappedSentParaCount || !mappedInvolvedAmount) && correspondenceEntries && correspondenceEntries.length > 0) {
+      if (!initialEntry && (!mappedSentParaCount || !mappedInvolvedAmount) && correspondenceEntries && correspondenceEntries.length > 0) {
         const norm = (s?: string) => toEnglishDigits(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const lNo = norm(letterNoPart);
         const iNo = norm(issueNoPart);
@@ -1730,6 +1758,42 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
               <input type="text" className={getDynamicInputCls(formData.remarks)} value={formData.remarks || ''} onChange={e => setFormData({...formData, remarks: e.target.value})} placeholder="মন্তব্য লিখুন..." />
             </div>
 
+            {isUpdateMode && (
+              <>
+                <div id="field-sent-para-count" className={col2Style}>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-emerald-600 shrink-0" /> প্রেরিত অনুচ্ছেদ সংখ্যা:</label>
+                  <input
+                    type="text"
+                    className={getDynamicInputCls(rawInputs['direct-meetingSentParaCount'] ?? formData.meetingSentParaCount)}
+                    value={rawInputs['direct-meetingSentParaCount'] !== undefined ? rawInputs['direct-meetingSentParaCount'] : (formData.meetingSentParaCount === '' ? '' : toBengaliDigits(formData.meetingSentParaCount))}
+                    onChange={e => handleNumericInput('direct', 'meetingSentParaCount', e.target.value)}
+                    placeholder="০"
+                  />
+                </div>
+
+                <div id="field-online-status" className={col1Style}>
+                  <SearchableSelect
+                    label={<><span className={numBadge}>{getSerial()}</span> <Globe size={14} className="text-sky-600 shrink-0" /> অনলাইন/অফলাইন স্ট্যাটাস:</>}
+                    groups={[{ label: 'স্ট্যাটাস', options: ['হ্যাঁ', 'না'] }]}
+                    value={(formData as any).isOnline || 'না'}
+                    onChange={v => setFormData({ ...formData, isOnline: v || 'না' })}
+                    showSearch={false}
+                  />
+                </div>
+
+                <div id="field-archive-no" className={`${col4Style} col-span-1 md:col-span-2`}>
+                  <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Archive size={14} className="text-purple-600 shrink-0" /> আর্কাইভ নং-</label>
+                  <input
+                    type="text"
+                    className={getDynamicInputCls(formData.archiveNo)}
+                    value={formData.archiveNo || ''}
+                    onChange={e => setFormData({ ...formData, archiveNo: e.target.value })}
+                    placeholder="যেমন: kg- ০৪৯৮"
+                  />
+                </div>
+              </>
+            )}
+
             {/* Meeting options if meetingType !== 'বিএসআর' */}
             {formData.meetingType !== 'বিএসআর' && (
               <>
@@ -1737,8 +1801,24 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
                   <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Calendar size={14} className="text-amber-600 shrink-0" /> সভার তারিখ:</label>
                   <input type="date" className={getDynamicInputCls(formData.meetingDate)} value={formData.meetingDate} onChange={e => setFormData({...formData, meetingDate: e.target.value})} />
                 </div>
-                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] || (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
-                <div id="field-21" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] || (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-20" className={col3Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <ListOrdered size={14} className="text-sky-600 shrink-0" /> আলোচিত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingDiscussedParaCount'] || formData.meetingDiscussedParaCount)} value={rawInputs['direct-meetingDiscussedParaCount'] !== undefined ? rawInputs['direct-meetingDiscussedParaCount'] : (formData.meetingDiscussedParaCount === '0' || formData.meetingDiscussedParaCount === '' ? '' : toBengaliDigits(formData.meetingDiscussedParaCount))} onChange={e => handleNumericInput('direct', 'meetingDiscussedParaCount', e.target.value)} placeholder="০" /></div>
+                <div id="field-21" className={col1Style}><label className={labelCls}><span className={numBadge}>{getSerial()}</span> <CheckCircle2 size={14} className="text-emerald-600 shrink-0" /> সুপারিশকৃত অনুচ্ছেদ সংখ্যা:</label><input type="text" className={getDynamicInputCls(rawInputs['direct-meetingRecommendedParaCount'] || formData.meetingRecommendedParaCount)} value={rawInputs['direct-meetingRecommendedParaCount'] !== undefined ? rawInputs['direct-meetingRecommendedParaCount'] : (formData.meetingRecommendedParaCount === '0' || formData.meetingRecommendedParaCount === '' ? '' : toBengaliDigits(formData.meetingRecommendedParaCount))} onChange={e => handleNumericInput('direct', 'meetingRecommendedParaCount', e.target.value)} placeholder="০" /></div>
+                {isUpdateMode && (
+                  <>
+                    <div id="field-wp-no" className={col4Style}>
+                      <label className={labelCls}><span className={numBadge}>{getSerial()}</span> <Hash size={14} className="text-purple-600 shrink-0" /> কার্যপত্র নং-</label>
+                      <input
+                        type="text"
+                        className={getDynamicInputCls(wpNoPart)}
+                        value={wpNoPart}
+                        onChange={e => setWpNoPart(toBengaliDigits(e.target.value))}
+                        placeholder="কার্যপত্র নং লিখুন"
+                      />
+                    </div>
+                    <SegmentedInput id="field-wp-date" num={getSerial()} icon={Calendar} label="কার্যপত্র তারিখ" color="purple" noValue="DATE_ONLY" dayValue={wpDay} monthValue={wpMonth} yearValue={wpYear} noSetter={()=>{}} daySetter={setWpDay} monthSetter={setWpMonth} yearSetter={setWpYear} dayRef={wpDayRef} monthRef={wpMonthRef} yearRef={wpYearRef} isFocused={isWpFocused} focusSetter={setIsWpFocused} />
+                    <SegmentedInput id="field-mr-date" num={getSerial()} icon={Calendar} label="কার্যবিবরণী প্রাপ্তির তারিখ" color="amber" noValue="DATE_ONLY" dayValue={mrDay} monthValue={mrMonth} yearValue={mrYear} noSetter={()=>{}} daySetter={setMrDay} monthSetter={setMrMonth} yearSetter={setMrYear} dayRef={mrDayRef} monthRef={mrMonthRef} yearRef={mrYearRef} isFocused={isMrFocused} focusSetter={setIsMrFocused} />
+                  </>
+                )}
               </>
             )}
           </div>

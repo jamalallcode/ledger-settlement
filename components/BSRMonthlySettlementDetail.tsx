@@ -77,8 +77,8 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  const startOfMonthDate = startOfMonth(selectedCycleDate);
-  const endOfMonthDate = endOfMonth(selectedCycleDate);
+  const startOfMonthDate = startDate;
+  const endOfMonthDate = endDate;
 
   // Filter entries for Non-SFI and BSR matching selected date range (হতে - থেকে)
   const filteredEntries = useMemo(() => {
@@ -805,7 +805,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-blue-600 shrink-0" />
           <h3 className="text-[13px] sm:text-[14px] font-black text-slate-800 tracking-tight">
-            ব্রডশিট জবাবের উপর নিষ্পত্তিকৃত জারীপত্রের মাসিক প্রতিবেদন: ({toBengaliDigits(dateFnsFormat(startOfMonthDate, 'dd-MM-yyyy'))} খ্রিঃ হতে {toBengaliDigits(dateFnsFormat(endOfMonthDate, 'dd-MM-yyyy'))} খ্রিঃ তারিখ পর্যন্ত):
+            ব্রডশিট জবাবের উপর নিষ্পত্তিকৃত জারীপত্রের মাসিক প্রতিবেদন: ({toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))} খ্রিঃ হতে {toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))} খ্রিঃ তারিখ পর্যন্ত):
           </h3>
         </div>
 
@@ -886,27 +886,27 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}.
                       </td>
                       <td className={`${tdStyle} text-left font-bold text-slate-800`}>
-                        <HighlightText text={row.ministryName} searchTerm={searchTerm} />
-                        {row.entityName && (
-                          <>
-                            ,<br />
-                            <HighlightText text={row.entityName} searchTerm={searchTerm} />
-                          </>
-                        )}
-                        {row.branchName && (
-                          <>
-                            ,<br />
-                            <span className="text-blue-700 font-extrabold text-[10.5px]">
-                              <HighlightText text={row.branchName} searchTerm={searchTerm} />
-                            </span>
-                          </>
-                        )}
-                        {row.auditYear && (
-                          <>
-                            <br />
-                            <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
-                          </>
-                        )}
+                        {(() => {
+                          const min = (row.ministryName || '').trim().replace(/,+$/, '').trim();
+                          const ent = (row.entityName || '').trim().replace(/,+$/, '').trim();
+                          const br = (row.branchName || '').trim().replace(/,+$/, '').trim();
+                          const yr = toBengaliDigits((row.auditYear || '').trim().replace(/^\(|\)$/g, '').trim());
+
+                          const parts: string[] = [];
+                          if (min) parts.push(min);
+                          if (ent && (!br || !robustNormalize(br).includes(robustNormalize(ent)))) {
+                            parts.push(ent);
+                          }
+                          if (br) parts.push(br);
+
+                          let combined = parts.join(', ');
+                          const hasYearInText = /\([০-৯0-9\-\s,ও/]+\)\s*$/.test(combined) || (yr && robustNormalize(combined).includes(robustNormalize(yr)));
+                          if (yr && !hasYearInText) {
+                            combined = combined ? `${combined} (${yr})` : `(${yr})`;
+                          }
+
+                          return <HighlightText text={combined || '-'} searchTerm={searchTerm} />;
+                        })()}
                       </td>
                       <td className={numTdStyle}>
                         {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}

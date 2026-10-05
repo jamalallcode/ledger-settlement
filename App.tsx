@@ -1072,18 +1072,19 @@ const App: React.FC = () => {
         ...editingEntry, 
         ...data, 
         approvalStatus: status,
-        type: isCorrespondence ? 'correspondence' : 'settlement'
+        type: isCorrespondence ? 'correspondence' : 'settlement',
+        ...(isCorrespondence ? {} : { isManuallyEdited: true })
       };
       
-      // Remove from both lists first to handle potential type changes or misidentifications
-      setEntries(prev => prev.filter(e => e.id !== editingEntry.id));
-      setCorrespondenceEntries(prev => prev.filter(e => e.id !== editingEntry.id));
-      
-      // Add to the correct list
+      // Update the correct list without unnecessarily mutating the other list
       if (isCorrespondence) {
-        setCorrespondenceEntries(prev => [entryToSync, ...prev]);
+        setEntries(prev => prev.filter(e => e.id !== editingEntry.id));
+        setCorrespondenceEntries(prev => {
+          const exists = prev.some(e => e.id === editingEntry.id);
+          return exists ? prev.map(e => e.id === editingEntry.id ? entryToSync : e) : [entryToSync, ...prev];
+        });
         setEntries(prev => {
-          const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(entryToSync, prev);
+          const { updatedSettlements, hasChanges } = syncCorrespondenceToSettlements(entryToSync, prev, true);
           if (hasChanges) {
             updatedSettlements.forEach(se => {
               const orig = prev.find(p => p.id === se.id);
@@ -1098,7 +1099,11 @@ const App: React.FC = () => {
           return prev;
         });
       } else {
-        setEntries(prev => [...prev, entryToSync]);
+        setCorrespondenceEntries(prev => prev.some(e => e.id === editingEntry.id) ? prev.filter(e => e.id !== editingEntry.id) : prev);
+        setEntries(prev => {
+          const exists = prev.some(e => e.id === editingEntry.id);
+          return exists ? prev.map(e => e.id === editingEntry.id ? entryToSync : e) : [...prev, entryToSync];
+        });
       }
       
       setEditingEntry(null);

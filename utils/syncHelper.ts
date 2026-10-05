@@ -186,7 +186,8 @@ export const isSettlementMatchingCorrespondence = (
  */
 export const syncCorrespondenceToSettlements = (
   corr: any,
-  settlements: SettlementEntry[]
+  settlements: SettlementEntry[],
+  forceSync: boolean = false
 ): { updatedSettlements: SettlementEntry[]; hasChanges: boolean } => {
   if (!corr || !settlements || settlements.length === 0) {
     return { updatedSettlements: settlements, hasChanges: false };
@@ -195,6 +196,9 @@ export const syncCorrespondenceToSettlements = (
   let hasChanges = false;
 
   const updatedSettlements = settlements.map((se) => {
+    if (!forceSync && (se as any).isManuallyEdited) {
+      return se;
+    }
     if (!isSettlementMatchingCorrespondence(se, corr)) {
       return se;
     }
