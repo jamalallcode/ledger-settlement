@@ -42,16 +42,19 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
   const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   
-  const [startDate, setStartDate] = useState<Date>(() => startOfMonth(selectedCycleDate));
-  const [endDate, setEndDate] = useState<Date>(() => endOfMonth(selectedCycleDate));
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 0);
+  });
   const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
-  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(selectedCycleDate));
-
-  useEffect(() => {
-    setStartDate(startOfMonth(selectedCycleDate));
-    setEndDate(endOfMonth(selectedCycleDate));
-    setCurrentViewDate(new Date(selectedCycleDate));
-  }, [selectedCycleDate]);
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
@@ -885,28 +888,30 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                       <td className={`${numTdStyle} text-slate-700 group-hover:text-blue-600`}>
                         {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}.
                       </td>
-                      <td className={`${tdStyle} text-left font-bold text-slate-800`}>
-                        {(() => {
-                          const min = (row.ministryName || '').trim().replace(/,+$/, '').trim();
-                          const ent = (row.entityName || '').trim().replace(/,+$/, '').trim();
-                          const br = (row.branchName || '').trim().replace(/,+$/, '').trim();
-                          const yr = toBengaliDigits((row.auditYear || '').trim().replace(/^\(|\)$/g, '').trim());
+                      <td className={`${tdStyle} !text-justify font-bold text-slate-800 px-2`}>
+                        <div className="text-justify leading-relaxed">
+                          {(() => {
+                            const min = (row.ministryName || '').trim().replace(/,+$/, '').trim();
+                            const ent = (row.entityName || '').trim().replace(/,+$/, '').trim();
+                            const br = (row.branchName || '').trim().replace(/,+$/, '').trim();
+                            const yr = toBengaliDigits((row.auditYear || '').trim().replace(/^\(|\)$/g, '').trim());
 
-                          const parts: string[] = [];
-                          if (min) parts.push(min);
-                          if (ent && (!br || !robustNormalize(br).includes(robustNormalize(ent)))) {
-                            parts.push(ent);
-                          }
-                          if (br) parts.push(br);
+                            const parts: string[] = [];
+                            if (min) parts.push(min);
+                            if (ent && (!br || !robustNormalize(br).includes(robustNormalize(ent)))) {
+                              parts.push(ent);
+                            }
+                            if (br) parts.push(br);
 
-                          let combined = parts.join(', ');
-                          const hasYearInText = /\([০-৯0-9\-\s,ও/]+\)\s*$/.test(combined) || (yr && robustNormalize(combined).includes(robustNormalize(yr)));
-                          if (yr && !hasYearInText) {
-                            combined = combined ? `${combined} (${yr})` : `(${yr})`;
-                          }
+                            let combined = parts.join(', ');
+                            const hasYearInText = /\([০-৯0-9\-\s,ও/]+\)\s*$/.test(combined) || (yr && robustNormalize(combined).includes(robustNormalize(yr)));
+                            if (yr && !hasYearInText) {
+                              combined = combined ? `${combined} (${yr})` : `(${yr})`;
+                            }
 
-                          return <HighlightText text={combined || '-'} searchTerm={searchTerm} />;
-                        })()}
+                            return <HighlightText text={combined || '-'} searchTerm={searchTerm} />;
+                          })()}
+                        </div>
                       </td>
                       <td className={numTdStyle}>
                         {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}

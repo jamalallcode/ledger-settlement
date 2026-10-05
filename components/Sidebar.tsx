@@ -179,6 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isReturnExpanded, setIsReturnExpanded] = useState(false);
   const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
+  const [isDhakaExpanded, setIsDhakaExpanded] = useState(false);
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
@@ -210,6 +211,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     if (reportType?.includes('বাৎসরিক') || reportType?.includes('বার্ষিক')) {
       setIsYearlyExpanded(true);
+    }
+    if (reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') {
+      setIsMonthlyExpanded(true);
+      setIsMonthlyCorrExpanded(true);
+      setIsDhakaExpanded(true);
     }
   }, [activeTab, reportType]);
 
@@ -611,21 +617,41 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     transition={{ duration: 0.2, ease: "easeInOut" }}
                                     className="pl-1 py-1 space-y-1 overflow-hidden"
                                   >
-                                    {/* ১. ঢাকা */}
+                                    {/* ১. ঢাকা (Toggle) */}
                                     <button 
-                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                                      className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      onClick={() => setIsDhakaExpanded(!isDhakaExpanded)}
+                                      className={`w-full flex items-center justify-between px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${isDhakaExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
-                                      ঢাকা রিটার্ণ
+                                      <div className="flex items-center gap-1">
+                                        <span>ঢাকা</span>
+                                      </div>
+                                      <ChevronDown size={6} className={`transition-transform duration-300 shrink-0 ${isDhakaExpanded ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {/* ঢাকা রিটার্ন-২ */}
-                                    <button 
-                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২')}
-                                      className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                    >
-                                      ঢাকা রিটার্ন-২
-                                    </button>
+                                    <AnimatePresence>
+                                      {isDhakaExpanded && (
+                                        <motion.div 
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                                          className="pl-1.5 py-1 space-y-1 overflow-hidden"
+                                        >
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ঢাকা রিটার্ণ
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ঢাকা রিটার্ণ - ২
+                                          </button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
 
                                     {/* ২. নিষ্পত্তি (Toggle) */}
                                     <button 
@@ -707,12 +733,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                       ডিডি স্যার রিটার্ণ
                                     </button>
 
-                                    {/* ৫. প্রাপ্ত বিএসআর */}
+                                    {/* ৫. প্রাপ্ত পত্র */}
                                     <button 
                                       onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর')}
                                       className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                     >
-                                      প্রাপ্ত বিএসআর
+                                      প্রাপ্ত পত্র
                                     </button>
                                   </motion.div>
                                 )}

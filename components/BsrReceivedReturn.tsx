@@ -472,6 +472,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
       showCategory: boolean;
       rowSpan: number;
       letterCountStr: string;
+      letterNoDateDisplay: string;
       diaryNoDateDisplay: string;
       paraCount: number;
       disposalDisplay: string;
@@ -503,6 +504,11 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
 
         // 3. Letter Count formatted as ০১ or ১
         const letterCountStr = toBengaliDigits('০১');
+
+        // 3b. Letter No & Date: e.g. "৫৭১, ০২/০৮/২৬"
+        const letterNoBN = toBengaliDigits(entry.letterNo || '');
+        const letterDateShort = formatShortDateBN(entry.letterDate);
+        const letterNoDateDisplay = letterNoBN ? `${letterNoBN}${letterDateShort ? `, ${letterDateShort}` : ''}` : (letterDateShort || '-');
 
         // 4. Diary No & Date: e.g. "২০৩, ১৪/০১/২৬"
         const diaryNoBN = toBengaliDigits(entry.diaryNo || '');
@@ -569,6 +575,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
           showCategory,
           rowSpan,
           letterCountStr,
+          letterNoDateDisplay,
           diaryNoDateDisplay,
           paraCount,
           disposalDisplay,
@@ -1226,60 +1233,66 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
           >
             <thead>
               {/* Row 1: Headers */}
-              <tr>
+              <tr className="h-[36px]">
                 <th 
                   rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[55px] min-w-[50px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 font-bold text-center align-middle w-[50px] min-w-[45px] bg-white whitespace-nowrap"
                 >
                   ক্রমিক<br />নং
                 </th>
                 <th 
                   rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[150px] min-w-[140px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 font-bold text-center align-middle w-[140px] min-w-[130px] bg-white whitespace-nowrap"
                 >
                   বিবরণ
                 </th>
                 <th 
                   rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[110px] min-w-[100px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 font-bold text-center align-middle w-[100px] min-w-[90px] bg-white whitespace-nowrap"
                 >
                   প্রাপ্ত জবাব<br />(পত্র সংখ্যা)
                 </th>
                 <th 
                   rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[190px] min-w-[170px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 font-bold text-center align-middle w-[135px] min-w-[120px] bg-white whitespace-nowrap"
                 >
-                  প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ
+                  পত্র নং ও তারিখ
                 </th>
                 <th 
                   rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[95px] min-w-[90px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 font-bold text-center align-middle w-[150px] min-w-[135px] bg-white"
+                >
+                  প্রাপ্ত জবাবের ডায়েরি নং ও<br />তারিখ
+                </th>
+                <th 
+                  rowSpan={2} 
+                  className="border border-black p-2 font-bold text-center align-middle w-[75px] min-w-[70px] bg-white whitespace-nowrap"
                 >
                   অনুচ্ছেদ<br />সংখ্যা
                 </th>
                 <th 
                   colSpan={3} 
-                  className="border border-black p-1.5 font-bold text-center align-middle bg-white whitespace-nowrap"
+                  className="border border-black py-1 px-2 font-bold text-center align-middle bg-white whitespace-nowrap h-[36px]"
                 >
                   গৃহীত কার্যক্রম
                 </th>
               </tr>
 
               {/* Row 2: Subheaders under গৃহীত কার্যক্রম */}
-              <tr>
-                <th className="border border-black p-2 font-bold text-center align-middle w-[190px] min-w-[170px] bg-white whitespace-nowrap">
-                  প্রাপ্ত জবাবের Disposal/জারিপত্র ও তারিখ
+              <tr className="h-[52px]">
+                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[150px] min-w-[135px] bg-white whitespace-nowrap leading-snug">
+                  প্রাপ্ত জবাবের Disposal/<br />জারিপত্র ও তারিখ
                 </th>
-                <th className="border border-black p-2 font-bold text-center align-middle w-[130px] min-w-[120px] bg-white whitespace-nowrap">
-                  নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা
+                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[85px] min-w-[75px] bg-white whitespace-nowrap leading-snug">
+                  নিষ্পত্তিকৃত<br />অনুচ্ছেদ সংখ্যা
                 </th>
-                <th className="border border-black p-2 font-bold text-center align-middle w-[130px] min-w-[120px] bg-white whitespace-nowrap">
-                  অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা
+                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[85px] min-w-[75px] bg-white whitespace-nowrap leading-snug">
+                  অনিষ্পত্তিকৃত<br />অনুচ্ছেদ সংখ্যা
                 </th>
               </tr>
 
-              {/* Row 3: Column Numbers ১ - ৮ */}
-              <tr className="text-xs font-bold bg-white">
+              {/* Row 3: Column Numbers ১ - ৯ */}
+              <tr className="text-xs font-bold bg-white h-[28px]">
                 <th className="border border-black py-1 text-center font-bold">১</th>
                 <th className="border border-black py-1 text-center font-bold">২</th>
                 <th className="border border-black py-1 text-center font-bold">৩</th>
@@ -1288,6 +1301,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                 <th className="border border-black py-1 text-center font-bold">৬</th>
                 <th className="border border-black py-1 text-center font-bold">৭</th>
                 <th className="border border-black py-1 text-center font-bold">৮</th>
+                <th className="border border-black py-1 text-center font-bold">৯</th>
               </tr>
             </thead>
 
@@ -1295,7 +1309,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
               {processedTableRows.rows.length === 0 ? (
                 <tr>
                   <td 
-                    colSpan={8} 
+                    colSpan={9} 
                     className="border border-black py-10 text-center text-slate-500 font-bold bg-white"
                   >
                     এই সময়কালে ({dateRangeTitleBN}) কোনো পত্রাদির তথ্য পাওয়া যায়নি।
@@ -1328,27 +1342,32 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         {row.letterCountStr}
                       </td>
 
-                      {/* ৪. প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ: যেমন ২০৩, ১৪/০১/২৬ */}
+                      {/* ৪. পত্র নং ও তারিখ */}
+                      <td className="border border-black p-2 text-center font-bold align-middle whitespace-nowrap">
+                        {row.letterNoDateDisplay}
+                      </td>
+
+                      {/* ৫. প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ: যেমন ২০৩, ১৪/০১/২৬ */}
                       <td className="border border-black p-2 text-center font-bold align-middle whitespace-nowrap">
                         {row.diaryNoDateDisplay}
                       </td>
 
-                      {/* ৫. অনুচ্ছেদ সংখ্যা */}
+                      {/* ৬. অনুচ্ছেদ সংখ্যা */}
                       <td className="border border-black p-2 text-center font-bold align-middle">
                         {toBengaliDigits(row.paraCount.toString())}
                       </td>
 
-                      {/* ৬. প্রাপ্ত জবাবের Disposal/জারিপত্র ও তারিখ: যেমন "চলমান" */}
+                      {/* ৭. প্রাপ্ত জবাবের Disposal/জারিপত্র ও তারিখ: যেমন "চলমান" */}
                       <td className="border border-black p-2 text-center font-bold align-middle">
                         {row.disposalDisplay}
                       </td>
 
-                      {/* ৭. নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
+                      {/* ৮. নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
                       <td className="border border-black p-2 text-center font-bold align-middle">
                         {row.settledCount > 0 ? toBengaliDigits(row.settledCount.toString()) : '-'}
                       </td>
 
-                      {/* ৮. অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
+                      {/* ৯. অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
                       <td className="border border-black p-2 text-center font-bold align-middle">
                         {row.unsettledCount > 0 ? toBengaliDigits(row.unsettledCount.toString()) : '-'}
                       </td>
@@ -1367,6 +1386,9 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                   </td>
                   <td className="border border-black p-2 text-center font-black">
                     {toBengaliDigits(processedTableRows.totalLetters.toString())}
+                  </td>
+                  <td className="border border-black p-2 text-center font-black">
+                    -
                   </td>
                   <td className="border border-black p-2 text-center font-black">
                     -
