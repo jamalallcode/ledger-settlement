@@ -31,6 +31,7 @@ import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
 import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
 import { CustomPeriodReceiptReport } from './CustomPeriodReceiptReport';
 import BsrReceivedReturn from './BsrReceivedReturn';
+import YearlyReturnView from './YearlyReturnView';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
@@ -1796,6 +1797,28 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       entries={entries}
       activeCycle={activeCycle}
     />;
+  } else if (
+    selectedReportType === 'বাৎসরিক রিটার্ন - ১' ||
+    selectedReportType === 'বাৎসরিক রিটার্ন - ২' ||
+    selectedReportType === 'বাৎসরিক রিটার্ন - ৩' ||
+    selectedReportType === 'বার্ষিক - ১' ||
+    selectedReportType === 'বার্ষিক - ২' ||
+    selectedReportType === 'বার্ষিক - ৩' ||
+    selectedReportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+  ) {
+    renderedContent = (
+      <YearlyReturnView
+        entries={entries}
+        correspondenceEntries={correspondenceEntries}
+        prevStats={prevStats}
+        activeCycle={activeCycle}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        selectedReportType={selectedReportType}
+        setSelectedReportType={setSelectedReportType}
+        monthPickerElement={monthPickerElement}
+      />
+    );
   } else if (selectedReportType === 'ষাণ্মাসিক - ১' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ১') {
     renderedContent = <HR_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ১" />;
   } else if (selectedReportType === 'ষাণ্মাসিক - ২' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ২') {

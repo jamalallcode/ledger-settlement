@@ -255,16 +255,39 @@
 }
 
 /* BSR Received Return Sticky Headers */
+#table-bsr-received-return-main thead th {
+  box-sizing: border-box !important;
+  background-color: #ffffff !important;
+}
+
 #table-bsr-received-return-main thead tr:first-child th {
   top: 0px !important;
-  z-index: 130 !important;
+  height: 36px !important;
+  z-index: 145 !important;
+  background-color: #ffffff !important;
+}
+
+#table-bsr-received-return-main thead tr:first-child th[rowspan],
+#table-bsr-received-return-main thead tr:first-child th[rowSpan] {
+  top: 0px !important;
+  height: 88px !important;
+  z-index: 146 !important;
   background-color: #ffffff !important;
 }
 
 #table-bsr-received-return-main thead tr:nth-child(2) th {
-  top: 40px !important;
-  z-index: 125 !important;
+  top: 36px !important;
+  height: 52px !important;
+  z-index: 144 !important;
   background-color: #ffffff !important;
+}
+
+#table-bsr-received-return-main thead tr:nth-child(3) th {
+  top: 88px !important;
+  height: 28px !important;
+  z-index: 143 !important;
+  background-color: #ffffff !important;
+  white-space: nowrap !important;
 }
 
 /* Correspondence & Settlement Registers Sticky Headers */

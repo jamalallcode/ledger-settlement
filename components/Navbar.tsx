@@ -919,16 +919,46 @@ const Navbar: React.FC<NavbarProps> = ({
 
                   <button
                     onClick={() => {
-                      setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।');
+                      setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ১');
                       setIsMobileMenuOpen(false);
                     }}
                     className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
-                      reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+                      reportType === 'বাৎসরিক রিটার্ন - ১' || reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
                         ? 'bg-purple-600 text-white border-purple-500'
                         : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                     }`}
                   >
-                    <span>বাৎসরিক রিটার্ণ</span>
+                    <span>বাৎসরিক - ১</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ২');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'বাৎসরিক রিটার্ন - ২'
+                        ? 'bg-purple-600 text-white border-purple-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বাৎসরিক - ২</span>
+                    <ArrowRight size={11} className="opacity-50" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ৩');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      reportType === 'বাৎসরিক রিটার্ন - ৩'
+                        ? 'bg-purple-600 text-white border-purple-500'
+                        : 'bg-slate-800/70 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বাৎসরিক - ৩</span>
                     <ArrowRight size={11} className="opacity-50" />
                   </button>
 

@@ -179,10 +179,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isReturnExpanded, setIsReturnExpanded] = useState(false);
   const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
   const [isMonthlyCorrExpanded, setIsMonthlyCorrExpanded] = useState(false);
+  const [isDhakaExpanded, setIsDhakaExpanded] = useState(false);
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isHalfYearlyExpanded, setIsHalfYearlyExpanded] = useState(false);
+  const [isYearlyExpanded, setIsYearlyExpanded] = useState(false);
   const [isDetailedExpanded, setIsDetailedExpanded] = useState(false);
   const [isSetupExpanded, setIsSetupExpanded] = useState(false);
   const [isLinksExpanded, setIsLinksExpanded] = useState(false);
@@ -206,6 +208,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     if (reportType?.includes('ষাণ্মাসিক')) {
       setIsHalfYearlyExpanded(true);
+    }
+    if (reportType?.includes('বাৎসরিক') || reportType?.includes('বার্ষিক')) {
+      setIsYearlyExpanded(true);
+    }
+    if (reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') {
+      setIsMonthlyExpanded(true);
+      setIsMonthlyCorrExpanded(true);
+      setIsDhakaExpanded(true);
     }
   }, [activeTab, reportType]);
 
@@ -511,7 +521,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="pl-3 py-1 space-y-1 overflow-hidden"
+                        className="pl-1.5 py-1 space-y-1 overflow-hidden"
                       >
                         <button 
                           onClick={() => setActiveTab('entry', 'correspondence')}
@@ -537,7 +547,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="pl-3 py-1 space-y-1 overflow-hidden"
+                        className="pl-1.5 py-1 space-y-1 overflow-hidden"
                       >
                         <button 
                           onClick={() => setActiveTab('register', 'correspondence')}
@@ -563,7 +573,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="pl-3 py-1 space-y-1 overflow-hidden"
+                        className="pl-1.5 py-1 space-y-1 overflow-hidden"
                       >
                         {/* ১. মাসিক (Toggle) */}
                         <button 
@@ -584,7 +594,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2, ease: "easeInOut" }}
-                              className="pl-3 py-1 space-y-1 overflow-hidden"
+                              className="pl-1.5 py-1 space-y-1 overflow-hidden"
                             >
                               {/* ১. চিঠিপত্র (Toggle) */}
                               <button 
@@ -605,33 +615,53 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     animate={{ height: 'auto', opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={{ duration: 0.2, ease: "easeInOut" }}
-                                    className="pl-3 py-1 space-y-1 overflow-hidden"
+                                    className="pl-1 py-1 space-y-1 overflow-hidden"
                                   >
-                                    {/* ১. ঢাকা */}
+                                    {/* ১. ঢাকা (Toggle) */}
                                     <button 
-                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      onClick={() => setIsDhakaExpanded(!isDhakaExpanded)}
+                                      className={`w-full flex items-center justify-between px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${isDhakaExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
-                                      ঢাকা রিটার্ণ
+                                      <div className="flex items-center gap-1">
+                                        <span>ঢাকা</span>
+                                      </div>
+                                      <ChevronDown size={6} className={`transition-transform duration-300 shrink-0 ${isDhakaExpanded ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {/* ঢাকা রিটার্ন-২ */}
-                                    <button 
-                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
-                                    >
-                                      ঢাকা রিটার্ন-২
-                                    </button>
+                                    <AnimatePresence>
+                                      {isDhakaExpanded && (
+                                        <motion.div 
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                                          className="pl-1.5 py-1 space-y-1 overflow-hidden"
+                                        >
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ঢাকা রিটার্ণ
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ঢাকা রিটার্ণ - ২
+                                          </button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
 
                                     {/* ২. নিষ্পত্তি (Toggle) */}
                                     <button 
                                       onClick={() => setIsSettlementExpanded(!isSettlementExpanded)}
-                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                      className={`w-full flex items-center justify-between px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${isSettlementExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-1">
                                         <span>নিষ্পত্তি</span>
                                       </div>
-                                      <ChevronDown size={6} className={`transition-transform duration-300 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
+                                      <ChevronDown size={6} className={`transition-transform duration-300 shrink-0 ${isSettlementExpanded ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     <AnimatePresence>
@@ -641,17 +671,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                                           animate={{ height: 'auto', opacity: 1 }}
                                           exit={{ height: 0, opacity: 0 }}
                                           transition={{ duration: 0.2, ease: "easeInOut" }}
-                                          className="pl-3 py-1 space-y-1 overflow-hidden"
+                                          className="pl-1.5 py-1 space-y-1 overflow-hidden"
                                         >
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             বিএসআর
                                           </button>
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             দ্বিপক্ষীয়
                                           </button>
@@ -662,12 +692,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ৩. অনলাইন প্রাপ্তি (Toggle) */}
                                     <button 
                                       onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
-                                      className={`w-full flex items-center justify-between px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
+                                      className={`w-full flex items-center justify-between px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${isOnlineExpanded ? 'text-emerald-400' : 'text-slate-500 hover:text-emerald-300'}`}
                                     >
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-1">
                                         <span>অনলাইন প্রাপ্তি</span>
                                       </div>
-                                      <ChevronDown size={6} className={`transition-transform duration-300 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
+                                      <ChevronDown size={6} className={`transition-transform duration-300 shrink-0 ${isOnlineExpanded ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     <AnimatePresence>
@@ -677,17 +707,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                                           animate={{ height: 'auto', opacity: 1 }}
                                           exit={{ height: 0, opacity: 0 }}
                                           transition={{ duration: 0.2, ease: "easeInOut" }}
-                                          className="pl-3 py-1 space-y-1 overflow-hidden"
+                                          className="pl-1.5 py-1 space-y-1 overflow-hidden"
                                         >
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             বিএসআর
                                           </button>
                                           <button 
                                             onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়')}
-                                            className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                           >
                                             দ্বিপক্ষীয়
                                           </button>
@@ -698,17 +728,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     {/* ৪. ডিডি স্যার ফরমেট */}
                                     <button 
                                       onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                     >
                                       ডিডি স্যার রিটার্ণ
                                     </button>
 
-                                    {/* ৫. প্রাপ্ত বিএসআর */}
+                                    {/* ৫. প্রাপ্ত পত্র */}
                                     <button 
                                       onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর')}
-                                      className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                                     >
-                                      প্রাপ্ত বিএসআর
+                                      প্রাপ্ত পত্র
                                     </button>
                                   </motion.div>
                                 )}
@@ -744,12 +774,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2, ease: "easeInOut" }}
-                              className="pl-3 py-1 space-y-1 overflow-hidden"
+                              className="pl-1.5 py-1 space-y-1 overflow-hidden"
                             >
                               {/* ত্রৈমাসিক - ১ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ২')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ১
                               </button>
@@ -757,7 +787,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ত্রৈমাসিক - ২ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - ১')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ২
                               </button>
@@ -765,7 +795,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ত্রৈমাসিক - ৩ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ৩
                               </button>
@@ -773,7 +803,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ত্রৈমাসিক - ৪ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ৪
                               </button>
@@ -781,7 +811,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ত্রৈমাসিক - ৫ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ৫
                               </button>
@@ -789,7 +819,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ত্রৈমাসিক - ৬ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ত্রৈমাসিক - ৬
                               </button>
@@ -816,12 +846,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2, ease: "easeInOut" }}
-                              className="pl-3 py-1 space-y-1 overflow-hidden"
+                              className="pl-1.5 py-1 space-y-1 overflow-hidden"
                             >
                               {/* ষাণ্মাসিক - ১ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'ষাণ্মাসিক - ১')}
-                                className={`w-full text-left px-2 py-1 text-[9px] font-black transition-all border-l ml-1 rounded-r-md cursor-pointer ${reportType === 'ষাণ্মাসিক - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'ষাণ্মাসিক - ১' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
                               >
                                 ষাণ্মাসিক - ১
                               </button>
@@ -829,13 +859,53 @@ const Sidebar: React.FC<SidebarProps> = ({
                           )}
                         </AnimatePresence>
 
-                        {/* ৪. বাৎসরিক */}
+                        {/* ৪. বাৎসরিক (Toggle) */}
                         <button 
-                          onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                          className={getSubItemCls(reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
+                          onClick={() => setIsYearlyExpanded(!isYearlyExpanded)}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${isYearlyExpanded ? 'bg-slate-800 text-purple-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                         >
-                          <span>বাৎসরিক</span>
+                          <div className="flex items-center gap-2">
+                            <span>বাৎসরিক</span>
+                          </div>
+                          <ChevronDown size={6} className={`transition-transform duration-300 ${isYearlyExpanded ? 'rotate-180' : ''}`} />
                         </button>
+
+                        {/* Yearly Sub-items (৩টি টেবিল) */}
+                        <AnimatePresence>
+                          {isYearlyExpanded && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeInOut" }}
+                              className="pl-1.5 py-1 space-y-1 overflow-hidden"
+                            >
+                              {/* বাৎসরিক - ১ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ১')}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'বাৎসরিক রিটার্ন - ১' || reportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                বাৎসরিক - ১
+                              </button>
+
+                              {/* বাৎসরিক - ২ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ২')}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'বাৎসরিক রিটার্ন - ২' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                বাৎসরিক - ২
+                              </button>
+
+                              {/* বাৎসরিক - ৩ */}
+                              <button 
+                                onClick={() => setActiveTab('return', null, 'বাৎসরিক রিটার্ন - ৩')}
+                                className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'বাৎসরিক রিটার্ন - ৩' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                              >
+                                বাৎসরিক - ৩
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* ৫. চাহিদা মোতাবেক */}
                         <button 
