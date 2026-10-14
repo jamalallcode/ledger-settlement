@@ -5,7 +5,7 @@ import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/n
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet, Calendar } from 'lucide-react';
 import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
-import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate } from '../utils/cycleHelper';
+import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate, getYearlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
 import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
@@ -308,7 +308,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
     const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
-    const isYearly = selectedReportType?.includes('বাৎসরিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক') || selectedReportType?.includes('বার্ষিক');
 
     if (isQuarterly) {
       // Loop back to find all quarters in the last 2 years.
@@ -380,24 +380,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
       }
     } else if (isYearly) {
-      // Yearly: 12-month cycles (Jan to Dec)
-      for (let i = 0; i < 10; i++) {
-        const refDate = addMonths(today, -i * 12);
-        const year = refDate.getFullYear();
-
-        const label = `${BENGALI_MONTHS[0]}/${toBengaliDigits(dateFnsFormat(new Date(year, 0, 1), 'yy'))} হতে ${BENGALI_MONTHS[11]}/${toBengaliDigits(dateFnsFormat(new Date(year, 11, 1), 'yy'))}`;
-
-        if (!seen.has(label)) {
-          if (year < 2025) {
-            continue;
-          }
-          const reprDate = new Date(year, 0, 16);
-          const cycle = getCycleForDate(reprDate);
-          if (cycle.start.getTime() > currentCycle.start.getTime()) {
-            continue;
-          }
-          seen.add(label);
-          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+      // Yearly: 12-month cycles (16/06/YYYY to 15/06/YYYY+1) starting from 16/06/2025 to 15/06/2026
+      const currentYearly = getYearlyCycleForDate(today);
+      const maxStartYear = Math.max(2026, currentYearly.start.getFullYear());
+      for (let yr = maxStartYear; yr >= 2025; yr--) {
+        const reprDate = new Date(yr, 5, 16);
+        const cycle = getYearlyCycleForDate(reprDate);
+        if (!seen.has(cycle.label)) {
+          seen.add(cycle.label);
+          options.push({ date: reprDate, label: cycle.subLabel, cycleLabel: cycle.label });
         }
       }
     } else {
@@ -444,11 +435,15 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     }
     const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
     const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক') || selectedReportType?.includes('বার্ষিক');
     if (isQuarterly) {
       return getQuarterlyCycleForDate(selectedCycleDate);
     }
     if (isHalfYearly) {
       return getHalfYearlyCycleForDate(selectedCycleDate);
+    }
+    if (isYearly) {
+      return getYearlyCycleForDate(selectedCycleDate);
     }
     return getCycleForDate(selectedCycleDate);
   }, [selectedCycleDate, selectedReportType, isCustomRangeActive, customStartDate, customEndDate]);
@@ -733,10 +728,45 @@ const ReturnView: React.FC<ReturnViewProps> = ({
         }
       });
 
-      // Also copy any other previously saved entities
-      Object.keys(savedLocalStats).forEach(k => {
+      // Also copy any other previously saved entities (including বাৎসরিক জের & ষাণ্মাসিক জের keys from Supabase prevStats and localStorage)
+      let savedYearlyOverrides: Record<string, any> = {};
+      try {
+        const storedYearly = localStorage.getItem('ledger_yearly_return_overrides_v2');
+        if (storedYearly) savedYearlyOverrides = JSON.parse(storedYearly);
+      } catch {}
+
+      const extraSources: Record<string, any> = {
+        ...(prevStats?.entitiesNonSFI || {}),
+        ...(prevStats?.entitiesSFI || {}),
+        ...savedLocalStats
+      };
+
+      Object.keys(extraSources).forEach(k => {
         if (!rawMasterStats[k]) {
-          rawMasterStats[k] = savedLocalStats[k];
+          rawMasterStats[k] = extraSources[k];
+        } else {
+          rawMasterStats[k] = {
+            ...extraSources[k],
+            ...rawMasterStats[k]
+          };
+        }
+      });
+
+      Object.keys(savedYearlyOverrides).forEach(k => {
+        const over = savedYearlyOverrides[k];
+        if (over && (over.prevCount !== undefined || over.prevAmount !== undefined)) {
+          const existing = rawMasterStats[k] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+          rawMasterStats[k] = {
+            ...existing,
+            yearlyPrevUnsettledCount:
+              existing.yearlyPrevUnsettledCount !== undefined && existing.yearlyPrevUnsettledCount !== 0 && existing.yearlyPrevUnsettledCount !== ''
+                ? existing.yearlyPrevUnsettledCount
+                : (over.prevCount ?? 0),
+            yearlyPrevUnsettledAmount:
+              existing.yearlyPrevUnsettledAmount !== undefined && existing.yearlyPrevUnsettledAmount !== 0 && existing.yearlyPrevUnsettledAmount !== ''
+                ? existing.yearlyPrevUnsettledAmount
+                : (over.prevAmount ?? 0)
+          };
         }
       });
 

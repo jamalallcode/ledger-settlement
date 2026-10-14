@@ -13,6 +13,27 @@ export const HALF_YEARLY_MINISTRIES = [
   'বেসামরিক বিমান, পরিবহন ও পর্যটন মন্ত্রণালয়'
 ];
 
+export const YEARLY_TABLES = ['বার্ষিক - ১', 'বার্ষিক - ২', 'বার্ষিক - ৩'] as const;
+export type YearlyBalanceTableType = typeof YEARLY_TABLES[number];
+
+export const YEARLY_TABLE_1_MINISTRIES = [
+  'আর্থিক প্রতিষ্ঠান বিভাগ',
+  'শিল্প মন্ত্রণালয়',
+  'বস্ত্র ও পাট মন্ত্রণালয়',
+  'বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়',
+  'বাণিজ্য মন্ত্রণালয়'
+];
+
+export const YEARLY_TABLE_2_3_MINISTRIES = [
+  'শিল্প মন্ত্রণালয়',
+  'বস্ত্র ও পাট মন্ত্রণালয়',
+  'বেসামরিক বিমান পরিবহন ও পর্যটন মন্ত্রণালয়',
+  'বাণিজ্য মন্ত্রণালয়',
+  'আর্থিক প্রতিষ্ঠান বিভাগ'
+];
+
+export const YEARLY_MINISTRIES = YEARLY_TABLE_2_3_MINISTRIES;
+
 interface OpeningBalanceSetupProps {
   ministryGroups: string[];
   tempPrevStats: Record<string, MinistryPrevStats>;
@@ -55,10 +76,23 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
   const [isHalfYearlyMenuOpen, setIsHalfYearlyMenuOpen] = useState<boolean>(false);
   const halfYearlyMenuRef = useRef<HTMLDivElement>(null);
 
+  const [selectedYearlyTable, setSelectedYearlyTable] = useState<YearlyBalanceTableType>('বার্ষিক - ১');
+  const [isYearlyMenuOpen, setIsYearlyMenuOpen] = useState<boolean>(false);
+  const yearlyMenuRef = useRef<HTMLDivElement>(null);
+
+  const activeYearlyMinistries = useMemo(() => {
+    return selectedYearlyTable === 'বার্ষিক - ১'
+      ? YEARLY_TABLE_1_MINISTRIES
+      : YEARLY_TABLE_2_3_MINISTRIES;
+  }, [selectedYearlyTable]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (halfYearlyMenuRef.current && !halfYearlyMenuRef.current.contains(e.target as Node)) {
         setIsHalfYearlyMenuOpen(false);
+      }
+      if (yearlyMenuRef.current && !yearlyMenuRef.current.contains(e.target as Node)) {
+        setIsYearlyMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -115,9 +149,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
 
   const yearlyFields: { key: keyof MinistryPrevStats; label: string }[] = [
     { key: 'yearlyPrevUnsettledCount', label: 'সংখ্যা' },
-    { key: 'yearlyPrevUnsettledAmount', label: 'টাকা (কোটি)' },
-    { key: 'yearlySettledCount', label: 'সংখ্যা' },
-    { key: 'yearlySettledAmount', label: 'টাকা (কোটি)' }
+    { key: 'yearlyPrevUnsettledAmount', label: 'টাকা' }
   ];
 
   // Smart multi-cell copy & paste handler for Excel data
@@ -136,6 +168,8 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
     const allEntities: string[] = [];
     if (activeTab === 'halfYearly') {
       HR1_CATEGORIES.forEach(c => allEntities.push(c.name));
+    } else if (activeTab === 'yearly') {
+      activeYearlyMinistries.forEach(m => allEntities.push(m));
     } else {
       ministryGroups.forEach(m => {
         (MINISTRY_ENTITY_MAP[m] || []).forEach(ent => allEntities.push(ent));
@@ -179,6 +213,17 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
               [fieldName]: value
             };
           }
+        } else if (activeTab === 'yearly') {
+          const specificKey = `${selectedYearlyTable}_${entityName}`;
+          newStats[specificKey] = {
+            ...(newStats[specificKey] || {
+              unsettledCount: 0,
+              unsettledAmount: 0,
+              settledCount: 0,
+              settledAmount: 0
+            }),
+            [fieldName]: value
+          };
         } else {
           newStats[entityName] = {
             ...(newStats[entityName] || {
@@ -280,19 +325,22 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
       acc.hyRA += parseBengaliNumber(stats.halfYearlyRaisedAmount) || 0;
       acc.hySC += parseBengaliNumber(stats.halfYearlySettledCount) || 0;
       acc.hySA += parseBengaliNumber(stats.halfYearlySettledAmount) || 0;
-      // Yearly
-      acc.yPUC += parseBengaliNumber(stats.yearlyPrevUnsettledCount) || 0;
-      acc.yPUA += parseBengaliNumber(stats.yearlyPrevUnsettledAmount) || 0;
-      acc.ySC += parseBengaliNumber(stats.yearlySettledCount) || 0;
-      acc.ySA += parseBengaliNumber(stats.yearlySettledAmount) || 0;
     });
     return acc;
   }, {
     uC: 0, uA: 0, sC: 0, sA: 0,
     uQA: 0, rAQC: 0, rAQA: 0,
-    hyPUC: 0, hyPUA: 0, hyRC: 0, hyRA: 0, hySC: 0, hySA: 0,
-    yPUC: 0, yPUA: 0, ySC: 0, ySA: 0
+    hyPUC: 0, hyPUA: 0, hyRC: 0, hyRA: 0, hySC: 0, hySA: 0
   });
+
+  const yearlyTotals = useMemo(() => {
+    return activeYearlyMinistries.reduce((acc, m) => {
+      const stats = tempPrevStats[`${selectedYearlyTable}_${m}`] || {};
+      acc.yPUC += parseBengaliNumber(stats.yearlyPrevUnsettledCount) || 0;
+      acc.yPUA += parseBengaliNumber(stats.yearlyPrevUnsettledAmount) || 0;
+      return acc;
+    }, { yPUC: 0, yPUA: 0 });
+  }, [tempPrevStats, activeYearlyMinistries, selectedYearlyTable]);
 
   return (
     <div id="section-prev-stats-setup" className="max-w-full mx-auto py-1 px-2 font-sans rounded-none pb-0 mb-0">
@@ -350,7 +398,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 border border-slate-300 rounded-none shrink-0">
           <button
             type="button"
-            onClick={() => { setActiveTab('monthly'); setIsHalfYearlyMenuOpen(false); }}
+            onClick={() => { setActiveTab('monthly'); setIsHalfYearlyMenuOpen(false); setIsYearlyMenuOpen(false); }}
             className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
               activeTab === 'monthly'
                 ? 'bg-blue-600 text-white shadow-xs'
@@ -361,7 +409,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => { setActiveTab('quarterly'); setIsHalfYearlyMenuOpen(false); }}
+            onClick={() => { setActiveTab('quarterly'); setIsHalfYearlyMenuOpen(false); setIsYearlyMenuOpen(false); }}
             className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
               activeTab === 'quarterly'
                 ? 'bg-blue-600 text-white shadow-xs'
@@ -376,6 +424,7 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
               type="button"
               onClick={() => {
                 setIsHalfYearlyMenuOpen(prev => !prev);
+                setIsYearlyMenuOpen(false);
               }}
               className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer flex items-center gap-1 ${
                 activeTab === 'halfYearly'
@@ -417,17 +466,54 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => { setActiveTab('yearly'); setIsHalfYearlyMenuOpen(false); }}
-            className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer ${
-              activeTab === 'yearly'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            বাৎসরিক জের
-          </button>
+          {/* বাৎসরিক জের Tab with 3 Yearly Tables Dropdown */}
+          <div className="relative" ref={yearlyMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsYearlyMenuOpen(prev => !prev);
+                setIsHalfYearlyMenuOpen(false);
+              }}
+              className={`px-2.5 py-1.5 rounded-none font-black text-[11px] md:text-[12px] transition-all cursor-pointer flex items-center gap-1 ${
+                activeTab === 'yearly'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white'
+              }`}
+            >
+              <span>বাৎসরিক জের</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isYearlyMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isYearlyMenuOpen && (
+              <div className="absolute left-0 mt-1 w-56 bg-white border border-slate-300 shadow-2xl z-[99999] py-1">
+                <div className="px-3 py-1.5 text-[11px] font-black text-slate-500 border-b border-slate-100 bg-slate-50">
+                  বার্ষিক টেবিল নির্বাচন করুন
+                </div>
+                {YEARLY_TABLES.map(tbl => {
+                  const isSelected = activeTab === 'yearly' && selectedYearlyTable === tbl;
+                  return (
+                    <button
+                      key={tbl}
+                      type="button"
+                      onClick={() => {
+                        setSelectedYearlyTable(tbl);
+                        setActiveTab('yearly');
+                        setIsYearlyMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-600 text-white font-black'
+                          : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+                      }`}
+                    >
+                      <span>{tbl}</span>
+                      {isSelected && <Check size={14} className="stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Action Button: Edit / Save */}
@@ -496,9 +582,12 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
               ত্রৈমাসিক পূর্ব জের
             </span>
           ) : (
-            <span className="font-bold text-slate-700 text-xs md:text-sm">
-              বাৎসরিক পূর্ব জের
-            </span>
+            <div className="flex items-center gap-1.5 text-xs md:text-sm">
+              <span className="font-bold text-slate-700">বাৎসরিক জের:</span>
+              <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 border border-blue-200">
+                {selectedYearlyTable}
+              </span>
+            </div>
           )}
         </div>
 
@@ -1124,34 +1213,28 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* TAB 4: বাৎসরিক জের (Yearly Balance Table with Excel Paste Support) */}
+        {/* TAB 4: বাৎসরিক জের (3 Separate Yearly Opening Balance Tables) */}
         {/* ============================================================== */}
         {activeTab === 'yearly' && (
           <table id="opening-setup-table" className="text-sm">
             <thead className="bg-slate-200">
               <tr className="hdr-row-1 bg-slate-200">
-                <th rowSpan={2} className="py-2.5 px-3 text-center font-black text-slate-900 text-[13px] md:text-[14px] w-[32%] bg-slate-200 border-b border-r border-slate-300">
-                  মন্ত্রণালয় ও সংস্থা
+                <th rowSpan={2} className="py-2.5 px-3 text-center font-black text-slate-900 text-[13px] md:text-[14px] w-[10%] bg-slate-200 border-b border-r border-slate-300">
+                  {selectedYearlyTable === 'বার্ষিক - ৩' ? 'ক্র: নং' : 'ক্রমিক নং'}
+                </th>
+                <th rowSpan={2} className="py-2.5 px-3 text-center font-black text-slate-900 text-[13px] md:text-[14px] w-[42%] bg-slate-200 border-b border-r border-slate-300">
+                  {selectedYearlyTable === 'বার্ষিক - ৩' ? 'মন্ত্রণালয়/বিভাগ' : 'মন্ত্রণালয়ের নাম'}
                 </th>
                 <th colSpan={2} className="py-2.5 px-3 text-center font-black text-slate-900 text-[13px] md:text-[14px] bg-slate-200 border-b border-r border-slate-300 tracking-wide">
-                  পূর্ববর্তী অর্থবছর পর্যন্ত অবশিষ্ট জের
-                </th>
-                <th colSpan={2} className="py-2.5 px-3 text-center font-black text-slate-900 text-[13px] md:text-[14px] bg-slate-200 border-b border-r border-slate-300 tracking-wide">
-                  চলতি অর্থবছর মোট নিষ্পত্তি/আদায়
+                  {selectedYearlyTable === 'বার্ষিক - ৩' ? 'বিগত বৎসর পর্যন্ত অনিষ্পন্ন অডিট আপত্তি' : 'প্রারম্ভিক জের'}
                 </th>
               </tr>
               <tr className="hdr-row-2 bg-slate-200">
-                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[17%]">
+                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[24%]">
                   সংখ্যা
                 </th>
-                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[17%]">
-                  টাকা (কোটি)
-                </th>
-                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[17%]">
-                  সংখ্যা
-                </th>
-                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[17%]">
-                  টাকা (কোটি)
+                <th className="py-2 px-3 text-center font-black text-slate-900 text-[12px] bg-slate-200 border-b border-r border-slate-300 w-[24%]">
+                  টাকা
                 </th>
               </tr>
               <tr className="hdr-row-3 bg-slate-200 text-slate-900 font-black text-[12px] text-center border-b border-slate-300">
@@ -1159,104 +1242,74 @@ const OpeningBalanceSetup: React.FC<OpeningBalanceSetupProps> = ({
                 <th className="py-1 px-3 text-center font-black text-slate-800 bg-slate-200 border-r border-b border-slate-300 text-[11px]">(২)</th>
                 <th className="py-1 px-3 text-center font-black text-slate-800 bg-slate-200 border-r border-b border-slate-300 text-[11px]">(৩)</th>
                 <th className="py-1 px-3 text-center font-black text-slate-800 bg-slate-200 border-r border-b border-slate-300 text-[11px]">(৪)</th>
-                <th className="py-1 px-3 text-center font-black text-slate-800 bg-slate-200 border-r border-b border-slate-300 text-[11px]">(৫)</th>
               </tr>
             </thead>
 
             <tbody>
-              {ministryGroups.map(m => {
-                const entities = MINISTRY_ENTITY_MAP[m] || [];
-                const mSubTotal = entities.reduce((acc, ent) => {
-                  const s = tempPrevStats[ent] || {};
-                  acc.yPUC += s.yearlyPrevUnsettledCount || 0;
-                  acc.yPUA += Number(s.yearlyPrevUnsettledAmount || 0);
-                  acc.ySC += s.yearlySettledCount || 0;
-                  acc.ySA += Number(s.yearlySettledAmount || 0);
-                  return acc;
-                }, { yPUC: 0, yPUA: 0, ySC: 0, ySA: 0 });
-
+              {activeYearlyMinistries.map((m, idx) => {
+                const specificKey = `${selectedYearlyTable}_${m}`;
+                const s = tempPrevStats[specificKey] || {};
                 return (
-                  <React.Fragment key={m}>
-                    <tr className="bg-[#1e293b] no-hover-row">
-                      <td colSpan={5} className="px-5 py-3 bg-[#1e293b]">
-                        <div className="flex items-center gap-2 font-black uppercase text-[12px] tracking-wide text-white">
-                          <LayoutGrid size={15} className="text-teal-400" /> {m}
-                        </div>
-                      </td>
-                    </tr>
-                    {entities.map(ent => (
-                      <tr key={ent} className="hover:bg-teal-50/40 transition-all group bg-white">
-                        <td className="px-6 py-3.5 font-bold text-slate-800 text-[13px] bg-white group-hover:text-teal-800 border-r border-b border-slate-200">
-                          {ent}
-                        </td>
-                        {yearlyFields.map(f => (
-                          <td key={f.key} className={`p-1.5 text-center align-middle h-14 border-r border-b border-slate-100 ${isEditingSetup ? 'bg-white group-hover:bg-teal-50' : 'bg-slate-50'}`}>
-                            <input 
-                              type="text" 
-                              readOnly={!isEditingSetup}
-                              className={`w-full h-11 text-center font-bold text-[14px] md:text-[15px] outline-none border-0 transition-all ${
-                                isEditingSetup 
-                                  ? 'bg-white text-slate-900 cursor-text hover:bg-teal-50/50 focus:bg-amber-50 focus:ring-2 focus:ring-blue-500 rounded-lg' 
-                                  : 'bg-slate-50 text-slate-700 cursor-not-allowed'
-                              }`} 
-                              placeholder="০" 
-                              value={
-                                tempPrevStats[ent]?.[f.key] !== undefined &&
-                                tempPrevStats[ent]![f.key] !== '' &&
-                                tempPrevStats[ent]![f.key] !== 0
-                                  ? toBengaliDigits(tempPrevStats[ent]![f.key])
-                                  : ''
+                  <tr key={specificKey} className="hover:bg-teal-50/40 transition-all group bg-white">
+                    <td className="px-3 py-3.5 text-center font-black text-slate-800 text-[13px] bg-white border-r border-b border-slate-200">
+                      {toBengaliDigits(idx + 1)}
+                    </td>
+                    <td className="px-6 py-3.5 font-bold text-slate-800 text-[13px] bg-white group-hover:text-teal-800 border-r border-b border-slate-200">
+                      {m}
+                    </td>
+                    {yearlyFields.map(f => (
+                      <td key={f.key} className={`p-1.5 text-center align-middle h-14 border-r border-b border-slate-100 ${isEditingSetup ? 'bg-white group-hover:bg-teal-50' : 'bg-slate-50'}`}>
+                        <input 
+                          type="text" 
+                          readOnly={!isEditingSetup}
+                          className={`w-full h-11 text-center font-bold text-[14px] md:text-[15px] outline-none border-0 transition-all ${
+                            isEditingSetup 
+                              ? 'bg-white text-slate-900 cursor-text hover:bg-teal-50/50 focus:bg-amber-50 focus:ring-2 focus:ring-blue-500 rounded-lg' 
+                              : 'bg-slate-50 text-slate-700 cursor-not-allowed'
+                          }`} 
+                          placeholder="০" 
+                          value={
+                            s[f.key] !== undefined &&
+                            s[f.key] !== '' &&
+                            s[f.key] !== 0
+                              ? toBengaliDigits(s[f.key])
+                              : ''
+                          } 
+                          onPaste={(e) => handleTabPaste(e, m, f.key, yearlyFields)} 
+                          onChange={e => { 
+                            if (!isEditingSetup) return;
+                            let raw = e.target.value.replace(/,/g, '.');
+                            const eng = toEnglishDigits(raw);
+                            if (raw !== '' && !/^[0-9]*\.?[0-9]*$/.test(eng)) {
+                              return;
+                            }
+                            const valToStore = raw === '' ? 0 : toBengaliDigits(raw);
+                            setTempPrevStats(prev => ({ 
+                              ...prev, 
+                              [specificKey]: { 
+                                ...(prev[specificKey] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), 
+                                [f.key]: valToStore 
                               } 
-                              onPaste={(e) => handleTabPaste(e, ent, f.key, yearlyFields)} 
-                              onChange={e => { 
-                                if (!isEditingSetup) return;
-                                let raw = e.target.value.replace(/,/g, '.');
-                                const eng = toEnglishDigits(raw);
-                                if (raw !== '' && !/^[0-9]*\.?[0-9]*$/.test(eng)) {
-                                  return;
-                                }
-                                const valToStore = raw === '' ? 0 : toBengaliDigits(raw);
-                                setTempPrevStats(prev => ({ 
-                                  ...prev, 
-                                  [ent]: { 
-                                    ...(prev[ent] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 }), 
-                                    [f.key]: valToStore 
-                                  } 
-                                })); 
-                              }} 
-                            />
-                          </td>
-                        ))}
-                      </tr>
+                            })); 
+                          }} 
+                        />
+                      </td>
                     ))}
-                    <tr className="bg-teal-50/60 font-black italic text-slate-800 no-hover-row border-b-2 border-slate-300">
-                      <td className="px-6 py-3 text-right text-[11px] uppercase border-r border-slate-200">উপ-মোট: {m}</td>
-                      <td className="p-3 text-center border-r border-slate-200 text-teal-900 font-extrabold">{toBengaliDigits(mSubTotal.yPUC)}</td>
-                      <td className="p-3 text-center border-r border-slate-200 text-teal-900 font-extrabold">{toBengaliDigits(mSubTotal.yPUA.toFixed(4).replace(/\.?0+$/, ''))}</td>
-                      <td className="p-3 text-center border-r border-slate-200 text-teal-900 font-extrabold">{toBengaliDigits(mSubTotal.ySC)}</td>
-                      <td className="p-3 text-center border-r border-slate-200 text-teal-900 font-extrabold">{toBengaliDigits(mSubTotal.ySA.toFixed(4).replace(/\.?0+$/, ''))}</td>
-                    </tr>
-                  </React.Fragment>
+                  </tr>
                 );
               })}
             </tbody>
 
             <tfoot>
               <tr className="bg-slate-200 text-slate-900 font-black border-t-2 border-slate-400">
-                <td className="px-6 py-4 text-right text-[13px] uppercase tracking-tighter bg-slate-200 text-slate-900 border-r border-slate-300 font-black">
-                  সর্বমোট সেটআপ তথ্য:
+                <td colSpan={2} className="px-6 py-4 text-center text-[13px] uppercase tracking-tighter bg-slate-200 text-slate-900 border-r border-slate-300 font-black">
+                  মোট
                 </td>
                 <td className="p-4 text-center text-[15px] bg-slate-200 text-teal-950 font-black border-r border-slate-300">
-                  {toBengaliDigits(totalStats.yPUC)}
+                  {toBengaliDigits(yearlyTotals.yPUC)}
                 </td>
                 <td className="p-4 text-center text-[15px] bg-slate-200 text-teal-950 font-black border-r border-slate-300">
-                  {toBengaliDigits(totalStats.yPUA.toFixed(4).replace(/\.?0+$/, ''))}
-                </td>
-                <td className="p-4 text-center text-[15px] bg-slate-200 text-teal-950 font-black border-r border-slate-300">
-                  {toBengaliDigits(totalStats.ySC)}
-                </td>
-                <td className="p-4 text-center text-[15px] bg-slate-200 text-teal-950 font-black border-r border-slate-300">
-                  {toBengaliDigits(totalStats.ySA.toFixed(4).replace(/\.?0+$/, ''))}
+                  {toBengaliDigits(yearlyTotals.yPUA.toFixed(4).replace(/\.?0+$/, ''))}
                 </td>
               </tr>
             </tfoot>

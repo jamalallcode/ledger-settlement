@@ -798,17 +798,17 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                       <td className={`${numTdStyle} text-slate-700 font-extrabold group-hover:text-blue-600`}>
                         {toBengaliDigits((idx + 1).toString())}
                       </td>
-                      <td className={`${tdStyle} text-left font-bold text-slate-800 leading-relaxed`}>
-                        <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px]">
+                      <td className={`${tdStyle} text-justify font-bold text-slate-800 leading-relaxed`}>
+                        <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px] text-justify">
                           <HighlightText text={row.ministryName} searchTerm={searchTerm} />
                         </div>
                         {(row.entityName || row.description) && (
-                          <div className="text-slate-700 text-[10px] sm:text-[10.5px]">
+                          <div className="text-slate-700 text-[10px] sm:text-[10.5px] text-justify">
                             <HighlightText text={row.entityName || row.description} searchTerm={searchTerm} />
                           </div>
                         )}
                         {row.branchName && (
-                          <div className="text-blue-700 text-[10px] font-black">
+                          <div className="text-blue-700 text-[10px] font-black text-justify">
                             <HighlightText text={row.branchName} searchTerm={searchTerm} />
                           </div>
                         )}
@@ -844,7 +844,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                       <td className={`${numTdStyle} text-red-600 font-black`}>
                         {toBengaliDigits(rowUnsettledCount.toString())}
                       </td>
-                      <td className={`${tdStyle} text-left font-semibold text-slate-800`}>
+                      <td className={`${tdStyle} text-justify font-semibold text-slate-800`}>
                         <HighlightText text={row.remarks || ''} searchTerm={searchTerm} />
                       </td>
                     </tr>

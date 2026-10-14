@@ -1284,7 +1284,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                 return (
                   <tr key={entry.id} className="no-hover-row group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                     <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
-                    <td className={`${tdS} text-left px-2 transition-colors`}>{entry.description}</td>
+                    <td className={`${tdS} text-justify px-2 transition-colors`}>{entry.description}</td>
                     <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
                     <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
                     <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
@@ -1365,7 +1365,7 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                       return (
                         <tr key={entry.id || idx} className="hover:bg-amber-50/50 font-bold text-slate-800">
                           <td className="border border-amber-200 px-2 py-1.5 text-center">{toBengaliDigits(idx + 1)}</td>
-                          <td className="border border-amber-200 px-3 py-1.5 text-left text-slate-900 font-black">{entry.description}</td>
+                          <td className="border border-amber-200 px-3 py-1.5 text-justify text-slate-900 font-black">{entry.description}</td>
                           <td className="border border-amber-200 px-2.5 py-1.5 text-center">{entry.paraType || '-'}</td>
                           <td className="border border-amber-200 px-2.5 py-1.5 text-center">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">

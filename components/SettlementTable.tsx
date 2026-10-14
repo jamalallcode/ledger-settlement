@@ -894,7 +894,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       
       if (trimmed.toLowerCase().startsWith("kg-")) {
         const dashIdx = trimmed.indexOf("-");
-        prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+        prefix = trimmed.substring(0, dashIdx + 1).trim() + "\u00A0";
         rest = trimmed.substring(dashIdx + 1).trim();
       }
       
@@ -947,7 +947,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const tdBase =
       "border border-slate-300 px-0.5 py-1.5 text-center align-middle text-[9px] leading-tight font-bold text-slate-900 relative";
     const tdMoney =
-      "border border-slate-300 px-0.5 py-1 text-center align-middle text-[9px] font-black text-slate-950 relative";
+      "border border-slate-300 px-0.5 py-1 text-center align-middle text-[9px] font-black text-slate-950 relative whitespace-nowrap";
 
     const renderCellDescription = (entry: SettlementEntry, isExpanded: boolean) => {
       const hasNoParas = !entry.paragraphs || entry.paragraphs.length === 0;
@@ -1025,7 +1025,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       }
 
       return (
-        <div className="w-full space-y-1 text-left pt-0.5 pb-1">
+        <div className="w-full space-y-1 text-justify pt-0.5 pb-1">
             {hasNoParas && (
               <p className="text-[10px] leading-tight font-black text-red-600 underline underline-offset-2 tracking-tighter mb-1.5">
                 উত্থাপিত এন্ট্রি (কোন অনুচ্ছেদ নেই)
@@ -1036,7 +1036,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             {fields.map((f, idx) => {
               const displayVal = (f.value === "-" || !f.value) ? "" : f.value;
               return (
-                <p key={idx} className="text-[10px] leading-tight">
+                <p key={idx} className="text-[10px] leading-tight text-justify">
                   <span className="font-black text-emerald-700">
                     {f.label}{f.label.includes("নং") ? "-" : ":"}
                   </span>{" "}

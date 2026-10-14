@@ -119,7 +119,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ১: দ্বিপক্ষীয় সভা (কাযবিবরনী)</h2>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">ত্রৈমাসিক রিটার্ন - ১: দ্বিপক্ষীয় সভা (কার্যবিবরনী)</h2>
         ${tablesHtml}
       </body>
       </html>
@@ -635,7 +635,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       <div className="text-center mb-3 pt-1 relative z-[260]">
         <div className="inline-block relative">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">
-            {customTitle ? `${customTitle}: দ্বিপক্ষীয় সভা (কাযবিবরনী)` : "ত্রৈমাসিক রিটার্ন: দ্বিপক্ষীয় সভা (কাযবিবরনী)"}
+            {customTitle ? `${customTitle}: দ্বিপক্ষীয় সভা (কার্যবিবরনী)` : "ত্রৈমাসিক রিটার্ন: দ্বিপক্ষীয় সভা (কার্যবিবরনী)"}
           </h1>
 
           <div className="flex items-center justify-center gap-4 mb-2">
@@ -652,7 +652,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
       {/* Info Section + Lowered statistics button */}
       <div className="mb-3 text-[11px] font-bold text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-x-4 gap-y-2 border-b border-t border-slate-200 py-1.5 px-2 bg-slate-50/50 rounded-lg">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p><span className="text-slate-500">বিষয়ঃ</span> দ্বিপক্ষীয় সভা (কাযবিবরনী) - AIR এ আপত্তি নিষ্পত্তির অগ্রগতি ও সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
+          <p><span className="text-slate-500">বিষয়ঃ</span> দ্বিপক্ষীয় সভা (কার্যবিবরনী) - AIR এ আপত্তি নিষ্পত্তির অগ্রগতি ও সুপারিশের ত্রৈমাসিক প্রতিবেদন</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
           <p><span className="text-slate-500">শাখাঃ</span> নন এসএফআই শাখা</p>
           <span className="text-slate-300 hidden md:inline font-normal">|</span>
@@ -774,10 +774,30 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             z-index: 143 !important;
             white-space: nowrap !important;
           }
+          #qr-1-table thead tr:first-child th:nth-child(2),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(2) {
+            width: 20% !important;
+            min-width: 210px !important;
+          }
+          #qr-1-table thead tr:first-child th:nth-child(6),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(6) {
+            width: 68px !important;
+            max-width: 68px !important;
+          }
+          #qr-1-table thead tr:first-child th:nth-child(8),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(8) {
+            width: 86px !important;
+            max-width: 86px !important;
+          }
           #qr-1-table thead tr:first-child th:nth-child(9) {
             width: 90px !important;
             max-width: 95px !important;
             line-height: 1.25 !important;
+          }
+          #qr-1-table thead tr:first-child th:nth-child(11),
+          #qr-1-table thead tr:nth-child(3) th:nth-child(13) {
+            width: 71px !important;
+            min-width: 71px !important;
           }
           #qr-1-table thead tr:nth-child(2) th:nth-child(1),
           #qr-1-table thead tr:nth-child(2) th:nth-child(2),
@@ -800,16 +820,16 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
           <thead className="bg-slate-100">
             <tr className="h-[40px]">
               <th rowSpan={2} className={`${thClsWithTop} w-[34px]`}>ক্রঃ নং</th>
-              <th rowSpan={2} className={`${thClsWithTop} w-[12%]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[20%] min-w-[210px]`}>মন্ত্রণালয়ের নাম/প্রতিষ্ঠানের নাম এবং রিপোর্টের বৎসর</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[62px]`}>দ্বি-পক্ষীয় সভার সংখ্যা</th>
               <th rowSpan={2} className={thClsWithTop}>সভা অনুষ্ঠানের তারিখ</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[62px]`}>আলোচিত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thClsWithTop}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
-              <th rowSpan={2} className={thClsWithTop}>কার্য বিবরণী প্রাপ্তির তারিখ</th>
-              <th rowSpan={2} className={thClsWithTop}>মীমাংসাপত্র জারীর তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[68px] max-w-[68px]`}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
+              <th rowSpan={2} className={thClsWithTop}>ডায়েরি নং ও তারিখ</th>
+              <th rowSpan={2} className={`${thClsWithTop} w-[86px] max-w-[86px]`}>মীমাংসাপত্র জারীর তারিখ</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[90px] max-w-[95px] leading-tight`}>মীমাংসিত অনুচ্ছেদে জড়িত টাকার পরিমাণ</th>
               <th colSpan={3} className={thClsWithTop}>সভার প্রেক্ষিতে আদায় সমন্বয়ের পরিমাণ</th>
-              <th rowSpan={2} className={`${thClsWithTop.replace('p-2', 'p-1')} w-[42px]`}>মন্তব্য</th>
+              <th rowSpan={2} className={`${thClsWithTop.replace('p-2', 'p-1')} w-[71px] min-w-[71px]`}>মন্তব্য</th>
             </tr>
             <tr className="h-[32px]">
               <th className={`${thCls} w-[78px] min-w-[78px]`}>আদায়</th>
@@ -819,7 +839,10 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             <tr className="h-[28px]">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => (
                 <th key={n} className={`${
-                  n === 13 ? thCls.replace('p-2', 'p-1') + " w-[42px]" : 
+                  n === 2 ? thCls + " w-[20%] min-w-[210px]" :
+                  n === 6 ? thCls + " w-[68px] max-w-[68px]" :
+                  n === 8 ? thCls + " w-[86px] max-w-[86px]" :
+                  n === 13 ? thCls.replace('p-2', 'p-1') + " w-[71px] min-w-[71px]" : 
                   (n === 3 || n === 5) ? thCls + " w-[62px]" :
                   n === 9 ? thCls + " w-[90px] max-w-[95px]" :
                   (n === 10 || n === 11 || n === 12) ? thCls + " w-[78px] min-w-[78px]" :
@@ -832,36 +855,37 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
             {filteredData.map((row, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
-                <td className={tdCls}>
-                  <HighlightText text={row.ministryName} searchTerm={searchTerm} />
-                  {row.entityName && (
-                    <>
-                      ,<br />
-                      <HighlightText text={row.entityName} searchTerm={searchTerm} />
-                    </>
-                  )}
-                  {row.branchName && (
-                    <>
-                      ,<br />
-                      <span className="text-blue-700 font-extrabold text-[10.5px]">
-                        <HighlightText text={row.branchName} searchTerm={searchTerm} />
-                      </span>
-                    </>
-                  )}
-                  {row.auditYear && (
-                    <>
-                      <br />
-                      <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
-                    </>
-                  )}
+                <td className={`${tdCls} text-justify w-[20%] min-w-[210px]`}>
+                  <div className="text-justify leading-relaxed">
+                    <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                    {row.entityName && (
+                      <>
+                        ,<br />
+                        <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                      </>
+                    )}
+                    {row.branchName && (
+                      <>
+                        ,<br />
+                        <span className="text-blue-700 font-extrabold text-[10.5px] block text-justify">
+                          <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                        </span>
+                      </>
+                    )}
+                    {row.auditYear && (
+                      <>
+                        <span className="font-bold text-slate-800 block">({toBengaliDigits(row.auditYear)})</span>
+                      </>
+                    )}
+                  </div>
                 </td>
                 <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits("১")}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingDate || '')}</td>
+                <td className={numTdCls}><HighlightText text={toBengaliDigits(row.meetingDate || '')} searchTerm={searchTerm} /></td>
                 <td className={`${numTdCls} w-[62px]`}>{toBengaliDigits(row.meetingDiscussedParaCount || row.meetingSentParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingRecommendedParaCount || row.meetingSettledParaCount || '০')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.meetingResponseDate || '')}</td>
-                <td className={numTdCls}>{toBengaliDigits(row.issueLetterNoDate || '')}</td>
-                <td className={`${numTdCls} w-[90px] max-w-[95px]`}>
+                <td className={`${numTdCls} w-[68px] max-w-[68px]`}>{toBengaliDigits(row.meetingRecommendedParaCount || row.meetingSettledParaCount || '০')}</td>
+                <td className={`${numTdCls} break-words`}><HighlightText text={toBengaliDigits(row.workpaperNoDate || row.meetingResponseDate || '')} searchTerm={searchTerm} /></td>
+                <td className={`${numTdCls} w-[86px] max-w-[86px] break-words px-1`}><HighlightText text={toBengaliDigits(row.issueLetterNoDate || '')} searchTerm={searchTerm} /></td>
+                <td className={`${numTdCls} w-[90px] max-w-[95px] whitespace-nowrap`}>
                   {toBengaliDigits(
                     (row.paragraphs && row.paragraphs.length > 0
                       ? row.paragraphs
@@ -870,10 +894,10 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                     ).toString()
                   )}
                 </td>
-                <td className={`${numTdCls} w-[78px] min-w-[78px]`}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
-                <td className={`${numTdCls} w-[78px] min-w-[78px]`}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
-                <td className={`${numTdCls} w-[78px] min-w-[78px]`}></td>
-                <td className={tdCls.replace('p-2', 'p-1') + " w-[42px]"}>{row.remarks}</td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px] whitespace-nowrap`}>{toBengaliDigits(row.totalRec?.toString() || '০')}</td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px] whitespace-nowrap`}>{toBengaliDigits(row.totalAdj?.toString() || '০')}</td>
+                <td className={`${numTdCls} w-[78px] min-w-[78px] whitespace-nowrap`}></td>
+                <td className={tdCls.replace('p-2', 'p-1') + " w-[71px] min-w-[71px] text-justify"}>{row.remarks}</td>
               </tr>
             ))}
           </tbody>
@@ -887,11 +911,11 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
               <td className={`${footerNumTdCls} w-[62px]`}>
                 {toBengaliDigits(totals.sentPara.toString())}
               </td>
-              <td className={footerNumTdCls}>
+              <td className={`${footerNumTdCls} w-[68px] max-w-[68px]`}>
                 {toBengaliDigits(totals.recommendedPara.toString())}
               </td>
               <td className={footerNumTdCls}></td>
-              <td className={footerNumTdCls}></td>
+              <td className={`${footerNumTdCls} w-[86px] max-w-[86px]`}></td>
               <td className={`${footerNumTdCls} w-[90px] max-w-[95px]`}>
                 {toBengaliDigits(totals.amount.toString())}
               </td>
@@ -902,7 +926,7 @@ const QR_1: React.FC<QRProps> = ({ entries, activeCycle, IDBadge, searchTerm = '
                 {toBengaliDigits(totals.adjustment.toString())}
               </td>
               <td className={`${footerNumTdCls} w-[78px] min-w-[78px]`}></td>
-              <td className={footerTdCls + " w-[42px]"}></td>
+              <td className={footerTdCls + " w-[71px] min-w-[71px]"}></td>
             </tr>
           </tfoot>
         </table>

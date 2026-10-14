@@ -2140,7 +2140,7 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     
     if (trimmed.toLowerCase().startsWith("kg-")) {
       const dashIdx = trimmed.indexOf("-");
-      prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+      prefix = trimmed.substring(0, dashIdx + 1).trim() + "\u00A0";
       rest = trimmed.substring(dashIdx + 1).trim();
     }
     
@@ -2162,10 +2162,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
 
   const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-tight break-words";
   const thClsWithTop = thCls + " border-t border-slate-400";
-  const tdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-700 align-middle leading-tight break-words";
-  const numTdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-700 text-center align-middle font-bold leading-tight break-all";
+  const tdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-700 align-middle leading-tight break-words text-justify";
+  const numTdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-700 text-center align-middle font-bold leading-tight break-words";
   const footerTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 align-middle bg-slate-200 font-extrabold";
-  const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-900 text-center align-middle font-black bg-slate-200";
+  const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[9.5px] text-slate-900 text-center align-middle font-black bg-slate-200 whitespace-nowrap";
 
   if (customTitle === 'বিস্তারিত - ১') {
     const priorMonthIdx = (quarterStartMonth - 1 + 12) % 12;
@@ -2180,10 +2180,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     // Local styling shadowing for larger, more readable font size
     const thCls = "border-r border-b border-slate-400 p-1 text-[10px] font-black text-slate-800 bg-slate-100 align-middle text-center leading-tight break-words";
     const thClsWithTop = thCls + " border-t border-slate-400";
-    const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle leading-tight break-words";
-    const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold leading-tight break-all";
+    const tdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 align-middle leading-tight break-words text-justify";
+    const numTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-700 text-center align-middle font-bold leading-tight break-words";
     const footerTdCls = "border-r border-b border-slate-400 p-1 text-[10.5px] text-slate-900 align-middle bg-slate-200 font-extrabold";
-    const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200";
+    const footerNumTdCls = "border-r border-b border-slate-400 p-1 text-[10px] text-slate-900 text-center align-middle font-black bg-slate-200 whitespace-nowrap";
 
     const getColWidthClass = (index: number) => {
       if (index === 0) return "w-[30px] min-w-[30px] max-w-[30px]";
@@ -2592,34 +2592,35 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               return (
                 <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                   <td className={numTdCls}>{toBengaliDigits((idx + 1).toString())}</td>
-                  <td className={tdCls}>
-                    <HighlightText text={row.ministryName} searchTerm={searchTerm} />
-                    {row.entityName && (
-                      <>
-                        ,<br />
-                        <HighlightText text={row.entityName} searchTerm={searchTerm} />
-                      </>
-                    )}
-                    {row.branchName && (
-                      <>
-                        ,<br />
-                        <span className="text-blue-700 font-extrabold text-[10.5px]">
-                          <HighlightText text={row.branchName} searchTerm={searchTerm} />
-                        </span>
-                      </>
-                    )}
-                    {row.auditYear && (
-                      <>
-                        <br />
-                        <span className="font-bold text-slate-800">({toBengaliDigits(row.auditYear)})</span>
-                      </>
-                    )}
+                  <td className={`${tdCls} text-justify`}>
+                    <div className="text-justify leading-relaxed">
+                      <HighlightText text={row.ministryName} searchTerm={searchTerm} />
+                      {row.entityName && (
+                        <>
+                          ,<br />
+                          <HighlightText text={row.entityName} searchTerm={searchTerm} />
+                        </>
+                      )}
+                      {row.branchName && (
+                        <>
+                          ,<br />
+                          <span className="text-blue-700 font-extrabold text-[10.5px] block text-justify">
+                            <HighlightText text={row.branchName} searchTerm={searchTerm} />
+                          </span>
+                        </>
+                      )}
+                      {row.auditYear && (
+                        <>
+                          <span className="font-bold text-slate-800 block">({toBengaliDigits(row.auditYear)})</span>
+                        </>
+                      )}
+                    </div>
                   </td>
                   <td className={numTdCls}>{toBengaliDigits("১")}</td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} !break-words`}>
                     <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />
                   </td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} !break-words`}>
                     <HighlightText text={formatTextValue(row.letterNoDate)} searchTerm={searchTerm} />
                   </td>
                   <td className={numTdCls}>
@@ -2628,10 +2629,10 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                   <td className={numTdCls}>
                     {formatCountBengali(rowSettledCount)}
                   </td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} !break-words`}>
                     <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
                   </td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} whitespace-nowrap`}>
                     {formatAmountBengali(
                       row.paragraphs && row.paragraphs.length > 0
                         ? row.paragraphs
@@ -2639,22 +2640,22 @@ const QR_2: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
                         : ((row.totalRec || 0) + (row.totalAdj || 0))
                     )}
                   </td>
-                  <td className={`${numTdCls} text-emerald-600 bg-emerald-50/10`}>
+                  <td className={`${numTdCls} text-emerald-600 bg-emerald-50/10 whitespace-nowrap`}>
                     {formatAmountBengali(row.totalRec)}
                   </td>
-                  <td className={`${numTdCls} text-indigo-600 bg-indigo-50/10`}>
+                  <td className={`${numTdCls} text-indigo-600 bg-indigo-50/10 whitespace-nowrap`}>
                     {formatAmountBengali(row.totalAdj)}
                   </td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} whitespace-nowrap`}>
                     {formatAmountBengali(0)}
                   </td>
                   <td className={numTdCls}>
                     {formatCountBengali(rowUnsettledCount)}
                   </td>
-                  <td className={numTdCls}>
+                  <td className={`${numTdCls} whitespace-nowrap`}>
                     {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
                   </td>
-                  <td className={`${numTdCls} whitespace-pre-line font-bold`}>
+                  <td className={`${numTdCls} !break-words whitespace-pre-line font-bold`}>
                     <HighlightText text={formatArchiveNoForTable(row.archiveNo)} searchTerm={searchTerm} />
                   </td>
                 </tr>

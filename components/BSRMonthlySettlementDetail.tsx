@@ -279,7 +279,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     
     if (trimmed.toLowerCase().startsWith("kg-")) {
       const dashIdx = trimmed.indexOf("-");
-      prefix = trimmed.substring(0, dashIdx + 1).trim() + " ";
+      prefix = trimmed.substring(0, dashIdx + 1).trim() + "\u00A0";
       rest = trimmed.substring(dashIdx + 1).trim();
     }
     
@@ -931,7 +931,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                       <td className={numTdStyle}>
                         <HighlightText text={formatTextValue(row.issueLetterNoDate)} searchTerm={searchTerm} />
                       </td>
-                      <td className={numTdStyle}>
+                      <td className={`${numTdStyle} whitespace-nowrap`}>
                         {formatAmountBengali(col9Amount)}
                       </td>
                       <td className={`${numTdStyle} text-emerald-600 bg-emerald-50/10 whitespace-nowrap`}>
@@ -946,7 +946,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                       <td className={numTdStyle}>
                         {formatCountBengali(rowUnsettledCount)}
                       </td>
-                      <td className={numTdStyle}>
+                      <td className={`${numTdStyle} whitespace-nowrap`}>
                         {entryUnsettledAmount === 0 ? toBengaliDigits('0') + '/-' : formatAmountBengali(entryUnsettledAmount)}
                       </td>
                       <td className={`${numTdStyle} whitespace-pre-line`}>
