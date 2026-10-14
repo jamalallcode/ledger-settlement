@@ -167,6 +167,46 @@ export const getHalfYearlyCycleForDate = (date: Date): { start: Date; end: Date;
 };
 
 /**
+ * Returns yearly cycle information for a given date.
+ * Yearly cycle: 16/06/YYYY to 15/06/(YYYY+1)
+ */
+export const getYearlyCycleForDate = (date: Date): { start: Date; end: Date; label: string; subLabel: string } => {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0 to 11
+  const day = date.getDate();
+
+  let startYear: number;
+  if (month > 5 || (month === 5 && day >= 16)) {
+    startYear = year;
+  } else {
+    startYear = year - 1;
+  }
+
+  // Ensure minimum yearly cycle starts at 16/06/2025 (since 2024-2025 is opening balance)
+  if (startYear < 2025) {
+    startYear = 2025;
+  }
+
+  const endYear = startYear + 1;
+  const start = new Date(startYear, 5, 16);
+  const end = new Date(endYear, 5, 15);
+
+  const s = startOfDay(start);
+  const e = endOfDay(end);
+
+  const startYrShort = format(s, 'yy');
+  const endYrShort = format(e, 'yy');
+  const subLabel = `জুলাই/${toBengaliDigits(startYrShort)} হতে জুন/${toBengaliDigits(endYrShort)}`;
+
+  return {
+    start: s,
+    end: e,
+    label: `${toBengaliDigits(format(s, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(format(e, 'dd/MM/yyyy'))}`,
+    subLabel
+  };
+};
+
+/**
  * Helper to check if an entry is within its intended cycle or it's backdated/late
  */
 export const isEntryLate = (entryMadeAt: Date, targetCycleEnd: Date): boolean => {
