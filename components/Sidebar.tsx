@@ -445,7 +445,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      <div id="sidebar-container" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
+      <div id="sidebar-container" data-sidebar="true" className="w-[126px] bg-slate-900 h-full text-slate-300 flex flex-col border-r border-slate-800 shadow-2xl overflow-hidden relative z-[5000]">
           <IDBadge id="sidebar-container" />
           <div id="sidebar-header" className="px-1.5 flex items-center justify-between relative bg-slate-900/45 h-[45px] shrink-0">
             <IDBadge id="sidebar-header" />

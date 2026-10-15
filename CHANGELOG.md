@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-15] - Removed Top Navbar Reporting Cycle/Date Badge
+
+### 🚀 Enhanced & Refined
+- **Removed Top Navbar Date Badge (`Navbar.tsx`)**:
+  - ব্যবহারকারীর সুনির্দিষ্ট নির্দেশনা অনুযায়ী, উপরের নেভবারের ডান পাশ থেকে লাল চিহ্নে চিহ্নিত তারিখ ব্যাজটি (`📅 ১৬/০৯/২০২৬ হতে ১৫/১০/২০২৬`) সম্পূর্ণরূপে অপসারণ করা হয়েছে।
+- **Complete Isolation & Zero Side Effects**:
+  - নির্দেশিত ব্যাজটি অপসারণ ব্যতীত অন্য কোনো ফাইল, উপাদান বা ব্যবসায়িক লজিকে বিন্দুমাত্র স্পর্শ করা হয়নি। সকল কিছু ১০০% ইনট্যাক্ট রয়েছে।
+
+## [2026-10-15] - Fixed ReferenceError in YearlyReturnView (correspondenceEntries prop destructuring)
+
+### 🐛 Fixed & Polished
+- **Fixed `ReferenceError: correspondenceEntries is not defined` (`YearlyReturnView.tsx`)**:
+  - `YearlyReturnView` উপাদানের প্রপস ডেস্ট্রাকচারিং তালিকায় `correspondenceEntries = []` এবং `onBack` যুক্ত করা হয়েছে।
+  - এর ফলে বাৎসরিক রিটার্নে নিষ্পত্তিকৃত আপত্তির সংখ্যায় ক্লিক করলে বিস্তারিত মোডাল (`SettledDetailsModal`) খোলার সময় অথবা বাৎসরিক রিটার্ন ভিউ রেন্ডার হওয়ার সময় কোনো রেফারেন্স ত্রুটি ঘটবে না এবং নির্বিঘ্নে সকল অনুচ্ছেদ ও জারিপত্র তারিখ প্রদর্শিত হবে।
+- **Complete Isolation & Zero Side Effects**:
+  - অন্য কোনো উপাদান বা আর্থিক সূত্রে কোনো পরিবর্তন ছাড়াই টাইপস্ক্রিপ্ট লিন্ট এবং কম্পাইলেশন সফলভাবে সম্পন্ন হয়েছে।
+
 ## [2026-10-04] - Added 3 Annual Return (বাৎসরিক রিটার্ন) Tables with Dropdown Selector
 
 ### 🚀 Added & Enhanced

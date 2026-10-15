@@ -18,6 +18,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import AdminAnalytics from './subapps/admin_analytics/AdminAnalytics';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import AutoTruncateTooltip from './components/AutoTruncateTooltip';
 import { SettlementEntry, GroupOption, CumulativeStats, ModuleVisibility, CorrespondenceEntry } from './types';
 import { getCurrentCycle } from './utils/cycleHelper';
 import { toBengaliDigits } from './utils/numberUtils';
@@ -2090,6 +2091,9 @@ const App: React.FC = () => {
           setShowAdminLogin(false);
         }}
       />
+
+      {/* Global Smart Tooltip for Truncated Text */}
+      <AutoTruncateTooltip />
     </div>
   );
 };

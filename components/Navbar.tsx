@@ -412,7 +412,7 @@ const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          {/* Cycle badge removed as per request */}
+
           
           {isAdmin && (
             <div className="hidden sm:flex items-center gap-2">

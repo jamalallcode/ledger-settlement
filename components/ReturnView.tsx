@@ -759,11 +759,11 @@ const ReturnView: React.FC<ReturnViewProps> = ({
           rawMasterStats[k] = {
             ...existing,
             yearlyPrevUnsettledCount:
-              existing.yearlyPrevUnsettledCount !== undefined && existing.yearlyPrevUnsettledCount !== 0 && existing.yearlyPrevUnsettledCount !== ''
+              existing.yearlyPrevUnsettledCount !== undefined && existing.yearlyPrevUnsettledCount !== 0 && (existing.yearlyPrevUnsettledCount as any) !== ''
                 ? existing.yearlyPrevUnsettledCount
                 : (over.prevCount ?? 0),
             yearlyPrevUnsettledAmount:
-              existing.yearlyPrevUnsettledAmount !== undefined && existing.yearlyPrevUnsettledAmount !== 0 && existing.yearlyPrevUnsettledAmount !== ''
+              existing.yearlyPrevUnsettledAmount !== undefined && existing.yearlyPrevUnsettledAmount !== 0 && (existing.yearlyPrevUnsettledAmount as any) !== ''
                 ? existing.yearlyPrevUnsettledAmount
                 : (over.prevAmount ?? 0)
           };
