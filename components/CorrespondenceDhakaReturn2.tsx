@@ -10,6 +10,7 @@ import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import { OFFICE_HEADER } from '../constants';
 import { format as dateFnsFormat } from 'date-fns';
+import { formatBengaliDateDMY } from '../utils/syncHelper';
 import * as XLSX from 'xlsx';
 import { isBilateralLetter, isTrilateralLetter, isExcludedFromDhakaReturn } from './CorrespondenceDhakaReturn';
 
@@ -166,13 +167,8 @@ export const formatDateDisplay = (dateVal?: string): string => {
   if (!dateVal) return '';
   const trimmed = String(dateVal).trim().replace(/খ্রি:?/gi, '').trim();
   if (!trimmed) return '';
-  if (trimmed.includes('-')) {
-    const parts = trimmed.split('-');
-    if (parts.length === 3 && parts[0].length === 4) {
-      return toBengaliDigits(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  }
-  return toBengaliDigits(trimmed);
+  const dmy = formatBengaliDateDMY(trimmed);
+  return dmy || toBengaliDigits(trimmed);
 };
 
 export const findMatchedCorr = (entry: any, corrList: any[] = []): any => {

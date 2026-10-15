@@ -7,17 +7,17 @@ import { toBengaliDigits, toEnglishDigits, formatDateBN } from './numberUtils';
  */
 export const formatBengaliDateDMY = (dateInput: string | undefined | null): string => {
   if (!dateInput || dateInput.trim() === '' || dateInput === '0000-00-00') return '';
-  const eng = toEnglishDigits(dateInput).trim();
+  const eng = toEnglishDigits(dateInput).replace(/খ্রি:?/gi, '').trim();
 
   // If match YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
-  const ymdMatch = eng.match(/^(\d{4})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])(?:T.*)?$/);
+  const ymdMatch = eng.match(/(\d{4})[-\/\.](0?[1-9]|1[0-2])[-\/\.](0?[1-9]|[12]\d|3[01])/);
   if (ymdMatch) {
     const [, y, m, d] = ymdMatch;
     return toBengaliDigits(`${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`);
   }
 
   // If match DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
-  const dmyMatch = eng.match(/^(0?[1-9]|[12]\d|3[01])[-\/\.](0?[1-9]|1[0-2])[-\/\.](\d{2,4})$/);
+  const dmyMatch = eng.match(/(0?[1-9]|[12]\d|3[01])[-\/\.](0?[1-9]|1[0-2])[-\/\.](\d{2,4})/);
   if (dmyMatch) {
     let [, d, m, y] = dmyMatch;
     if (y.length === 2) y = '20' + y;

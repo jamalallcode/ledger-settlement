@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Printer, FileSpreadsheet, ChevronDown, Check, Building2, Edit3, RotateCcw, CalendarDays, Layers, X, ListFilter } from 'lucide-react';
-import { toBengaliDigits, parseBengaliNumber } from '../utils/numberUtils';
+import { toBengaliDigits, toEnglishDigits, parseBengaliNumber } from '../utils/numberUtils';
 import { SettlementEntry, CorrespondenceEntry } from '../types';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import { extractEntryDate } from '../utils/halfYearlyHelper';
+import { formatBengaliDateDMY } from '../utils/syncHelper';
 
 export type YearlyTableType = 'বার্ষিক - ১' | 'বার্ষিক - ২' | 'বার্ষিক - ৩';
 
@@ -166,9 +167,11 @@ const STORAGE_KEY_YEARLY_OVERRIDES = 'ledger_yearly_return_overrides_v2';
 
 export const YearlyReturnView: React.FC<YearlyReturnViewProps> = ({
   entries = [],
+  correspondenceEntries = [],
   prevStats,
   activeCycle,
   IDBadge,
+  onBack,
   selectedReportType,
   setSelectedReportType,
   monthPickerElement,
@@ -317,6 +320,9 @@ export const YearlyReturnView: React.FC<YearlyReturnViewProps> = ({
           settledTaka: number;
           settledCrore: number;
           issueLetterNoDate: string;
+          issueDateISO?: string;
+          meetingDate?: string;
+          entryId?: string;
           isCountedInSettled: boolean;
           countValue: number;
         }[] = [];
@@ -390,6 +396,9 @@ export const YearlyReturnView: React.FC<YearlyReturnViewProps> = ({
                     settledTaka: settledAmt,
                     settledCrore: Number((settledAmt / 10000000).toFixed(4)),
                     issueLetterNoDate: entry.issueLetterNoDate || '-',
+                    issueDateISO: entry.issueDateISO || '',
+                    meetingDate: entry.meetingDate || '',
+                    entryId: entry.id,
                     isCountedInSettled: isFull,
                     countValue: isFull ? 1 : 0,
                   });
@@ -421,6 +430,9 @@ export const YearlyReturnView: React.FC<YearlyReturnViewProps> = ({
                   settledTaka: settledAmt,
                   settledCrore: Number((settledAmt / 10000000).toFixed(4)),
                   issueLetterNoDate: entry.issueLetterNoDate || '-',
+                  issueDateISO: entry.issueDateISO || '',
+                  meetingDate: entry.meetingDate || '',
+                  entryId: entry.id,
                   isCountedInSettled: fc > 0,
                   countValue: fc,
                 });
@@ -1480,6 +1492,8 @@ export const YearlyReturnView: React.FC<YearlyReturnViewProps> = ({
           onClose={() => setSelectedSettledMinistry(null)}
           rows={rows}
           activeCycle={activeCycle}
+          entries={entries}
+          correspondenceEntries={correspondenceEntries}
         />
       )}
     </div>
@@ -1491,6 +1505,8 @@ interface SettledDetailsModalProps {
   onClose: () => void;
   rows: any[];
   activeCycle?: { label?: string; [key: string]: any };
+  entries?: SettlementEntry[];
+  correspondenceEntries?: CorrespondenceEntry[];
 }
 
 const SettledDetailsModal: React.FC<SettledDetailsModalProps> = ({
@@ -1498,6 +1514,8 @@ const SettledDetailsModal: React.FC<SettledDetailsModalProps> = ({
   onClose,
   rows,
   activeCycle,
+  entries,
+  correspondenceEntries,
 }) => {
   const theadRef = useRef<HTMLTableSectionElement>(null);
   const [theadHeight, setTheadHeight] = useState<number>(54);
@@ -1567,20 +1585,43 @@ const SettledDetailsModal: React.FC<SettledDetailsModalProps> = ({
   // ২য় ছবির মত হেডার ও লেখার মাঝখানে ঠিক নিখুঁত ফাঁকা বজায় রাখতে গতিশীল অফসেট (theadHeight + 10px)
   const stickyTop = (theadHeight || 54) + 10;
 
-  const renderIssueLetterInfo = (rawText: string) => {
+  const renderIssueLetterInfo = (rawText: string, groupItems: any[] = []) => {
     if (!rawText || rawText.trim() === '' || rawText.trim() === '-') {
-      return <span className="text-slate-400">-</span>;
+      return (
+        <div className="space-y-1 text-center leading-snug">
+          <div>
+            <span className="font-semibold text-slate-700">জারিপত্র নং: </span>
+            <span className="text-slate-400">-</span>
+          </div>
+          <div>
+            <span className="font-semibold text-slate-700">তারিখ: </span>
+            <span className="text-slate-400">-</span>
+          </div>
+        </div>
+      );
     }
 
     const text = rawText.trim();
-    // তারিখ খুঁজে নেওয়া (উদাঃ ১৫/০৬/২০২৫, 15/06/2025, ১৫-০৬-২০২৫ ইত্যাদি)
-    const dateMatch = text.match(/([০-৯0-9]{1,2}[\/\-\.][০-৯0-9]{1,2}[\/\-\.][০-৯0-9]{2,4})/);
-    const dateStr = dateMatch ? toBengaliDigits(dateMatch[1]) : '';
+    // তারিখ খুঁজে নেওয়া (১মে ডেট তারপর মাস তারপর বছর - দিন/মাস/বছর)
+    let matchedRawDate = '';
+    const ymdMatch = text.match(/(?:^|[^\d০-৯])([০-৯0-9]{4}[-\/\.][০-৯0-9]{1,2}[-\/\.][০-৯0-9]{1,2})(?:[^\d০-৯]|$)/);
+    if (ymdMatch) {
+      matchedRawDate = ymdMatch[1];
+    } else {
+      const dmyMatch = text.match(/(?:^|[^\d০-৯])([০-৯0-9]{1,2}[-\/\.][০-৯0-9]{1,2}[-\/\.][০-৯0-9]{2,4})(?:[^\d০-৯]|$)/);
+      if (dmyMatch) {
+        matchedRawDate = dmyMatch[1];
+      }
+    }
 
     // তারিখ ও তারিখের লেবেল অংশগুলো বাদ দিয়ে মূল জারিপত্র নম্বর আলাদা করা
-    const withoutDate = text
+    let withoutDate = text
       .replace(/(?:জারিপত্রের\s*তারিখ|তারিখের\s*তারিখ|তারিখ)[\s:\-–—]*[০-৯0-9\/\-\.]+/gi, '')
       .trim();
+
+    if (matchedRawDate) {
+      withoutDate = withoutDate.replace(matchedRawDate, '').trim();
+    }
 
     const cleanNo = withoutDate
       .replace(/(?:জারিপত্র\s*নং|জারিপত্রের\s*নং|স্মারক\s*নং|জারিপত্র|নং)[\s:\-–—]*/gi, '')
@@ -1590,40 +1631,70 @@ const SettledDetailsModal: React.FC<SettledDetailsModalProps> = ({
 
     const noStr = cleanNo ? toBengaliDigits(cleanNo) : '';
 
-    if (noStr && dateStr) {
-      return (
-        <div className="space-y-1 text-center leading-snug">
-          <div>
-            <span className="font-semibold text-slate-700">জারিপত্র নং: </span>
-            <span className="font-bold text-slate-900">{noStr}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-slate-700">তারিখ: </span>
-            <span className="font-medium text-slate-800">{dateStr}</span>
-          </div>
-        </div>
-      );
+    // If date was not found inside rawText, try finding it from groupItems or related entry or correspondence
+    if (!matchedRawDate && groupItems && groupItems.length > 0) {
+      for (const it of groupItems) {
+        if (it.issueDateISO) {
+          matchedRawDate = it.issueDateISO;
+          break;
+        }
+        if (it.meetingDate) {
+          matchedRawDate = it.meetingDate;
+          break;
+        }
+        if (it.entryId && entries) {
+          const matchedEntry = entries.find((e) => e.id === it.entryId);
+          if (matchedEntry?.issueDateISO) {
+            matchedRawDate = matchedEntry.issueDateISO;
+            break;
+          }
+        }
+      }
     }
 
-    if (noStr && !dateStr) {
-      return (
-        <div className="text-center leading-snug">
+    // If still no date, search in entries by cleanNo
+    if (!matchedRawDate && cleanNo && entries) {
+      const normNo = toEnglishDigits(cleanNo).replace(/\D/g, '');
+      if (normNo) {
+        const found = entries.find((e) => {
+          const eIssue = toEnglishDigits(e.issueLetterNoDate || '').replace(/\D/g, '');
+          return eIssue.includes(normNo) && e.issueDateISO;
+        });
+        if (found?.issueDateISO) {
+          matchedRawDate = found.issueDateISO;
+        }
+      }
+    }
+
+    // If still no date, check correspondenceEntries
+    if (!matchedRawDate && cleanNo && correspondenceEntries) {
+      const normNo = toEnglishDigits(cleanNo).replace(/\D/g, '');
+      if (normNo) {
+        const found = correspondenceEntries.find((c) => {
+          const cIssue = toEnglishDigits(c.issueLetterNo || c.issueLetterNoDate || '').replace(/\D/g, '');
+          return cIssue === normNo && (c.issueLetterDate || c.issueDateISO);
+        });
+        if (found) {
+          matchedRawDate = found.issueLetterDate || found.issueDateISO || '';
+        }
+      }
+    }
+
+    // ১মে ডেট তারপর মাস তারপর বছর (দিন/মাস/বছর)
+    const dateStr = matchedRawDate ? formatBengaliDateDMY(matchedRawDate) : '';
+
+    return (
+      <div className="space-y-1 text-center leading-snug">
+        <div>
           <span className="font-semibold text-slate-700">জারিপত্র নং: </span>
-          <span className="font-bold text-slate-900">{noStr}</span>
+          <span className="font-bold text-slate-900">{noStr || toBengaliDigits(text) || '-'}</span>
         </div>
-      );
-    }
-
-    if (!noStr && dateStr) {
-      return (
-        <div className="text-center leading-snug">
+        <div>
           <span className="font-semibold text-slate-700">তারিখ: </span>
-          <span className="font-medium text-slate-800">{dateStr}</span>
+          <span className="font-medium text-slate-800">{dateStr || '-'}</span>
         </div>
-      );
-    }
-
-    return <span className="leading-snug">{toBengaliDigits(text)}</span>;
+      </div>
+    );
   };
 
   return (
@@ -1816,7 +1887,7 @@ const SettledDetailsModal: React.FC<SettledDetailsModalProps> = ({
                                 className="sticky py-1 leading-relaxed"
                                 style={{ top: `${stickyTop}px` }}
                               >
-                                {renderIssueLetterInfo(group.issueLetterNoDate)}
+                                {renderIssueLetterInfo(group.issueLetterNoDate, group.items)}
                               </div>
                             </td>
                           )}

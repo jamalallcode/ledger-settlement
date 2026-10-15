@@ -51,6 +51,7 @@ import SettledMinistryDetailModal, { SettledMinistryItem } from "./SettledMinist
 import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from "../constants.ts";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper.ts";
 import { format, addMonths } from "date-fns";
+import { formatBengaliDateDMY } from "../utils/syncHelper.ts";
 
 const robustNormalize = (str: string = "") => {
   if (!str) return "";
@@ -383,6 +384,73 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
 
     const filteredEntries = useMemo(() => {
       return entries
+        .map((entry) => {
+          if (!entry.paragraphs || entry.paragraphs.length === 0) return entry;
+
+          if (filterStatus === "settled") {
+            const filteredParas = entry.paragraphs.filter(
+              (p) => (p.status || "").trim() === "পূর্ণাঙ্গ"
+            );
+            if (filteredParas.length === entry.paragraphs.length) return entry;
+
+            const inv = filteredParas.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+            const vRec = filteredParas.reduce((sum, p) => sum + (p.category === "ভ্যাট" ? (p.recoveredAmount || 0) : (p.vatRec || 0)), 0);
+            const vAdj = filteredParas.reduce((sum, p) => sum + (p.category === "ভ্যাট" ? (p.adjustedAmount || 0) : (p.vatAdj || 0)), 0);
+            const iRec = filteredParas.reduce((sum, p) => sum + (p.category === "আয়কর" ? (p.recoveredAmount || 0) : (p.itRec || 0)), 0);
+            const iAdj = filteredParas.reduce((sum, p) => sum + (p.category === "আয়কর" ? (p.adjustedAmount || 0) : (p.itAdj || 0)), 0);
+            const oRec = filteredParas.reduce((sum, p) => sum + (p.category === "অন্যান্য" ? (p.recoveredAmount || 0) : (p.othersRec || 0)), 0);
+            const oAdj = filteredParas.reduce((sum, p) => sum + (p.category === "অন্যান্য" ? (p.adjustedAmount || 0) : (p.othersAdj || 0)), 0);
+            const tRec = filteredParas.reduce((sum, p) => sum + (p.recoveredAmount || 0), 0);
+            const tAdj = filteredParas.reduce((sum, p) => sum + (p.adjustedAmount || 0), 0);
+
+            return {
+              ...entry,
+              paragraphs: filteredParas,
+              involvedAmount: inv,
+              vatRec: vRec,
+              vatAdj: vAdj,
+              itRec: iRec,
+              itAdj: iAdj,
+              othersRec: oRec,
+              othersAdj: oAdj,
+              totalRec: tRec,
+              totalAdj: tAdj,
+            };
+          }
+
+          if (filterStatus === "unsettled") {
+            const filteredParas = entry.paragraphs.filter(
+              (p) => (p.status || "").trim() === "আংশিক"
+            );
+            if (filteredParas.length === entry.paragraphs.length) return entry;
+
+            const inv = filteredParas.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
+            const vRec = filteredParas.reduce((sum, p) => sum + (p.category === "ভ্যাট" ? (p.recoveredAmount || 0) : (p.vatRec || 0)), 0);
+            const vAdj = filteredParas.reduce((sum, p) => sum + (p.category === "ভ্যাট" ? (p.adjustedAmount || 0) : (p.vatAdj || 0)), 0);
+            const iRec = filteredParas.reduce((sum, p) => sum + (p.category === "আয়কর" ? (p.recoveredAmount || 0) : (p.itRec || 0)), 0);
+            const iAdj = filteredParas.reduce((sum, p) => sum + (p.category === "আয়কর" ? (p.adjustedAmount || 0) : (p.itAdj || 0)), 0);
+            const oRec = filteredParas.reduce((sum, p) => sum + (p.category === "অন্যান্য" ? (p.recoveredAmount || 0) : (p.othersRec || 0)), 0);
+            const oAdj = filteredParas.reduce((sum, p) => sum + (p.category === "অন্যান্য" ? (p.adjustedAmount || 0) : (p.othersAdj || 0)), 0);
+            const tRec = filteredParas.reduce((sum, p) => sum + (p.recoveredAmount || 0), 0);
+            const tAdj = filteredParas.reduce((sum, p) => sum + (p.adjustedAmount || 0), 0);
+
+            return {
+              ...entry,
+              paragraphs: filteredParas,
+              involvedAmount: inv,
+              vatRec: vRec,
+              vatAdj: vAdj,
+              itRec: iRec,
+              itAdj: iAdj,
+              othersRec: oRec,
+              othersAdj: oAdj,
+              totalRec: tRec,
+              totalAdj: tAdj,
+            };
+          }
+
+          return entry;
+        })
         .filter((entry) => {
           let entryDate = entry.issueDateISO || "";
           const matchDate = (() => {
@@ -472,12 +540,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
             return variations.some(v => normalizedEntryPara === v);
           })();
 
-          const hasSettled = entry.paragraphs?.some(
-            (p) => p.status === "পূর্ণাঙ্গ",
-          );
-          const hasUnsettled = entry.paragraphs?.some(
-            (p) => p.status === "আংশিক",
-          );
+          const hasSettled =
+            (entry.paragraphs && entry.paragraphs.some((p) => (p.status || "").trim() === "পূর্ণাঙ্গ")) ||
+            (entry.isMeeting && (
+              parseBengaliNumber((entry.meetingFullSettledParaCount || "").toString().trim()) > 0 ||
+              parseBengaliNumber((entry.meetingSettledParaCount || "").toString().trim()) > 0
+            ));
+
+          const hasUnsettled =
+            (entry.paragraphs && entry.paragraphs.some((p) => (p.status || "").trim() === "আংশিক")) ||
+            (entry.isMeeting && (
+              parseBengaliNumber((entry.meetingPartialSettledParaCount || "").toString().trim()) > 0
+            ));
+
           const matchStatus =
             filterStatus === "" ||
             (filterStatus === "settled" && hasSettled) ||
@@ -632,10 +707,26 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           (e) => e.meetingType === "দ্বিপক্ষীয় সভা",
         ).length;
         const cycleSettledParasCount = group.entries.reduce(
-          (acc, ent) =>
-            acc +
-            (ent.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ").length ||
-              0),
+          (acc, ent) => {
+            const paras = ent.paragraphs || [];
+            if (filterStatus === "unsettled") {
+              const pCount = paras.filter((p) => (p.status || "").trim() === "আংশিক").length;
+              if (pCount > 0) return acc + pCount;
+              if (ent.isMeeting) {
+                const mPartial = parseBengaliNumber((ent.meetingPartialSettledParaCount || "").toString().trim());
+                return acc + (mPartial > 0 ? mPartial : 0);
+              }
+              return acc;
+            }
+            const pCount = paras.filter((p) => (p.status || "").trim() === "পূর্ণাঙ্গ").length;
+            if (pCount > 0) return acc + pCount;
+            if (ent.isMeeting) {
+              const mFull = parseBengaliNumber((ent.meetingFullSettledParaCount || "").toString().trim());
+              const mSettled = parseBengaliNumber((ent.meetingSettledParaCount || "").toString().trim());
+              return acc + (mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0);
+            }
+            return acc;
+          },
           0,
         );
 
@@ -646,14 +737,23 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           typeEntries.forEach((ent) => {
             let count = 0;
             const paras = ent.paragraphs || [];
-            const fullParas = paras.filter((p) => (p.status || "").trim() === "পূর্ণাঙ্গ");
+            const targetParas = paras.filter((p) =>
+              filterStatus === "unsettled"
+                ? (p.status || "").trim() === "আংশিক"
+                : (p.status || "").trim() === "পূর্ণাঙ্গ"
+            );
 
-            if (fullParas.length > 0) {
-              count = fullParas.length;
+            if (targetParas.length > 0) {
+              count = targetParas.length;
             } else if (ent.isMeeting) {
-              const mFull = parseBengaliNumber((ent.meetingFullSettledParaCount || "").toString().trim());
-              const mSettled = parseBengaliNumber((ent.meetingSettledParaCount || "").toString().trim());
-              count = mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0;
+              if (filterStatus === "unsettled") {
+                const mPartial = parseBengaliNumber((ent.meetingPartialSettledParaCount || "").toString().trim());
+                count = mPartial > 0 ? mPartial : 0;
+              } else {
+                const mFull = parseBengaliNumber((ent.meetingFullSettledParaCount || "").toString().trim());
+                const mSettled = parseBengaliNumber((ent.meetingSettledParaCount || "").toString().trim());
+                count = mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0;
+              }
             }
 
             if (count > 0) {
@@ -730,15 +830,33 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       });
 
       return { cycleStats: statsMap, groupedEntries: groupsList };
-    }, [filteredEntries]);
+    }, [filteredEntries, filterStatus]);
 
     const grandTotals = useMemo(() => {
       return filteredEntries.reduce(
         (acc, entry) => {
           const paras = entry.paragraphs || [];
           
-          // Count total number of paragraphs listed in the table
-          acc.paraCount += paras.length;
+          let fullCount = 0;
+          let partialCount = 0;
+          if (paras.length > 0) {
+            fullCount = paras.filter((p) => (p.status || "").trim() === "পূর্ণাঙ্গ").length;
+            partialCount = paras.filter((p) => (p.status || "").trim() === "আংশিক").length;
+          } else if (entry.isMeeting) {
+            if (filterStatus !== "unsettled") {
+              const mFull = parseBengaliNumber((entry.meetingFullSettledParaCount || "").toString().trim());
+              const mSettled = parseBengaliNumber((entry.meetingSettledParaCount || "").toString().trim());
+              fullCount = mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0;
+            }
+            if (filterStatus !== "settled") {
+              const mPartial = parseBengaliNumber((entry.meetingPartialSettledParaCount || "").toString().trim());
+              partialCount = mPartial > 0 ? mPartial : 0;
+            }
+          }
+
+          acc.fullParaCount += fullCount;
+          acc.partialParaCount += partialCount;
+          acc.paraCount += (filterStatus === "unsettled" ? partialCount : fullCount);
 
           // Use entry.involvedAmount if available as it includes meeting unsettled amounts
           acc.inv += entry.involvedAmount || paras.reduce((sum, p) => sum + (p.involvedAmount || 0), 0);
@@ -767,6 +885,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           return acc;
         },
         {
+          fullParaCount: 0,
+          partialParaCount: 0,
           paraCount: 0,
           inv: 0,
           raisedCount: 0,
@@ -781,7 +901,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
           tAdj: 0,
         },
       );
-    }, [filteredEntries]);
+    }, [filteredEntries, filterStatus]);
 
     const globalStats = useMemo(() => {
       const totalLetters = filteredEntries.length;
@@ -802,9 +922,26 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       ).length;
 
       const settledParas = filteredEntries.reduce(
-        (acc, ent) =>
-          acc +
-          (ent.paragraphs?.filter((p) => p.status === "পূর্ণাঙ্গ").length || 0),
+        (acc, ent) => {
+          const paras = ent.paragraphs || [];
+          if (filterStatus === "unsettled") {
+            const pCount = paras.filter((p) => (p.status || "").trim() === "আংশিক").length;
+            if (pCount > 0) return acc + pCount;
+            if (ent.isMeeting) {
+              const mPartial = parseBengaliNumber((ent.meetingPartialSettledParaCount || "").toString().trim());
+              return acc + (mPartial > 0 ? mPartial : 0);
+            }
+            return acc;
+          }
+          const pCount = paras.filter((p) => (p.status || "").trim() === "পূর্ণাঙ্গ").length;
+          if (pCount > 0) return acc + pCount;
+          if (ent.isMeeting) {
+            const mFull = parseBengaliNumber((ent.meetingFullSettledParaCount || "").toString().trim());
+            const mSettled = parseBengaliNumber((ent.meetingSettledParaCount || "").toString().trim());
+            return acc + (mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0);
+          }
+          return acc;
+        },
         0,
       );
 
@@ -839,7 +976,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         totalSettledAmount,
         totalInvolved: grandTotals.inv,
       };
-    }, [filteredEntries, grandTotals]);
+    }, [filteredEntries, grandTotals, filterStatus]);
 
     const formatIssueInfoForDisplay = (info: string) => {
       if (!info) return "";
@@ -929,7 +1066,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
       let no = parts[0].replace(new RegExp(`.*${noPrefix}[\\s:\\-–—]*`), "").trim() || "-";
       let date = parts[1].replace(new RegExp(`.*${datePrefix}[\\s:\\-–—]*`), "").trim();
       if (date) {
-        date = date + " খ্রি:";
+        const cleanDate = date.replace(/খ্রি:?.*$/, '').trim();
+        const dmy = formatBengaliDateDMY(cleanDate);
+        date = (dmy || cleanDate) + " খ্রি:";
       } else {
         date = "-";
       }
@@ -1846,10 +1985,10 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     {filterStatus === ""
                       ? "সকল অবস্থা"
                       : filterStatus === "settled"
-                        ? "পূর্ণাঙ্গ"
+                        ? "পূর্ণাঙ্গ নিষ্পত্তি"
                         : filterStatus === "no-paras"
                           ? "উত্থাপিত (অনুচ্ছেদ নেই)"
-                          : "আংশিক"}
+                          : "আংশিক/অনিষ্পত্তি"}
                   </span>
                   <ChevronDown
                     size={12}
@@ -2410,7 +2549,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                     onClick={() => {
                                       setSettledDetailsModalData({
                                         isOpen: true,
-                                        branchType: "সর্বমোট (এসএফআই ও নন এসএফআই শাখা)",
+                                        branchType: filterStatus === "unsettled" ? "সর্বমোট আংশিক (এসএফআই ও নন এসএফআই শাখা)" : "সর্বমোট (এসএফআই ও নন এসএফআই শাখা)",
                                         cycleLabel: group.label,
                                         totalCount: stats.cycleSettledParasCount,
                                         ministries: stats.allSettled?.ministries || [],
@@ -2421,7 +2560,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   >
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <CheckCircle2 size={15} className="text-emerald-600 shrink-0 group-hover/total-settled:scale-110 transition-transform" />
-                                      <span>সর্বমোট মীমাংসিত অনুচ্ছেদ:</span>
+                                      <span>{filterStatus === "unsettled" ? "সর্বমোট আংশিক অনুচ্ছেদ:" : "সর্বমোট মীমাংসিত অনুচ্ছেদ:"}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-lg font-black text-[12px] border border-emerald-200 shrink-0">
@@ -2471,8 +2610,19 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                         const isExpanded = expandedEntries.has(entry.id);
                         const paras = entry.paragraphs || [];
                         const entrySettledCount = paras.filter(
-                          (p) => p.status === "পূর্ণাঙ্গ",
+                          (p) => filterStatus === "unsettled" ? (p.status || "").trim() === "আংশিক" : (p.status || "").trim() === "পূর্ণাঙ্গ",
                         ).length;
+                        let displayCount = entrySettledCount;
+                        if (paras.length === 0 && entry.isMeeting) {
+                          if (filterStatus === "unsettled") {
+                            const mPartial = parseBengaliNumber((entry.meetingPartialSettledParaCount || "").toString().trim());
+                            displayCount = mPartial > 0 ? mPartial : 0;
+                          } else {
+                            const mFull = parseBengaliNumber((entry.meetingFullSettledParaCount || "").toString().trim());
+                            const mSettled = parseBengaliNumber((entry.meetingSettledParaCount || "").toString().trim());
+                            displayCount = mFull > 0 ? mFull : mSettled > 0 ? mSettled : 0;
+                          }
+                        }
                         const entryInvolvedAmount = paras.reduce(
                           (sum, p) => sum + (p.involvedAmount || 0),
                           0,
@@ -2677,7 +2827,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            onEdit(entry);
+                                            onEdit(entries.find((orig) => orig.id === entry.id) || entry);
                                           }}
                                           className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50 cursor-pointer"
                                         >
@@ -2817,7 +2967,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          onEdit(entry);
+                                          onEdit(entries.find((orig) => orig.id === entry.id) || entry);
                                         }}
                                         className="p-1 text-blue-600 bg-white border rounded shadow-sm hover:bg-blue-50 cursor-pointer"
                                       >
@@ -2920,9 +3070,9 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                 colSpan={2}
                                 className="px-4 text-left italic text-[10px] text-blue-900 border border-slate-300"
                               >
-                                মোট মিমাংসিত অনুচ্ছেদ:{" "}
-                                <span className="text-emerald-700">
-                                  {toBengaliDigits(entrySettledCount)} টি
+                                {filterStatus === "unsettled" ? "মোট আংশিক অনুচ্ছেদ: " : "মোট মিমাংসিত অনুচ্ছেদ: "}
+                                <span className={filterStatus === "unsettled" ? "text-amber-800 font-black" : "text-emerald-700"}>
+                                  {toBengaliDigits(displayCount)} টি
                                 </span>{" "}
                                 | মোট জড়িত টাকা:{" "}
                                 <span className="text-blue-700">
@@ -2931,8 +3081,8 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                                   )}
                                 </span>
                               </td>
-                              <td className="text-center text-[10px] text-emerald-800 border border-slate-300 bg-emerald-50/30">
-                                {toBengaliDigits(entrySettledCount)}
+                              <td className={`text-center text-[10px] font-black border border-slate-300 ${filterStatus === "unsettled" ? "text-amber-800 bg-amber-50/50" : "text-emerald-800 bg-emerald-50/30"}`}>
+                                {toBengaliDigits(displayCount)}
                               </td>
                               <td className="text-center text-[10px] text-blue-800 border border-slate-300 bg-blue-50/30">
                                 {toBengaliDigits(
@@ -3023,7 +3173,27 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                     সর্বমোট (ফিল্টার ডাটা):
                   </td>
                   <td className={footerTdCls + " text-blue-700"}>
-                    {toBengaliDigits(grandTotals.paraCount)}
+                    <div className="flex flex-col items-center justify-center leading-tight py-0.5">
+                      {filterStatus === "unsettled" ? (
+                        <span className="text-amber-800 font-black text-[11px]" title={`আংশিক নিষ্পন্ন: ${toBengaliDigits(grandTotals.partialParaCount)} টি`}>
+                          {toBengaliDigits(grandTotals.partialParaCount)}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-blue-700 font-black text-[11px]" title={`পূর্ণাঙ্গ নিষ্পন্ন: ${toBengaliDigits(grandTotals.fullParaCount)} টি`}>
+                            {toBengaliDigits(grandTotals.fullParaCount)}
+                          </span>
+                          {filterStatus === "" && grandTotals.partialParaCount > 0 && (
+                            <span
+                              className="text-[8.5px] font-bold text-amber-800 bg-amber-100/90 px-1 py-0.5 rounded border border-amber-300 mt-0.5 whitespace-nowrap shadow-2xs"
+                              title={`আংশিক নিষ্পন্ন: ${toBengaliDigits(grandTotals.partialParaCount)} টি`}
+                            >
+                              (+{toBengaliDigits(grandTotals.partialParaCount)} আংশিক)
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
                   <td className={footerTdCls + " text-blue-700"}>
                     {toBengaliDigits(Math.round(grandTotals.inv))}

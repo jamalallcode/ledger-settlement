@@ -21,6 +21,7 @@ import {
   toEnglishDigits,
 } from "../utils/numberUtils";
 import { isSFI, isNonSFI } from "../utils/branchUtils";
+import { formatBengaliDateDMY } from "../utils/syncHelper";
 
 interface SettledDataModalProps {
   entry: CorrespondenceEntry;
@@ -46,7 +47,9 @@ const splitCombinedInfo = (info: string, noPrefix: string, datePrefix: string) =
     .replace(new RegExp(`.*${datePrefix}[\\s:\\-–—]*`), "")
     .trim();
   if (date) {
-    date = date + " খ্রি:";
+    const cleanDate = date.replace(/খ্রি:?.*$/, "").trim();
+    const dmy = formatBengaliDateDMY(cleanDate);
+    date = (dmy || cleanDate) + " খ্রি:";
   } else {
     date = "-";
   }
