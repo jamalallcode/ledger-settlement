@@ -9,15 +9,16 @@ import {
   Check, 
   FileSpreadsheet, 
   Calendar, 
-  CalendarDays,
   Filter, 
-  RotateCcw,
   Mail,
-  Clock
+  Building2,
+  RotateCcw,
+  Copy
 } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
+import { MINISTRY_ENTITY_MAP } from '../constants';
 
 interface BsrReceivedReturnProps {
   correspondenceEntries: any[];
@@ -28,6 +29,7 @@ interface BsrReceivedReturnProps {
   IDBadge?: React.FC<{ id: string }>;
   showFilters?: boolean;
   isLayoutEditable?: boolean;
+  initialLetterType?: string;
 }
 
 const BENGALI_MONTHS = [
@@ -45,14 +47,11 @@ const BENGALI_MONTHS = [
   { index: 11, name: 'ডিসেম্বর' },
 ];
 
-const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র'];
-
-const parseDate = (dateStr: string | null | undefined): Date | null => {
+const parseDateSafe = (dateStr: string | null | undefined): Date | null => {
   if (!dateStr) return null;
   const cleanStr = toEnglishDigits(String(dateStr)).trim();
   if (!cleanStr) return null;
 
-  // Extract date portion before any 'T' or space
   const datePortion = cleanStr.split('T')[0].split(' ')[0].trim();
   const parts = datePortion.split(/[-/.]/);
   if (parts.length === 3) {
@@ -79,6 +78,24 @@ const parseDate = (dateStr: string | null | undefined): Date | null => {
   return null;
 };
 
+const formatDateDMY = (dateInput: string | Date | null | undefined): string => {
+  if (!dateInput) return '-';
+  let d: Date | null = null;
+  if (dateInput instanceof Date) {
+    d = dateInput;
+  } else {
+    d = parseDateSafe(dateInput);
+  }
+  if (!d || isNaN(d.getTime())) {
+    const raw = String(dateInput).trim();
+    return raw ? toBengaliDigits(raw) : '-';
+  }
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear().toString();
+  return `${day}/${month}/${year}`;
+};
+
 const robustNormalize = (str: string = '') => {
   return str
     .normalize('NFC')
@@ -90,143 +107,139 @@ const robustNormalize = (str: string = '') => {
     .trim();
 };
 
-const isBilateralText = (s: string = '') => {
-  const norm = robustNormalize(s);
-  return (
-    norm.includes('দ্বিপক্ষীয়') ||
-    norm.includes('দ্বিপক্ষীয়') ||
-    norm.includes('দ্বিপক্ষিয়') ||
-    norm.includes('দ্বি-পক্ষীয়') ||
-    norm.includes('দ্বি-পক্ষীয়') ||
-    norm.includes('দ্বি-পক্ষিয়') ||
-    norm.includes('দ্বিপাক্ষিক') ||
-    norm.includes('দ্বিপাক্ষীক') ||
-    norm.includes('দ্বি-পাক্ষিক') ||
-    norm.includes('দ্বি-সভা') ||
-    norm.includes('দ্বিসভা') ||
-    norm.toLowerCase().includes('bilateral')
-  );
+const getEntryMinistry = (entry: any): string => {
+  if (entry.ministryName && entry.ministryName.trim() && entry.ministryName.trim() !== '-') {
+    return entry.ministryName.trim();
+  }
+  // Lookup by entityName in MINISTRY_ENTITY_MAP
+  const ent = (entry.entityName || '').trim();
+  if (ent) {
+    for (const [min, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      if (entities.some(e => e.includes(ent) || ent.includes(e))) {
+        return min;
+      }
+    }
+  }
+  // Lookup by description in MINISTRY_ENTITY_MAP
+  const desc = (entry.description || '').trim();
+  if (desc) {
+    for (const [min, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      if (entities.some(e => desc.includes(e))) {
+        return min;
+      }
+    }
+  }
+  return 'অন্যান্য মন্ত্রণালয়';
 };
 
-const isWorkPaperText = (s: string = '') => {
-  const norm = robustNormalize(s);
-  return (
-    norm.includes('কার্যপত্র') || 
-    norm.includes('কাযপত্র') || 
-    norm.toLowerCase().includes('work paper') || 
-    norm.toLowerCase().includes('working paper')
-  );
-};
+const getAuditEntityAndBranch = (entry: any, settlementEntries: any[] = []): { entityLine: string; branchLine: string } => {
+  let ent = (entry.entityName || '').trim();
+  let yr = (entry.auditYear || '').trim();
+  let branch = (entry.branchName || entry.branch || '').trim();
+  const desc = (entry.description || '').trim();
 
-const isMeetingMinutesText = (s: string = '') => {
-  const norm = robustNormalize(s);
-  return (
-    norm.includes('কার্যবিবরণী') ||
-    norm.includes('কার্যবিবরনী') ||
-    norm.includes('কাযবিবরণী') ||
-    norm.includes('কাযবিবরনী') ||
-    norm.includes('বিবরণী') ||
-    norm.includes('বিবরনী') ||
-    norm.toLowerCase().includes('minutes')
-  );
-};
+  // Try finding in linked settlement entry if fields are missing
+  if ((!branch || !ent || !yr) && settlementEntries && settlementEntries.length > 0) {
+    const entryLetterDigits = toEnglishDigits(entry.letterNo || '').replace(/\D/g, '');
+    const entryDiaryDigits = toEnglishDigits(entry.diaryNo || '').replace(/\D/g, '');
 
-const isTrilateralText = (s: string = '') => {
-  const norm = robustNormalize(s);
-  return (
-    norm.includes('ত্রিপক্ষীয়') ||
-    norm.includes('ত্রিপক্ষীয়') ||
-    norm.includes('ত্রিপক্ষিয়') ||
-    norm.includes('ত্রি-পক্ষীয়') ||
-    norm.includes('ত্রি-পক্ষীয়') ||
-    norm.includes('ত্রি-পক্ষিয়') ||
-    norm.includes('ত্রিপাক্ষিক') ||
-    norm.includes('ত্রিপাক্ষীক') ||
-    norm.includes('ত্রি-পাক্ষিক') ||
-    norm.includes('ত্রি-সভা') ||
-    norm.includes('ত্রিসভা') ||
-    norm.toLowerCase().includes('trilateral')
-  );
-};
+    const matched = settlementEntries.find(s => {
+      if (!s) return false;
+      if (s.id && (s.id === entry.correspondenceId || s.correspondenceId === entry.id || s.letterId === entry.id)) return true;
+      if (entry.id && s.correspondenceId === entry.id) return true;
+      
+      const sLetterDigits = toEnglishDigits(s.letterNoDate || s.letterNo || '').replace(/\D/g, '');
+      if (entryLetterDigits && sLetterDigits && entryLetterDigits.length >= 2) {
+        if (sLetterDigits.startsWith(entryLetterDigits) || sLetterDigits.includes(entryLetterDigits)) {
+          return true;
+        }
+      }
+      if (entryDiaryDigits && s.diaryNo) {
+        const sDiaryDigits = toEnglishDigits(s.diaryNo).replace(/\D/g, '');
+        if (sDiaryDigits && sDiaryDigits === entryDiaryDigits) return true;
+      }
+      // Match by entity name
+      if (ent && s.entityName && robustNormalize(s.entityName) === robustNormalize(ent)) {
+        if (!yr || !s.auditYear || robustNormalize(s.auditYear) === robustNormalize(yr)) {
+          return true;
+        }
+      }
+      return false;
+    });
 
-const formatDateWithHyphensBN = (date: Date): string => {
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const y = date.getFullYear().toString();
-  return `${toBengaliDigits(d)}-${toBengaliDigits(m)}-${toBengaliDigits(y)}`;
-};
-
-const formatShortDateBN = (dateStr: string | null | undefined): string => {
-  const d = parseDate(dateStr);
-  if (!d) return dateStr ? toBengaliDigits(dateStr) : '';
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const yr = String(d.getFullYear()).slice(-2);
-  return `${toBengaliDigits(day)}/${toBengaliDigits(month)}/${toBengaliDigits(yr)}`;
-};
-
-const getLetterCategory = (entry: any, activeBranch?: string): string => {
-  const rawType = (entry.letterType || entry.meetingType || '').trim();
-  const lType = robustNormalize(rawType);
-  const pType = entry.paraType || '';
-  const isEntrySFI = isSFI(pType);
-  const isEntryNonSFI = isNonSFI(pType);
-  
-  if (lType.includes('বিএসআর') || lType.includes('bsr')) {
-    if (activeBranch && activeBranch !== 'সকল') {
-      return 'বিএসআর';
+    if (matched) {
+      if (!ent && matched.entityName) ent = matched.entityName.trim();
+      if (!yr && matched.auditYear) yr = matched.auditYear.trim();
+      if (!branch && matched.branchName) branch = matched.branchName.trim();
     }
-    if (isEntrySFI) {
-      return 'বিএসআর (এসএফআই)';
-    }
-    return 'বিএসআর (নন এসএফআই)';
   }
 
-  // Bilateral / দ্বি-সভা
-  if (
-    isBilateralText(lType) ||
-    (isEntryNonSFI && (isWorkPaperText(lType) || isMeetingMinutesText(lType)))
-  ) {
-    if (isWorkPaperText(lType)) {
-      return 'দ্বি-সভা (কার্যপত্র)';
+  // If no entityName, check if desc or branch contains known entity
+  if (!ent && desc) {
+    for (const [_, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      const found = entities.find(e => desc.includes(e));
+      if (found) {
+        ent = found;
+        break;
+      }
     }
-    return 'দ্বি-সভা (কার্যবিবরণী)';
+  }
+  if (!ent && branch) {
+    for (const [_, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
+      const found = entities.find(e => branch.includes(e));
+      if (found) {
+        ent = found;
+        break;
+      }
+    }
   }
 
-  // Trilateral / ত্রি-সভা
-  if (
-    isTrilateralText(lType) ||
-    (isEntrySFI && (isWorkPaperText(lType) || isMeetingMinutesText(lType)))
-  ) {
-    if (isWorkPaperText(lType)) {
-      return 'ত্রি-সভা (কার্যপত্র)';
+  // If yr not found, check if it's in desc or branch, e.g. (২০০৯-১৬) or (২০১২-১৩)
+  if (!yr && desc) {
+    const yrMatch = desc.match(/\(([০-৯0-9]{4}\s*[-–—]\s*[০-৯0-9]{2,4})\)/);
+    if (yrMatch) {
+      yr = yrMatch[1].trim();
     }
-    return 'ত্রি-সভা (কার্যবিবরণী)';
+  }
+  if (!yr && branch) {
+    const yrMatch = branch.match(/\(([০-৯0-9]{4}\s*[-–—]\s*[০-৯0-9]{2,4})\)/);
+    if (yrMatch) {
+      yr = yrMatch[1].trim();
+    }
   }
 
-  // If still generic কার্যপত্র / কার্যবিবরণী
-  if (isWorkPaperText(lType)) {
-    return isEntrySFI ? 'ত্রি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যপত্র)';
-  }
-  if (isMeetingMinutesText(lType)) {
-    return isEntrySFI ? 'ত্রি-সভা (কার্যবিবরণী)' : 'দ্বি-সভা (কার্যবিবরণী)';
+  // Clean year string (remove surrounding parentheses if already present)
+  const cleanYr = yr.replace(/^\(/, '').replace(/\)$/, '').trim();
+  const yearPart = cleanYr ? ` (${toBengaliDigits(cleanYr)})` : '';
+
+  // Determine branchLine:
+  let branchLine = '';
+  if (branch && branch !== ent) {
+    branchLine = branch;
+  } else if (desc && desc !== ent && desc !== `${ent}${yearPart}`) {
+    branchLine = desc;
   }
 
-  if (lType.includes('মিলিকরণ') || lType.includes('মিলকরণ')) {
-    return 'মিলিকরণ';
+  // Strip leading entity or year from branchLine if present
+  if (branchLine && ent && branchLine.includes(ent)) {
+    const regex = new RegExp(`^${ent}\\s*(\\([^)]*\\))?\\s*[,，-]?\\s*`, 'i');
+    const stripped = branchLine.replace(regex, '').trim();
+    if (stripped) {
+      branchLine = stripped;
+    }
   }
 
-  if (entry.letterType && entry.letterType.trim()) {
-    const trimmed = entry.letterType.trim();
-    if (isBilateralText(trimmed)) {
-      return isWorkPaperText(trimmed) ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরণী)';
-    }
-    if (isTrilateralText(trimmed)) {
-      return isWorkPaperText(trimmed) ? 'ত্রি-সভা (কার্যপত্র)' : 'ত্রি-সভা (কার্যবিবরণী)';
-    }
-    return trimmed;
+  // Remove duplicate year parentheses from branchLine if present
+  if (cleanYr && branchLine) {
+    branchLine = branchLine
+      .replace(new RegExp(`\\s*\\(${cleanYr}\\)`, 'g'), '')
+      .replace(new RegExp(`\\s*\\(${toBengaliDigits(cleanYr)}\\)`, 'g'), '')
+      .trim();
   }
-  return 'অন্যান্য পত্রাদি';
+
+  const entityLine = ent ? `${ent}${yearPart}${branchLine ? ',' : ''}` : (branchLine || '-');
+
+  return { entityLine, branchLine };
 };
 
 export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
@@ -235,406 +248,328 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   activeCycle,
   onBack,
   IDBadge,
+  initialLetterType,
 }) => {
-  // Initialize start and end date to the previous calendar month by default
-  const [startDate, setStartDate] = useState<Date>(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  });
-
-  const [endDate, setEndDate] = useState<Date>(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 0);
-  });
-
-  const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
-  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(startDate.getFullYear(), startDate.getMonth(), 1));
-
-  const [filterBranch, setFilterBranch] = useState<string>('নন এসএফআই');
-  const [filterLetterType, setFilterLetterType] = useState<string>('সকল');
+  // Default branch filter is 'নন এসএফআই' as shown in the user's reference image
+  const [filterBranch, setFilterBranch] = useState<'নন এসএফআই' | 'এসএফআই' | 'সকল'>('নন এসএফআই');
+  const [filterLetterType, setFilterLetterType] = useState<string>(initialLetterType || 'বিএসআর');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Dropdown states
-  const [isMonthOpen, setIsMonthOpen] = useState(false);
   const [isBranchOpen, setIsBranchOpen] = useState(false);
   const [isLetterTypeOpen, setIsLetterTypeOpen] = useState(false);
+  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
 
-  const monthRef = useRef<HTMLDivElement>(null);
   const branchRef = useRef<HTMLDivElement>(null);
   const letterTypeRef = useRef<HTMLDivElement>(null);
+  const dateRangeRef = useRef<HTMLDivElement>(null);
 
-  // Sync viewDate when popover opens or startDate changes
-  useEffect(() => {
-    if (isMonthOpen) {
-      setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+  // Initialize start & end date based on activeCycle or previous 1 month
+  const [startDate, setStartDate] = useState<Date>(() => {
+    if (activeCycle?.start) {
+      const d = parseDateSafe(activeCycle.start);
+      if (d) return d;
     }
-  }, [isMonthOpen]);
+    const now = new Date();
+    // Default to 16th of previous month
+    return new Date(now.getFullYear(), now.getMonth() - 1, 16);
+  });
+
+  const [endDate, setEndDate] = useState<Date>(() => {
+    if (activeCycle?.end) {
+      const d = parseDateSafe(activeCycle.end);
+      if (d) return d;
+    }
+    const now = new Date();
+    // Default to 15th of current month
+    return new Date(now.getFullYear(), now.getMonth(), 15);
+  });
+
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(startDate));
+
+  // Sync with activeCycle if it changes
+  useEffect(() => {
+    if (activeCycle?.start && activeCycle?.end) {
+      const s = parseDateSafe(activeCycle.start);
+      const e = parseDateSafe(activeCycle.end);
+      if (s && e) {
+        setStartDate(s);
+        setEndDate(e);
+        setCurrentViewDate(new Date(s));
+      }
+    }
+  }, [activeCycle]);
+
+  useEffect(() => {
+    if (initialLetterType) {
+      setFilterLetterType(initialLetterType);
+    }
+  }, [initialLetterType]);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (monthRef.current && !monthRef.current.contains(e.target as Node)) {
-        setIsMonthOpen(false);
-      }
       if (branchRef.current && !branchRef.current.contains(e.target as Node)) {
         setIsBranchOpen(false);
       }
       if (letterTypeRef.current && !letterTypeRef.current.contains(e.target as Node)) {
         setIsLetterTypeOpen(false);
       }
+      if (dateRangeRef.current && !dateRangeRef.current.contains(e.target as Node)) {
+        setIsDateRangeOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Compute start date, end date, and titles
-  const { dateRangeTitleBN, displayRangeLabelBN, isFullMonth, fullMonthNameBN } = useMemo(() => {
-    const startHyphenBN = formatDateWithHyphensBN(startDate);
-    const endHyphenBN = formatDateWithHyphensBN(endDate);
+  const letterTypeOptions = [
+    'বিএসআর',
+    'দ্বিপক্ষীয় সভা (কার্যপত্র)',
+    'দ্বিপক্ষীয় সভা (কার্যবিবরনী)',
+    'ত্রিপক্ষীয় সভা (কার্যপত্র)',
+    'ত্রিপক্ষীয় সভা (কার্যবিবরনী)',
+    'অন্যান্য পত্র',
+    'সকল'
+  ];
 
-    const isStartFirst = startDate.getDate() === 1;
-    const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
-    const isEndLast = endDate.getDate() === lastDayOfMonth;
-    const isSameMonthAndYear = startDate.getFullYear() === endDate.getFullYear() && startDate.getMonth() === endDate.getMonth();
-    const fullMonth = isStartFirst && isEndLast && isSameMonthAndYear;
-
-    const monthNameBN = BENGALI_MONTHS.find(m => m.index === startDate.getMonth())?.name || '';
-    const yearBN = toBengaliDigits(startDate.getFullYear().toString());
-    const mLabel = `${monthNameBN}, ${yearBN}`;
-
-    const shortStartBN = `${toBengaliDigits(String(startDate.getDate()).padStart(2, '0'))}/${toBengaliDigits(String(startDate.getMonth() + 1).padStart(2, '0'))}/${toBengaliDigits(startDate.getFullYear().toString())}`;
-    const shortEndBN = `${toBengaliDigits(String(endDate.getDate()).padStart(2, '0'))}/${toBengaliDigits(String(endDate.getMonth() + 1).padStart(2, '0'))}/${toBengaliDigits(endDate.getFullYear().toString())}`;
-
-    return {
-      dateRangeTitleBN: `${startHyphenBN} হতে ${endHyphenBN} খ্রিঃ তারিখ পর্যন্ত`,
-      displayRangeLabelBN: `${shortStartBN} হতে ${shortEndBN}`,
-      isFullMonth: fullMonth,
-      fullMonthNameBN: mLabel
-    };
+  // Date range formatted labels in Bengali
+  const dateRangeDisplayBN = useMemo(() => {
+    const sStr = formatDateDMY(startDate);
+    const eStr = formatDateDMY(endDate);
+    return `${toBengaliDigits(sStr)} হতে ${toBengaliDigits(eStr)}`;
   }, [startDate, endDate]);
 
-  // Letter type options dynamically based on branch
-  const letterTypeOptions = useMemo(() => {
-    if (filterBranch === 'নন এসএফআই' || isNonSFI(filterBranch)) {
-      return ['সকল', 'বিএসআর', 'দ্বি-সভা (কার্যবিবরণী)', 'দ্বি-সভা (কার্যপত্র)', 'মিলিকরণ', 'অন্যান্য'];
-    }
-    if (filterBranch === 'এসএফআই' || isSFI(filterBranch)) {
-      return ['সকল', 'বিএসআর', 'ত্রি-সভা (কার্যবিবরণী)', 'ত্রি-সভা (কার্যপত্র)', 'মিলিকরণ', 'অন্যান্য'];
-    }
-    return [
-      'সকল', 
-      'বিএসআর', 
-      'দ্বি-সভা (কার্যবিবরণী)', 
-      'দ্বি-সভা (কার্যপত্র)', 
-      'ত্রি-সভা (কার্যবিবরণী)', 
-      'ত্রি-সভা (কার্যপত্র)', 
-      'মিলিকরণ', 
-      'অন্যান্য'
-    ];
-  }, [filterBranch]);
+  // Subject title matching Image 2 exactly:
+  // "বিষয়: ১৬/০৮/২০২৬ হতে ১৫/০৯/২০২৬ খ্রিঃ তারিখ পর্যন্ত নন এসএফআই শাখায় বিএসআর প্রাপ্তির রিটার্ন।"
+  const subjectTitleBN = useMemo(() => {
+    const branchText = filterBranch === 'সকল' ? 'সকল' : filterBranch;
+    const letterText = filterLetterType === 'সকল' ? 'সকল পত্র' : filterLetterType;
+    return `বিষয়: ${dateRangeDisplayBN} খ্রিঃ তারিখ পর্যন্ত ${branchText} শাখায় ${letterText} প্রাপ্তির রিটার্ন।`;
+  }, [dateRangeDisplayBN, filterBranch, filterLetterType]);
 
-  // Filtered entries strictly based on Diary Date within selected month (01 to end of month)
-  const filteredEntries = useMemo(() => {
-    const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
-    const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999).getTime();
+  // Filter and prepare entries
+  const filteredRows = useMemo(() => {
+    const startMs = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0).getTime();
+    const endMs = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999).getTime();
 
-    return correspondenceEntries.filter(entry => {
-      // 1. Diary Date Check (01 of selected month to end of selected month)
-      if (!entry.diaryDate) return false;
-      const dDate = parseDate(entry.diaryDate);
-      if (!dDate) return false;
-      const dTime = dDate.getTime();
-      if (dTime < startMidnight || dTime > endMidnight) {
-        return false;
+    // Pool from correspondenceEntries
+    let list = (correspondenceEntries || []).filter(entry => {
+      if (!entry) return false;
+      if (entry.approvalStatus === 'pending') return false;
+
+      // Date check: check diaryDate, receiptDate, or letterDate
+      const dDate = parseDateSafe(entry.diaryDate) || parseDateSafe(entry.receiptDate) || parseDateSafe(entry.letterDate);
+      if (dDate) {
+        const dTime = dDate.getTime();
+        if (dTime < startMs || dTime > endMs) return false;
       }
 
-      // 2. Branch / Para Type Filter
-      if (filterBranch === 'এসএফআই' || isSFI(filterBranch)) {
-        if (!isSFI(entry.paraType)) {
-          return false;
-        }
-      } else if (filterBranch === 'নন এসএফআই' || isNonSFI(filterBranch)) {
-        if (!isNonSFI(entry.paraType)) {
-          return false;
-        }
+      // Branch filter
+      const pType = (entry.paraType || entry.branchName || '').trim();
+      if (filterBranch === 'এসএফআই') {
+        if (!isSFI(pType)) return false;
+      } else if (filterBranch === 'নন এসএফআই') {
+        if (!isNonSFI(pType)) return false;
       }
 
-      // 3. Letter Type Filter
+      // Letter Type filter
       if (filterLetterType !== 'সকল') {
-        const cat = getLetterCategory(entry, filterBranch);
+        const lTypeRaw = (entry.letterType || entry.meetingType || entry.type || '').trim();
+        const norm = robustNormalize(lTypeRaw);
         if (filterLetterType === 'বিএসআর') {
-          if (!cat.startsWith('বিএসআর')) return false;
-        } else if (filterLetterType === 'দ্বি-সভা (কার্যবিবরণী)' || filterLetterType === 'দ্বি-সভা (কার্যবিবরনী)') {
-          if (cat !== 'দ্বি-সভা (কার্যবিবরণী)' && cat !== 'দ্বি-সভা (কার্যবিবরনী)') return false;
-        } else if (filterLetterType === 'দ্বি-সভা (কার্যপত্র)') {
-          if (cat !== 'দ্বি-সভা (কার্যপত্র)') return false;
-        } else if (filterLetterType === 'ত্রি-সভা (কার্যবিবরণী)' || filterLetterType === 'ত্রি-সভা (কার্যবিবরনী)') {
-          if (cat !== 'ত্রি-সভা (কার্যবিবরণী)' && cat !== 'ত্রি-সভা (কার্যবিবরনী)') return false;
-        } else if (filterLetterType === 'ত্রি-সভা (কার্যপত্র)') {
-          if (cat !== 'ত্রি-সভা (কার্যপত্র)') return false;
-        } else if (filterLetterType === 'মিলিকরণ') {
-          if (cat !== 'মিলিকরণ') return false;
-        } else if (filterLetterType === 'অন্যান্য') {
-          if (
-            cat.startsWith('বিএসআর') ||
-            cat.includes('দ্বি-সভা') ||
-            cat.includes('ত্রি-সভা') ||
-            cat === 'মিলিকরণ'
-          ) {
-            return false;
-          }
+          const isBsr = norm.includes('বিএসআর') || norm.toLowerCase().includes('bsr') || !norm;
+          if (!isBsr) return false;
+        } else if (filterLetterType.includes('দ্বিপক্ষীয়') || filterLetterType.includes('দ্বি-সভা')) {
+          if (!norm.includes('দ্বিপক্ষীয়') && !norm.includes('দ্বিপক্ষীয়') && !norm.includes('দ্বি-সভা')) return false;
+        } else if (filterLetterType.includes('ত্রিপক্ষীয়') || filterLetterType.includes('ত্রি-সভা')) {
+          if (!norm.includes('ত্রিপক্ষীয়') && !norm.includes('ত্রিপক্ষীয়') && !norm.includes('ত্রি-সভা')) return false;
         } else {
-          if (cat !== filterLetterType) return false;
+          if (!norm.includes(robustNormalize(filterLetterType))) return false;
         }
       }
 
-      // 4. Search Term Filter
+      // Search term filter
       if (searchTerm.trim()) {
         const term = searchTerm.trim().toLowerCase();
-        const desc = (entry.description || '').toLowerCase();
-        const diaryNo = (entry.diaryNo || '').toLowerCase();
-        const letterNo = (entry.letterNo || '').toLowerCase();
-        const archiveNo = (entry.archiveNo || '').toLowerCase();
-        const comments = (entry.comments || entry.remarks || '').toLowerCase();
-        const minName = (entry.ministryName || '').toLowerCase();
-
-        if (
-          !desc.includes(term) &&
-          !diaryNo.includes(term) &&
-          !letterNo.includes(term) &&
-          !archiveNo.includes(term) &&
-          !comments.includes(term) &&
-          !minName.includes(term)
-        ) {
-          return false;
-        }
+        const str = `${entry.description || ''} ${entry.diaryNo || ''} ${entry.letterNo || ''} ${entry.entityName || ''} ${entry.ministryName || ''} ${entry.archiveNo || ''} ${entry.remarks || ''}`.toLowerCase();
+        if (!str.includes(term)) return false;
       }
 
       return true;
     });
+
+    // Sort entries by Ministry so identical ministries cluster consecutively for rowSpan grouping
+    list.sort((a, b) => {
+      const minA = getEntryMinistry(a);
+      const minB = getEntryMinistry(b);
+      if (minA !== minB) return minA.localeCompare(minB, 'bn');
+      const dateA = parseDateSafe(a.diaryDate)?.getTime() || 0;
+      const dateB = parseDateSafe(b.diaryDate)?.getTime() || 0;
+      return dateA - dateB;
+    });
+
+    // Grouping by Ministry for rowSpan (Matching Image 2 where consecutive rows with same ministry share column 2)
+    interface ProcessedRow {
+      entry: any;
+      serial: number;
+      ministryName: string;
+      isFirstInMinistryGroup: boolean;
+      ministryRowSpan: number;
+    }
+
+    const processed: ProcessedRow[] = [];
+    let i = 0;
+    while (i < list.length) {
+      const currentMin = getEntryMinistry(list[i]);
+      let j = i;
+      while (j < list.length && getEntryMinistry(list[j]) === currentMin) {
+        j++;
+      }
+      const groupCount = j - i;
+      for (let k = i; k < j; k++) {
+        processed.push({
+          entry: list[k],
+          serial: k + 1,
+          ministryName: currentMin,
+          isFirstInMinistryGroup: k === i,
+          ministryRowSpan: groupCount
+        });
+      }
+      i = j;
+    }
+
+    return processed;
   }, [correspondenceEntries, startDate, endDate, filterBranch, filterLetterType, searchTerm]);
 
-  // Grouped and processed rows strictly matching the table in user's image
-  const processedTableRows = useMemo(() => {
-    // 1. Group items by category (বিবরণ)
-    const categoryMap = new Map<string, any[]>();
-    
-    const categoryOrder = [
-      'বিএসআর',
-      'বিএসআর (নন এসএফআই)',
-      'বিএসআর (এসএফআই)',
-      'দ্বি-সভা (কার্যবিবরণী)',
-      'দ্বি-সভা (কার্যপত্র)',
-      'ত্রি-সভা (কার্যবিবরণী)',
-      'ত্রি-সভা (কার্যপত্র)',
-      'মিলিকরণ',
-      'অন্যান্য পত্রাদি',
-      'অন্যান্য',
-    ];
+  const [copiedWord, setCopiedWord] = useState(false);
 
-    filteredEntries.forEach(entry => {
-      let cat = getLetterCategory(entry, filterBranch);
-      if (
-        cat === 'দ্বিপক্ষীয় সভা' ||
-        cat === 'দ্বিপক্ষীয় সভার কার্যবিবরণী' ||
-        cat === 'দ্বি-সভা (কার্যবিবরনী)' ||
-        isBilateralText(cat)
-      ) {
-        cat = isWorkPaperText(cat) ? 'দ্বি-সভা (কার্যপত্র)' : 'দ্বি-সভা (কার্যবিবরণী)';
-      } else if (
-        cat === 'ত্রিপক্ষীয় সভা' ||
-        cat === 'ত্রিপক্ষীয় সভার কার্যবিবরণী' ||
-        cat === 'ত্রি-সভা (কার্যবিবরনী)' ||
-        isTrilateralText(cat)
-      ) {
-        cat = isWorkPaperText(cat) ? 'ত্রি-সভা (কার্যপত্র)' : 'ত্রি-সভা (কার্যবিবরণী)';
-      }
-      if (!categoryMap.has(cat)) {
-        categoryMap.set(cat, []);
-      }
-      categoryMap.get(cat)!.push(entry);
+  // Copy report for Word: Title is OUTSIDE the main table as a paragraph, table underneath
+  const handleCopyWord = async () => {
+    const tableEl = document.getElementById('table-bsr-received-return-main');
+    if (!tableEl) return;
+
+    const cloned = tableEl.cloneNode(true) as HTMLTableElement;
+    cloned.querySelectorAll('button, svg, input').forEach(el => el.remove());
+
+    // Replace any remaining div inside td/th with span so Word never splits into multiple cells/rows
+    cloned.querySelectorAll('td div, th div').forEach(div => {
+      const span = document.createElement('span');
+      span.innerHTML = div.innerHTML;
+      if (div.getAttribute('style')) span.setAttribute('style', div.getAttribute('style') || '');
+      div.parentNode?.replaceChild(span, div);
     });
 
-    const sortedCategories = Array.from(categoryMap.keys()).sort((a, b) => {
-      const idxA = categoryOrder.indexOf(a);
-      const idxB = categoryOrder.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return a.localeCompare(b, 'bn');
+    // Ensure all br elements have mso-data-placement: same-cell so Excel & Word treat them as in-cell breaks
+    cloned.querySelectorAll('br').forEach(br => {
+      br.setAttribute('style', 'mso-data-placement:same-cell;');
     });
 
-    let globalSerial = 1;
-    const flatRows: Array<{
-      entry: any;
-      serial: string;
-      category: string;
-      showCategory: boolean;
-      rowSpan: number;
-      letterCountStr: string;
-      letterNoDateDisplay: string;
-      diaryNoDateDisplay: string;
-      paraCount: number;
-      disposalDisplay: string;
-      settledCount: number;
-      unsettledCount: number;
-    }> = [];
+    // Ensure all cells have mso-number-format: '\@' to strictly treat serials like (১), (২) as text (not negative numbers)
+    cloned.querySelectorAll('th, td').forEach(cell => {
+      const existing = cell.getAttribute('style') || '';
+      cell.setAttribute('style', `${existing}; mso-number-format:'\\@';`);
+    });
 
-    let totalParasSum = 0;
-    let totalSettledSum = 0;
-    let totalUnsettledSum = 0;
+    // Title is OUTSIDE the table as a clean paragraph (হুবহু নির্দেশনা অনুযায়ী শিরোনাম টেবিলের বাইরে)
+    const htmlContent = `
+      <div style="font-family: 'Noto Sans Bengali', Arial, sans-serif;">
+        <p style="font-size: 13pt; font-weight: bold; margin-bottom: 8pt; text-align: left; color: #000000; line-height: 1.4;">
+          ${subjectTitleBN}
+        </p>
+        <table border="1" style="border-collapse: collapse; width: 100%; border: 1px solid #000000; font-size: 10pt; font-family: 'Noto Sans Bengali', Arial, sans-serif;">
+          ${cloned.innerHTML}
+        </table>
+      </div>
+    `;
 
-    sortedCategories.forEach(cat => {
-      const entriesInCat = categoryMap.get(cat)!;
+    const plainText = `${subjectTitleBN}\n\n` + tableEl.innerText;
 
-      // Sort entries within category by diaryDate ascending, then diaryNo numeric
-      entriesInCat.sort((a, b) => {
-        const dateA = parseDate(a.diaryDate)?.getTime() || 0;
-        const dateB = parseDate(b.diaryDate)?.getTime() || 0;
-        if (dateA !== dateB) return dateA - dateB;
-        const numA = parseInt(toEnglishDigits(a.diaryNo || '0'), 10) || 0;
-        const numB = parseInt(toEnglishDigits(b.diaryNo || '0'), 10) || 0;
-        return numA - numB;
-      });
-
-      entriesInCat.forEach((entry, idx) => {
-        const serial = toBengaliDigits((globalSerial++).toString());
-        const showCategory = idx === 0;
-        const rowSpan = entriesInCat.length;
-
-        // 3. Letter Count formatted as ০১ or ১
-        const letterCountStr = toBengaliDigits('০১');
-
-        // 3b. Letter No & Date: e.g. "৫৭১, ০২/০৮/২৬"
-        const letterNoBN = toBengaliDigits(entry.letterNo || '');
-        const letterDateShort = formatShortDateBN(entry.letterDate);
-        const letterNoDateDisplay = letterNoBN ? `${letterNoBN}${letterDateShort ? `, ${letterDateShort}` : ''}` : (letterDateShort || '-');
-
-        // 4. Diary No & Date: e.g. "২০৩, ১৪/০১/২৬"
-        const diaryNoBN = toBengaliDigits(entry.diaryNo || '');
-        const diaryDateShort = formatShortDateBN(entry.diaryDate);
-        const diaryNoDateDisplay = diaryNoBN ? `${diaryNoBN}${diaryDateShort ? `, ${diaryDateShort}` : ''}` : '-';
-
-        // 5. Paragraph Count: e.g. "১", "৩", "২৫"
-        let paraCount = 1;
-        if (entry.totalParas && String(entry.totalParas).trim() !== '') {
-          const parsed = parseInt(toEnglishDigits(String(entry.totalParas)), 10);
-          if (!isNaN(parsed) && parsed > 0) paraCount = parsed;
-        } else if (entry.paragraphs && Array.isArray(entry.paragraphs) && entry.paragraphs.length > 0) {
-          paraCount = entry.paragraphs.length;
+    try {
+      let success = false;
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+          const blobText = new Blob([plainText], { type: 'text/plain' });
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': blobHtml,
+              'text/plain': blobText,
+            }),
+          ]);
+          success = true;
+        } catch {
+          // Fallback to execCommand if ClipboardItem is blocked in iframe
         }
-        totalParasSum += paraCount;
+      }
 
-        // 6. Disposal / Issue letter & date: e.g. "চলমান" or "৮৫৬, ২৫/০৮/২৬"
-        const hasIssueNo = entry.issueLetterNo && String(entry.issueLetterNo).trim() !== '' && entry.issueLetterNo !== '০';
-        const hasIssueDate = entry.issueLetterDate && String(entry.issueLetterDate).trim() !== '' && entry.issueLetterDate !== '০';
-        
-        let disposalDisplay = 'চলমান';
-        if (hasIssueNo || hasIssueDate) {
-          const parts: string[] = [];
-          if (hasIssueNo) parts.push(toBengaliDigits(entry.issueLetterNo));
-          if (hasIssueDate) parts.push(formatShortDateBN(entry.issueLetterDate));
-          disposalDisplay = parts.join(', ');
-        }
-
-        // 7 & 8. Settled and Unsettled Paras
-        let settledCount = 0;
-        if (entry.meetingSettledParas !== undefined && entry.meetingSettledParas !== null && String(entry.meetingSettledParas).trim() !== '') {
-          settledCount = parseInt(toEnglishDigits(String(entry.meetingSettledParas)), 10) || 0;
-        } else if (entry.settledParas && Array.isArray(entry.settledParas)) {
-          settledCount = entry.settledParas.length;
-        } else if (settlementEntries && settlementEntries.length > 0) {
-          const matched = settlementEntries.filter((s: any) => {
-            if (s.correspondenceId && s.correspondenceId === entry.id) return true;
-            if (s.diaryNo && entry.diaryNo && String(s.diaryNo).trim() === String(entry.diaryNo).trim()) return true;
-            return false;
-          });
-          if (matched.length > 0) {
-            matched.forEach((m: any) => {
-              if (m.settledParas && Array.isArray(m.settledParas)) {
-                settledCount += m.settledParas.length;
-              } else if (m.meetingSettledParas) {
-                settledCount += parseInt(toEnglishDigits(String(m.meetingSettledParas)), 10) || 0;
-              }
-            });
+      if (!success) {
+        const handler = (e: ClipboardEvent) => {
+          e.preventDefault();
+          if (e.clipboardData) {
+            e.clipboardData.setData('text/html', htmlContent);
+            e.clipboardData.setData('text/plain', plainText);
           }
-        }
+        };
+        document.addEventListener('copy', handler);
+        document.execCommand('copy');
+        document.removeEventListener('copy', handler);
+      }
 
-        let unsettledCount = 0;
-        if (settledCount > 0) {
-          unsettledCount = Math.max(0, paraCount - settledCount);
-        }
+      setCopiedWord(true);
+      setTimeout(() => setCopiedWord(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy for Word:', err);
+    }
+  };
 
-        totalSettledSum += settledCount;
-        totalUnsettledSum += unsettledCount;
+  // Excel download functionality
+  const handleDownloadExcel = () => {
+    const tableEl = document.getElementById('table-bsr-received-return-main');
+    if (!tableEl) return;
 
-        flatRows.push({
-          entry,
-          serial,
-          category: cat,
-          showCategory,
-          rowSpan,
-          letterCountStr,
-          letterNoDateDisplay,
-          diaryNoDateDisplay,
-          paraCount,
-          disposalDisplay,
-          settledCount,
-          unsettledCount,
-        });
-      });
+    const cloned = tableEl.cloneNode(true) as HTMLTableElement;
+    cloned.querySelectorAll('button, svg, input').forEach(el => el.remove());
+
+    // Replace any remaining div inside td/th with span so Excel and Word never split into multiple cells/rows
+    cloned.querySelectorAll('td div, th div').forEach(div => {
+      const span = document.createElement('span');
+      span.innerHTML = div.innerHTML;
+      if (div.getAttribute('style')) span.setAttribute('style', div.getAttribute('style') || '');
+      div.parentNode?.replaceChild(span, div);
     });
 
-    return {
-      rows: flatRows,
-      totalLetters: flatRows.length,
-      totalParasSum,
-      totalSettledSum,
-      totalUnsettledSum,
-    };
-  }, [filteredEntries, settlementEntries]);
+    // Ensure all br elements have mso-data-placement: same-cell so Excel treats them as in-cell breaks
+    cloned.querySelectorAll('br').forEach(br => {
+      br.setAttribute('style', 'mso-data-placement:same-cell;');
+    });
 
-  // Branch Title Display
-  const branchTitleBN = useMemo(() => {
-    if (filterBranch === 'নন এসএফআই') return 'শাখাঃ নন এসএফআই।';
-    if (filterBranch === 'এসএফআই') return 'শাখাঃ এসএফআই।';
-    return 'শাখাঃ সকল শাখা।';
-  }, [filterBranch]);
+    // Ensure all th, td have mso-number-format: '\@' so (১), (২) etc are NEVER converted to minus signs
+    cloned.querySelectorAll('th, td').forEach(cell => {
+      const existing = cell.getAttribute('style') || '';
+      cell.setAttribute('style', `${existing}; mso-number-format:'\\@';`);
+    });
 
-  // Excel Download
-  const downloadExcel = () => {
-    const table = document.getElementById('table-bsr-received-return-main');
-    if (!table) return;
+    const filename = `বিএসআর_প্রাপ্তির_রিটার্ন_${dateRangeDisplayBN.replace(/\s+/g, '_')}.xls`;
 
-    const clonedTable = table.cloneNode(true) as HTMLTableElement;
-    const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
-    interactiveElements.forEach(el => el.remove());
-
-    const filename = `Responsible_Party_প্রাপ্ত_পত্রাদির_প্রতিবেদন_${(isFullMonth ? fullMonthNameBN : displayRangeLabelBN).replace(/[\s,\/:]+/g, '_')}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
-
+    // Note: The title is intentionally NOT placed inside the Excel sheet so that when the user
+    // copies from Excel to Word, the Word table will NOT have the title inside the table!
     const template = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head>
         <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <title>${subjectTitleBN}</title>
         <style>
-          table { border-collapse: collapse; width: 100%; font-family: 'SolaimanLipi', 'SutonnyMJ', sans-serif; }
-          th, td { border: 1px solid #000000; padding: 6px 8px; text-align: center; font-size: 13px; vertical-align: middle; color: #000000; }
-          th { background-color: #ffffff; color: #000000; font-weight: bold; }
-          .header-title { font-size: 15px; font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 12px; }
+          body { font-family: 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-top: 5px; }
+          th, td { border: 1px solid #000000; padding: 6px 8px; text-align: center; font-size: 11px; vertical-align: middle; mso-number-format: "\\@"; }
+          th { background-color: #f1f5f9; font-weight: bold; }
+          br { mso-data-placement: same-cell; }
+          .text-left { text-align: left !important; }
         </style>
       </head>
       <body>
-        <table style="width:100%; border:none; margin-bottom:10px;">
-          <tr>
-            <td style="border:none; text-align:left; font-size:15px; font-weight:bold;">
-              Responsible Party হতে প্রাপ্ত পত্রাদির মাসিক প্রতিবেদনঃ (${dateRangeTitleBN})
-            </td>
-            <td style="border:none; text-align:right; font-size:15px; font-weight:bold;">
-              ${branchTitleBN}
-            </td>
-          </tr>
-        </table>
-        ${clonedTable.outerHTML}
+        ${cloned.outerHTML}
       </body>
       </html>
     `;
@@ -650,764 +585,427 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handlePrevMonth = () => {
-    setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  };
-
-  const handleResetFilters = () => {
-    setFilterBranch('নন এসএফআই');
-    setFilterLetterType('সকল');
-    setSearchTerm('');
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
-    <div className="w-full space-y-4 font-sans text-slate-900 pb-16">
-      {/* Top Header Card (Controls / No-print) */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-3 sm:p-4 no-print flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 flex-wrap">
+    <div id="bsr-received-report-container" className="w-full bg-white p-3 sm:p-5 rounded-none animate-in fade-in duration-300 relative font-sans">
+      {IDBadge && <IDBadge id="bsr-received-report-container" />}
+
+      {/* Non-Print Top Toolbar & Filters */}
+      <div className="no-print mb-4 pb-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Back button & Title tag */}
+        <div className="flex items-center gap-2">
           {onBack && (
             <button
+              type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-95"
+              className="flex items-center gap-1 px-3 h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-black text-xs transition-all cursor-pointer shadow-xs active:scale-95"
+              title="রিটার্ন তালিকায় ফিরে যান"
             >
               <ChevronLeft size={16} />
-              <span>পেছনে</span>
+              <span>পেছনে ফিরুন</span>
             </button>
           )}
 
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-black shadow-inner">
-              <FileSpreadsheet size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-black text-slate-900 leading-tight">
-                  চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর ও অন্যান্য পত্রাদি
-                </h1>
-                {IDBadge && <IDBadge id="bsr-received-return" />}
-              </div>
-              <p className="text-[11px] font-bold text-slate-500">
-                Responsible Party হতে প্রাপ্ত পত্রাদির মাসিক প্রতিবেদন
-              </p>
-            </div>
+          <div className="flex items-center gap-1.5 px-3.5 h-[38px] bg-blue-50 border border-blue-200 rounded-xl text-blue-900 font-black text-xs shadow-xs">
+            <Mail size={15} className="text-blue-600" />
+            <span>প্রাপ্ত পত্র: বিএসআর প্রাপ্তির রিটার্ন</span>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 self-end md:self-auto">
+        {/* Center / Right: Filters (Branch, Letter Type, Date Range, Search, Excel, Print) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* ১. শাখা ফিল্টার ড্রপডাউন */}
+          <div className="relative z-[500]" ref={branchRef}>
+            <button
+              type="button"
+              onClick={() => setIsBranchOpen(!isBranchOpen)}
+              className="flex items-center gap-1.5 px-3 h-[38px] bg-white border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs text-slate-800 shadow-xs cursor-pointer"
+            >
+              <Filter size={13} className="text-slate-600" />
+              <span className="text-slate-500">শাখা:</span>
+              <span className="font-black text-blue-900">{filterBranch}</span>
+              <ChevronDown size={13} className={`transition-transform duration-200 ${isBranchOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isBranchOpen && (
+              <div className="absolute left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-[600] py-1">
+                {(['নন এসএফআই', 'এসএফআই', 'সকল'] as const).map(branch => (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() => {
+                      setFilterBranch(branch);
+                      setIsBranchOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
+                      filterBranch === branch ? 'bg-blue-50 text-blue-700 font-black' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>{branch}</span>
+                    {filterBranch === branch && <Check size={14} className="text-blue-600 font-bold" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ২. চিঠির ধরণ ফিল্টার */}
+          <div className="relative z-[500]" ref={letterTypeRef}>
+            <button
+              type="button"
+              onClick={() => setIsLetterTypeOpen(!isLetterTypeOpen)}
+              className="flex items-center gap-1.5 px-3 h-[38px] bg-white border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs text-slate-800 shadow-xs cursor-pointer"
+            >
+              <Mail size={13} className="text-slate-600" />
+              <span className="text-slate-500">ধরণ:</span>
+              <span className="font-black text-blue-900">{filterLetterType}</span>
+              <ChevronDown size={13} className={`transition-transform duration-200 ${isLetterTypeOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isLetterTypeOpen && (
+              <div className="absolute left-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-[600] py-1 max-h-60 overflow-y-auto">
+                {letterTypeOptions.map(lType => (
+                  <button
+                    key={lType}
+                    type="button"
+                    onClick={() => {
+                      setFilterLetterType(lType);
+                      setIsLetterTypeOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
+                      filterLetterType === lType ? 'bg-blue-50 text-blue-700 font-black' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>{lType}</span>
+                    {filterLetterType === lType && <Check size={14} className="text-blue-600 font-bold" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ৩. সময়কাল / তারিখ রেঞ্জ নির্বাচন */}
+          <div className="relative z-[500]" ref={dateRangeRef}>
+            <button
+              type="button"
+              onClick={() => setIsDateRangeOpen(!isDateRangeOpen)}
+              className="flex items-center gap-1.5 px-3 h-[38px] bg-white border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs text-slate-800 shadow-xs cursor-pointer"
+            >
+              <Calendar size={13} className="text-slate-600" />
+              <span className="text-slate-500">সময়কাল:</span>
+              <span className="font-black text-blue-900">{dateRangeDisplayBN}</span>
+              <ChevronDown size={13} className={`transition-transform duration-200 ${isDateRangeOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isDateRangeOpen && (
+              <div className="absolute right-0 mt-1 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[600] p-3 space-y-2.5">
+                <div className="text-[11px] font-black text-slate-500 uppercase tracking-wider border-b pb-1">
+                  তারিখ সীমা নির্ধারণ
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">হতে (শুরু)</label>
+                    <input
+                      type="date"
+                      value={dateFnsFormat(startDate, 'yyyy-MM-dd')}
+                      onChange={e => {
+                        if (e.target.value) {
+                          const [y, m, d] = e.target.value.split('-').map(Number);
+                          setStartDate(new Date(y, m - 1, d));
+                        }
+                      }}
+                      className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">পর্যন্ত (শেষ)</label>
+                    <input
+                      type="date"
+                      value={dateFnsFormat(endDate, 'yyyy-MM-dd')}
+                      onChange={e => {
+                        if (e.target.value) {
+                          const [y, m, d] = e.target.value.split('-').map(Number);
+                          setEndDate(new Date(y, m - 1, d));
+                        }
+                      }}
+                      className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeCycle?.start && activeCycle?.end) {
+                        const s = parseDateSafe(activeCycle.start);
+                        const e = parseDateSafe(activeCycle.end);
+                        if (s && e) {
+                          setStartDate(s);
+                          setEndDate(e);
+                        }
+                      }
+                      setIsDateRangeOpen(false);
+                    }}
+                    className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded font-bold cursor-pointer"
+                  >
+                    চলতি সাইকেল
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      setStartDate(new Date(now.getFullYear(), now.getMonth() - 1, 16));
+                      setEndDate(new Date(now.getFullYear(), now.getMonth(), 15));
+                      setIsDateRangeOpen(false);
+                    }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-bold cursor-pointer"
+                  >
+                    বিগত সাইকেল
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ৪. সার্চ বার */}
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="খুঁজুন..."
+              className="h-[38px] pl-8 pr-7 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 w-36 sm:w-44 transition-all"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* ৫. ওয়ার্ডে কপি বাটন */}
           <button
             type="button"
-            onClick={downloadExcel}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer"
+            onClick={handleCopyWord}
+            className={`flex items-center gap-1.5 px-3 h-[38px] rounded-xl font-black text-xs shadow-xs cursor-pointer active:scale-95 transition-all ${
+              copiedWord 
+                ? 'bg-blue-700 text-white ring-2 ring-blue-400' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+            title="ওয়ার্ডে পেস্ট করার জন্য শিরোনামসহ টেবিল কপি করুন (শিরোনাম টেবিলের বাইরে থাকবে)"
+          >
+            {copiedWord ? <Check size={15} /> : <Copy size={15} />}
+            <span className="hidden sm:inline">{copiedWord ? 'কপি হয়েছে' : 'ওয়ার্ডে কপি'}</span>
+          </button>
+
+          {/* ৬. এক্সেল ডাউনলোড বাটন */}
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            className="flex items-center gap-1.5 px-3 h-[38px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-xs cursor-pointer active:scale-95 transition-all"
+            title="এক্সেল ডাউনলোড করুন"
           >
             <FileSpreadsheet size={15} />
-            <span>এক্সেল ডাউনলোড</span>
+            <span className="hidden sm:inline">এক্সেল</span>
           </button>
 
+          {/* ৭. প্রিন্ট বাটন */}
           <button
             type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer"
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-3 h-[38px] bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-black text-xs shadow-xs cursor-pointer active:scale-95 transition-all"
+            title="প্রিন্ট করুন"
           >
             <Printer size={15} />
-            <span>প্রিন্ট</span>
+            <span className="hidden sm:inline">প্রিন্ট</span>
           </button>
         </div>
       </div>
 
-      {/* Filter Toolbar Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-3 sm:p-4 no-print space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Filters */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Date Range (হতে - থেকে) Calendar Control */}
-            <div className="relative shrink-0 select-none" ref={monthRef}>
-              {/* Main Trigger Button */}
-              <button
-                type="button"
-                onClick={() => setIsMonthOpen(prev => !prev)}
-                className={`flex items-center gap-2 px-3 h-[38px] bg-slate-50 border rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
-                  isMonthOpen ? 'border-emerald-600 ring-2 ring-emerald-100 bg-white' : 'border-slate-300 hover:border-emerald-400'
-                }`}
-                title={`${toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}`}
-              >
-                <Calendar size={14} className="text-emerald-600 shrink-0" />
-                <span className="text-slate-600 font-semibold shrink-0">সময়কাল:</span>
-                <span className="text-slate-900 font-black truncate max-w-[220px] sm:max-w-none">{displayRangeLabelBN}</span>
-                <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isMonthOpen ? 'rotate-180 text-emerald-600' : ''}`} />
-              </button>
-
-              {/* Comprehensive Date Range Popover */}
-              {isMonthOpen && (
-                <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[350px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-3.5 z-[1200] animate-in fade-in duration-150 select-none">
-                  {/* Popover Header */}
-                  <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
-                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
-                      <Calendar size={13} className="text-emerald-600" />
-                      <span>সময়কাল নির্বাচন (হতে - থেকে)</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsMonthOpen(false)}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                      title="বন্ধ করুন"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  {/* Start & End Date Selection Tabs / Cards */}
-                  <div className="grid grid-cols-2 gap-2 mb-2.5">
-                    {/* Start Date Card */}
-                    <div
-                      onClick={() => {
-                        setSelectingDateType('start');
-                        setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
-                      }}
-                      className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                        selectingDateType === 'start'
-                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-xs'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
-                      }`}
-                    >
-                      <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="font-extrabold text-xs text-slate-800">
-                          {toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))}
-                        </span>
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={dateFnsFormat(startDate, 'yyyy-MM-dd')}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val) {
-                                const [y, m, d] = val.split('-').map(Number);
-                                const newD = new Date(y, m - 1, d);
-                                setStartDate(newD);
-                                if (newD > endDate) setEndDate(newD);
-                                setCurrentViewDate(new Date(y, m - 1, 1));
-                              }
-                            }}
-                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                            title="শুরুর তারিখ পরিবর্তন করুন"
-                          />
-                          <Calendar size={13} className="text-emerald-600" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* End Date Card */}
-                    <div
-                      onClick={() => {
-                        setSelectingDateType('end');
-                        setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
-                      }}
-                      className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                        selectingDateType === 'end'
-                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-xs'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
-                      }`}
-                    >
-                      <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="font-extrabold text-xs text-slate-800">
-                          {toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}
-                        </span>
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={dateFnsFormat(endDate, 'yyyy-MM-dd')}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val) {
-                                const [y, m, d] = val.split('-').map(Number);
-                                const newD = new Date(y, m - 1, d);
-                                setEndDate(newD);
-                                if (newD < startDate) setStartDate(newD);
-                                setCurrentViewDate(new Date(y, m - 1, 1));
-                              }
-                            }}
-                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                            title="শেষের তারিখ পরিবর্তন করুন"
-                          />
-                          <Calendar size={13} className="text-emerald-600" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Presets */}
-                  <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const now = new Date();
-                        const s = new Date(now.getFullYear(), now.getMonth(), 1);
-                        const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                        setStartDate(s);
-                        setEndDate(e);
-                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                      }}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                    >
-                      চলতি মাস
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const now = new Date();
-                        const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                        const e = new Date(now.getFullYear(), now.getMonth(), 0);
-                        setStartDate(s);
-                        setEndDate(e);
-                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
-                      }}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                    >
-                      বিগত মাস
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const now = new Date();
-                        const s = new Date(now.getFullYear(), 0, 1);
-                        const e = new Date(now.getFullYear(), 11, 31);
-                        setStartDate(s);
-                        setEndDate(e);
-                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                      }}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                    >
-                      চলতি বছর
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const now = new Date();
-                        const s = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
-                        setStartDate(s);
-                        setEndDate(now);
-                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
-                      }}
-                      className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                    >
-                      গত ৩০ দিন
-                    </button>
-                  </div>
-
-                  {/* Calendar Header with Navigation */}
-                  <div className="flex items-center justify-between mb-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-                      }}
-                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
-                      title="পূর্ববর্তী মাস"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-
-                    <div className="flex items-center gap-1.5">
-                      <select
-                        value={currentViewDate.getMonth()}
-                        onChange={(e) => {
-                          const m = parseInt(e.target.value, 10);
-                          setCurrentViewDate(new Date(currentViewDate.getFullYear(), m, 1));
-                        }}
-                        className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-emerald-500"
-                      >
-                        {BENGALI_MONTHS.map(m => (
-                          <option key={m.index} value={m.index}>{m.name}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={currentViewDate.getFullYear()}
-                        onChange={(e) => {
-                          const y = parseInt(e.target.value, 10);
-                          setCurrentViewDate(new Date(y, currentViewDate.getMonth(), 1));
-                        }}
-                        className="font-black text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 cursor-pointer outline-none focus:border-emerald-500"
-                      >
-                        {[2024, 2025, 2026, 2027, 2028].map(y => (
-                          <option key={y} value={y}>{toBengaliDigits(y.toString())}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-                      }}
-                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer"
-                      title="পরবর্তী মাস"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-
-                  {/* Weekday Headers */}
-                  <div className="grid grid-cols-7 gap-1 text-center mb-1">
-                    {BENGALI_WEEKDAYS.map((wd, i) => (
-                      <span key={i} className="text-[10px] font-black text-slate-400 py-0.5">
-                        {wd}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Days Grid with Range Selection */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {(() => {
-                      const Y = currentViewDate.getFullYear();
-                      const M = currentViewDate.getMonth();
-                      const firstDay = new Date(Y, M, 1);
-
-                      // Saturday start (0=Sun -> 1, 6=Sat -> 0)
-                      const startOffset = (firstDay.getDay() + 1) % 7;
-
-                      const daysInMonth = new Date(Y, M + 1, 0).getDate();
-                      const prevMonthDays = new Date(Y, M, 0).getDate();
-
-                      const cells: Array<{ day: number; isCurrentMonth: boolean; dateObj: Date }> = [];
-
-                      // Trailing days from previous month
-                      for (let i = startOffset - 1; i >= 0; i--) {
-                        const d = prevMonthDays - i;
-                        const dateObj = new Date(Y, M - 1, d);
-                        cells.push({ day: d, isCurrentMonth: false, dateObj });
-                      }
-
-                      // Current month days
-                      for (let d = 1; d <= daysInMonth; d++) {
-                        const dateObj = new Date(Y, M, d);
-                        cells.push({ day: d, isCurrentMonth: true, dateObj });
-                      }
-
-                      // Leading days
-                      const totalCells = cells.length > 35 ? 42 : 35;
-                      const remaining = totalCells - cells.length;
-                      for (let d = 1; d <= remaining; d++) {
-                        const dateObj = new Date(Y, M + 1, d);
-                        cells.push({ day: d, isCurrentMonth: false, dateObj });
-                      }
-
-                      const startStr = dateFnsFormat(startDate, 'yyyy-MM-dd');
-                      const endStr = dateFnsFormat(endDate, 'yyyy-MM-dd');
-
-                      return cells.map((cell, idx) => {
-                        const cellDateStr = dateFnsFormat(cell.dateObj, 'yyyy-MM-dd');
-                        const isStart = cellDateStr === startStr;
-                        const isEnd = cellDateStr === endStr;
-                        const isInRange = cellDateStr > startStr && cellDateStr < endStr;
-
-                        let cellCls = "text-[11.5px] font-bold h-7 flex items-center justify-center transition-all cursor-pointer relative ";
-                        if (isStart && isEnd) {
-                          cellCls += "bg-emerald-600 text-white font-black rounded-lg shadow-sm z-10";
-                        } else if (isStart) {
-                          cellCls += "bg-emerald-600 text-white font-black rounded-l-lg shadow-sm z-10";
-                        } else if (isEnd) {
-                          cellCls += "bg-emerald-600 text-white font-black rounded-r-lg shadow-sm z-10";
-                        } else if (isInRange) {
-                          cellCls += "bg-emerald-100/70 text-emerald-950 font-extrabold rounded-none";
-                        } else if (cell.isCurrentMonth) {
-                          cellCls += "text-slate-800 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg";
-                        } else {
-                          cellCls += "text-slate-300 hover:bg-slate-50 hover:text-slate-400 rounded-lg";
-                        }
-
-                        return (
-                          <div
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const clickedDate = cell.dateObj;
-                              if (selectingDateType === 'start') {
-                                if (clickedDate > endDate) {
-                                  setStartDate(clickedDate);
-                                  setEndDate(clickedDate);
-                                  setSelectingDateType('end');
-                                } else {
-                                  setStartDate(clickedDate);
-                                  setSelectingDateType('end');
-                                }
-                              } else {
-                                // selectingDateType === 'end'
-                                if (clickedDate < startDate) {
-                                  setStartDate(clickedDate);
-                                  setSelectingDateType('end');
-                                } else {
-                                  setEndDate(clickedDate);
-                                }
-                              }
-                            }}
-                            className={cellCls}
-                          >
-                            <span>{toBengaliDigits(cell.day.toString())}</span>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-
-                  {/* Bottom Footer Actions */}
-                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <div className="text-[10.5px] font-bold text-slate-600">
-                      <span>{toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))}</span>
-                      <span className="mx-1 text-slate-400">হতে</span>
-                      <span>{toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const now = new Date();
-                          const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                          const eDate = new Date(now.getFullYear(), now.getMonth(), 0);
-                          setStartDate(s);
-                          setEndDate(eDate);
-                          setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
-                          setSelectingDateType('start');
-                        }}
-                        className="px-2 py-1 text-[10.5px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      >
-                        রিসেট
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsMonthOpen(false)}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] transition-all shadow-xs flex items-center gap-1 cursor-pointer active:scale-95"
-                      >
-                        <Check size={12} className="stroke-[3]" />
-                        <span>প্রয়োগ করুন</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Branch Filter */}
-            <div className="relative" ref={branchRef}>
-              <button
-                type="button"
-                onClick={() => setIsBranchOpen(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 h-[38px] bg-slate-50 border rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
-                  isBranchOpen ? 'border-emerald-600 ring-2 ring-emerald-100 bg-white' : 'border-slate-300 hover:border-emerald-400'
-                }`}
-              >
-                <Filter size={13} className="text-emerald-600" />
-                <span className="text-slate-600">শাখা:</span>
-                <span className="text-slate-900 font-black">{filterBranch}</span>
-                <ChevronDown size={13} className={`text-slate-500 transition-transform duration-200 ${isBranchOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isBranchOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-[160px] bg-white border border-slate-200 rounded-2xl shadow-xl py-1 z-[1100] animate-in fade-in">
-                  {['নন এসএফআই', 'এসএফআই', 'সকল'].map(branch => {
-                    const isSelected = filterBranch === branch;
-                    return (
-                      <button
-                        key={branch}
-                        type="button"
-                        onClick={() => {
-                          setFilterBranch(branch);
-                          setFilterLetterType('সকল');
-                          setIsBranchOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
-                          isSelected ? 'bg-emerald-50 text-emerald-800 font-black' : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <span>{branch}</span>
-                        {isSelected && <Check size={13} className="text-emerald-600 font-bold" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Letter Type Filter */}
-            <div className="relative" ref={letterTypeRef}>
-              <button
-                type="button"
-                onClick={() => setIsLetterTypeOpen(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 h-[38px] bg-slate-50 border rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
-                  isLetterTypeOpen ? 'border-emerald-600 ring-2 ring-emerald-100 bg-white' : 'border-slate-300 hover:border-emerald-400'
-                }`}
-              >
-                <Mail size={13} className="text-emerald-600" />
-                <span className="text-slate-600">চিঠির ধরণ:</span>
-                <span className="text-slate-900 font-black">{filterLetterType}</span>
-                <ChevronDown size={13} className={`text-slate-500 transition-transform duration-200 ${isLetterTypeOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isLetterTypeOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-[200px] max-h-[260px] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl py-1 z-[1100] animate-in fade-in">
-                  {letterTypeOptions.map(lType => {
-                    const isSelected = filterLetterType === lType;
-                    return (
-                      <button
-                        key={lType}
-                        type="button"
-                        onClick={() => {
-                          setFilterLetterType(lType);
-                          setIsLetterTypeOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
-                          isSelected ? 'bg-emerald-50 text-emerald-800 font-black' : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <span>{lType}</span>
-                        {isSelected && <Check size={13} className="text-emerald-600 font-bold" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Search Input & Count Badge */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="খুঁজুন (ডায়েরি, বিবরণ, মন্তব্য)..."
-                className="w-full h-[38px] pl-8.5 pr-8 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-
-            <div className="px-3 h-[38px] bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-xs font-black text-emerald-800">
-                মোট চিঠি: {toBengaliDigits(processedTableRows.totalLetters.toString())} টি
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Printable & Viewable Report Container */}
-      <div 
-        id="bsr-received-report-container" 
-        className="bg-white p-4 sm:p-6 border border-slate-300 rounded-2xl shadow-sm print:shadow-none print:border-none print:p-0 overflow-visible"
-      >
-        {/* Title Header matching the requested screenshot */}
-        <div className="mb-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5">
-          <h1 className="text-sm sm:text-[15px] font-bold text-black tracking-tight">
-            Responsible Party হতে প্রাপ্ত পত্রাদির মাসিক প্রতিবেদনঃ ({dateRangeTitleBN})
-          </h1>
-          <div className="text-sm sm:text-[15px] font-bold text-black sm:text-right shrink-0">
-            {branchTitleBN}
-          </div>
+      {/* Main Official Printable Report Area (Harking back strictly to Image 2) */}
+      <div className="w-full bg-white print:p-0">
+        {/* Title Line (হুবহু ২ নং ছবি অনুযায়ী) */}
+        <div className="mb-2 text-left">
+          <p className="font-bold text-[14px] sm:text-[15.5px] text-black leading-snug tracking-tight">
+            {subjectTitleBN}
+          </p>
         </div>
 
-        {/* Table View matching the exact column layout from user image */}
-        <div className="table-container relative w-full overflow-x-auto pb-2">
-          <table 
-            id="table-bsr-received-return-main" 
-            className="w-full min-w-[980px] border-separate border-spacing-0 text-black text-xs sm:text-[13px] font-sans"
-            style={{ borderColor: '#000000' }}
+        {/* The 8-Column Exact Table from Image 2 */}
+        <div className="table-container relative w-full overflow-x-auto">
+          <table
+            id="table-bsr-received-return-main"
+            className="w-full min-w-[1050px] border-collapse border border-black text-black text-xs sm:text-[13px] font-sans"
+            style={{ borderCollapse: 'collapse', borderColor: '#000000', minWidth: '1050px' }}
           >
+            <colgroup>
+              <col style={{ width: '60px', minWidth: '60px' }} />
+              <col style={{ width: '160px', minWidth: '150px' }} />
+              <col style={{ width: '320px', minWidth: '280px' }} />
+              <col style={{ width: '125px', minWidth: '115px' }} />
+              <col style={{ width: '125px', minWidth: '115px' }} />
+              <col style={{ width: '95px', minWidth: '90px' }} />
+              <col style={{ width: '100px', minWidth: '95px' }} />
+              <col style={{ width: '90px', minWidth: '85px' }} />
+            </colgroup>
             <thead>
-              {/* Row 1: Headers */}
-              <tr className="h-[36px]">
-                <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[50px] min-w-[45px] bg-white whitespace-nowrap"
-                >
-                  ক্রমিক<br />নং
+              {/* Row 1: 8 Column Headers */}
+              <tr className="bg-white text-black font-bold h-[38px]">
+                <th className="border border-black p-2 text-center align-middle w-[60px] min-w-[60px] font-bold">
+                  ক্রমিক নং
+                </th>
+                <th className="border border-black p-2 text-center align-middle w-[160px] min-w-[150px] font-bold">
+                  বিভাগ/মন্ত্রণালয়
                 </th>
                 <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[140px] min-w-[130px] bg-white whitespace-nowrap"
+                  className="border border-black p-2 text-center align-middle font-bold text-black"
+                  style={{ width: '320px', minWidth: '280px' }}
                 >
-                  বিবরণ
+                  <span className="inline-block whitespace-nowrap">অডিট প্রতিষ্ঠানের নাম</span>{' '}
+                  <span className="inline-block whitespace-nowrap">ও নিরীক্ষা সাল</span>
                 </th>
-                <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[100px] min-w-[90px] bg-white whitespace-nowrap"
-                >
-                  প্রাপ্ত জবাব<br />(পত্র সংখ্যা)
+                <th className="border border-black p-2 text-center align-middle w-[125px] min-w-[115px] font-bold">
+                  ডায়েরি নং
                 </th>
-                <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[135px] min-w-[120px] bg-white whitespace-nowrap"
-                >
-                  পত্র নং ও তারিখ
+                <th className="border border-black p-2 text-center align-middle w-[125px] min-w-[115px] font-bold">
+                  পত্র নং
                 </th>
-                <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[150px] min-w-[135px] bg-white"
-                >
-                  প্রাপ্ত জবাবের ডায়েরি নং ও<br />তারিখ
+                <th className="border border-black p-2 text-center align-middle w-[95px] min-w-[90px] font-bold">
+                  চিঠির ধরণ
                 </th>
-                <th 
-                  rowSpan={2} 
-                  className="border border-black p-2 font-bold text-center align-middle w-[75px] min-w-[70px] bg-white whitespace-nowrap"
-                >
-                  অনুচ্ছেদ<br />সংখ্যা
+                <th className="border border-black p-2 text-center align-middle w-[100px] min-w-[95px] font-bold">
+                  আর্কাইভ নং
                 </th>
-                <th 
-                  colSpan={3} 
-                  className="border border-black py-1 px-2 font-bold text-center align-middle bg-white whitespace-nowrap h-[36px]"
-                >
-                  গৃহীত কার্যক্রম
+                <th className="border border-black p-2 text-center align-middle w-[90px] min-w-[85px] font-bold">
+                  মন্তব্য
                 </th>
               </tr>
 
-              {/* Row 2: Subheaders under গৃহীত কার্যক্রম */}
-              <tr className="h-[52px]">
-                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[150px] min-w-[135px] bg-white whitespace-nowrap leading-snug">
-                  প্রাপ্ত জবাবের Disposal/<br />জারিপত্র ও তারিখ
-                </th>
-                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[85px] min-w-[75px] bg-white whitespace-nowrap leading-snug">
-                  নিষ্পত্তিকৃত<br />অনুচ্ছেদ সংখ্যা
-                </th>
-                <th className="border border-black py-1 px-1.5 font-bold text-center align-middle w-[85px] min-w-[75px] bg-white whitespace-nowrap leading-snug">
-                  অনিষ্পত্তিকৃত<br />অনুচ্ছেদ সংখ্যা
-                </th>
-              </tr>
-
-              {/* Row 3: Column Numbers ১ - ৯ */}
-              <tr className="text-xs font-bold bg-white h-[28px]">
-                <th className="border border-black py-1 text-center font-bold">১</th>
-                <th className="border border-black py-1 text-center font-bold">২</th>
-                <th className="border border-black py-1 text-center font-bold">৩</th>
-                <th className="border border-black py-1 text-center font-bold">৪</th>
-                <th className="border border-black py-1 text-center font-bold">৫</th>
-                <th className="border border-black py-1 text-center font-bold">৬</th>
-                <th className="border border-black py-1 text-center font-bold">৭</th>
-                <th className="border border-black py-1 text-center font-bold">৮</th>
-                <th className="border border-black py-1 text-center font-bold">৯</th>
+              {/* Row 2: Sub-headers (১) হতে (৮) - ১ম ছবির নির্দেশনা অনুযায়ী ফাস্ট ব্রাকেটের মধ্যে */}
+              <tr className="bg-white text-black font-bold h-[26px]">
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(১)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(২)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৩)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৪)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৫)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৬)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৭)</th>
+                <th style={{ msoNumberFormat: '\\@' } as any} className="border border-black py-0.5 text-center font-bold whitespace-nowrap">(৮)</th>
               </tr>
             </thead>
 
             <tbody>
-              {processedTableRows.rows.length === 0 ? (
+              {filteredRows.length === 0 ? (
                 <tr>
-                  <td 
-                    colSpan={9} 
-                    className="border border-black py-10 text-center text-slate-500 font-bold bg-white"
+                  <td
+                    colSpan={8}
+                    className="border border-black py-12 text-center text-slate-500 font-bold bg-white text-sm"
                   >
-                    এই সময়কালে ({dateRangeTitleBN}) কোনো পত্রাদির তথ্য পাওয়া যায়নি।
+                    এই সময়কালে কোনো পত্রাদির তথ্য পাওয়া যায়নি।
                   </td>
                 </tr>
               ) : (
-                processedTableRows.rows.map((row, index) => {
+                filteredRows.map((row) => {
+                  const entry = row.entry;
+                  const diaryNo = entry.diaryNo ? String(entry.diaryNo).trim() : '-';
+                  const diaryDate = formatDateDMY(entry.diaryDate || entry.receiptDate);
+                  const letterNo = entry.letterNo ? String(entry.letterNo).trim() : '-';
+                  const letterDate = formatDateDMY(entry.letterDate);
+                  const letterTypeDisplay = entry.letterType?.trim() || filterLetterType || 'বিএসআর';
+                  const archiveNo = entry.archiveNo ? String(entry.archiveNo).trim() : '';
+                  const remarks = entry.remarks || entry.comments || '';
+
                   return (
-                    <tr 
-                      key={row.entry.id || `${index}-${row.entry.diaryNo}`} 
-                      className="bg-white hover:bg-slate-50/60 transition-colors"
+                    <tr
+                      key={entry.id || `row-${row.serial}`}
+                      className="bg-white hover:bg-slate-50/70 transition-colors text-black"
                     >
-                      {/* ১. ক্রমিক নং: ১, ২, ৩, ৪... */}
-                      <td className="border border-black p-2 text-center font-bold align-middle whitespace-nowrap">
-                        {row.serial}
+                      {/* ১. ক্রমিক নং (Centered) */}
+                      <td className="border border-black p-2 text-center align-middle font-bold text-xs sm:text-[13px] whitespace-nowrap">
+                        {toBengaliDigits(row.serial.toString())}
                       </td>
 
-                      {/* ২. বিবরণ: Grouped by category with rowSpan (বিএসআর (নন এসএফআই), দ্বিপক্ষীয় সভার কার্যবিবরণী, etc.) */}
-                      {row.showCategory && (
+                      {/* ২. বিভাগ/মন্ত্রণালয় (Merged with rowSpan for same ministry!) */}
+                      {row.isFirstInMinistryGroup && (
                         <td
-                          rowSpan={row.rowSpan}
-                          className="border border-black p-2.5 text-center font-bold align-middle bg-white"
+                          rowSpan={row.ministryRowSpan}
+                          className="border border-black p-2.5 text-center font-bold align-middle bg-white text-black text-xs sm:text-[13px] leading-snug"
                         >
-                          {row.category}
+                          {row.ministryName}
                         </td>
                       )}
 
-                      {/* ৩. প্রাপ্ত জবাব (পত্র সংখ্যা): ০১ */}
-                      <td className="border border-black p-2 text-center font-bold align-middle">
-                        {row.letterCountStr}
+                      {/* ৩. অডিট প্রতিষ্ঠানের নাম ও নিরীক্ষা সাল (একক সেলে প্রতিষ্ঠান ও শাখা) */}
+                      <td 
+                        className="border border-black p-2.5 text-justify align-middle text-xs sm:text-[13px] text-black leading-snug"
+                        style={{ width: '320px', minWidth: '280px', textAlign: 'justify' }}
+                      >
+                        {(() => {
+                          const { entityLine, branchLine } = getAuditEntityAndBranch(entry, settlementEntries);
+                          return (
+                            <>
+                              <span className="font-bold text-black" style={{ textAlign: 'justify' }}>
+                                {entityLine}
+                              </span>
+                              {branchLine && (
+                                <>
+                                  <br style={{ msoDataPlacement: 'same-cell' } as any} />
+                                  <span 
+                                    className="text-blue-600 print:text-blue-600 font-semibold"
+                                    style={{ color: '#2563eb', textAlign: 'justify' }}
+                                  >
+                                    {branchLine}
+                                  </span>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
                       </td>
 
-                      {/* ৪. পত্র নং ও তারিখ */}
-                      <td className="border border-black p-2 text-center font-bold align-middle whitespace-nowrap">
-                        {row.letterNoDateDisplay}
+                      {/* ৪. ডায়েরি নং (ডায়েরি নং ও তারিখ - একক সেলে হুবহু ২ নং ছবির মত) */}
+                      <td className="border border-black p-2 text-center align-middle whitespace-nowrap text-black font-semibold text-xs sm:text-[13px] leading-tight">
+                        {diaryDate && diaryDate !== '-' 
+                          ? `${toBengaliDigits(diaryNo)}, ${toBengaliDigits(diaryDate)}`
+                          : toBengaliDigits(diaryNo)}
                       </td>
 
-                      {/* ৫. প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ: যেমন ২০৩, ১৪/০১/২৬ */}
-                      <td className="border border-black p-2 text-center font-bold align-middle whitespace-nowrap">
-                        {row.diaryNoDateDisplay}
+                      {/* ৫. পত্র নং (পত্র নং ও তারিখ - একক সেলে হুবহু ২ নং ছবির মত) */}
+                      <td className="border border-black p-2 text-center align-middle whitespace-nowrap text-black font-semibold text-xs sm:text-[13px] leading-tight">
+                        {letterDate && letterDate !== '-' 
+                          ? `${toBengaliDigits(letterNo)}, ${toBengaliDigits(letterDate)}`
+                          : toBengaliDigits(letterNo)}
                       </td>
 
-                      {/* ৬. অনুচ্ছেদ সংখ্যা */}
-                      <td className="border border-black p-2 text-center font-bold align-middle">
-                        {toBengaliDigits(row.paraCount.toString())}
+                      {/* ৬. চিঠির ধরণ (বিএসআর - Centered) */}
+                      <td className="border border-black p-2 text-center align-middle font-semibold text-xs sm:text-[13px] text-black whitespace-nowrap">
+                        {letterTypeDisplay}
                       </td>
 
-                      {/* ৭. প্রাপ্ত জবাবের Disposal/জারিপত্র ও তারিখ: যেমন "চলমান" */}
-                      <td className="border border-black p-2 text-center font-bold align-middle">
-                        {row.disposalDisplay}
+                      {/* ৭. আর্কাইভ নং (Centered) */}
+                      <td className="border border-black p-2 text-center align-middle font-semibold text-xs sm:text-[13px] text-black whitespace-nowrap">
+                        {archiveNo ? toBengaliDigits(archiveNo) : ''}
                       </td>
 
-                      {/* ৮. নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
-                      <td className="border border-black p-2 text-center font-bold align-middle">
-                        {row.settledCount > 0 ? toBengaliDigits(row.settledCount.toString()) : '-'}
-                      </td>
-
-                      {/* ৯. অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা */}
-                      <td className="border border-black p-2 text-center font-bold align-middle">
-                        {row.unsettledCount > 0 ? toBengaliDigits(row.unsettledCount.toString()) : '-'}
+                      {/* ৮. মন্তব্য (Centered) */}
+                      <td className="border border-black p-2 text-center align-middle font-medium text-xs sm:text-[13px] text-black">
+                        {remarks ? toBengaliDigits(remarks) : ''}
                       </td>
                     </tr>
                   );
                 })
               )}
             </tbody>
-
-            {/* Total / Summary Row */}
-            {processedTableRows.rows.length > 0 && (
-              <tfoot>
-                <tr className="bg-slate-50 font-bold border-t-2 border-black">
-                  <td colSpan={2} className="border border-black p-2 text-center font-black">
-                    সর্বমোটঃ
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    {toBengaliDigits(processedTableRows.totalLetters.toString())}
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    -
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    -
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    {toBengaliDigits(processedTableRows.totalParasSum.toString())}
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    -
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    {processedTableRows.totalSettledSum > 0 ? toBengaliDigits(processedTableRows.totalSettledSum.toString()) : '-'}
-                  </td>
-                  <td className="border border-black p-2 text-center font-black">
-                    {processedTableRows.totalUnsettledSum > 0 ? toBengaliDigits(processedTableRows.totalUnsettledSum.toString()) : '-'}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
           </table>
         </div>
       </div>
