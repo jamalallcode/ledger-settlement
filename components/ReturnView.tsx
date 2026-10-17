@@ -149,6 +149,17 @@ const ReturnView: React.FC<ReturnViewProps> = ({
       // Remove any interactive buttons, icons, or non-print elements inside the cloned table
       const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
       interactiveElements.forEach(el => el.remove());
+
+      // Replace div with span and add mso-data-placement to br so Excel / Word never splits cells
+      clonedTable.querySelectorAll('td div, th div').forEach(div => {
+        const span = document.createElement('span');
+        span.innerHTML = div.innerHTML;
+        if (div.getAttribute('style')) span.setAttribute('style', div.getAttribute('style') || '');
+        div.parentNode?.replaceChild(span, div);
+      });
+      clonedTable.querySelectorAll('br').forEach(br => {
+        br.setAttribute('style', 'mso-data-placement:same-cell;');
+      });
       
       tablesHtml += `
         <div style="margin-bottom: 40px;">
@@ -193,6 +204,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
             text-align: center;
             font-size: 11px;
             vertical-align: middle;
+          }
+          br {
+            mso-data-placement: same-cell;
           }
           th {
             background-color: #f1f5f9 !important;
@@ -1804,8 +1818,34 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} settlementEntries={entries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
-  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর') {
-    renderedContent = <BsrReceivedReturn correspondenceEntries={correspondenceEntries || []} settlementEntries={entries || []} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত পত্র' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র'
+  ) {
+    let initialType = 'বিএসআর';
+    if (selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'দ্বিপক্ষীয় সভা (কার্যবিবরনী)';
+    else if (selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'ত্রিপক্ষীয় সভা (কার্যবিবরনী)';
+    else if (selectedReportType.includes('অন্যান্য পত্র')) initialType = 'অন্যান্য পত্র';
+
+    renderedContent = (
+      <BsrReceivedReturn 
+        correspondenceEntries={correspondenceEntries || []} 
+        settlementEntries={entries || []} 
+        activeCycle={activeCycle} 
+        onBack={() => setSelectedReportType(null)} 
+        isLayoutEditable={isLayoutEditable} 
+        IDBadge={IDBadge} 
+        showFilters={showFilters}
+        initialLetterType={initialType}
+      />
+    );
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
     renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') {

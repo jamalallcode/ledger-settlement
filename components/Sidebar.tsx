@@ -182,6 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isDhakaExpanded, setIsDhakaExpanded] = useState(false);
   const [isSettlementExpanded, setIsSettlementExpanded] = useState(false);
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(false);
+  const [isReceivedLettersExpanded, setIsReceivedLettersExpanded] = useState(false);
   const [isQuarterlyExpanded, setIsQuarterlyExpanded] = useState(false);
   const [isHalfYearlyExpanded, setIsHalfYearlyExpanded] = useState(false);
   const [isYearlyExpanded, setIsYearlyExpanded] = useState(false);
@@ -216,6 +217,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       setIsMonthlyExpanded(true);
       setIsMonthlyCorrExpanded(true);
       setIsDhakaExpanded(true);
+    }
+    if (reportType?.includes('প্রাপ্ত বিএসআর') || reportType?.includes('প্রাপ্ত পত্র') || reportType?.includes('প্রাপ্ত ')) {
+      setIsMonthlyExpanded(true);
+      setIsMonthlyCorrExpanded(true);
+      setIsReceivedLettersExpanded(true);
     }
   }, [activeTab, reportType]);
 
@@ -733,13 +739,65 @@ const Sidebar: React.FC<SidebarProps> = ({
                                       ডিডি স্যার রিটার্ণ
                                     </button>
 
-                                    {/* ৫. প্রাপ্ত পত্র */}
+                                    {/* ৫. প্রাপ্ত পত্র (Toggle) */}
                                     <button 
-                                      onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর')}
-                                      className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                      onClick={() => setIsReceivedLettersExpanded(!isReceivedLettersExpanded)}
+                                      className={`w-full flex items-center justify-between px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${isReceivedLettersExpanded || (reportType?.startsWith('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত') ?? false) ? 'text-cyan-400' : 'text-slate-500 hover:text-cyan-300'}`}
                                     >
-                                      প্রাপ্ত পত্র
+                                      <div className="flex items-center gap-1">
+                                        <span>প্রাপ্ত পত্র</span>
+                                      </div>
+                                      <ChevronDown size={6} className={`transition-transform duration-300 shrink-0 ${isReceivedLettersExpanded ? 'rotate-180' : ''}`} />
                                     </button>
+
+                                    <AnimatePresence>
+                                      {isReceivedLettersExpanded && (
+                                        <motion.div 
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                                          className="pl-1.5 py-1 space-y-1 overflow-hidden"
+                                        >
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            বিএসআর
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যপত্র)')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যপত্র)' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            দ্বিপক্ষীয় সভা (কার্যপত্র)
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যবিবরনী)')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যবিবরনী)' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            দ্বিপক্ষীয় সভা (কার্যবিবরনী)
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যপত্র)')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যপত্র)' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ত্রিপক্ষীয় সভা (কার্যপত্র)
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যবিবরনী)')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যবিবরনী)' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            ত্রিপক্ষীয় সভা (কার্যবিবরনী)
+                                          </button>
+                                          <button 
+                                            onClick={() => setActiveTab('return', null, 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র')}
+                                            className={`w-full text-left px-1.5 py-1 text-[9px] font-black transition-all border-l ml-0.5 rounded-r-md cursor-pointer whitespace-nowrap ${reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র' ? 'bg-blue-600 text-white border-blue-400' : 'text-slate-500 hover:text-white border-slate-700'}`}
+                                          >
+                                            অন্যান্য পত্র
+                                          </button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </motion.div>
                                 )}
                               </AnimatePresence>
