@@ -80,14 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [adminEmailInput, setAdminEmailInput] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [recoveredPassword, setRecoveredPassword] = useState<string | null>(null);
-  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
+  const [storedPassword, setStoredPassword] = useState('80093424JAma@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
-  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('websitetogather@gmail.com');
+  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('jamaluddinkh3424@gmail.com');
 
   // Gmail password reset states
   const [recoveryMethod, setRecoveryMethod] = useState<'question' | 'email'>('email');
-  const [recoveryEmail, setRecoveryEmail] = useState('websitetogather@gmail.com');
+  const [recoveryEmail, setRecoveryEmail] = useState('jamaluddinkh3424@gmail.com');
   const [resetOtpInput, setResetOtpInput] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [requestingOtp, setRequestingOtp] = useState(false);
@@ -116,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       setStoredRecoveryEmail(savedEmail);
       setRecoveryEmail(savedEmail);
     } else {
-      localStorage.setItem('ledger_admin_recovery_email_v1', 'websitetogather@gmail.com');
+      localStorage.setItem('ledger_admin_recovery_email_v1', 'jamaluddinkh3424@gmail.com');
     }
 
     // Intercept Password Reset URL details from query parameters
@@ -257,7 +257,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const inputEmail = adminEmailInput.trim().toLowerCase();
     const inputPassword = adminPassword.trim();
     
-    if (inputEmail === 'jamaluddinkh3424@gmail.com' && inputPassword === '80093424JAma@') {
+    if (inputEmail === 'jamaluddinkh3424@gmail.com' && (inputPassword === '80093424JAma@' || inputPassword === storedPassword)) {
       setIsAdmin(true);
       localStorage.setItem('ledger_admin_access_v1', 'true');
       localStorage.setItem('ledger_admin_email_v1', 'jamaluddinkh3424@gmail.com');

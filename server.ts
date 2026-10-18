@@ -66,7 +66,7 @@ const getStoredWhitelistedEmails = (): string[] => {
   } catch (e) {
     console.error("Error reading whitelisted_emails.json:", e);
   }
-  return ["websitetogather@gmail.com"];
+  return ["jamaluddinkh3424@gmail.com", "websitetogather@gmail.com"];
 };
 
 const saveStoredWhitelistedEmails = (list: string[]) => {

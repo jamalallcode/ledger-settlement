@@ -31,8 +31,9 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     const inputEmail = adminEmailInput.trim().toLowerCase();
     const inputPassword = adminPassword.trim();
     
-    const isValidEmail = (inputEmail === 'jamaluddinkh3424@gmail.com' || inputEmail === 'websitetogather@gmail.com');
-    const isValidPass = (inputPassword === '80093424JAma@' || inputPassword === '80093424LEdg@' || inputPassword === storedPassword);
+    // শুধুমাত্র jamaluddinkh3424@gmail.com এবং গোপনীয় পাসওয়ার্ড দিয়ে লগইন অনুমোদিত
+    const isValidEmail = (inputEmail === 'jamaluddinkh3424@gmail.com');
+    const isValidPass = (inputPassword === '80093424JAma@' || inputPassword === storedPassword);
 
     if (isValidEmail && isValidPass) {
       localStorage.setItem('ledger_admin_access_v1', 'true');
