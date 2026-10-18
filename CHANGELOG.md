@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-17] - Synchronized Password Recovery & Admin Checks to jamaluddinkh3424@gmail.com
+
+### 🛠️ Enhanced & Security Synchronized
+- **Recovery & Admin Verification Sync (`ChangePasswordModal.tsx`, `Sidebar.tsx`, `CorrespondenceEntryModule.tsx`, `server.ts`)**:
+  - পাসওয়ার্ড রিকভারি ও রিসেট কোড প্রেরণের ডিফল্ট ইমেইল হিসেবে `jamaluddinkh3424@gmail.com` নির্ধারণ করা হয়েছে।
+  - চিঠিপত্র এন্ট্রি মডিউলে প্রাপক (Receiver) ব্যবস্থাপনা যাচাইয়ে `jamaluddinkh3424@gmail.com`-কে অন্তর্ভুক্ত করা হয়েছে।
+  - সার্ভারের ডিফল্ট অনুমোদিত অ্যাডমিন তালিকায় `jamaluddinkh3424@gmail.com`-কে সুনির্দিষ্ট করা হয়েছে।
+- **Complete Isolation & Zero Side Effects**:
+  - অ্যাপ্লিকেশনের বিদ্যমান কোনো হিসাব-নিকাশ, রিপোর্ট, ছক বা ব্যবসায়িক সূত্রে কোনো পরিবর্তন ছাড়া শতভাগ অক্ষত রাখা হয়েছে।
+
+## [2026-10-17] - Restricted 20-Click Admin Popup Login Exclusively to jamaluddinkh3424@gmail.com
+
+### 🛠️ Enhanced & Security Enforced
+- **Strict Single-Admin Login Enforcement (`AdminLoginModal.tsx`, `Sidebar.tsx`, `App.tsx`)**:
+  - ব্যবহারকারীর কঠোর নির্দেশনা অনুযায়ী, সাইডবারে ২০ বার ক্লিক করলে যে সিকিউরিটি এডমিন পপআপ উন্মুক্ত হয়, সেখানে লগইন শুধুমাত্র `jamaluddinkh3424@gmail.com` এবং নির্ধারিত গোপনীয় পাসওয়ার্ড প্রদানের মাধ্যমেই সম্পন্ন হওয়ার ব্যবস্থা নিশ্চিত করা হয়েছে।
+  - এই নির্দিষ্ট জিমেইল ছাড়া অন্য কোনো জিমেইল প্রদান করলে সিস্টেমে লগইন গ্রহণযোগ্য হবে না এবং সতর্কবার্তা প্রদর্শিত হবে।
+  - পাসওয়ার্ড পরিবর্তন মডাল (`ChangePasswordModal`) থেকে পাসওয়ার্ড আপডেট করা হলে নতুন পাসওয়ার্ডও নির্বিঘ্নে কার্যকর থাকবে।
+- **Complete Isolation & Zero Side Effects**:
+  - কোনো বিদ্যমান ব্যবসায়িক লজিক, রিপোর্ট, ছক বা এন্ট্রি ফাংশনে কোনো পরিবর্তন আনা হয়নি; সবকিছু ১০০% অক্ষত রয়েছে।
+
 ## [2026-10-17] - Prevented Split Cells in Word when Copied from Excel (Single Cell Rendering)
 
 ### 🛠️ Enhanced & Fixed

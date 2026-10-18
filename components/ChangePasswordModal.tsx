@@ -11,12 +11,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
-  const [newEmail, setNewEmail] = useState('websitetogather@gmail.com');
+  const [newEmail, setNewEmail] = useState('jamaluddinkh3424@gmail.com');
   
-  const [storedPassword, setStoredPassword] = useState('80093424LEdg@');
+  const [storedPassword, setStoredPassword] = useState('80093424JAma@');
   const [storedRecoveryQuestion, setStoredRecoveryQuestion] = useState('আপনার প্রিয় রং কি?');
   const [storedRecoveryAnswer, setStoredRecoveryAnswer] = useState('সাদা');
-  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('websitetogather@gmail.com');
+  const [storedRecoveryEmail, setStoredRecoveryEmail] = useState('jamaluddinkh3424@gmail.com');
 
   useEffect(() => {
     const savedPass = localStorage.getItem('ledger_admin_password_v1');

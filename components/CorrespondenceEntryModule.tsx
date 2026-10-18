@@ -1126,7 +1126,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
 }) => {
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
   // Admin check for receiver management
-  const adminEmails = ['websitetogather@gmail.com'];
+  const adminEmails = ['jamaluddinkh3424@gmail.com', 'websitetogather@gmail.com'];
   const isReceiverAdmin = isAdmin || (userEmail && adminEmails.includes(userEmail));
 
   const [isSuccess, setIsSuccess] = useState(false);
