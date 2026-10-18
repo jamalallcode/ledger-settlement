@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2, GitFork, Layers, Mail } from 'lucide-react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2, GitFork, Layers } from 'lucide-react';
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -51,11 +51,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<'সকল' | 'এসএফআই' | 'নন এসএফআই'>('সকল');
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
-  const [isReceivedLettersDropdownOpen, setIsReceivedLettersDropdownOpen] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
-  const receivedLettersDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -67,9 +65,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       }
       if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
         setIsBranchDropdownOpen(false);
-      }
-      if (receivedLettersDropdownRef.current && !receivedLettersDropdownRef.current.contains(e.target as Node)) {
-        setIsReceivedLettersDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -285,120 +280,6 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
                 </div>
                 <div className="h-[2.5px] bg-[#1e3a8a]" />
               </div>
-            </div>
-
-            {/* প্রাপ্ত পত্র Dropdown Button (User Marked Red Box Location) */}
-            <div className="relative z-[5000] no-print shrink-0" ref={receivedLettersDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsReceivedLettersDropdownOpen(prev => !prev)}
-                className="flex items-center gap-1.5 px-3.5 h-[38px] bg-white hover:bg-slate-50 border border-slate-300 hover:border-blue-500 rounded-xl font-black text-xs text-slate-800 shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 cursor-pointer"
-                title="প্রাপ্ত পত্রের তালিকা"
-              >
-                <Mail size={14} className="text-blue-600 shrink-0" />
-                <span>প্রাপ্ত পত্র</span>
-                <ChevronDown size={13} className={`text-slate-600 transition-transform duration-200 ${isReceivedLettersDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isReceivedLettersDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl z-[5100] py-1.5 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3.5 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1 flex items-center justify-between">
-                    <span>প্রাপ্ত পত্রের তালিকা</span>
-                    <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">রিটার্ন</span>
-                  </div>
-
-                  {/* ১. বিএসআর (সক্রিয়) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-900 hover:bg-blue-50 hover:text-blue-700 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform" />
-                      <span>বিএসআর</span>
-                    </div>
-                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">সক্রিয়</span>
-                  </button>
-
-                  {/* ২. দ্বিপক্ষীয় সভা (কার্যপত্র) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <span>দ্বিপক্ষীয় সভা (কার্যপত্র)</span>
-                    </div>
-                  </button>
-
-                  {/* ৩. দ্বিপক্ষীয় সভা (কার্যবিবরনী) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <span>দ্বিপক্ষীয় সভা (কার্যবিবরনী)</span>
-                    </div>
-                  </button>
-
-                  {/* ৪. ত্রিপক্ষীয় সভা (কার্যপত্র) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <span>ত্রিপক্ষীয় সভা (কার্যপত্র)</span>
-                    </div>
-                  </button>
-
-                  {/* ৫. ত্রিপক্ষীয় সভা (কার্যবিবরনী) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <span>ত্রিপক্ষীয় সভা (কার্যবিবরনী)</span>
-                    </div>
-                  </button>
-
-                  {/* ৬. অন্যান্য পত্র */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedReportType('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর');
-                      setIsReceivedLettersDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <span>অন্যান্য পত্র</span>
-                    </div>
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 

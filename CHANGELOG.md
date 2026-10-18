@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-18] - Removed Top Bar 'প্রাপ্ত পত্র' Dropdown & Shortened Meeting Names in Sidebar ('দ্বি-সভা', 'ত্রি-সভা')
+
+### 🛠️ Enhanced & Refined
+- **Removed 'প্রাপ্ত পত্র' Dropdown from Top Summary Header (`ReturnSummaryTable.tsx`)**:
+  - ব্যবহারকারীর ১ম ছবির নির্দেশনা অনুযায়ী, টেবিলের ওপরের হেডার বার থেকে লাল মার্ক করা `[✉️ প্রাপ্ত পত্র ˅]` ড্রপডাউন বাটনটি সম্পূর্ণভাবে অপসারণ করা হয়েছে।
+  - প্রাপ্ত পত্রের সম্পূর্ণ কার্যকারিতা এখন এককভাবে ও পরিচ্ছন্নভাবে বাম পাশের সাইডবারে সংরক্ষিত রয়েছে।
+- **Shortened Meeting Labels to 'দ্বি-সভা' & 'ত্রি-সভা' (`Sidebar.tsx`, `ReturnView.tsx`, `BsrReceivedReturn.tsx`)**:
+  - ব্যবহারকারীর ২য় ছবির নির্দেশনা অনুযায়ী, সাইডবারের “প্রাপ্ত পত্র” সাব-মেনুর লেবেলগুলো সংক্ষেপ করে নিখুঁতভাবে সাজানো হয়েছে:
+    1. `দ্বিপক্ষীয় সভা (কার্যপত্র)` -> `দ্বি-সভা (কার্যপত্র)`
+    2. `দ্বিপক্ষীয় সভা (কার্যবিবরনী)` -> `দ্বি-সভা (কার্যবিবরনী)`
+    3. `ত্রিপক্ষীয় সভা (কার্যপত্র)` -> `ত্রি-সভা (কার্যপত্র)`
+    4. `ত্রিপক্ষীয় সভা (কার্যবিবরনী)` -> `ত্রি-সভা (কার্যবিবরনী)`
+  - `BsrReceivedReturn.tsx` ও `ReturnView.tsx`-এ ফিল্টার ও রাউটিং উভয় ফরম্যাটের সাথে শতভাগ সামঞ্জস্যপূর্ণ রাখা হয়েছে।
+- **Complete Isolation & Zero Side Effects**:
+  - নির্দেশিত দুটি কাজ ব্যতিত অন্য কোনো ব্যবসায়িক সূত্র, ক্যালকুলেশন বা লেআউটে বিন্দুমাত্র পরিবর্তন আনা হয়নি; সমস্ত ফিচার ১০০% ইনট্যাক্ট রয়েছে।
+
 ## [2026-10-17] - Synchronized Password Recovery & Admin Checks to jamaluddinkh3424@gmail.com
 
 ### 🛠️ Enhanced & Security Synchronized

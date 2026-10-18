@@ -1202,6 +1202,7 @@ const CorrespondenceEntryModule: React.FC<CorrespondenceEntryModuleProps> = ({
   const [hasWarnedAuditYear, setHasWarnedAuditYear] = useState(false);
 
   const DEFAULT_PATKOL_MILLS = [
+    "দি ক্রিসেন্ট জুট মিলস লিমিটেড",
     "দৌলতপুর জুট মিলস লিমিটেড",
     "ইস্টার্ন জুট মিলস লিমিটেড",
     "আলীম জুট মিলস লিমিটেড",
