@@ -1821,6 +1821,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত পত্র' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বি-সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বি-সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রি-সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রি-সভা (কার্যবিবরনী)' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যপত্র)' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যবিবরনী)' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যপত্র)' ||
@@ -1828,10 +1832,10 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র'
   ) {
     let initialType = 'বিএসআর';
-    if (selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বিপক্ষীয় সভা (কার্যপত্র)';
-    else if (selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'দ্বিপক্ষীয় সভা (কার্যবিবরনী)';
-    else if (selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'ত্রিপক্ষীয় সভা (কার্যপত্র)';
-    else if (selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'ত্রিপক্ষীয় সভা (কার্যবিবরনী)';
+    if (selectedReportType.includes('দ্বি-সভা (কার্যপত্র)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বি-সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('দ্বি-সভা (কার্যবিবরনী)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'দ্বি-সভা (কার্যবিবরনী)';
+    else if (selectedReportType.includes('ত্রি-সভা (কার্যপত্র)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'ত্রি-সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('ত্রি-সভা (কার্যবিবরনী)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'ত্রি-সভা (কার্যবিবরনী)';
     else if (selectedReportType.includes('অন্যান্য পত্র')) initialType = 'অন্যান্য পত্র';
 
     renderedContent = (

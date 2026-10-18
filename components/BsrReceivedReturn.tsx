@@ -132,14 +132,194 @@ const getEntryMinistry = (entry: any): string => {
   return 'অন্যান্য মন্ত্রণালয়';
 };
 
-const getAuditEntityAndBranch = (entry: any, settlementEntries: any[] = []): { entityLine: string; branchLine: string } => {
+const KNOWN_ENTITIES_LIST = [
+  'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক লি.',
+  'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক পিএলসি',
+  'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক',
+  'ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ',
+  'আইসিবি',
+  'আনসার ভিডিপি উন্নয়ন ব্যাংক লি.',
+  'আনসার ভিডিপি উন্নয়ন ব্যাংক',
+  'সাধারণ বীমা কর্পোরেশন',
+  'জীবন বীমা কর্পোরেশন',
+  'গৃহনির্মাণ ঋণদান সংস্থা',
+  'প্রবাসী কল্যাণ ব্যাংক',
+  'বাংলাদেশ কৃষি ব্যাংক',
+  'রূপালী ব্যাংক পিএলসি',
+  'রূপালী ব্যাংক লি.',
+  'রূপালী ব্যাংক লিমিটেড',
+  'রূপালী ব্যাংক',
+  'সোনালী ব্যাংক পিএলসি',
+  'সোনালী ব্যাংক লি.',
+  'সোনালী ব্যাংক লিমিটেড',
+  'সোনালী ব্যাংক',
+  'জনতা ব্যাংক পিএলসি',
+  'জনতা ব্যাংক লি.',
+  'জনতা ব্যাংক লিমিটেড',
+  'জনতা ব্যাংক',
+  'অগ্রণী ব্যাংক পিএলসি',
+  'অগ্রণী ব্যাংক লি.',
+  'অগ্রণী ব্যাংক লিমিটেড',
+  'অগ্রণী ব্যাংক',
+  'বেসিক ব্যাংক লি.',
+  'বেসিক ব্যাংক লিমিটেড',
+  'বেসিক ব্যাংক',
+  'বাংলাদেশ ব্যাংক',
+  'কর্মসংস্থান ব্যাংক',
+  'বাংলাদেশ চিনি ও খাদ্য শিল্প কর্পোরেশন',
+  'চিনি ও খাদ্য সংস্থা',
+  'ক্ষুদ্র ও কুটির শিল্প',
+  'বিসিক',
+  'বিটাক',
+  'রসায়ন শিল্প',
+  'বিসিআইসি',
+  'বাংলাদেশ বিমান',
+  'বিমান বাংলাদেশ এয়ারলাইন্স',
+  'পর্যটন কর্পোরেশন',
+  'টিসিবি',
+  'আমদানি ও রপ্তানি',
+  'পাটকল সংস্থা',
+  'পাট সংস্থা',
+  'বিজেএমসি',
+  'বস্ত্রকল সংস্থা',
+  'বিটিএমসি',
+  'রেশম বোর্ড'
+];
+
+const KNOWN_MILLS_LIST = [
+  'দি ক্রিসেন্ট জুট মিলস লিমিটেড',
+  'দি ক্রিসেন্ট জুট মিলস্ লিমিটেড',
+  'দি ক্রিসেন্ট জুট মিলস্ লিঃ',
+  'দি ক্রিসেন্ট জুট মিলস লিঃ',
+  'দি ক্রিসেন্ট জুট মিলস',
+  'দি ক্রিসেন্ট জুট মিল',
+  'দৌলতপুর জুট মিলস লিমিটেড',
+  'দৌলতপুর জুট মিলস',
+  'দৌলতপুর জুট মিল',
+  'ইস্টার্ন জুট মিলস লিমিটেড',
+  'ইস্টার্ন জুট মিলস',
+  'ইস্টার্ন জুট মিল',
+  'আলীম জুট মিলস লিমিটেড',
+  'আলীম জুট মিলস',
+  'আলীম জুট মিল',
+  'স্টার সুট মিলস লিমিটেড',
+  'স্টার জুট মিলস লিমিটেড',
+  'স্টার জুট মিলস',
+  'স্টার জুট মিল',
+  'যশোর জুট মিলস লিমিটেড',
+  'যশোর জুট মিলস',
+  'যশোর জুট মিল',
+  'প্লাটিনাম জুট মিলস লিমিটেড',
+  'প্লাটিনাম জুট মিলস',
+  'প্লাটিনাম জুট মিল',
+  'প্লাটিনাম জুবিলী জুট মিলস',
+  'প্লাটিনাম জুবিলী জুট মিল',
+  'ক্রিসেন্ট জুট মিলস লিমিটেড',
+  'ক্রিসেন্ট জুট মিলস্ লিমিটেড',
+  'ক্রিসেন্ট জুট মিলস্ লিঃ',
+  'ক্রিসেন্ট জুট মিলস লিঃ',
+  'ক্রিসেন্ট জুট মিলস',
+  'ক্রিসেন্ট জুট মিল',
+  'কার্পেটিং জুট মিলস লিমিটেড',
+  'কার্পেটিং জুট মিলস',
+  'কার্পেটিং জুট মিল',
+  'জাতীয় পাটকল',
+  'জনতা জুট মিলস',
+  'আদমজী জুট মিলস',
+  'রাজশাহী জুট মিলস',
+  'কুষ্টিয়া সুগার মিলস',
+  'মোবারকগঞ্জ সুগার মিলস'
+];
+
+const BANK_OR_FI_NAMES = [
+  'বাংলাদেশ ڈویلপমেন্ট ব্যাংক লি.',
+  'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক পিএলসি',
+  'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক',
+  'ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ',
+  'আইসিবি',
+  'আনসার ভিডিপি উন্নয়ন ব্যাংক লি.',
+  'আনসার ভিডিপি উন্নয়ন ব্যাংক',
+  'সাধারণ বীমা কর্পোরেশন',
+  'জীবন বীমা কর্পোরেশন',
+  'গৃহনির্মাণ ঋণদান সংস্থা',
+  'প্রবাসী কল্যাণ ব্যাংক',
+  'বাংলাদেশ কৃষি ব্যাংক',
+  'রূপালী ব্যাংক পিএলসি',
+  'রূপালী ব্যাংক লি.',
+  'রূপালী ব্যাংক লিমিটেড',
+  'রূপালী ব্যাংক',
+  'সোনালী ব্যাংক পিএলসি',
+  'সোনালী ব্যাংক লি.',
+  'সোনালী ব্যাংক লিমিটেড',
+  'সোনালী ব্যাংক',
+  'জনতা ব্যাংক পিএলসি',
+  'জনতা ব্যাংক লি.',
+  'জনতা ব্যাংক লিমিটেড',
+  'জনতা ব্যাংক',
+  'অগ্রণী ব্যাংক পিএলসি',
+  'অগ্রণী ব্যাংক লি.',
+  'অগ্রণী ব্যাংক লিমিটেড',
+  'অগ্রণী ব্যাংক',
+  'বেসিক ব্যাংক লি.',
+  'বেসিক ব্যাংক লিমিটেড',
+  'বেসিক ব্যাংক',
+  'বাংলাদেশ ব্যাংক',
+  'কর্মসংস্থান ব্যাংক'
+];
+
+const BANK_ACRONYM_MAP: Record<string, string> = {
+  'বিকেবি': 'বাংলাদেশ কৃষি ব্যাংক',
+  'বি.কে.বি': 'বাংলাদেশ কৃষি ব্যাংক',
+  'বি.কে.বি.': 'বাংলাদেশ কৃষি ব্যাংক',
+  'bkb': 'বাংলাদেশ কৃষি ব্যাংক',
+  'কৃষি ব্যাংক': 'বাংলাদেশ কৃষি ব্যাংক',
+  'রাকাব': 'রাজশাহী কৃষি উন্নয়ন ব্যাংক',
+  'রা.কা.ব': 'রাজশাহী কৃষি উন্নয়ন ব্যাংক',
+  'rakub': 'রাজশাহী কৃষি উন্নয়ন ব্যাংক',
+  'বিডিবিএল': 'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক পিএলসি',
+  'বি.ডি.বি.এল': 'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক পিএলসি',
+  'bdbl': 'বাংলাদেশ ডেভেলপমেন্ট ব্যাংক পিএলসি',
+  'আইসিবি': 'ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ',
+  'icb': 'ইনভেস্টমেন্ট কর্পোরেশন অব বাংলাদেশ',
+  'পিকেবি': 'প্রবাসী কল্যাণ ব্যাংক',
+  'pkb': 'প্রবাসী কল্যাণ ব্যাংক',
+  'বেসিক ব্যাংক': 'বেসিক ব্যাংক লি.',
+  'বেসিক': 'বেসিক ব্যাংক লি.',
+  'basic': 'বেসিক ব্যাংক লি.',
+  'সোনালী ব্যাংক': 'সোনালী ব্যাংক পিএলসি',
+  'এসবি': 'সোনালী ব্যাংক পিএলসি',
+  'রূপালী ব্যাংক': 'রূপালী ব্যাংক পিএলসি',
+  'রুপালী ব্যাংক': 'রূপালী ব্যাংক পিএলসি',
+  'আরবি': 'রূপালী ব্যাংক পিএলসি',
+  'জনতা ব্যাংক': 'জনতা ব্যাংক পিএলসি',
+  'জেবি': 'জনতা ব্যাংক পিএলসি',
+  'অগ্রণী ব্যাংক': 'অগ্রণী ব্যাংক পিএলসি',
+  'অগ্রনী ব্যাংক': 'অগ্রণী ব্যাংক পিএলসি',
+  'এবি': 'অগ্রণী ব্যাংক পিএলসি'
+};
+
+const getAuditEntityAndBranch = (entry: any, settlementEntries: any[] = []): { entityLine: string; branchLine: string; lines: string[] } => {
   let ent = (entry.entityName || '').trim();
   let yr = (entry.auditYear || '').trim();
   let branch = (entry.branchName || entry.branch || '').trim();
   const desc = (entry.description || '').trim();
+  const ministry = (entry.ministryName || entry.ministry || '').trim();
 
-  // Try finding in linked settlement entry if fields are missing
-  if ((!branch || !ent || !yr) && settlementEntries && settlementEntries.length > 0) {
+  // ১. পত্রের বিবরণ (description)-এ যদি অডিট সাল থাকে (যেমন: (২০০৫-১৩)), তবে সেটিই এই পত্রের মূল অডিট সাল
+  const yrInDesc = desc.match(/\(([০-৯0-9\s\-–—/হতেথেকেto]+[০-৯0-9]+)\)/);
+  if (yrInDesc) {
+    yr = yrInDesc[1].trim();
+  } else if (!yr) {
+    const fullText = `${desc} ${branch} ${ent}`;
+    const yrMatch = fullText.match(/\(([০-৯0-9\s\-–—/হতেথেকেto]+[০-৯0-9]+)\)/);
+    if (yrMatch) {
+      yr = yrMatch[1].trim();
+    }
+  }
+
+  // ২. settlementEntries হতে তথ্য নেওয়া যাবে শুধুমাত্র যদি বিবরণ বা মূল তথ্য অনুপস্থিত থাকে এবং নির্দিষ্ট আইডি মিল থাকে
+  // কখনোই ডায়েরি নং একা দিয়ে তথ্য ওভাররাইট করা যাবে না (কারণ ডায়েরি নং প্রতি বছর পুনরাবৃত্তি হয় এবং অন্য পত্রের তথ্য ঢুকিয়ে দেয়)
+  if (!desc && (!branch || !ent || !yr) && settlementEntries && settlementEntries.length > 0) {
     const entryLetterDigits = toEnglishDigits(entry.letterNo || '').replace(/\D/g, '');
     const entryDiaryDigits = toEnglishDigits(entry.diaryNo || '').replace(/\D/g, '');
 
@@ -147,20 +327,12 @@ const getAuditEntityAndBranch = (entry: any, settlementEntries: any[] = []): { e
       if (!s) return false;
       if (s.id && (s.id === entry.correspondenceId || s.correspondenceId === entry.id || s.letterId === entry.id)) return true;
       if (entry.id && s.correspondenceId === entry.id) return true;
+      if (entry.settlementId && s.id === entry.settlementId) return true;
       
       const sLetterDigits = toEnglishDigits(s.letterNoDate || s.letterNo || '').replace(/\D/g, '');
-      if (entryLetterDigits && sLetterDigits && entryLetterDigits.length >= 2) {
-        if (sLetterDigits.startsWith(entryLetterDigits) || sLetterDigits.includes(entryLetterDigits)) {
-          return true;
-        }
-      }
-      if (entryDiaryDigits && s.diaryNo) {
-        const sDiaryDigits = toEnglishDigits(s.diaryNo).replace(/\D/g, '');
-        if (sDiaryDigits && sDiaryDigits === entryDiaryDigits) return true;
-      }
-      // Match by entity name
-      if (ent && s.entityName && robustNormalize(s.entityName) === robustNormalize(ent)) {
-        if (!yr || !s.auditYear || robustNormalize(s.auditYear) === robustNormalize(yr)) {
+      const sDiaryDigits = toEnglishDigits(s.diaryNo || '').replace(/\D/g, '');
+      if (entryLetterDigits && sLetterDigits && entryDiaryDigits && sDiaryDigits) {
+        if (entryLetterDigits === sLetterDigits && entryDiaryDigits === sDiaryDigits) {
           return true;
         }
       }
@@ -174,72 +346,304 @@ const getAuditEntityAndBranch = (entry: any, settlementEntries: any[] = []): { e
     }
   }
 
-  // If no entityName, check if desc or branch contains known entity
-  if (!ent && desc) {
-    for (const [_, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
-      const found = entities.find(e => desc.includes(e));
-      if (found) {
-        ent = found;
-        break;
+  // ৩. Build full mills list (built-in + localStorage custom mills)
+  const millsList = [...KNOWN_MILLS_LIST];
+  try {
+    const savedCustom = localStorage.getItem('custom_patkol_mills');
+    if (savedCustom) {
+      const parsed = JSON.parse(savedCustom);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((m: any) => {
+          if (m && typeof m === 'string' && !millsList.includes(m.trim())) {
+            millsList.unshift(m.trim());
+          }
+        });
       }
     }
-  }
-  if (!ent && branch) {
-    for (const [_, entities] of Object.entries(MINISTRY_ENTITY_MAP)) {
-      const found = entities.find(e => branch.includes(e));
-      if (found) {
-        ent = found;
-        break;
-      }
-    }
-  }
+  } catch (_) {}
 
-  // If yr not found, check if it's in desc or branch, e.g. (২০০৯-১৬) or (২০১২-১৩)
-  if (!yr && desc) {
-    const yrMatch = desc.match(/\(([০-৯0-9]{4}\s*[-–—]\s*[০-৯0-9]{2,4})\)/);
-    if (yrMatch) {
-      yr = yrMatch[1].trim();
-    }
-  }
-  if (!yr && branch) {
-    const yrMatch = branch.match(/\(([০-৯0-9]{4}\s*[-–—]\s*[০-৯0-9]{2,4})\)/);
-    if (yrMatch) {
-      yr = yrMatch[1].trim();
-    }
-  }
-
-  // Clean year string (remove surrounding parentheses if already present)
+  // Clean year string and format to Bengali digits
   const cleanYr = yr.replace(/^\(/, '').replace(/\)$/, '').trim();
-  const yearPart = cleanYr ? ` (${toBengaliDigits(cleanYr)})` : '';
+  const bengaliYr = cleanYr ? toBengaliDigits(cleanYr) : '';
+  const yearSuffix = bengaliYr ? ` (${bengaliYr})` : '';
 
-  // Determine branchLine:
-  let branchLine = '';
-  if (branch && branch !== ent) {
-    branchLine = branch;
-  } else if (desc && desc !== ent && desc !== `${ent}${yearPart}`) {
-    branchLine = desc;
-  }
+  // 4. Check whether this is a Jute/Patkol entry
+  const isDefinitelyBank = 
+    ministry.includes('আর্থিক প্রতিষ্ঠান') || 
+    ministry.includes('অর্থ বিভাগ') ||
+    Object.keys(BANK_ACRONYM_MAP).some(k => 
+      new RegExp(`(?:^|[\\s,，(])${k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(?:$|[\\s,，)])`, 'i').test(`${desc} ${ent} ${branch}`)
+    ) ||
+    BANK_OR_FI_NAMES.some(b => ent.includes(b) || desc.includes(b));
 
-  // Strip leading entity or year from branchLine if present
-  if (branchLine && ent && branchLine.includes(ent)) {
-    const regex = new RegExp(`^${ent}\\s*(\\([^)]*\\))?\\s*[,，-]?\\s*`, 'i');
-    const stripped = branchLine.replace(regex, '').trim();
-    if (stripped) {
-      branchLine = stripped;
+  const isJuteOrPatkol = !isDefinitelyBank && (
+    ministry.includes('পাট') || 
+    ministry.includes('বস্ত্র') || 
+    ent.includes('পাট') || 
+    ent.includes('বিজেএমসি') || 
+    millsList.some(m => desc.includes(m) || ent.includes(m) || branch.includes(m)) ||
+    /(?:জুট\s*মিল|টেক্সটাইল\s*মিল|পাটকল)/i.test(`${desc} ${branch} ${ent}`)
+  );
+
+  if (isJuteOrPatkol) {
+    // ১ম লাইন: এনটিটি (চিঠিপত্র এন্ট্রিতে পাটকল সংস্থা থাকলে তা পরিবর্তিত হয়ে "বিজেএমসি", পাট সংস্থা থাকলে "পাট সংস্থা")
+    let line1Entity = 'বিজেএমসি';
+    if (ent.includes('পাট সংস্থা')) {
+      line1Entity = 'পাট সংস্থা';
+    } else if (ent && !ent.includes('পাটকল সংস্থা')) {
+      line1Entity = ent.split(',')[0].trim() || 'বিজেএমসি';
     }
+    // যদি পাটকল সংস্থা বা বিজেএমসি হয়
+    if (line1Entity === 'পাটকল সংস্থা') line1Entity = 'বিজেএমসি';
+
+    // ২য় লাইন: মিলের নাম + নিরীক্ষা সাল (যেমন: দি ক্রিসেন্ট জুট মিলস লিমিটেড (২০১৮-১৯),)
+    const sortedMills = [...millsList].sort((a, b) => b.length - a.length);
+    let foundMill = sortedMills.find(m => desc.includes(m) || ent.includes(m) || branch.includes(m));
+    if (!foundMill) {
+      const millMatch = (desc || branch || ent).match(/((?:দি\s+|মেসার্স\s+)?[^\s,，()]+(?:\s+[^\s,，()]+)?\s+(?:জুট মিল(?:স|স্)?(?: লিমিটেড| লিঃ)?|টেক্সটাইল মিল(?:স|স্)?|সুগার মিল(?:স|স্)?))/);
+      if (millMatch) {
+        foundMill = millMatch[1].trim();
+      }
+    }
+    // যদি মূল টেক্সটে মিলের নামের পূর্বে "দি" বা "মেসার্স" থাকে (যেমন: "দি ক্রিসেন্ট জুট মিলস লিমিটেড"), তবে সেটিও মিলের নামের অবিচ্ছেদ্য অংশ হিসেবে যুক্ত হবে
+    if (foundMill && !foundMill.startsWith('দি ') && !foundMill.startsWith('মেসার্স ')) {
+      const srcText = `${desc} ${branch} ${ent}`;
+      const prefixRegex = new RegExp(`(?:^|\\s)(দি|মেসার্স)\\s+${foundMill.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'i');
+      const prefixMatch = srcText.match(prefixRegex);
+      if (prefixMatch) {
+        foundMill = `${prefixMatch[1]} ${foundMill}`;
+      }
+    }
+    const millName = foundMill || (branch && branch !== ent ? branch : 'জুট মিলস');
+
+    // ৩য় লাইন: মিলের পরে যদি কোন লেখা থাকে কেবল সেটিই আসবে। মিলের পরে যদি কোন লেখা না থাকে তাহলে খালিই থাকবে।
+    // মিলের নাম বা অডিট সাল কোনোভাবেই ৩য় লাইনে ২বার আসবে না।
+    let rawRemaining = `${desc} ${branch && branch !== desc ? branch : ''}`.trim();
+
+    // ১. অডিট সাল সংক্রান্ত অংশ বাদ দেওয়া
+    rawRemaining = rawRemaining
+      .replace(/\s*\([০-৯0-9\s\-–—/হতেথেকেto]+[০-৯0-9]+\)/g, ' ')
+      .trim();
+    if (cleanYr) {
+      rawRemaining = rawRemaining
+        .replace(new RegExp(`\\s*\\(?${cleanYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)?`, 'g'), ' ')
+        .trim();
+    }
+    if (bengaliYr) {
+      rawRemaining = rawRemaining
+        .replace(new RegExp(`\\s*\\(?${bengaliYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)?`, 'g'), ' ')
+        .trim();
+    }
+
+    // ২. এনটিটি বা মন্ত্রণালয় সম্পর্কিত শব্দ বাদ দেওয়া
+    rawRemaining = rawRemaining
+      .replace(/(?:বাংলাদেশ\s+)?পাটকল\s+(?:সংস্থা|কর্পোরেশন)/gi, ' ')
+      .replace(/বিজেএমসি(?:['’]র|র)?/gi, ' ')
+      .replace(/পাট\s+সংস্থা/gi, ' ')
+      .replace(/বস্ত্র\s+ও\s+পাট\s+মন্ত্রণালয়/gi, ' ')
+      .trim();
+
+    // ৩. মিলের নাম বা মিলের অংশগুলো ৩য় লাইন থেকে বাদ দেওয়া (যেন কোনো মিলের নাম ২বার না আসে)
+    if (foundMill) {
+      rawRemaining = rawRemaining
+        .replace(new RegExp(foundMill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
+        .trim();
+    }
+    if (millName) {
+      rawRemaining = rawRemaining
+        .replace(new RegExp(millName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
+        .trim();
+    }
+    sortedMills.forEach(m => {
+      if (rawRemaining.includes(m)) {
+        rawRemaining = rawRemaining.replace(new RegExp(m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ').trim();
+      }
+    });
+
+    // অতিরিক্ত সাধারণ মিল শব্দ ও উপসর্গ থাকলে পরিষ্কার করা
+    rawRemaining = rawRemaining
+      .replace(/(?:দি\s+|মেসার্স\s+)?(?:[^\s,，()]+(?:\s+[^\s,，()]+)?\s+)?(?:জুট মিল(?:স|স্)?(?: লিমিটেড| লিঃ)?|টেক্সটাইল মিল(?:স|স্)?|সুগার মিল(?:স|স্)?)/gi, ' ')
+      .replace(/\b(?:জুট মিলস লিমিটেড|জুট মিলস্ লিমিটেড|জুট মিলস|জুট মিল|লিমিটেড|লিঃ|পিএলসি|মেসার্স|দি)\b/gi, ' ')
+      .replace(/^(?:দি|মেসার্স)\s+/gi, ' ')
+      .replace(/\s+(?:দি|মেসার্স)$/gi, ' ')
+      .trim();
+
+    // বিরামচিহ্ন পরিষ্কার করা
+    rawRemaining = rawRemaining
+      .replace(/^[,\s।\-–—:;，()]+/g, '')
+      .replace(/[,\s।\-–—:;，()]+$/g, '')
+      .trim();
+
+    // যদি অবশিষ্ট অংশ শুধু মিলের নাম, এনটিটি, 'দি', 'মেসার্স' বা ফাঁকা হয় তবে ৩য় লাইন খালি থাকবে
+    if (
+      rawRemaining === millName || 
+      rawRemaining === line1Entity || 
+      rawRemaining === 'জুট মিলস' || 
+      rawRemaining === 'দি' ||
+      rawRemaining === 'মেসার্স' ||
+      rawRemaining.length <= 2
+    ) {
+      rawRemaining = '';
+    }
+
+    const line3Desc = rawRemaining;
+    const line3 = line3Desc ? `${line3Desc}${yearSuffix}` : (yearSuffix ? yearSuffix.trim() : '');
+
+    const lines: string[] = [];
+    lines.push(`${line1Entity},`);
+    if (line3) {
+      lines.push(`${millName},`);
+      lines.push(line3);
+    } else {
+      lines.push(millName);
+    }
+
+    return {
+      entityLine: lines[0] || '',
+      branchLine: lines.slice(1).join(' '),
+      lines
+    };
   }
 
-  // Remove duplicate year parentheses from branchLine if present
-  if (cleanYr && branchLine) {
-    branchLine = branchLine
-      .replace(new RegExp(`\\s*\\(${cleanYr}\\)`, 'g'), '')
-      .replace(new RegExp(`\\s*\\(${toBengaliDigits(cleanYr)}\\)`, 'g'), '')
+  // 5. Check whether this is a Bank / Financial Institution entry
+  const isBankOrFI = 
+    ministry.includes('আর্থিক প্রতিষ্ঠান') || 
+    ministry.includes('অর্থ বিভাগ') ||
+    Object.keys(BANK_ACRONYM_MAP).some(k => 
+      new RegExp(`(?:^|[\\s,，(])${k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(?:$|[\\s,，)])`, 'i').test(`${desc} ${ent} ${branch}`)
+    ) ||
+    BANK_OR_FI_NAMES.some(b => ent.includes(b) || desc.includes(b) || branch.includes(b));
+
+  if (isBankOrFI) {
+    // ১ম লাইন: আর্থিক প্রতিষ্ঠান,
+    const line1 = 'আর্থিক প্রতিষ্ঠান,';
+
+    // ২য় লাইন: ব্যাংকের নাম ও নিরীক্ষা সাল (যেমন: রূপালী ব্যাংক পিএলসি (২০০৫-১২ হতে ২০১৭-১৮),)
+    const sortedBankNames = [...BANK_OR_FI_NAMES].sort((a, b) => b.length - a.length);
+    let matchedBank = sortedBankNames.find(b => ent.includes(b) || desc.includes(b) || branch.includes(b));
+
+    // Check bank acronyms / abbreviations (e.g. বিকেবি -> বাংলাদেশ কৃষি ব্যাংক)
+    if (!matchedBank) {
+      const srcText = `${desc} ${ent} ${branch}`;
+      for (const [acronym, fullName] of Object.entries(BANK_ACRONYM_MAP)) {
+        const regex = new RegExp(`(?:^|[\\s,，(])${acronym.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(?:$|[\\s,，)])`, 'i');
+        if (regex.test(srcText)) {
+          matchedBank = fullName;
+          break;
+        }
+      }
+    }
+    if (!matchedBank) {
+      matchedBank = ent.split(',')[0].trim() || 'ব্যাংক';
+    }
+
+    // ৩য় লাইন: সংশ্লিষ্ট শাখার নাম (যেমন: বিভাগীয় কাযালয়, বরিশাল এর আওতাধীন গৌরনদী শাখা, বরিশাল)
+    // ব্যাংকের নাম বা সাল ৩য় লাইনে ২বার আসবে না
+    let rawBranch = (branch || '').trim();
+    if (!rawBranch && ent && ent !== matchedBank && !BANK_OR_FI_NAMES.some(b => ent === b)) {
+      rawBranch = ent.replace(matchedBank, '').trim();
+    }
+    if (!rawBranch && desc && desc !== matchedBank) {
+      rawBranch = desc;
+    }
+
+    // সাল বাদ দেওয়া
+    rawBranch = rawBranch
+      .replace(/\s*\([০-৯0-9\s\-–—/হতেথেকেto]+[০-৯0-9]+\)/g, ' ')
+      .trim();
+    if (cleanYr) {
+      rawBranch = rawBranch
+        .replace(new RegExp(`\\s*\\(?${cleanYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)?`, 'g'), ' ')
+        .trim();
+    }
+    if (bengaliYr) {
+      rawBranch = rawBranch
+        .replace(new RegExp(`\\s*\\(?${bengaliYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)?`, 'g'), ' ')
+        .trim();
+    }
+
+    // ব্যাংকের নাম ও আর্থিক প্রতিষ্ঠান সংক্রান্ত শব্দ মুছে ফেলা
+    if (matchedBank) {
+      rawBranch = rawBranch
+        .replace(new RegExp(matchedBank.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ')
+        .trim();
+    }
+    sortedBankNames.forEach(b => {
+      if (rawBranch.includes(b)) {
+        rawBranch = rawBranch.replace(new RegExp(b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ').trim();
+      }
+    });
+
+    // ব্যাংক এক্রোনিম (যেমন: বিকেবি) মুছে ফেলা
+    Object.keys(BANK_ACRONYM_MAP).forEach(acronym => {
+      const regex = new RegExp(`(?:^|[\\s,，(])${acronym.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}(?:$|[\\s,，)])`, 'gi');
+      rawBranch = rawBranch.replace(regex, ' ').trim();
+    });
+
+    rawBranch = rawBranch
+      .replace(/(?:আর্থিক\s+প্রতিষ্ঠান|ব্যাংক\s+ও\s+আর্থিক\s+প্রতিষ্ঠান|অর্থ\s+মন্ত্রণালয়)/gi, ' ')
+      .replace(/\b(?:লিমিটেড|লিঃ|পিএলসি)\b/gi, ' ')
+      .replace(/^[,\s।\-–—:;，()]+/g, '')
+      .replace(/[,\s।\-–—:;，()]+$/g, '')
+      .replace(/^এর\s+/, '')
+      .trim();
+
+    if (rawBranch === matchedBank || rawBranch === 'আর্থিক প্রতিষ্ঠান' || rawBranch.length <= 1) {
+      rawBranch = '';
+    }
+
+    const branchText = rawBranch;
+    const line3 = branchText ? `${branchText}${yearSuffix}` : (yearSuffix ? yearSuffix.trim() : '');
+
+    const lines: string[] = [];
+    lines.push(line1);
+    if (line3) {
+      lines.push(`${matchedBank},`);
+      lines.push(line3);
+    } else {
+      lines.push(matchedBank);
+    }
+
+    return {
+      entityLine: lines[0] || '',
+      branchLine: lines.slice(1).join(' '),
+      lines
+    };
+  }
+
+  // 6. General Entities (অন্যান্য সংস্থা/মন্ত্রণালয়)
+  let generalEntity = ent.split(',')[0].trim() || ministry || 'প্রতিষ্ঠান';
+  let generalBranch = branch || ent.replace(generalEntity, '').replace(/^[,，\-–\s]+/, '').trim() || (desc !== generalEntity ? desc : '');
+  
+  if (cleanYr && generalBranch) {
+    generalBranch = generalBranch
+      .replace(new RegExp(`\\s*\\(${cleanYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), ' ')
+      .replace(new RegExp(`\\s*\\(${bengaliYr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), ' ')
+      .replace(/\s*\([০-৯0-9\s\-–—/হতেথেকেto]+[০-৯0-9]+\)/g, ' ')
       .trim();
   }
+  if (generalEntity && generalBranch) {
+    generalBranch = generalBranch.replace(new RegExp(generalEntity.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ').trim();
+  }
+  generalBranch = generalBranch.replace(/^[,\s।\-–—:;，()]+/g, '').replace(/[,\s।\-–—:;，()]+$/g, '').trim();
 
-  const entityLine = ent ? `${ent}${yearPart}${branchLine ? ',' : ''}` : (branchLine || '-');
+  if (generalBranch === generalEntity || generalBranch.length <= 1) {
+    generalBranch = '';
+  }
 
-  return { entityLine, branchLine };
+  const lines: string[] = [];
+  if (generalBranch) {
+    lines.push(`${generalEntity},`);
+    lines.push(`${generalBranch}${yearSuffix}`);
+  } else {
+    lines.push(`${generalEntity}${yearSuffix}`);
+  }
+
+  return {
+    entityLine: lines[0] || '',
+    branchLine: lines.slice(1).join(' '),
+    lines
+  };
 };
 
 export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
@@ -323,15 +727,41 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const letterTypeOptions = [
-    'বিএসআর',
-    'দ্বিপক্ষীয় সভা (কার্যপত্র)',
-    'দ্বিপক্ষীয় সভা (কার্যবিবরনী)',
-    'ত্রিপক্ষীয় সভা (কার্যপত্র)',
-    'ত্রিপক্ষীয় সভা (কার্যবিবরনী)',
-    'অন্যান্য পত্র',
-    'সকল'
-  ];
+  // Dynamic Letter Type Options based on selected Branch:
+  // নন এসএফআই: “বিএসআর”, “দ্বি-সভা (কার্যপত্র)”, “দ্বি-সভা (কার্যবিবরনী)”, “অন্যান্য”, “মিলিকরন”, “সকল”
+  // এসএফআই: “বিএসআর”, “ত্রি-সভা (কার্যপত্র)”, “ত্রি-সভা (কার্যবিবরনী)”, “অন্যান্য”, “মিলিকরন”, “সকল”
+  const letterTypeOptions = useMemo(() => {
+    if (filterBranch === 'নন এসএফআই') {
+      return [
+        'বিএসআর',
+        'দ্বি-সভা (কার্যপত্র)',
+        'দ্বি-সভা (কার্যবিবরনী)',
+        'অন্যান্য',
+        'মিলিকরন',
+        'সকল'
+      ];
+    }
+    if (filterBranch === 'এসএফআই') {
+      return [
+        'বিএসআর',
+        'ত্রি-সভা (কার্যপত্র)',
+        'ত্রি-সভা (কার্যবিবরনী)',
+        'অন্যান্য',
+        'মিলিকরন',
+        'সকল'
+      ];
+    }
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যপত্র)',
+      'দ্বি-সভা (কার্যবিবরনী)',
+      'ত্রি-সভা (কার্যপত্র)',
+      'ত্রি-সভা (কার্যবিবরনী)',
+      'অন্যান্য',
+      'মিলিকরন',
+      'সকল'
+    ];
+  }, [filterBranch]);
 
   // Date range formatted labels in Bengali
   const dateRangeDisplayBN = useMemo(() => {
@@ -377,15 +807,37 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
       if (filterLetterType !== 'সকল') {
         const lTypeRaw = (entry.letterType || entry.meetingType || entry.type || '').trim();
         const norm = robustNormalize(lTypeRaw);
+        const descNorm = robustNormalize(entry.description || '');
+
         if (filterLetterType === 'বিএসআর') {
-          const isBsr = norm.includes('বিএসআর') || norm.toLowerCase().includes('bsr') || !norm;
+          const isBsr = norm.includes('বিএসআর') || norm.toLowerCase().includes('bsr') || (!norm && !descNorm.includes('সভা') && !descNorm.includes('মিলিক'));
           if (!isBsr) return false;
-        } else if (filterLetterType.includes('দ্বিপক্ষীয়') || filterLetterType.includes('দ্বি-সভা')) {
-          if (!norm.includes('দ্বিপক্ষীয়') && !norm.includes('দ্বিপক্ষীয়') && !norm.includes('দ্বি-সভা')) return false;
-        } else if (filterLetterType.includes('ত্রিপক্ষীয়') || filterLetterType.includes('ত্রি-সভা')) {
-          if (!norm.includes('ত্রিপক্ষীয়') && !norm.includes('ত্রিপক্ষীয়') && !norm.includes('ত্রি-সভা')) return false;
+        } else if (filterLetterType.includes('দ্বি-সভা (কার্যপত্র)') || filterLetterType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) {
+          const isBilateralWork = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
+                                  (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
+          if (!isBilateralWork) return false;
+        } else if (filterLetterType.includes('দ্বি-সভা (কার্যবিবরনী)') || filterLetterType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) {
+          const isBilateralMinutes = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
+                                     (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী'));
+          if (!isBilateralMinutes) return false;
+        } else if (filterLetterType.includes('ত্রি-সভা (কার্যপত্র)') || filterLetterType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) {
+          const isTrilateralWork = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
+                                   (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
+          if (!isTrilateralWork) return false;
+        } else if (filterLetterType.includes('ত্রি-সভা (কার্যবিবরনী)') || filterLetterType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) {
+          const isTrilateralMinutes = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
+                                      (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী'));
+          if (!isTrilateralMinutes) return false;
+        } else if (filterLetterType.includes('মিলিকরন') || filterLetterType.includes('মিলিকরণ')) {
+          const isRecon = norm.includes('মিলিক') || norm.includes('মিলক') || norm.includes('reconciliation') || 
+                          descNorm.includes('মিলিক') || descNorm.includes('মিলক');
+          if (!isRecon) return false;
+        } else if (filterLetterType.includes('অন্যান্য')) {
+          const isOther = norm.includes('অন্যান্য') || norm.toLowerCase().includes('other') || 
+                          (!norm.includes('বিএসআর') && !norm.includes('সভা') && !norm.includes('মিলিক'));
+          if (!isOther) return false;
         } else {
-          if (!norm.includes(robustNormalize(filterLetterType))) return false;
+          if (!norm.includes(robustNormalize(filterLetterType)) && !descNorm.includes(robustNormalize(filterLetterType))) return false;
         }
       }
 
@@ -611,7 +1063,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
 
           <div className="flex items-center gap-1.5 px-3.5 h-[38px] bg-blue-50 border border-blue-200 rounded-xl text-blue-900 font-black text-xs shadow-xs">
             <Mail size={15} className="text-blue-600" />
-            <span>প্রাপ্ত পত্র: বিএসআর প্রাপ্তির রিটার্ন</span>
+            <span>প্রাপ্ত পত্র: {filterLetterType === 'সকল' || filterLetterType === 'বিএসআর' ? 'বিএসআর প্রাপ্তির রিটার্ন' : `${filterLetterType} প্রাপ্তির রিটার্ন`}</span>
           </div>
         </div>
 
@@ -842,7 +1294,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
         </div>
 
         {/* The 8-Column Exact Table from Image 2 */}
-        <div className="table-container relative w-full overflow-x-auto">
+        <div className="table-container qr-table-container relative w-full overflow-visible">
           <table
             id="table-bsr-received-return-main"
             className="w-full min-w-[1050px] border-collapse border border-black text-black text-xs sm:text-[13px] font-sans"
@@ -935,13 +1387,19 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         {toBengaliDigits(row.serial.toString())}
                       </td>
 
-                      {/* ২. বিভাগ/মন্ত্রণালয় (Merged with rowSpan for same ministry!) */}
+                      {/* ২. বিভাগ/মন্ত্রণালয় (Merged with rowSpan for same ministry with sticky floating) */}
                       {row.isFirstInMinistryGroup && (
                         <td
                           rowSpan={row.ministryRowSpan}
-                          className="border border-black p-2.5 text-center font-bold align-middle bg-white text-black text-xs sm:text-[13px] leading-snug"
+                          className="border border-black p-1.5 text-center font-bold align-top bg-white text-black text-xs sm:text-[13px] leading-snug"
+                          style={{ verticalAlign: 'top' }}
                         >
-                          {row.ministryName}
+                          <div 
+                            className="sticky-ministry-cell sticky top-[66px] z-20 py-1 px-1 bg-white font-bold text-center print:static"
+                            style={{ position: 'sticky', top: '66px', zIndex: 20 }}
+                          >
+                            {row.ministryName}
+                          </div>
                         </td>
                       )}
 
@@ -951,23 +1409,29 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                         style={{ width: '320px', minWidth: '280px', textAlign: 'justify' }}
                       >
                         {(() => {
-                          const { entityLine, branchLine } = getAuditEntityAndBranch(entry, settlementEntries);
+                          const { lines } = getAuditEntityAndBranch(entry, settlementEntries);
                           return (
                             <>
-                              <span className="font-bold text-black" style={{ textAlign: 'justify' }}>
-                                {entityLine}
-                              </span>
-                              {branchLine && (
-                                <>
-                                  <br style={{ msoDataPlacement: 'same-cell' } as any} />
+                              {lines.map((line, idx) => (
+                                <React.Fragment key={idx}>
+                                  {idx > 0 && <br style={{ msoDataPlacement: 'same-cell' } as any} />}
                                   <span 
-                                    className="text-blue-600 print:text-blue-600 font-semibold"
-                                    style={{ color: '#2563eb', textAlign: 'justify' }}
+                                    className={
+                                      idx === 0 
+                                        ? "font-bold text-black" 
+                                        : (idx === 1 && (lines.length > 2 || /জুট মিল|ব্যাংক|সুগার মিল|টেক্সটাইল|বীমা|কর্পোরেশন|বোর্ড|সংস্থা/.test(line)))
+                                          ? "font-bold text-slate-900" 
+                                          : "text-blue-600 print:text-blue-600 font-semibold"
+                                    }
+                                    style={{ 
+                                      color: idx === 0 ? '#000000' : (idx === 1 && (lines.length > 2 || /জুট মিল|ব্যাংক|সুগার মিল|টেক্সটাইল|বীমা|কর্পোরেশন|বোর্ড|সংস্থা/.test(line))) ? '#0f172a' : '#2563eb', 
+                                      textAlign: 'justify' 
+                                    }}
                                   >
-                                    {branchLine}
+                                    {line}
                                   </span>
-                                </>
-                              )}
+                                </React.Fragment>
+                              ))}
                             </>
                           );
                         })()}
