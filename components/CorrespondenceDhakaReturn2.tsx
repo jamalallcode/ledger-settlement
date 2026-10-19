@@ -2509,8 +2509,17 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                           }
                         }
 
+                        // জারিপত্রের তারিখ যদি রিপোর্টের শেষ তারিখের (periodEndDate) পরে হয়, তাহলে উক্ত রিপোর্ট সময়কালে এটি 'চলমান' থাকবে
+                        let parsedIssueDate: Date | null = null;
+                        if (issueDate) {
+                          const engIssueDate = toEnglishDigits(issueDate).trim();
+                          const dateMatch = engIssueDate.match(/\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/);
+                          parsedIssueDate = parseDate(dateMatch ? dateMatch[0] : engIssueDate);
+                        }
+                        const isIssuedAfterPeriod = Boolean(parsedIssueDate && periodEndDate && parsedIssueDate > periodEndDate);
+
                         let formattedIssueText = '';
-                        if (issueNo) {
+                        if (issueNo && !isIssuedAfterPeriod) {
                           const formattedDate = formatDateDisplay(issueDate);
                           formattedIssueText = formattedDate 
                             ? `জারিপত্র নং- ${toBengaliDigits(issueNo)}, জারিপত্রের তারিখ- ${formattedDate}` 
