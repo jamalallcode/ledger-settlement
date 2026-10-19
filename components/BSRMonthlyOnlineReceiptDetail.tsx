@@ -83,6 +83,43 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
     setCurrentViewDate(new Date(selectedCycleDate));
   }, [selectedCycleDate]);
 
+  useEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      const table = document.getElementById('table-bsr-monthly-online-detail');
+      if (!table) return;
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+      const trs = thead.querySelectorAll('tr');
+      if (trs.length < 3) return;
+
+      const tr1 = trs[0];
+      const tr2 = trs[1];
+
+      const colSpanTh = tr1.querySelector('th[colspan]') as HTMLElement | null;
+      const r1SubHeight = colSpanTh ? Math.round(colSpanTh.getBoundingClientRect().height) : 40;
+      
+      const tr2Th = tr2.querySelector('th') as HTMLElement | null;
+      const r2Height = tr2Th ? Math.round(tr2Th.getBoundingClientRect().height) : Math.round(tr2.getBoundingClientRect().height);
+
+      if (r1SubHeight > 0) {
+        table.style.setProperty('--th-r2-top', `${r1SubHeight}px`);
+      }
+      if (r1SubHeight > 0 && r2Height > 0) {
+        table.style.setProperty('--th-r3-top', `${r1SubHeight + r2Height}px`);
+      }
+    };
+
+    updateHeaderStickyOffsets();
+    const timer = setTimeout(updateHeaderStickyOffsets, 50);
+    const timer2 = setTimeout(updateHeaderStickyOffsets, 200);
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+    };
+  }, [entries, correspondenceEntries]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -103,8 +140,8 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  const startOfMonthDate = startOfMonth(selectedCycleDate);
-  const endOfMonthDate = endOfMonth(selectedCycleDate);
+  const startOfMonthDate = startDate;
+  const endOfMonthDate = endDate;
 
   // Filter entries for Non-SFI and BSR and Online Receipt matching selected calendar month strictly by diary date
   const filteredEntries = useMemo(() => {
@@ -751,8 +788,8 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
 
         <div className="w-full overflow-visible">
           <table id="table-bsr-monthly-online-detail" className="w-full border-separate border-spacing-0 !table-auto">
-            <thead>
-              <tr className="bg-slate-50">
+            <thead className="bg-slate-100">
+              <tr className="h-[40px] bg-slate-100">
                 <th rowSpan={2} className={`${thStyle} w-[50px]`}>ক্রমিক নং</th>
                 <th rowSpan={2} className={`${thStyle} w-[240px]`}>প্রতিষ্ঠানের নাম ও নিরীক্ষা বছর</th>
                 <th rowSpan={2} className={`${thStyle} w-[100px]`}>প্রাপ্তজবাব (পত্র সংখ্যা)</th>
@@ -762,12 +799,12 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                 <th colSpan={3} className={`${thStyle}`}>গৃহীত কার্যক্রম</th>
                 <th rowSpan={2} className={`${thStyle} w-[140px] rounded-none`}>মন্তব্য</th>
               </tr>
-              <tr className="bg-slate-50">
+              <tr className="h-[36px] bg-slate-100">
                 <th className={`${thStyle} w-[180px]`}>প্রাপ্ত জবাবের Disposal সংক্রান্ত তথ্য</th>
                 <th className={`${thStyle} w-[110px]`}>নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা</th>
                 <th className={`${thStyle} w-[110px]`}>অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা</th>
               </tr>
-              <tr className="bg-slate-50">
+              <tr className="h-[28px] bg-slate-100">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(p => (
                   <th key={p} className={`${thStyle} text-[9px] sm:text-[10px] font-bold text-slate-500 py-1`}>
                     {toBengaliDigits(p.toString())}
@@ -824,7 +861,7 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                         )}
                       </td>
                       <td className={numTdStyle}>
-                        {toBengaliDigits(rowRaisedCount.toString())}
+                        {rowRaisedCount > 0 ? `${toBengaliDigits(rowRaisedCount.toString())} টি` : '-'}
                       </td>
                       <td className={`${tdStyle} font-bold text-slate-800`}>
                         <HighlightText text={formatTextValue(letterNoDateDisplay)} searchTerm={searchTerm} />
@@ -833,16 +870,16 @@ const BSRMonthlyOnlineReceiptDetail: React.FC<BSRMonthlyOnlineReceiptDetailProps
                         <HighlightText text={formatTextValue(diaryNoDateDisplay)} searchTerm={searchTerm} />
                       </td>
                       <td className={numTdStyle}>
-                        {toBengaliDigits(rowRecommendedCount.toString())}
+                        {rowRecommendedCount > 0 ? `${toBengaliDigits(rowRecommendedCount.toString())} টি` : '-'}
                       </td>
                       <td className={`${tdStyle} font-bold text-slate-800`}>
                         <HighlightText text={formatTextValue(issueLetterNoDateDisplay)} searchTerm={searchTerm} />
                       </td>
                       <td className={`${numTdStyle} text-emerald-600 font-black`}>
-                        {toBengaliDigits(rowSettledCount.toString())}
+                        {rowSettledCount > 0 ? `${toBengaliDigits(rowSettledCount.toString())} টি` : '-'}
                       </td>
                       <td className={`${numTdStyle} text-red-600 font-black`}>
-                        {toBengaliDigits(rowUnsettledCount.toString())}
+                        {rowUnsettledCount > 0 ? `${toBengaliDigits(rowUnsettledCount.toString())} টি` : '-'}
                       </td>
                       <td className={`${tdStyle} text-justify font-semibold text-slate-800`}>
                         <HighlightText text={row.remarks || ''} searchTerm={searchTerm} />

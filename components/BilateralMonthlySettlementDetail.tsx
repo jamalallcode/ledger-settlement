@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Printer, Sparkles, ChevronDown, ChevronLeft, ChevronRight, Calendar, FileSpreadsheet, LayoutGrid, Search, X, CalendarDays, Check, Landmark, ArrowLeftRight, FileText } from 'lucide-react';
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
-import { normalizeDatesInText } from '../utils/syncHelper';
+import { normalizeDatesInText, formatBengaliDateDMY } from '../utils/syncHelper';
 import { format as dateFnsFormat, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import HighlightText from './HighlightText';
 import { SettlementEntry } from '../types';
@@ -15,6 +15,7 @@ const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গ�
 
 interface BilateralMonthlySettlementDetailProps {
   entries: SettlementEntry[];
+  correspondenceEntries?: any[];
   selectedCycleDate: Date;
   setSelectedCycleDate: (date: Date) => void;
   activeCycle: any;
@@ -27,6 +28,7 @@ interface BilateralMonthlySettlementDetailProps {
 
 const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetailProps> = ({
   entries,
+  correspondenceEntries = [],
   selectedCycleDate,
   setSelectedCycleDate,
   activeCycle,
@@ -77,8 +79,8 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     return str.normalize('NFC').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  const startOfMonthDate = startOfMonth(selectedCycleDate);
-  const endOfMonthDate = endOfMonth(selectedCycleDate);
+  const startOfMonthDate = startDate;
+  const endOfMonthDate = endDate;
 
   // Filter entries for Non-SFI and Bilateral Meeting matching selected date range (হতে - থেকে)
   const filteredEntries = useMemo(() => {
@@ -128,24 +130,115 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     return list;
   }, [entries, startDate, endDate, filterMinistry, searchTerm]);
 
+  // Dynamically calculate sticky header row heights to eliminate gaps during scrolling
+  useEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      const table = document.getElementById('table-bilateral-monthly-detail');
+      if (!table) return;
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+      const trs = thead.querySelectorAll('tr');
+      if (trs.length < 3) return;
+
+      const tr1 = trs[0];
+      const tr2 = trs[1];
+
+      const colSpanTh = tr1.querySelector('th[colspan]') as HTMLElement | null;
+      const r1SubHeight = colSpanTh ? Math.round(colSpanTh.getBoundingClientRect().height) : 40;
+      
+      const tr2Th = tr2.querySelector('th') as HTMLElement | null;
+      const r2Height = tr2Th ? Math.round(tr2Th.getBoundingClientRect().height) : Math.round(tr2.getBoundingClientRect().height);
+
+      if (r1SubHeight > 0) {
+        table.style.setProperty('--th-r2-top', `${r1SubHeight}px`);
+      }
+      if (r1SubHeight > 0 && r2Height > 0) {
+        table.style.setProperty('--th-r3-top', `${r1SubHeight + r2Height}px`);
+      }
+    };
+
+    updateHeaderStickyOffsets();
+    const timer = setTimeout(updateHeaderStickyOffsets, 50);
+    const timer2 = setTimeout(updateHeaderStickyOffsets, 200);
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+    };
+  }, [filteredEntries]);
+
+  const getEntryParaCounts = (entry: SettlementEntry) => {
+    // 1. Sent / Total paragraphs (প্রেরিত অনুচ্ছেদ সংখ্যা)
+    let sentPara = parseInt(toEnglishDigits(entry.meetingSentParaCount || (entry as any).sentParaCount || (entry as any).totalParas || '0')) || 0;
+    
+    // Fallback to matched correspondence if not explicitly stored on settlement entry
+    if (!sentPara && correspondenceEntries && correspondenceEntries.length > 0) {
+      const matchedCorr = correspondenceEntries.find((c: any) => {
+        if (entry.correspondenceId && (c.id === entry.correspondenceId || c.letterId === entry.correspondenceId)) return true;
+        if ((entry as any).letterId && c.id === (entry as any).letterId) return true;
+        if (entry.id === c.id) return true;
+        if (entry.archiveNo && c.archiveNo && entry.archiveNo.trim() === c.archiveNo.trim()) return true;
+        const rowDiary = toEnglishDigits(entry.workpaperNoDate || (entry as any).diaryNo || '').replace(/\D/g, '');
+        const corrDiary = toEnglishDigits(c.workpaperNoDate || c.diaryNo || '').replace(/\D/g, '');
+        if (rowDiary && corrDiary && rowDiary === corrDiary) return true;
+        const rowIssue = toEnglishDigits(entry.issueLetterNoDate || (entry as any).issueNo || '').replace(/\D/g, '');
+        const corrIssue = toEnglishDigits(c.issueLetterNoDate || c.issueLetterNo || '').replace(/\D/g, '');
+        if (rowIssue && corrIssue && rowIssue === corrIssue) return true;
+        return false;
+      });
+      if (matchedCorr) {
+        sentPara = parseInt(toEnglishDigits(matchedCorr.sentParaCount || matchedCorr.totalParas || matchedCorr.meetingSentParaCount || '0')) || 0;
+      }
+    }
+
+    // 2. Recommended paragraphs (সুপারিশকৃত অনুচ্ছেদ সংখ্যা)
+    const recPara = parseInt(toEnglishDigits(entry.meetingRecommendedParaCount || '0')) || 0;
+
+    // 3. Settled paragraphs (নিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা)
+    const settledFromParas = entry.paragraphs ? entry.paragraphs.filter(p => (p.status || '').trim() === 'পূর্ণাঙ্গ').length : 0;
+    const settledPara = settledFromParas > 0 ? settledFromParas : (parseInt(toEnglishDigits(entry.meetingSettledParaCount || entry.meetingFullSettledParaCount || '0')) || 0);
+
+    // 4. Unsettled paragraphs (অনিষ্পত্তিকৃত অনুচ্ছেদ সংখ্যা)
+    const explicitUnsettled = parseInt(toEnglishDigits(entry.meetingUnsettledParas || '0')) || 0;
+    const partialFromParas = entry.paragraphs ? entry.paragraphs.filter(p => (p.status || '').trim() === 'আংশিক').length : 0;
+
+    let unsettledPara = 0;
+    if (explicitUnsettled > 0) {
+      unsettledPara = explicitUnsettled;
+    } else if (sentPara > 0 && sentPara > settledPara) {
+      // যেমন: মোট প্রেরিত অনুচ্ছেদ ৩০টি এবং নিষ্পত্তিকৃত ২৯টি হলে ৩০ - ২৯ = ১টি অনিষ্পন্ন
+      unsettledPara = sentPara - settledPara;
+    } else if (recPara > 0 && recPara > settledPara) {
+      unsettledPara = recPara - settledPara;
+    } else if (partialFromParas > 0) {
+      unsettledPara = partialFromParas;
+    }
+
+    return {
+      sentPara,
+      recPara,
+      settledPara,
+      unsettledPara
+    };
+  };
+
   // Calculations for total statistics
   const totals = useMemo(() => {
     return filteredEntries.reduce((acc, curr) => {
-      const recPara = parseInt(toEnglishDigits(curr.meetingRecommendedParaCount || '0')) || 0;
-      const settledPara = parseInt(toEnglishDigits(curr.meetingSettledParaCount || curr.meetingFullSettledParaCount || '0')) || 0;
-      const unsettledPara = parseInt(toEnglishDigits(curr.meetingUnsettledParas || '0')) || Math.max(0, recPara - settledPara);
+      const counts = getEntryParaCounts(curr);
       
       return {
-        recPara: acc.recPara + recPara,
-        settledPara: acc.settledPara + settledPara,
-        unsettledPara: acc.unsettledPara + unsettledPara,
+        recPara: acc.recPara + counts.recPara,
+        settledPara: acc.settledPara + counts.settledPara,
+        unsettledPara: acc.unsettledPara + counts.unsettledPara,
       };
     }, {
       recPara: 0,
       settledPara: 0,
       unsettledPara: 0,
     });
-  }, [filteredEntries]);
+  }, [filteredEntries, correspondenceEntries]);
 
   const downloadExcel = () => {
     const table = document.getElementById('table-bilateral-monthly-detail');
@@ -155,7 +248,7 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
     interactiveElements.forEach(el => el.remove());
     
-    const formattedMonth = dateFnsFormat(selectedCycleDate, 'MMMM_yyyy');
+    const formattedMonth = dateFnsFormat(startDate, 'MMMM_yyyy');
     const filename = `দ্বিপক্ষীয়_মাসিক_রিপোর্ট_বিস্তারিত_${formattedMonth}.xls`;
 
     const template = `
@@ -212,12 +305,70 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
     if (count === undefined || count === null) return '-';
     const cStr = count.toString().trim();
     if (cStr === '0' || cStr === '০' || cStr === '') return '-';
-    return toBengaliDigits(cStr);
+    return `${toBengaliDigits(cStr)} টি`;
   };
 
   const formatTextValue = (val: string | undefined | null) => {
     if (val === undefined || val === null || val.trim() === '') return '-';
     return normalizeDatesInText(val);
+  };
+
+  const getRowLetterNoDate = (row: SettlementEntry) => {
+    let val = (row.letterNoDate || '').trim();
+    if (val && val !== '-') {
+      if (!val.includes('পত্র') && !val.includes('স্মারক')) {
+        const parts = val.split(',');
+        if (parts.length === 2) {
+          val = `পত্র নং- ${parts[0].trim()}, পত্রের তারিখ- ${parts[1].trim()}`;
+        } else if (parts.length === 1 && /^\d+$/.test(toEnglishDigits(parts[0].trim()))) {
+          val = `পত্র নং- ${parts[0].trim()}`;
+        }
+      }
+      return val;
+    }
+
+    const lNo = (row as any).letterNo || '';
+    const lDate = (row as any).letterDate || (row as any).meetingResponseDate || '';
+    if (lNo && lDate) {
+      return `পত্র নং- ${toBengaliDigits(lNo)}, পত্রের তারিখ- ${formatBengaliDateDMY(lDate) || toBengaliDigits(lDate)}`;
+    }
+    if (lNo) {
+      return `পত্র নং- ${toBengaliDigits(lNo)}`;
+    }
+    if (lDate) {
+      return `পত্রের তারিখ- ${formatBengaliDateDMY(lDate) || toBengaliDigits(lDate)}`;
+    }
+
+    if (correspondenceEntries && correspondenceEntries.length > 0) {
+      const matchedCorr = correspondenceEntries.find((c: any) => {
+        if (row.correspondenceId && (c.id === row.correspondenceId || c.letterId === row.correspondenceId)) return true;
+        if ((row as any).letterId && c.id === (row as any).letterId) return true;
+        if (row.id === c.id) return true;
+        if (row.archiveNo && c.archiveNo && row.archiveNo.trim() === c.archiveNo.trim()) return true;
+        const rowDiary = toEnglishDigits(row.workpaperNoDate || (row as any).diaryNo || '').replace(/\D/g, '');
+        const corrDiary = toEnglishDigits(c.workpaperNoDate || c.diaryNo || '').replace(/\D/g, '');
+        if (rowDiary && corrDiary && rowDiary === corrDiary) return true;
+        const rowIssue = toEnglishDigits(row.issueLetterNoDate || (row as any).issueNo || '').replace(/\D/g, '');
+        const corrIssue = toEnglishDigits(c.issueLetterNoDate || c.issueLetterNo || '').replace(/\D/g, '');
+        if (rowIssue && corrIssue && rowIssue === corrIssue) return true;
+        return false;
+      });
+
+      if (matchedCorr) {
+        if (matchedCorr.letterNoDate && matchedCorr.letterNoDate.trim()) {
+          return matchedCorr.letterNoDate.trim();
+        }
+        const cLNo = matchedCorr.letterNo || '';
+        const cLDate = matchedCorr.letterDate || '';
+        if (cLNo && cLDate) {
+          return `পত্র নং- ${toBengaliDigits(cLNo)}, পত্রের তারিখ- ${formatBengaliDateDMY(cLDate) || toBengaliDigits(cLDate)}`;
+        }
+        if (cLNo) return `পত্র নং- ${toBengaliDigits(cLNo)}`;
+        if (cLDate) return `পত্রের তারিখ- ${formatBengaliDateDMY(cLDate) || toBengaliDigits(cLDate)}`;
+      }
+    }
+
+    return '';
   };
 
   const formatArchiveNoForTable = (val: string | undefined | null) => {
@@ -726,21 +877,21 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
       <div id="card-bilateral-monthly-detail-table-container" className="table-container bg-white shadow-inner rounded-none overflow-visible w-full relative">
         <div className="w-full overflow-visible">
           <table id="table-bilateral-monthly-detail" className="w-full border-separate border-spacing-0 !table-auto">
-            <thead>
-              <tr className="bg-slate-50">
+            <thead className="bg-slate-100">
+              <tr className="h-[40px] bg-slate-100">
                 <th rowSpan={2} className={`${thStyle} w-[50px]`}>ক্রমিক নং</th>
                 <th rowSpan={2} className={`${thStyle} w-[240px]`}>বিবরণ</th>
-                <th rowSpan={2} className={`${thStyle} w-[100px]`}>প্রাপ্ত জবাব (পত্র সংখ্যা)</th>
+                <th rowSpan={2} className={`${thStyle} w-[180px]`}>জবাবের পত্র নং ও তারিখ</th>
                 <th rowSpan={2} className={`${thStyle} w-[180px]`}>প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ</th>
                 <th rowSpan={2} className={`${thStyle} w-[110px]`}>সুপারিশকৃত অনুচ্ছেদ সংখ্যা</th>
                 <th colSpan={3} className={`${thStyle}`}>গৃহীত কার্যক্রম</th>
               </tr>
-              <tr className="bg-slate-50">
+              <tr className="h-[36px] bg-slate-100">
                 <th className={`${thStyle} w-[180px]`}>প্রাপ্ত জবাবের Disposal সংক্রান্ত তথ্য</th>
                 <th className={`${thStyle} w-[110px]`}>নিষ্পত্তিকৃত অনুচ্ছেদ</th>
                 <th className={`${thStyle} w-[110px]`}>অনিষ্পত্তিকৃত অনুচ্ছেদ</th>
               </tr>
-              <tr className="bg-slate-50">
+              <tr className="h-[28px] bg-slate-100">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
                   <th key={n} className={`${thStyle} text-[9px] sm:text-[10px] font-bold text-slate-500 py-1`}>
                     {toBengaliDigits(n.toString())}
@@ -757,9 +908,10 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
                 </tr>
               ) : (
                 filteredEntries.map((row, idx) => {
-                  const recPara = parseInt(toEnglishDigits(row.meetingRecommendedParaCount || '0')) || 0;
-                  const settledPara = parseInt(toEnglishDigits(row.meetingSettledParaCount || row.meetingFullSettledParaCount || '0')) || 0;
-                  const unsettledPara = parseInt(toEnglishDigits(row.meetingUnsettledParas || '0')) || Math.max(0, recPara - settledPara);
+                  const counts = getEntryParaCounts(row);
+                  const recPara = counts.recPara;
+                  const settledPara = counts.settledPara;
+                  const unsettledPara = counts.unsettledPara;
                   
                   return (
                     <tr key={row.id} className="hover:bg-slate-50/75 bg-white transition-colors group">
@@ -769,40 +921,40 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
                       </td>
                       
                       {/* ২. বিবরণ */}
-                      <td className={`${tdStyle} text-left font-bold text-slate-800 leading-relaxed`}>
-                        <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px]">
+                      <td className={`${tdStyle} !text-justify font-bold text-slate-800 leading-relaxed px-2.5`} style={{ textAlign: 'justify' }}>
+                        <div className="font-extrabold text-slate-950 text-[11px] sm:text-[11.5px] text-justify leading-relaxed" style={{ textAlign: 'justify' }}>
                           <HighlightText text={row.ministryName} searchTerm={searchTerm} />
                         </div>
                         {row.entityName && (
-                          <div className="text-slate-700 text-[10px] sm:text-[10.5px]">
+                          <div className="text-slate-700 text-[10px] sm:text-[10.5px] text-justify leading-relaxed" style={{ textAlign: 'justify' }}>
                             <HighlightText text={row.entityName} searchTerm={searchTerm} />
                           </div>
                         )}
                         {row.branchName && (
-                          <div className="text-blue-700 text-[10px] font-black">
+                          <div className="text-blue-700 text-[10px] font-black text-justify leading-relaxed" style={{ textAlign: 'justify' }}>
                             <HighlightText text={row.branchName} searchTerm={searchTerm} />
                           </div>
                         )}
                         {row.auditYear && (
-                          <div className="text-slate-500 font-bold text-[10px] mt-0.5">
+                          <div className="text-slate-500 font-bold text-[10px] mt-0.5 text-justify leading-relaxed" style={{ textAlign: 'justify' }}>
                             অডিট আপত্তি বছর: {toBengaliDigits(row.auditYear)}
                           </div>
                         )}
                         {row.archiveNo && (
-                          <div className="text-purple-700 font-extrabold text-[10px] mt-1 pt-1 border-t border-dashed border-slate-200 whitespace-pre-line leading-normal">
+                          <div className="text-purple-700 font-extrabold text-[10px] mt-1 pt-1 border-t border-dashed border-slate-200 whitespace-pre-line leading-normal text-justify" style={{ textAlign: 'justify' }}>
                             আর্কাইভ নং- {formatArchiveNoForTable(row.archiveNo)}
                           </div>
                         )}
                       </td>
                       
-                      {/* ৩. প্রাপ্ত জবাব (পত্র সংখ্যা) */}
-                      <td className={numTdStyle}>
-                        {row.manualRaisedCount ? toBengaliDigits(row.manualRaisedCount) : toBengaliDigits('১')}
+                      {/* ৩. জবাবের পত্র নং ও তারিখ */}
+                      <td className={`${tdStyle} font-bold text-slate-800`}>
+                        <HighlightText text={formatTextValue(getRowLetterNoDate(row))} searchTerm={searchTerm} />
                       </td>
                       
                       {/* ৪. প্রাপ্ত জবাবের ডায়েরি নং ও তারিখ */}
                       <td className={`${tdStyle} font-bold text-slate-800`}>
-                        <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />
+                        <HighlightText text={formatTextValue(row.workpaperNoDate || ((row as any).diaryNo ? `ডায়েরি নং- ${(row as any).diaryNo}${(row as any).diaryDate ? `, ডায়েরির তারিখ- ${(row as any).diaryDate}` : ''}` : ''))} searchTerm={searchTerm} />
                       </td>
                       
                       {/* ৫. সুপারিশকৃত অনুচ্ছেদ সংখ্যা */}
@@ -833,11 +985,9 @@ const BilateralMonthlySettlementDetail: React.FC<BilateralMonthlySettlementDetai
               <tfoot className="bg-slate-900 text-white font-extrabold shadow-2xl relative z-10">
                 <tr className="h-[40px] bg-slate-900 border-t border-slate-700">
                   <td colSpan={2} className="border-r border-b border-slate-700 px-3 py-2 text-left text-[11px] font-black uppercase text-white rounded-none">
-                    সর্বমোট (ফিল্টারকৃত):
+                    সর্বমোট (ফিল্টারকৃত): {toBengaliDigits(filteredEntries.length.toString())} টি
                   </td>
-                  <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
-                    {toBengaliDigits(filteredEntries.length.toString())} টি
-                  </td>
+                  <td className="border-r border-b border-slate-700 px-2 py-2"></td>
                   <td className="border-r border-b border-slate-700 px-2 py-2"></td>
                   <td className="border-r border-b border-slate-700 px-2 py-2 text-center text-[11px] text-white font-black">
                     {formatCountBengali(totals.recPara)}

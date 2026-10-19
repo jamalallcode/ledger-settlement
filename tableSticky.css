@@ -258,28 +258,36 @@
 #table-bsr-received-return-main thead th {
   box-sizing: border-box !important;
   background-color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 #table-bsr-received-return-main thead tr:first-child th {
   top: 0px !important;
-  height: 38px !important;
   z-index: 145 !important;
   background-color: #ffffff !important;
 }
 
 #table-bsr-received-return-main thead tr:nth-child(2) th {
-  top: 38px !important;
-  height: 28px !important;
+  top: var(--th-r2-top, 36px) !important;
+  line-height: normal !important;
   z-index: 144 !important;
+  background-color: #ffffff !important;
+}
+
+#table-bsr-received-return-main thead tr:nth-child(3) th {
+  top: var(--th-r3-top, 74px) !important;
+  height: 28px !important;
+  line-height: normal !important;
+  z-index: 143 !important;
   background-color: #ffffff !important;
 }
 
 #table-bsr-received-return-main .sticky-ministry-cell {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 66px !important;
+  top: calc(var(--th-r3-top, 82px) + 8px) !important;
   z-index: 20 !important;
-  background-color: #ffffff !important;
+  background-color: #f0fdf4 !important;
 }
 
 /* Correspondence & Settlement Registers Sticky Headers */
@@ -304,6 +312,26 @@
 }
 
 /* Monthly Detail Tables Sticky Headers */
+#table-bsr-monthly-detail thead,
+#table-bilateral-monthly-detail thead,
+#table-bsr-monthly-online-detail thead,
+#table-bilateral-monthly-online-detail thead {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 140 !important;
+  background-color: #f1f5f9 !important;
+}
+
+#table-bsr-monthly-detail thead th,
+#table-bilateral-monthly-detail thead th,
+#table-bsr-monthly-online-detail thead th,
+#table-bilateral-monthly-online-detail thead th {
+  background-color: #f1f5f9 !important;
+  opacity: 1 !important;
+  box-sizing: border-box !important;
+}
+
 #table-bsr-monthly-detail thead tr:first-child th,
 #table-bilateral-monthly-detail thead tr:first-child th,
 #table-bsr-monthly-online-detail thead tr:first-child th,
@@ -313,11 +341,24 @@
   background-color: #f1f5f9 !important;
 }
 
+#table-bsr-monthly-detail thead tr:first-child th[rowspan],
+#table-bsr-monthly-detail thead tr:first-child th[rowSpan],
+#table-bilateral-monthly-detail thead tr:first-child th[rowspan],
+#table-bilateral-monthly-detail thead tr:first-child th[rowSpan],
+#table-bsr-monthly-online-detail thead tr:first-child th[rowspan],
+#table-bsr-monthly-online-detail thead tr:first-child th[rowSpan],
+#table-bilateral-monthly-online-detail thead tr:first-child th[rowspan],
+#table-bilateral-monthly-online-detail thead tr:first-child th[rowSpan] {
+  top: 0px !important;
+  z-index: 135 !important;
+  background-color: #f1f5f9 !important;
+}
+
 #table-bsr-monthly-detail thead tr:nth-child(2) th,
 #table-bilateral-monthly-detail thead tr:nth-child(2) th,
 #table-bsr-monthly-online-detail thead tr:nth-child(2) th,
 #table-bilateral-monthly-online-detail thead tr:nth-child(2) th {
-  top: 44px !important;
+  top: var(--th-r2-top, 40px) !important;
   z-index: 125 !important;
   background-color: #f1f5f9 !important;
 }
@@ -326,7 +367,7 @@
 #table-bilateral-monthly-detail thead tr:nth-child(3) th,
 #table-bsr-monthly-online-detail thead tr:nth-child(3) th,
 #table-bilateral-monthly-online-detail thead tr:nth-child(3) th {
-  top: 82px !important;
+  top: var(--th-r3-top, 76px) !important;
   z-index: 120 !important;
   background-color: #f1f5f9 !important;
 }

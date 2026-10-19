@@ -1100,7 +1100,28 @@ const App: React.FC = () => {
           return prev;
         });
       } else {
-        setCorrespondenceEntries(prev => prev.some(e => e.id === editingEntry.id) ? prev.filter(e => e.id !== editingEntry.id) : prev);
+        setCorrespondenceEntries(prev => {
+          const filtered = prev.some(e => e.id === editingEntry.id) ? prev.filter(e => e.id !== editingEntry.id) : prev;
+          if (entryToSync.correspondenceId) {
+            return filtered.map(c => {
+              if (c.id === entryToSync.correspondenceId) {
+                const updatedCorr = {
+                  ...c,
+                  ...(entryToSync.diaryNo ? { diaryNo: entryToSync.diaryNo } : {}),
+                  ...(entryToSync.diaryDate ? { diaryDate: entryToSync.diaryDate } : {}),
+                  ...(entryToSync.letterNo ? { letterNo: entryToSync.letterNo } : {}),
+                  ...(entryToSync.issueNo ? { issueLetterNo: entryToSync.issueNo } : {})
+                };
+                if (navigator.onLine) {
+                  supabase.from('settlement_entries').upsert({ id: updatedCorr.id, content: updatedCorr });
+                }
+                return updatedCorr;
+              }
+              return c;
+            });
+          }
+          return filtered;
+        });
         setEntries(prev => {
           const exists = prev.some(e => e.id === editingEntry.id);
           return exists ? prev.map(e => e.id === editingEntry.id ? entryToSync : e) : [...prev, entryToSync];

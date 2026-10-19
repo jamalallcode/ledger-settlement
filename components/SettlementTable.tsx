@@ -1114,7 +1114,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
         { label: getNextLabel("পত্রের তারিখ"), value: letterParts.date || "-" },
       ];
 
-      if (isBsr) {
+      if (isBsr || (diaryParts.no && diaryParts.no !== "-") || (diaryParts.date && diaryParts.date !== "-")) {
         fields.push(
           { label: getNextLabel("ডায়েরি নং"), value: diaryParts.no || "-" },
           { label: getNextLabel("ডায়েরি তারিখ"), value: diaryParts.date || "-" },
@@ -1260,7 +1260,7 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                 { label: getNextLabel("পত্রের তারিখ"), value: letterParts.date || "-", icon: Calendar, col: "amber" },
               ];
 
-              if (isBsr) {
+              if (isBsr || (diaryParts.no && diaryParts.no !== "-") || (diaryParts.date && diaryParts.date !== "-")) {
                 fields.push(
                   { label: getNextLabel("ডায়েরি নং"), value: diaryParts.no || "-", icon: FileText, col: "emerald" },
                   { label: getNextLabel("ডায়েরি তারিখ"), value: diaryParts.date || "-", icon: Calendar, col: "emerald" },

@@ -1964,6 +1964,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     renderedContent = (
       <BilateralMonthlySettlementDetail
         entries={entries}
+        correspondenceEntries={correspondenceEntries}
         selectedCycleDate={selectedCycleDate}
         setSelectedCycleDate={setSelectedCycleDate}
         activeCycle={activeCycle}

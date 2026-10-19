@@ -130,6 +130,43 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     return list;
   }, [entries, startDate, endDate, filterMinistry, searchTerm]);
 
+  useEffect(() => {
+    const updateHeaderStickyOffsets = () => {
+      const table = document.getElementById('table-bsr-monthly-detail');
+      if (!table) return;
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+      const trs = thead.querySelectorAll('tr');
+      if (trs.length < 3) return;
+
+      const tr1 = trs[0];
+      const tr2 = trs[1];
+
+      const colSpanTh = tr1.querySelector('th[colspan]') as HTMLElement | null;
+      const r1SubHeight = colSpanTh ? Math.round(colSpanTh.getBoundingClientRect().height) : 44;
+      
+      const tr2Th = tr2.querySelector('th') as HTMLElement | null;
+      const r2Height = tr2Th ? Math.round(tr2Th.getBoundingClientRect().height) : Math.round(tr2.getBoundingClientRect().height);
+
+      if (r1SubHeight > 0) {
+        table.style.setProperty('--th-r2-top', `${r1SubHeight}px`);
+      }
+      if (r1SubHeight > 0 && r2Height > 0) {
+        table.style.setProperty('--th-r3-top', `${r1SubHeight + r2Height}px`);
+      }
+    };
+
+    updateHeaderStickyOffsets();
+    const timer = setTimeout(updateHeaderStickyOffsets, 50);
+    const timer2 = setTimeout(updateHeaderStickyOffsets, 200);
+    window.addEventListener('resize', updateHeaderStickyOffsets);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', updateHeaderStickyOffsets);
+    };
+  }, [filteredEntries]);
+
   // Calculations for total statistics
   const totals = useMemo(() => {
     return filteredEntries.reduce((acc, curr) => {
@@ -262,7 +299,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
     if (count === undefined || count === null) return '-';
     const cStr = count.toString().trim();
     if (cStr === '0' || cStr === '০' || cStr === '') return '-';
-    return toBengaliDigits(cStr);
+    return `${toBengaliDigits(cStr)} টি`;
   };
 
   const formatTextValue = (val: string | undefined | null) => {
@@ -914,7 +951,7 @@ const BSRMonthlySettlementDetail: React.FC<BSRMonthlySettlementDetailProps> = ({
                         </div>
                       </td>
                       <td className={numTdStyle}>
-                        {toBengaliDigits((idx + 1).toString().padStart(2, '0'))}
+                        {toBengaliDigits((idx + 1).toString().padStart(2, '0'))} টি
                       </td>
                       <td className={numTdStyle}>
                         <HighlightText text={formatTextValue(row.workpaperNoDate)} searchTerm={searchTerm} />

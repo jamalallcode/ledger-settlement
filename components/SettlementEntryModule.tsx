@@ -749,11 +749,24 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
         setMrDay(''); setMrMonth(''); setMrYear('');
       }
 
-      const f10 = extractSegments(initialEntry.workpaperNoDate, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
-      setDiaryNoPart(f10.no); setDiaryDay(f10.d); setDiaryMonth(f10.m); setDiaryYear(f10.y);
+      const f10 = extractSegments(initialEntry.workpaperNoDate || '', 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
+      const resolvedDiaryNo = f10.no || (initialEntry as any).diaryNo || '';
+      setDiaryNoPart(resolvedDiaryNo);
 
-      const f11 = extractSegments(initialEntry.issueLetterNoDate, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-      setIssueNoPart(f11.no); setDayPart(f11.d); setMonthPart(f11.m); setYearPart(f11.y);
+      let dDay = f10.d;
+      let dMonth = f10.m;
+      let dYear = f10.y;
+      if (!dDay && !dMonth && !dYear && (initialEntry as any).diaryDate) {
+        const parsed = parseDateComponents((initialEntry as any).diaryDate);
+        dDay = parsed.d;
+        dMonth = parsed.m;
+        dYear = parsed.y;
+      }
+      setDiaryDay(dDay); setDiaryMonth(dMonth); setDiaryYear(dYear);
+
+      const f11 = extractSegments(initialEntry.issueLetterNoDate || '', 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
+      setIssueNoPart(f11.no || (initialEntry as any).issueNo || ''); 
+      setDayPart(f11.d); setMonthPart(f11.m); setYearPart(f11.y);
       
       const entryParas = initialEntry.paragraphs || [];
       setParagraphs([...entryParas]);
@@ -1107,9 +1120,9 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
       const calculatedUnsettledAmount = (formData.totalInvolvedAmount || 0) - totalSettledAmount;
       
       const combinedLetter = buildCombinedString(letterNoPart, letterDay, letterMonth, letterYear, 'পত্র নং-', 'পত্রের তারিখ-');
-      const combinedDiary = formData.meetingType === 'বিএসআর' ? buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-') : '';
+      const combinedDiary = buildCombinedString(diaryNoPart, diaryDay, diaryMonth, diaryYear, 'ডায়েরি নং-', 'ডায়েরির তারিখ-');
       const combinedIssue = buildCombinedString(issueNoPart, dayPart, monthPart, yearPart, 'জারিপত্র নং-', 'জারিপত্রের তারিখ-');
-      const combinedWp = formData.meetingType !== 'বিএসআর' ? buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-') : '';
+      const combinedWp = buildCombinedString(wpNoPart, wpDay, wpMonth, wpYear, 'কার্যপত্র নং-', 'কার্যপত্রের তারিখ-');
 
       // Auto-mapping fallback from correspondenceEntries (only when creating a new entry, not overriding edits)
       let mappedSentParaCount = formData.meetingSentParaCount !== undefined && formData.meetingSentParaCount !== null ? String(formData.meetingSentParaCount) : '';
@@ -1150,12 +1163,17 @@ const SettlementEntryModule: React.FC<SettlementEntryModuleProps> = ({
 
       const finalData = {
         ...formData, 
+        ...(initialEntry?.id ? { id: initialEntry.id } : {}),
         meetingSentParaCount: mappedSentParaCount,
         sentParaInvolvedAmount: mappedInvolvedAmount,
         letterNoDate: combinedLetter,
         issueLetterNoDate: combinedIssue,
         workpaperNoDate: combinedDiary,
         meetingWorkpaper: combinedWp,
+        diaryNo: diaryNoPart,
+        diaryDate: (diaryDay && diaryMonth && diaryYear) ? `${diaryDay}/${diaryMonth}/${diaryYear}` : '',
+        letterNo: letterNoPart,
+        issueNo: issueNoPart,
         meetingDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingDate,
         meetingResponseDate: formData.meetingType === 'বিএসআর' ? '' : formData.meetingResponseDate,
         meetingFullSettledParaCount: summaryData.fullCount.toString(),
