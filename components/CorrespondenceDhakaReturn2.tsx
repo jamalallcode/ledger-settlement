@@ -9,7 +9,7 @@ import {
 import { toBengaliDigits, toEnglishDigits } from '../utils/numberUtils';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import { OFFICE_HEADER } from '../constants';
-import { format as dateFnsFormat } from 'date-fns';
+import { format as dateFnsFormat, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { formatBengaliDateDMY } from '../utils/syncHelper';
 import * as XLSX from 'xlsx';
 import { isBilateralLetter, isTrilateralLetter, isExcludedFromDhakaReturn } from './CorrespondenceDhakaReturn';
@@ -231,6 +231,41 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
   const [startDate, setStartDate] = useState<Date>(() => initialStartDate);
   const [endDate, setEndDate] = useState<Date>(() => initialEndDate);
   const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
+
+  const [manualStartDate, setManualStartDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(initialStartDate, 'dd/MM/yyyy')));
+  const [manualEndDate, setManualEndDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(initialEndDate, 'dd/MM/yyyy')));
+
+  useEffect(() => {
+    setManualStartDate(toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy')));
+  }, [startDate]);
+
+  useEffect(() => {
+    setManualEndDate(toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy')));
+  }, [endDate]);
+
+  const parseManualDate = (str: string): Date | null => {
+    if (!str) return null;
+    const clean = toEnglishDigits(str).trim();
+    const parts = clean.split(/[-/.]/);
+    if (parts.length === 3) {
+      let d = 0, m = 0, y = 0;
+      if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      } else {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+        if (y < 100) y = 2000 + y;
+      }
+      if (y >= 1970 && y <= 2100 && m >= 0 && m <= 11 && d >= 1 && d <= 31) {
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime()) && dt.getMonth() === m && dt.getDate() === d) return dt;
+      }
+    }
+    return null;
+  };
 
   // Date Picker & Calendar States
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
@@ -1121,18 +1156,49 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                       setSelectingDateType('start');
                       setCurrentViewDate(new Date(startDate));
                     }}
-                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
                       selectingDateType === 'start'
                         ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-sm'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                     }`}
                   >
-                    <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-extrabold text-xs text-slate-800">
-                        {toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))}
-                      </span>
-                      <div className="relative">
+                    <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualStartDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingDateType('start');
+                          setCurrentViewDate(new Date(startDate));
+                        }}
+                        onFocus={() => {
+                          setSelectingDateType('start');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualStartDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setStartDate(parsed);
+                            if (parsed > endDate) setEndDate(parsed);
+                            setCurrentViewDate(parsed);
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualStartDate);
+                          if (parsed) {
+                            setStartDate(parsed);
+                            setManualStartDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualStartDate(toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="০১/০১/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ০১/১০/২০২৬ বা 01/10/2026)"
+                      />
+                      <div className="relative shrink-0">
                         <input 
                           type="date"
                           value={dateFnsFormat(startDate, 'yyyy-MM-dd')}
@@ -1147,7 +1213,7 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                             }
                           }}
                           className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                          title="শুরুর তারিখ পরিবর্তন করুন"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
                         />
                         <Calendar size={13} className="text-emerald-600" />
                       </div>
@@ -1159,18 +1225,49 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                       setSelectingDateType('end');
                       setCurrentViewDate(new Date(endDate));
                     }}
-                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
                       selectingDateType === 'end'
                         ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 shadow-sm'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                     }`}
                   >
-                    <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-extrabold text-xs text-slate-800">
-                        {toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))}
-                      </span>
-                      <div className="relative">
+                    <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualEndDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingDateType('end');
+                          setCurrentViewDate(new Date(endDate));
+                        }}
+                        onFocus={() => {
+                          setSelectingDateType('end');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualEndDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setEndDate(parsed);
+                            if (parsed < startDate) setStartDate(parsed);
+                            setCurrentViewDate(parsed);
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualEndDate);
+                          if (parsed) {
+                            setEndDate(parsed);
+                            setManualEndDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualEndDate(toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="৩১/০৮/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ৩১/১০/২০২৬ বা 31/10/2026)"
+                      />
+                      <div className="relative shrink-0">
                         <input 
                           type="date"
                           value={dateFnsFormat(endDate, 'yyyy-MM-dd')}
@@ -1185,7 +1282,7 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                             }
                           }}
                           className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                          title="শেষের তারিখ পরিবর্তন করুন"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
                         />
                         <Calendar size={13} className="text-emerald-600" />
                       </div>
@@ -1193,8 +1290,78 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                   </div>
                 </div>
 
-                {/* Quick Presets */}
-                <div className="flex flex-wrap gap-1 mb-3 pb-2 border-b border-slate-100">
+                {/* Quick Presets: [ < ] [বিগত মাস] [চলতি মাস] [ > ] [০১/০১/২০২৬ - ৩১/০৮/২০২৬] [চলতি বছর] */}
+                <div className="flex flex-wrap items-center gap-1 mb-3 pb-2 border-b border-slate-100">
+                  {/* পূর্ববর্তী মাস নেভিগেশন বোতাম (বাম অ্যারো - যতবার চাপবেন এক মাস করে পেছনে যাবে) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const base = startDate || new Date();
+                      const prevM = subMonths(base, 1);
+                      const s = startOfMonth(prevM);
+                      const e = endOfMonth(prevM);
+                      setStartDate(s);
+                      setEndDate(e);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পূর্ববর্তী মাস (পেছনে যান - যতবার চাপবেন এক মাস করে পেছনে যাবে)"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+
+                  {/* বিগত মাস */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = startOfMonth(subMonths(now, 1));
+                      const e = endOfMonth(subMonths(now, 1));
+                      setStartDate(s);
+                      setEndDate(e);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="বিগত মাস"
+                  >
+                    বিগত মাস
+                  </button>
+
+                  {/* চলতি মাস (বিগত মাসের ডান পাশে) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = startOfMonth(now);
+                      const e = endOfMonth(now);
+                      setStartDate(s);
+                      setEndDate(e);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="চলতি মাস"
+                  >
+                    চলতি মাস
+                  </button>
+
+                  {/* পরবর্তী মাস নেভিগেশন বোতাম (ডান অ্যারো) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const base = startDate || new Date();
+                      const nextM = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                      const s = startOfMonth(nextM);
+                      const e = endOfMonth(nextM);
+                      setStartDate(s);
+                      setEndDate(e);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পরবর্তী মাস (সামনে যান)"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -1220,33 +1387,6 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
                     className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors cursor-pointer"
                   >
                     চলতি বছর
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const now = new Date();
-                      const s = new Date(now.getFullYear(), now.getMonth(), 1);
-                      setStartDate(s);
-                      setEndDate(now);
-                      setCurrentViewDate(now);
-                    }}
-                    className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors cursor-pointer"
-                  >
-                    চলতি মাস
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const now = new Date();
-                      const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                      const e = new Date(now.getFullYear(), now.getMonth(), 0);
-                      setStartDate(s);
-                      setEndDate(e);
-                      setCurrentViewDate(s);
-                    }}
-                    className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors cursor-pointer"
-                  >
-                    বিগত মাস
                   </button>
                 </div>
 
