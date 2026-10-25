@@ -705,26 +705,66 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
 }) => {
   // Default branch filter is 'নন এসএফআই' as shown in the user's reference image
   const [filterBranch, setFilterBranch] = useState<'নন এসএফআই' | 'এসএফআই' | 'সকল'>('নন এসএফআই');
-  const [filterLetterType, setFilterLetterType] = useState<string>(initialLetterType || 'বিএসআর');
+  const [filterLetterType, setFilterLetterType] = useState<string>(initialLetterType || 'সকল');
+  const [generalSelectedTypes, setGeneralSelectedTypes] = useState<string[]>(() => {
+    if (initialLetterType && initialLetterType !== 'সকল' && initialLetterType !== 'বিএসআর') {
+      const norm = initialLetterType === 'দ্বি-সভা (কার্যবিবরনী)' ? 'দ্বি-সভা (কার্যবিবরণী)' :
+                   initialLetterType === 'ত্রি-সভা (কার্যবিবরনী)' ? 'ত্রি-সভা (কার্যবিবরণী)' :
+                   initialLetterType === 'মিলিকরন' ? 'মিলিকরণ' : initialLetterType;
+      return [norm];
+    }
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যপত্র)',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'অন্যান্য',
+      'মিলিকরণ'
+    ];
+  });
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Dropdown states
   const [isBranchOpen, setIsBranchOpen] = useState(false);
+  const [isMonthlyReportOpen, setIsMonthlyReportOpen] = useState(false);
   const [isLetterTypeOpen, setIsLetterTypeOpen] = useState(false);
-  const [isMonthlyReportDropdownOpen, setIsMonthlyReportDropdownOpen] = useState(false);
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
 
-  // Monthly Report Mode & Selected Types
-  const [isMonthlyReportMode, setIsMonthlyReportMode] = useState(false);
+  // Monthly Report Mode & Selected Types - ১ নং ছবির টেবিল ডিফল্ট হিসেবে শুরুতে দেখাবে
+  const [isMonthlyReportMode, setIsMonthlyReportMode] = useState<boolean>(true);
   const [monthlyReportSelectedTypes, setMonthlyReportSelectedTypes] = useState<string[]>(() => {
-    return ['বিএসআর', 'দ্বি-সভা (কার্যপত্র)', 'দ্বি-সভা (কার্যবিবরনী)'];
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('monthly_report_selected_types');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      }
+    } catch (_) {}
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'দ্বি-সভা (কার্যপত্র)',
+      'মিলিকরণ',
+      'অন্যান্য'
+    ];
   });
 
   const branchRef = useRef<HTMLDivElement>(null);
-  const letterTypeRef = useRef<HTMLDivElement>(null);
   const monthlyReportRef = useRef<HTMLDivElement>(null);
+  const letterTypeRef = useRef<HTMLDivElement>(null);
   const dateRangeRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    setMonthlyReportSelectedTypes([...generalSelectedTypes]);
+  }, [generalSelectedTypes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('monthly_report_selected_types', JSON.stringify(monthlyReportSelectedTypes));
+    } catch (_) {}
+  }, [monthlyReportSelectedTypes]);
 
   // Initialize start & end date based on activeCycle or previous 1 month
   const [startDate, setStartDate] = useState<Date>(() => {
@@ -748,6 +788,73 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   });
 
   const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(startDate));
+
+  // Dynamic Letter Type Options based on selected Branch
+  const letterTypeOptions = useMemo(() => {
+    if (filterBranch === 'নন এসএফআই') {
+      return [
+        'বিএসআর',
+        'দ্বি-সভা (কার্যপত্র)',
+        'দ্বি-সভা (কার্যবিবরণী)',
+        'অন্যান্য',
+        'মিলিকরণ'
+      ];
+    }
+    if (filterBranch === 'এসএফআই') {
+      return [
+        'বিএসআর',
+        'ত্রি-সভা (কার্যপত্র)',
+        'ত্রি-সভা (কার্যবিবরণী)',
+        'অন্যান্য',
+        'মিলিকরণ'
+      ];
+    }
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যপত্র)',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'ত্রি-সভা (কার্যপত্র)',
+      'ত্রি-সভা (কার্যবিবরণী)',
+      'অন্যান্য',
+      'মিলিকরণ'
+    ];
+  }, [filterBranch]);
+
+  useEffect(() => {
+    if (initialLetterType && initialLetterType !== 'সকল' && initialLetterType !== 'বিএসআর') return;
+    setGeneralSelectedTypes([...letterTypeOptions]);
+  }, [letterTypeOptions, initialLetterType]);
+
+  // মাসিক প্রতিবেদনের জন্য শাখা অনুযায়ী প্রযোজ্য চিঠির ধরণসমূহ
+  const monthlyReportAvailableTypes = useMemo(() => {
+    if (filterBranch === 'নন এসএফআই') {
+      return [
+        'বিএসআর',
+        'দ্বি-সভা (কার্যবিবরণী)',
+        'দ্বি-সভা (কার্যপত্র)',
+        'মিলিকরণ',
+        'অন্যান্য'
+      ];
+    }
+    if (filterBranch === 'এসএফআই') {
+      return [
+        'বিএসআর',
+        'ত্রি-সভা (কার্যবিবরণী)',
+        'ত্রি-সভা (কার্যপত্র)',
+        'মিলিকরণ',
+        'অন্যান্য'
+      ];
+    }
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'দ্বি-সভা (কার্যপত্র)',
+      'ত্রি-সভা (কার্যবিবরণী)',
+      'ত্রি-সভা (কার্যপত্র)',
+      'মিলিকরণ',
+      'অন্যান্য'
+    ];
+  }, [filterBranch]);
 
   // Sync with activeCycle if it changes
   useEffect(() => {
@@ -816,10 +923,17 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   }, [isMonthlyReportMode, filterBranch, filterLetterType]);
 
   useEffect(() => {
-    if (initialLetterType) {
-      setFilterLetterType(initialLetterType);
+    if (initialLetterType && initialLetterType !== 'সকল' && initialLetterType !== 'বিএসআর') {
+      const norm = initialLetterType === 'দ্বি-সভা (কার্যবিবরনী)' ? 'দ্বি-সভা (কার্যবিবরণী)' :
+                   initialLetterType === 'ত্রি-সভা (কার্যবিবরনী)' ? 'ত্রি-সভা (কার্যবিবরণী)' :
+                   initialLetterType === 'মিলিকরন' ? 'মিলিকরণ' : initialLetterType;
+      setFilterLetterType(norm);
+      setGeneralSelectedTypes([norm]);
+    } else {
+      setFilterLetterType('সকল');
+      setGeneralSelectedTypes([...letterTypeOptions]);
     }
-  }, [initialLetterType]);
+  }, [initialLetterType, letterTypeOptions]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -827,11 +941,11 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
       if (branchRef.current && !branchRef.current.contains(e.target as Node)) {
         setIsBranchOpen(false);
       }
+      if (monthlyReportRef.current && !monthlyReportRef.current.contains(e.target as Node)) {
+        setIsMonthlyReportOpen(false);
+      }
       if (letterTypeRef.current && !letterTypeRef.current.contains(e.target as Node)) {
         setIsLetterTypeOpen(false);
-      }
-      if (monthlyReportRef.current && !monthlyReportRef.current.contains(e.target as Node)) {
-        setIsMonthlyReportDropdownOpen(false);
       }
       if (dateRangeRef.current && !dateRangeRef.current.contains(e.target as Node)) {
         setIsDateRangeOpen(false);
@@ -841,74 +955,7 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Dynamic Letter Type Options based on selected Branch:
-  // নন এসএফআই: “বিএসআর”, “দ্বি-সভা (কার্যপত্র)”, “দ্বি-সভা (কার্যবিবরনী)”, “অন্যান্য”, “মিলিকরন”, “সকল”
-  // এসএফআই: “বিএসআর”, “ত্রি-সভা (কার্যপত্র)”, “ত্রি-সভা (কার্যবিবরনী)”, “অন্যান্য”, “মিলিকরন”, “সকল”
-  const letterTypeOptions = useMemo(() => {
-    if (filterBranch === 'নন এসএফআই') {
-      return [
-        'বিএসআর',
-        'দ্বি-সভা (কার্যপত্র)',
-        'দ্বি-সভা (কার্যবিবরনী)',
-        'অন্যান্য',
-        'মিলিকরন',
-        'সকল'
-      ];
-    }
-    if (filterBranch === 'এসএফআই') {
-      return [
-        'বিএসআর',
-        'ত্রি-সভা (কার্যপত্র)',
-        'ত্রি-সভা (কার্যবিবরনী)',
-        'অন্যান্য',
-        'মিলিকরন',
-        'সকল'
-      ];
-    }
-    return [
-      'বিএসআর',
-      'দ্বি-সভা (কার্যপত্র)',
-      'দ্বি-সভা (কার্যবিবরনী)',
-      'ত্রি-সভা (কার্যপত্র)',
-      'ত্রি-সভা (কার্যবিবরনী)',
-      'অন্যান্য',
-      'মিলিকরন',
-      'সকল'
-    ];
-  }, [filterBranch]);
 
-  // মাসিক প্রতিবেদনের জন্য শাখা অনুযায়ী প্রযোজ্য চিঠির ধরণসমূহ:
-  // নন এসএফআই সিলেক্ট করলে ত্রি-সভা সম্পর্কিত কিছুই থাকবে না।
-  // এসএফআই সিলেক্ট করলে দ্বি-সভা সম্পর্কিত কিছুই থাকবে না।
-  const monthlyReportAvailableTypes = useMemo(() => {
-    if (filterBranch === 'নন এসএফআই') {
-      return [
-        'বিএসআর',
-        'দ্বি-সভা (কার্যবিবরণী)',
-        'দ্বি-সভা (কার্যপত্র)',
-        'মিলিকরণ',
-        'অন্যান্য'
-      ];
-    }
-    if (filterBranch === 'এসএফআই') {
-      return [
-        'বিএসআর',
-        'ত্রি-সভা (কার্যবিবরণী)',
-        'ত্রি-সভা (কার্যপত্র)',
-        'মিলিকরণ',
-        'অন্যান্য'
-      ];
-    }
-    return [
-      'বিএসআর',
-      'দ্বি-সভা (কার্যবিবরণী)',
-      'দ্বি-সভা (কার্যপত্র)',
-      'ত্রি-সভা (কার্যবিবরণী)',
-      'ত্রি-সভা (কার্যপত্র)',
-      'মিলিকরণ',
-      'অন্যান্য'
-    ];
-  }, [filterBranch]);
 
   // শাখা পরিবর্তন হলে নির্বাচিত চিঠির ধরণ স্বয়ংক্রিয়ভাবে ফিল্টার করা (যাতে অবৈধ অপশন না থাকে)
   useEffect(() => {
@@ -917,6 +964,18 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
     } else if (filterBranch === 'এসএফআই' && (filterLetterType.includes('দ্বি-') || filterLetterType.includes('দ্বিপক্ষীয়'))) {
       setFilterLetterType('বিএসআর');
     }
+
+    setGeneralSelectedTypes(prev => {
+      const filtered = prev.filter(t => {
+        if (filterBranch === 'নন এসএফআই' && (t.includes('ত্রি-') || t.includes('ত্রিপক্ষীয়'))) return false;
+        if (filterBranch === 'এসএফআই' && (t.includes('দ্বি-') || t.includes('দ্বিপক্ষীয়'))) return false;
+        return true;
+      });
+      if (filtered.length === 0) {
+        return ['বিএসআর'];
+      }
+      return filtered;
+    });
 
     setMonthlyReportSelectedTypes(prev => {
       const filtered = prev.filter(t => {
@@ -1018,12 +1077,11 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
       if (!entry) return false;
       if (entry.approvalStatus === 'pending') return false;
 
-      // তারিখ চেক (diaryDate, receiptDate, or letterDate)
+      // ডায়েরি তারিখ ফিল্টার: ডায়েরি তারিখ অবশ্যই নির্বাচিত সময়কালের মধ্যে হতে হবে
       const dDate = parseDateSafe(entry.diaryDate) || parseDateSafe(entry.receiptDate) || parseDateSafe(entry.letterDate);
-      if (dDate) {
-        const dTime = dDate.getTime();
-        if (dTime < startMs || dTime > endMs) return false;
-      }
+      if (!dDate) return false;
+      const dTime = dDate.getTime();
+      if (dTime < startMs || dTime > endMs) return false;
 
       // শাখা ফিল্টার
       const pType = (entry.paraType || entry.branchName || '').trim();
@@ -1096,7 +1154,9 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
         const diaryStr = dNoBN && dDateShort ? `${dNoBN}, ${dDateShort}` : (dNoBN || dDateShort || '-');
 
         // প্রেরিত অনুচ্ছেদ সংখ্যা নির্ণয় (sentParaCount, totalParas, paragraphs ইত্যাদির বাংলা ডিজিট রূপান্তর সহ)
-        let paraCount = 1;
+        // শুণ্য বা ০ থাকলে ০ দেখাবে, কোনো কৃত্রিম ডিফল্ট মান ১ হবে না
+        let paraCount = 0;
+        let hasExplicitParaCount = false;
         const candidateParaValues = [
           item.sentParaCount,
           item.totalParas,
@@ -1107,17 +1167,19 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
         for (const cand of candidateParaValues) {
           if (cand !== undefined && cand !== null && String(cand).trim() !== '') {
             const eng = toEnglishDigits(String(cand).trim()).replace(/[^\d]/g, '');
-            if (eng) {
+            if (eng !== '') {
               const num = parseInt(eng, 10);
-              if (!isNaN(num) && num > 0) {
+              if (!isNaN(num)) {
                 paraCount = num;
+                hasExplicitParaCount = true;
                 break;
               }
             }
           }
         }
-        if (paraCount === 1 && Array.isArray(item.paragraphs) && item.paragraphs.length > 0) {
+        if (!hasExplicitParaCount && Array.isArray(item.paragraphs) && item.paragraphs.length > 0) {
           paraCount = item.paragraphs.length;
+          hasExplicitParaCount = true;
         }
 
         const matchedS = (settlementEntries || []).find((s: any) => 
@@ -1172,14 +1234,14 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
               const uns = Math.max(0, paraCount - sCount);
               unsettledStr = uns > 0 ? toBengaliDigits(uns) : '-';
             } else if (matchedS.isSettled === 'হ্যাঁ') {
-              settledStr = toBengaliDigits(paraCount);
+              settledStr = paraCount > 0 ? toBengaliDigits(paraCount) : '-';
             } else if (matchedS.isSettled === 'না') {
-              unsettledStr = toBengaliDigits(paraCount);
+              unsettledStr = paraCount > 0 ? toBengaliDigits(paraCount) : '-';
             }
           } else if (item.isSettled === 'হ্যাঁ') {
-            settledStr = toBengaliDigits(paraCount);
+            settledStr = paraCount > 0 ? toBengaliDigits(paraCount) : '-';
           } else if (item.isSettled === 'না' && (item.issueLetterNo || item.issueLetterDate)) {
-            unsettledStr = toBengaliDigits(paraCount);
+            unsettledStr = paraCount > 0 ? toBengaliDigits(paraCount) : '-';
           }
         }
 
@@ -1210,9 +1272,16 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
   // "বিষয়: ১৬/০৮/২০২৬ হতে ১৫/০৯/২০২৬ খ্রিঃ তারিখ পর্যন্ত নন এসএফআই শাখায় বিএসআর প্রাপ্তির রিটার্ন।"
   const subjectTitleBN = useMemo(() => {
     const branchText = filterBranch === 'সকল' ? 'সকল' : filterBranch;
-    const letterText = filterLetterType === 'সকল' ? 'সকল পত্র' : filterLetterType;
+    let letterText = 'বিএসআর';
+    if (generalSelectedTypes.length === 0 || generalSelectedTypes.length === letterTypeOptions.length) {
+      letterText = 'সকল পত্রাদি';
+    } else if (generalSelectedTypes.length === 1) {
+      letterText = generalSelectedTypes[0];
+    } else {
+      letterText = generalSelectedTypes.join(', ');
+    }
     return `বিষয়: ${dateRangeDisplayBN} খ্রিঃ তারিখ পর্যন্ত ${branchText} শাখায় ${letterText} প্রাপ্তির রিটার্ন।`;
-  }, [dateRangeDisplayBN, filterBranch, filterLetterType]);
+  }, [dateRangeDisplayBN, filterBranch, generalSelectedTypes, letterTypeOptions]);
 
   // Filter and prepare entries
   const filteredRows = useMemo(() => {
@@ -1239,42 +1308,38 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
         if (!isNonSFI(pType)) return false;
       }
 
-      // Letter Type filter
-      if (filterLetterType !== 'সকল') {
+      // Letter Type filter (এক বা একাধিক নির্বাচন সমর্থন)
+      if (generalSelectedTypes.length > 0 && generalSelectedTypes.length < letterTypeOptions.length) {
         const lTypeRaw = (entry.letterType || entry.meetingType || entry.type || '').trim();
         const norm = robustNormalize(lTypeRaw);
         const descNorm = robustNormalize(entry.description || '');
 
-        if (filterLetterType === 'বিএসআর') {
-          const isBsr = norm.includes('বিএসআর') || norm.toLowerCase().includes('bsr') || (!norm && !descNorm.includes('সভা') && !descNorm.includes('মিলিক'));
-          if (!isBsr) return false;
-        } else if (filterLetterType.includes('দ্বি-সভা (কার্যপত্র)') || filterLetterType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) {
-          const isBilateralWork = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
-                                  (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
-          if (!isBilateralWork) return false;
-        } else if (filterLetterType.includes('দ্বি-সভা (কার্যবিবরনী)') || filterLetterType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) {
-          const isBilateralMinutes = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
-                                     (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী'));
-          if (!isBilateralMinutes) return false;
-        } else if (filterLetterType.includes('ত্রি-সভা (কার্যপত্র)') || filterLetterType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) {
-          const isTrilateralWork = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
-                                   (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
-          if (!isTrilateralWork) return false;
-        } else if (filterLetterType.includes('ত্রি-সভা (কার্যবিবরনী)') || filterLetterType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) {
-          const isTrilateralMinutes = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
-                                      (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী'));
-          if (!isTrilateralMinutes) return false;
-        } else if (filterLetterType.includes('মিলিকরন') || filterLetterType.includes('মিলিকরণ')) {
-          const isRecon = norm.includes('মিলিক') || norm.includes('মিলক') || norm.includes('reconciliation') || 
-                          descNorm.includes('মিলিক') || descNorm.includes('মিলক');
-          if (!isRecon) return false;
-        } else if (filterLetterType.includes('অন্যান্য')) {
-          const isOther = norm.includes('অন্যান্য') || norm.toLowerCase().includes('other') || 
-                          (!norm.includes('বিএসআর') && !norm.includes('সভা') && !norm.includes('মিলিক'));
-          if (!isOther) return false;
-        } else {
-          if (!norm.includes(robustNormalize(filterLetterType)) && !descNorm.includes(robustNormalize(filterLetterType))) return false;
-        }
+        const isBsr = norm.includes('বিএসআর') || norm.toLowerCase().includes('bsr') || (!norm && !descNorm.includes('দ্বি') && !descNorm.includes('ত্রি') && !descNorm.includes('সভা') && !descNorm.includes('মিলিক'));
+        const isBilateralWork = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
+                                (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
+        const isBilateralMinutes = (norm.includes('দ্বি') || norm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বিপক্ষীয়') || descNorm.includes('দ্বি-সভা')) && 
+                                   (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী') || norm.includes('কার্যবিবরণী'));
+        const isTrilateralWork = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
+                                 (norm.includes('কার্যপত্র') || descNorm.includes('কার্যপত্র'));
+        const isTrilateralMinutes = (norm.includes('ত্রি') || norm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রিপক্ষীয়') || descNorm.includes('ত্রি-সভা')) && 
+                                    (norm.includes('কার্যবিবরন') || descNorm.includes('কার্যবিবরন') || norm.includes('বিবরণী') || descNorm.includes('বিবরণী') || norm.includes('কার্যবিবরণী'));
+        const isRecon = norm.includes('মিলিক') || norm.includes('মিলক') || norm.includes('reconciliation') || 
+                        descNorm.includes('মিলিক') || descNorm.includes('মিলক');
+        const isOther = (!isBsr && !isBilateralWork && !isBilateralMinutes && !isTrilateralWork && !isTrilateralMinutes && !isRecon);
+
+        const matches = generalSelectedTypes.some(sel => {
+          if (sel === 'বিএসআর' && isBsr) return true;
+          if ((sel === 'দ্বি-সভা (কার্যপত্র)' || sel.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) && isBilateralWork) return true;
+          if ((sel === 'দ্বি-সভা (কার্যবিবরণী)' || sel === 'দ্বি-সভা (কার্যবিবরনী)' || sel.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) && isBilateralMinutes) return true;
+          if ((sel === 'ত্রি-সভা (কার্যপত্র)' || sel.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) && isTrilateralWork) return true;
+          if ((sel === 'ত্রি-সভা (কার্যবিবরণী)' || sel === 'ত্রি-সভা (কার্যবিবরনী)' || sel.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) && isTrilateralMinutes) return true;
+          if ((sel === 'মিলিকরণ' || sel === 'মিলিকরন') && isRecon) return true;
+          if (sel === 'অন্যান্য' && isOther) return true;
+          if (norm.includes(robustNormalize(sel)) || descNorm.includes(robustNormalize(sel))) return true;
+          return false;
+        });
+
+        if (!matches) return false;
       }
 
       // Search term filter
@@ -1538,108 +1603,56 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
             )}
           </div>
 
-          {/* ২. চিঠির ধরণ ফিল্টার */}
+          {/* ৩. প্রাপ্ত পত্রের ধরণ ফিল্টার ড্রপডাউন (সাধারণ ভিউ) */}
           <div className="relative z-[500]" ref={letterTypeRef}>
             <button
               type="button"
-              onClick={() => setIsLetterTypeOpen(!isLetterTypeOpen)}
-              className="flex items-center gap-1.5 px-3 h-[38px] bg-white border border-slate-300 hover:border-slate-400 rounded-xl font-bold text-xs text-slate-800 shadow-xs cursor-pointer"
+              onClick={() => {
+                setIsLetterTypeOpen(!isLetterTypeOpen);
+                setIsMonthlyReportOpen(false);
+                setIsBranchOpen(false);
+                setIsDateRangeOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-3 h-[38px] rounded-xl font-bold text-xs shadow-xs cursor-pointer select-none transition-all border ${
+                !isMonthlyReportMode && generalSelectedTypes.length > 0 && generalSelectedTypes.length < letterTypeOptions.length
+                  ? 'bg-blue-50 border-blue-300 text-blue-900'
+                  : 'bg-white border-slate-300 hover:border-slate-400 text-slate-800'
+              }`}
+              title="প্রাপ্ত পত্রের ধরণ ফিল্টার"
             >
               <Mail size={13} className="text-slate-600" />
               <span className="text-slate-500">ধরণ:</span>
-              <span className="font-black text-blue-900">{filterLetterType}</span>
-              <ChevronDown size={13} className={`transition-transform duration-200 ${isLetterTypeOpen ? 'rotate-180' : ''}`} />
+              <span className="font-black text-blue-900">
+                {generalSelectedTypes.length === 0 || generalSelectedTypes.length === letterTypeOptions.length
+                  ? 'সকল'
+                  : generalSelectedTypes.length === 1
+                  ? generalSelectedTypes[0]
+                  : `${generalSelectedTypes[0]} +${toBengaliDigits(generalSelectedTypes.length - 1)}`}
+              </span>
+              {generalSelectedTypes.length > 1 && generalSelectedTypes.length < letterTypeOptions.length && (
+                <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full ml-0.5">
+                  {toBengaliDigits(generalSelectedTypes.length)}
+                </span>
+              )}
+              <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${isLetterTypeOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isLetterTypeOpen && (
-              <div className="absolute left-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-[600] py-1 max-h-60 overflow-y-auto">
-                {letterTypeOptions.map(lType => (
-                  <button
-                    key={lType}
-                    type="button"
-                    onClick={() => {
-                      setFilterLetterType(lType);
-                      setIsLetterTypeOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs font-bold transition-colors ${
-                      filterLetterType === lType ? 'bg-blue-50 text-blue-700 font-black' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{lType}</span>
-                    {filterLetterType === lType && <Check size={14} className="text-blue-600 font-bold" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ২.৫. মাসিক প্রতিবেদন ড্রপডাউন (ধরন ও সময়কাল এর মাঝখানে - হুবহু লাল বক্সের স্থানে) */}
-          <div className="relative z-[500]" ref={monthlyReportRef}>
-            <button
-              type="button"
-              onClick={() => setIsMonthlyReportDropdownOpen(!isMonthlyReportDropdownOpen)}
-              className={`flex items-center gap-1.5 px-3 h-[38px] rounded-xl font-bold text-xs shadow-xs cursor-pointer select-none transition-all border ${
-                isMonthlyReportMode
-                  ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
-                  : 'bg-white border-slate-300 hover:border-slate-400 text-slate-800'
-              }`}
-              title="Responsible Party হতে প্রাপ্ত পত্রাদির মাসিক প্রতিবেদন"
-            >
-              <FileText size={13} className={isMonthlyReportMode ? 'text-white' : 'text-slate-600'} />
-              <span className={isMonthlyReportMode ? 'text-white font-black' : 'text-slate-700 font-bold'}>
-                মাসিক প্রতিবেদন
-              </span>
-              {isMonthlyReportMode ? (
-                <span className="bg-white text-blue-700 text-[10px] font-black px-1.5 py-0.2 rounded-full ml-0.5">
-                  সক্রিয়
-                </span>
-              ) : (
-                monthlyReportSelectedTypes.length > 0 && (
-                  <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full ml-0.5">
-                    {toBengaliDigits(monthlyReportSelectedTypes.length)}
-                  </span>
-                )
-              )}
-              <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${isMonthlyReportDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isMonthlyReportDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[600] p-3 space-y-2.5">
-                {/* ভিউ টগল */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-800">মাসিক প্রতিবেদন ভিউ</span>
-                    <span className="text-[10px] text-slate-500">২ নং ছবির টেবিল ফরম্যাট</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsMonthlyReportMode(!isMonthlyReportMode)}
-                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
-                      isMonthlyReportMode ? 'bg-blue-600' : 'bg-slate-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                        isMonthlyReportMode ? 'translate-x-5' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-
+              <div className="absolute left-0 mt-1 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[600] p-3 space-y-3">
                 {/* অপশন হেডার ও কুইক সিলেক্ট বাটন */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-[11px] font-bold text-slate-600">চিঠির ধরণ নির্বাচন করুন:</span>
+                <div className="flex items-center justify-between pt-0.5 border-b border-slate-100 pb-1.5">
+                  <span className="text-[11px] font-bold text-slate-600">চিঠির ধরণ নির্বাচন:</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setMonthlyReportSelectedTypes([...monthlyReportAvailableTypes])}
+                      onClick={() => setGeneralSelectedTypes([...letterTypeOptions])}
                       className="text-[10px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
                     >
                       সব নির্বাচন
                     </button>
                     <button
                       type="button"
-                      onClick={() => setMonthlyReportSelectedTypes([])}
+                      onClick={() => setGeneralSelectedTypes([])}
                       className="text-[10px] font-bold text-slate-500 hover:text-slate-700 underline cursor-pointer"
                     >
                       সব মুছুন
@@ -1648,12 +1661,12 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                 </div>
 
                 {/* চেকবক্স তালিকা */}
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                  {monthlyReportAvailableTypes.map(type => {
-                    const isChecked = monthlyReportSelectedTypes.includes(type);
+                <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+                  {letterTypeOptions.map(lType => {
+                    const isChecked = generalSelectedTypes.includes(lType);
                     return (
                       <label
-                        key={type}
+                        key={lType}
                         className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                           isChecked ? 'bg-blue-50 text-blue-900 font-black' : 'text-slate-700 hover:bg-slate-50'
                         }`}
@@ -1664,44 +1677,32 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
                             checked={isChecked}
                             onChange={() => {
                               if (isChecked) {
-                                setMonthlyReportSelectedTypes(prev => prev.filter(t => t !== type));
+                                setGeneralSelectedTypes(prev => prev.filter(t => t !== lType));
                               } else {
-                                setMonthlyReportSelectedTypes(prev => [...prev, type]);
+                                setGeneralSelectedTypes(prev => [...prev, lType]);
                               }
                             }}
                             className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
                           />
-                          <span>{type}</span>
+                          <span>{lType}</span>
                         </div>
                       </label>
                     );
                   })}
+
                 </div>
 
                 {/* অ্যাকশন বাটন */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
-                      setIsMonthlyReportMode(true);
-                      setIsMonthlyReportDropdownOpen(false);
+                      setIsLetterTypeOpen(false);
                     }}
-                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-xs cursor-pointer transition-all text-center"
+                    className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-xs cursor-pointer transition-all text-center"
                   >
-                    প্রতিবেদন দেখুন
+                    ফিল্টার প্রয়োগ করুন
                   </button>
-                  {isMonthlyReportMode && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMonthlyReportMode(false);
-                        setIsMonthlyReportDropdownOpen(false);
-                      }}
-                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
-                    >
-                      সাধারণ ভিউ
-                    </button>
-                  )}
                 </div>
               </div>
             )}
@@ -2036,10 +2037,18 @@ export const BsrReceivedReturn: React.FC<BsrReceivedReturnProps> = ({
           /* ============================================================ */
           <>
             {/* Title Line (হুবহু ১ নং ছবি অনুযায়ী) */}
-            <div className="mb-2 text-left">
-              <p className="font-bold text-[14px] sm:text-[15.5px] text-black leading-snug tracking-tight">
+            <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-black font-bold text-[14px] sm:text-[15.5px]">
+              <p className="leading-snug tracking-tight">
                 {subjectTitleBN}
               </p>
+              <button
+                type="button"
+                onClick={() => setIsMonthlyReportMode(true)}
+                className="no-print text-xs font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer whitespace-nowrap"
+                title="মাসিক প্রতিবেদন টেবিলে ফিরুন"
+              >
+                মাসিক প্রতিবেদন ভিউ
+              </button>
             </div>
 
             {/* The 8-Column Exact Table from Image 1 */}

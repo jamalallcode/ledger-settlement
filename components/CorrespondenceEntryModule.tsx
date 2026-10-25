@@ -1053,7 +1053,7 @@ const SegmentedInput = ({
         {/* Adjusted Serial and Icon Position as per request */}
         <span className={numBadge}>{num}</span> <Icon size={14} className={`${error ? 'text-red-600' : `text-${color}-600`} shrink-0`} /> <span className="truncate">{label}</span>
       </label>
-      <div className={`relative w-full h-[55px] flex items-center border-2 rounded-2xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50')}`}>
+      <div className={`relative w-full h-[52px] flex items-center border-2 rounded-xl bg-white transition-all duration-300 shadow-sm ${error ? 'border-red-400 ring-4 ring-red-50' : (isFilled ? 'border-emerald-500 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50' : 'border-red-500 focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-50')}`}>
         <div className="flex items-center w-full px-4 h-full gap-2">
           <div className="relative flex-1 h-full flex items-center justify-center gap-1 shrink-0">
             <input 

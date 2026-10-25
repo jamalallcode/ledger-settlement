@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2, GitFork, Layers } from 'lucide-react';
+import { ChevronLeft, Printer, Database, CheckCircle2, Search, X, ChevronDown, Check, LayoutGrid, MapPin, PieChart, BarChart3, Building2, Landmark, ListChecks, Sparkles, Calendar, FileSpreadsheet, Settings2, GitFork, Layers, FileText } from 'lucide-react';
 import { toBengaliDigits, formatDateBN, toEnglishDigits } from '../utils/numberUtils';
 import { format as dateFnsFormat } from 'date-fns';
 import HighlightText from './HighlightText';
@@ -51,9 +51,58 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<'সকল' | 'এসএফআই' | 'নন এসএফআই'>('সকল');
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isMonthlyReportOpen, setIsMonthlyReportOpen] = useState(false);
   const ministryDropdownRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const monthlyReportRef = useRef<HTMLDivElement>(null);
+
+  const monthlyReportAvailableTypes = useMemo(() => {
+    if (selectedBranch === 'নন এসএফআই') {
+      return [
+        'বিএসআর',
+        'দ্বি-সভা (কার্যবিবরণী)',
+        'দ্বি-সভা (কার্যপত্র)',
+        'মিলিকরণ',
+        'অন্যান্য'
+      ];
+    }
+    if (selectedBranch === 'এসএফআই') {
+      return [
+        'বিএসআর',
+        'ত্রি-সভা (কার্যবিবরণী)',
+        'ত্রি-সভা (কার্যপত্র)',
+        'মিলিকরণ',
+        'অন্যান্য'
+      ];
+    }
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'দ্বি-সভা (কার্যপত্র)',
+      'মিলিকরণ',
+      'অন্যান্য'
+    ];
+  }, [selectedBranch]);
+
+  const [monthlyReportSelectedTypes, setMonthlyReportSelectedTypes] = useState<string[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('monthly_report_selected_types');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      }
+    } catch (_) {}
+    return [
+      'বিএসআর',
+      'দ্বি-সভা (কার্যবিবরণী)',
+      'দ্বি-সভা (কার্যপত্র)',
+      'মিলিকরণ',
+      'অন্যান্য'
+    ];
+  });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -65,6 +114,9 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       }
       if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
         setIsBranchDropdownOpen(false);
+      }
+      if (monthlyReportRef.current && !monthlyReportRef.current.contains(e.target as Node)) {
+        setIsMonthlyReportOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -260,26 +312,99 @@ const ReturnSummaryTable: React.FC<ReturnSummaryTableProps> = ({
       {/* Header container for Title block, cycle badge and statistics in a single line on desktop/xl screens OUTSIDE card-report-table-container to guarantee stickiness */}
       <div className="bg-white flex flex-col xl:flex-row items-center justify-between gap-4 mb-8 pt-4 pb-6 border-b border-slate-200/80 w-full px-4 sm:px-6 transition-all duration-300">
           
-          {/* Left: Title Header styled as split-block button and প্রাপ্ত পত্র dropdown (মার্ক করা স্থান) */}
-          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap max-w-full">
-            <div className="flex items-stretch h-[38px] w-fit max-w-[95%] shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
+          {/* Left: Title Header styled as split-block button and মাসিক প্রতিবেদন dropdown (মার্ক করা স্থানে একই সারিতে) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
+            <div className="flex items-stretch h-[36px] sm:h-[38px] w-fit shadow-md select-none rounded-xl overflow-hidden border border-slate-200/50 shrink-0 transition-all duration-300">
               {/* Left Icon Area: Off-white bg & gray bottom border */}
-              <div className="flex flex-col w-9 sm:w-10 shrink-0 h-full transition-all duration-300">
+              <div className="flex flex-col w-8 sm:w-10 shrink-0 h-full transition-all duration-300">
                 <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-                  <Landmark className="text-red-700 w-4 h-4 stroke-[2.5]" />
+                  <Landmark className="text-red-700 w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                 </div>
                 <div className="h-[2.5px] bg-[#94a3b8]" />
               </div>
               
               {/* Right Text Area: Solid Royal Blue / Deep Blue with dark blue bottom bar */}
-              <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[110px] sm:min-w-[120px]' : 'min-w-[160px] sm:min-w-[200px]'}`}>
-                <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-2.5 sm:px-3.5">
-                  <span className={`text-white font-[950] tracking-tight text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[9.5px]' : 'text-[11px] sm:text-[11.5px] md:text-[12px]'}`}>
+              <div className={`flex-1 flex flex-col h-full transition-all duration-300 ${isSearchExpanded ? 'min-w-[100px] sm:min-w-[120px]' : 'min-w-[140px] sm:min-w-[190px]'}`}>
+                <div className="flex-1 bg-[#1e40af] flex items-center justify-center px-2 sm:px-3.5">
+                  <span className={`text-white font-[950] tracking-tight text-center transition-all duration-300 whitespace-nowrap ${isSearchExpanded ? 'text-[9px] sm:text-[9.5px]' : 'text-[10.5px] sm:text-[11.5px]'}`}>
                     {displayTitle}
                   </span>
                 </div>
                 <div className="h-[2.5px] bg-[#1e3a8a]" />
               </div>
+            </div>
+
+            {/* মাসিক প্রতিবেদন অপশন (১ম ছবির চিহ্নিত অপশন, ২য় ছবির মার্ক করা স্থানে এক লাইনে সেট করা) */}
+            <div className="relative z-[500] shrink-0" ref={monthlyReportRef}>
+              <button
+                type="button"
+                onClick={() => setIsMonthlyReportOpen(!isMonthlyReportOpen)}
+                className="flex items-center gap-1.5 px-2.5 h-[36px] sm:h-[38px] rounded-xl font-bold text-xs shadow-xs cursor-pointer select-none transition-all border bg-blue-600 text-white border-blue-700 hover:bg-blue-700 active:scale-95 shrink-0"
+                title="Responsible Party হতে প্রাপ্ত পত্রাদির মাসিক প্রতিবেদন"
+              >
+                <FileText size={13} className="text-white shrink-0" />
+                <span className="text-white font-black whitespace-nowrap text-[11px] sm:text-[11.5px]">
+                  মাসিক প্রতিবেদন
+                </span>
+                <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${isMonthlyReportOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isMonthlyReportOpen && (
+                <div className="absolute left-0 top-full mt-1.5 w-60 sm:w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[600] p-3 space-y-2.5">
+                  {/* অপশন হেডার (সব নির্বাচন ও সব মুছুন বাদ দেওয়া হয়েছে) */}
+                  <div className="pt-0.5 border-b border-slate-100 pb-1.5">
+                    <span className="text-[11px] font-bold text-slate-700">চিঠির ধরণ নির্বাচন:</span>
+                  </div>
+
+                  {/* চেকবক্স তালিকা */}
+                  <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                    {monthlyReportAvailableTypes.map(type => {
+                      const isChecked = monthlyReportSelectedTypes.includes(type);
+                      return (
+                        <label
+                          key={type}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                            isChecked ? 'bg-blue-50 text-blue-900 font-black' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                const next = isChecked
+                                  ? monthlyReportSelectedTypes.filter(t => t !== type)
+                                  : [...monthlyReportSelectedTypes, type];
+                                setMonthlyReportSelectedTypes(next);
+                                localStorage.setItem('monthly_report_selected_types', JSON.stringify(next));
+                              }}
+                              className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 cursor-pointer"
+                            />
+                            <span>{type}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* অ্যাকশন বাটন */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMonthlyReportOpen(false);
+                        localStorage.setItem('monthly_report_selected_types', JSON.stringify(monthlyReportSelectedTypes));
+                        sessionStorage.setItem('open_monthly_report_mode', 'true');
+                        setSelectedReportType('মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত - মাসিক প্রতিবেদন');
+                      }}
+                      className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black shadow-xs cursor-pointer transition-all text-center flex items-center justify-center gap-1.5"
+                    >
+                      <FileText size={12} className="text-white" />
+                      <span>প্রতিবেদন দেখুন</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

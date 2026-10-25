@@ -38,6 +38,8 @@ import {
   Hash,
   Globe,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   toBengaliDigits,
@@ -50,7 +52,8 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import SettledMinistryDetailModal, { SettledMinistryItem } from "./SettledMinistryDetailModal";
 import { OFFICE_HEADER, MINISTRY_ENTITY_MAP } from "../constants.ts";
 import { getCurrentCycle, getCycleForDate } from "../utils/cycleHelper.ts";
-import { format, addMonths } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { parseManualDate } from "../utils/dateValidation.ts";
 import { formatBengaliDateDMY } from "../utils/syncHelper.ts";
 
 const robustNormalize = (str: string = "") => {
@@ -135,7 +138,25 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
     const [isCustomDateActive, setIsCustomDateActive] = useState<boolean>(false);
     const [filterStartDate, setFilterStartDate] = useState<string>("");
     const [filterEndDate, setFilterEndDate] = useState<string>("");
+    const [manualStartDate, setManualStartDate] = useState<string>(() => "");
+    const [manualEndDate, setManualEndDate] = useState<string>(() => "");
     const [dateTab, setDateTab] = useState<'cycle' | 'custom'>('cycle');
+
+    useEffect(() => {
+      if (filterStartDate) {
+        setManualStartDate(toBengaliDigits(format(new Date(filterStartDate), 'dd/MM/yyyy')));
+      } else {
+        setManualStartDate('');
+      }
+    }, [filterStartDate]);
+
+    useEffect(() => {
+      if (filterEndDate) {
+        setManualEndDate(toBengaliDigits(format(new Date(filterEndDate), 'dd/MM/yyyy')));
+      } else {
+        setManualEndDate('');
+      }
+    }, [filterEndDate]);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
       id: string;
@@ -1737,62 +1758,176 @@ const SettlementTable = React.forwardRef<HTMLDivElement, SettlementTableProps>(
                               <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
                                 শুরুর তারিখ (হতে):
                               </label>
-                              <input
-                                type="date"
-                                value={filterStartDate}
-                                onChange={(e) => {
-                                  setFilterStartDate(e.target.value);
-                                  setIsCustomDateActive(true);
-                                }}
-                                className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
-                              />
+                              <div className="relative flex items-center border border-slate-300 rounded-lg px-2 py-1 bg-white focus-within:border-blue-500">
+                                <input
+                                  type="text"
+                                  value={manualStartDate}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setManualStartDate(val);
+                                    const parsed = parseManualDate(val);
+                                    if (parsed) {
+                                      setFilterStartDate(format(parsed, 'yyyy-MM-dd'));
+                                      setIsCustomDateActive(true);
+                                    } else if (!val.trim()) {
+                                      setFilterStartDate('');
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    const parsed = parseManualDate(manualStartDate);
+                                    if (parsed) {
+                                      setFilterStartDate(format(parsed, 'yyyy-MM-dd'));
+                                      setManualStartDate(toBengaliDigits(format(parsed, 'dd/MM/yyyy')));
+                                    } else if (!manualStartDate.trim()) {
+                                      setFilterStartDate('');
+                                      setManualStartDate('');
+                                    } else if (filterStartDate) {
+                                      setManualStartDate(toBengaliDigits(format(new Date(filterStartDate), 'dd/MM/yyyy')));
+                                    }
+                                  }}
+                                  placeholder="০১/০১/২০২৬"
+                                  className="w-full bg-transparent font-bold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                                  title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ০১/০১/২০২৬ বা 01/01/2026)"
+                                />
+                                <div className="relative shrink-0 ml-1">
+                                  <input
+                                    type="date"
+                                    value={filterStartDate}
+                                    onChange={(e) => {
+                                      setFilterStartDate(e.target.value);
+                                      setIsCustomDateActive(true);
+                                    }}
+                                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                                    title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                                  />
+                                  <Calendar size={14} className="text-blue-600 cursor-pointer" />
+                                </div>
+                              </div>
                             </div>
                             <div>
                               <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
                                 শেষের তারিখ (পর্যন্ত):
                               </label>
-                              <input
-                                type="date"
-                                value={filterEndDate}
-                                onChange={(e) => {
-                                  setFilterEndDate(e.target.value);
-                                  setIsCustomDateActive(true);
-                                }}
-                                className="w-full h-8 px-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500"
-                              />
+                              <div className="relative flex items-center border border-slate-300 rounded-lg px-2 py-1 bg-white focus-within:border-blue-500">
+                                <input
+                                  type="text"
+                                  value={manualEndDate}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setManualEndDate(val);
+                                    const parsed = parseManualDate(val);
+                                    if (parsed) {
+                                      setFilterEndDate(format(parsed, 'yyyy-MM-dd'));
+                                      setIsCustomDateActive(true);
+                                    } else if (!val.trim()) {
+                                      setFilterEndDate('');
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    const parsed = parseManualDate(manualEndDate);
+                                    if (parsed) {
+                                      setFilterEndDate(format(parsed, 'yyyy-MM-dd'));
+                                      setManualEndDate(toBengaliDigits(format(parsed, 'dd/MM/yyyy')));
+                                    } else if (!manualEndDate.trim()) {
+                                      setFilterEndDate('');
+                                      setManualEndDate('');
+                                    } else if (filterEndDate) {
+                                      setManualEndDate(toBengaliDigits(format(new Date(filterEndDate), 'dd/MM/yyyy')));
+                                    }
+                                  }}
+                                  placeholder="৩১/০১/২০২৬"
+                                  className="w-full bg-transparent font-bold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                                  title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ৩১/০১/২০২৬ বা 31/01/2026)"
+                                />
+                                <div className="relative shrink-0 ml-1">
+                                  <input
+                                    type="date"
+                                    value={filterEndDate}
+                                    onChange={(e) => {
+                                      setFilterEndDate(e.target.value);
+                                      setIsCustomDateActive(true);
+                                    }}
+                                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                                    title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                                  />
+                                  <Calendar size={14} className="text-blue-600 cursor-pointer" />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Quick Presets */}
-                          <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                          {/* Quick Presets: [ < ] [বিগত মাস] [চলতি মাস] [ > ] [গত ৩০ দিন] */}
+                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-slate-100">
+                            {/* পূর্ববর্তী মাস নেভিগেশন বোতাম */}
                             <button
                               type="button"
                               onClick={() => {
-                                const now = new Date();
-                                const s = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd');
-                                const e = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd');
+                                const base = filterStartDate ? new Date(filterStartDate) : new Date();
+                                const prevM = subMonths(base, 1);
+                                const s = format(startOfMonth(prevM), 'yyyy-MM-dd');
+                                const e = format(endOfMonth(prevM), 'yyyy-MM-dd');
                                 setFilterStartDate(s);
                                 setFilterEndDate(e);
                                 setIsCustomDateActive(true);
                               }}
-                              className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                              className="p-1 px-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                              title="পূর্ববর্তী মাস (পেছনে যান - যতবার চাপবেন এক মাস করে পেছনে যাবে)"
                             >
-                              চলতি মাস
+                              <ChevronLeft size={12} />
                             </button>
+
+                            {/* বিগত মাস */}
                             <button
                               type="button"
                               onClick={() => {
                                 const now = new Date();
-                                const s = format(new Date(now.getFullYear(), now.getMonth() - 1, 1), 'yyyy-MM-dd');
-                                const e = format(new Date(now.getFullYear(), now.getMonth(), 0), 'yyyy-MM-dd');
+                                const s = format(startOfMonth(subMonths(now, 1)), 'yyyy-MM-dd');
+                                const e = format(endOfMonth(subMonths(now, 1)), 'yyyy-MM-dd');
                                 setFilterStartDate(s);
                                 setFilterEndDate(e);
                                 setIsCustomDateActive(true);
                               }}
                               className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                              title="বিগত মাস"
                             >
                               বিগত মাস
                             </button>
+
+                            {/* চলতি মাস (বিগত মাসের ডান পাশে) */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const now = new Date();
+                                const s = format(startOfMonth(now), 'yyyy-MM-dd');
+                                const e = format(endOfMonth(now), 'yyyy-MM-dd');
+                                setFilterStartDate(s);
+                                setFilterEndDate(e);
+                                setIsCustomDateActive(true);
+                              }}
+                              className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[10px] font-bold cursor-pointer"
+                              title="চলতি মাস"
+                            >
+                              চলতি মাস
+                            </button>
+
+                            {/* পরবর্তী মাস নেভিগেশন বোতাম */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const base = filterStartDate ? new Date(filterStartDate) : new Date();
+                                const nextM = addMonths(base, 1);
+                                const s = format(startOfMonth(nextM), 'yyyy-MM-dd');
+                                const e = format(endOfMonth(nextM), 'yyyy-MM-dd');
+                                setFilterStartDate(s);
+                                setFilterEndDate(e);
+                                setIsCustomDateActive(true);
+                              }}
+                              className="p-1 px-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                              title="পরবর্তী মাস (সামনে যান)"
+                            >
+                              <ChevronRight size={12} />
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {

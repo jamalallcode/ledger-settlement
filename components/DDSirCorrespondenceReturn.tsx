@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Printer, Mail, Calendar, RotateCcw, Search, 
 import React from 'react';
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { OFFICE_HEADER } from '../constants';
-import { format, startOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addDays, isBefore, subMonths, parseISO } from 'date-fns';
+import { parseManualDate } from '../utils/dateValidation';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 import { getReceivers } from './ReceiverManagement';
@@ -385,6 +386,16 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
   const [selectingDateType, setSelectingDateType] = useState<'start' | 'end'>('start');
   const [selectedReportingDate, setSelectedReportingDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date());
+  const [manualStartDate, setManualStartDate] = useState<string>(() => toBengaliDigits(format(new Date(2025, 5, 16), 'dd/MM/yyyy')));
+  const [manualEndDate, setManualEndDate] = useState<string>(() => toBengaliDigits(format(new Date(), 'dd/MM/yyyy')));
+
+  useEffect(() => {
+    setManualStartDate(toBengaliDigits(format(startDate, 'dd/MM/yyyy')));
+  }, [startDate]);
+
+  useEffect(() => {
+    setManualEndDate(toBengaliDigits(format(endDate, 'dd/MM/yyyy')));
+  }, [endDate]);
 
   useEffect(() => {
     const now = new Date();
@@ -871,125 +882,230 @@ const DDSirCorrespondenceReturn: React.FC<DDSirCorrespondenceReturnProps> = ({
                       <div
                         onClick={() => {
                           setSelectingDateType('start');
-                          setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
-                        }}
-                        className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                          selectingDateType === 'start'
-                            ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
-                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
-                        }`}
-                      >
-                        <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <span className="font-extrabold text-xs text-slate-800">
-                            {toBengaliDigits(format(startDate, 'dd/MM/yyyy'))}
-                          </span>
-                          <div className="relative">
-                            <input
-                              type="date"
-                              value={format(startDate, 'yyyy-MM-dd')}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const [y, m, d] = val.split('-').map(Number);
-                                  const newD = new Date(y, m - 1, d);
-                                  setStartDate(newD);
-                                  if (newD > endDate) setEndDate(newD);
-                                  setCurrentViewDate(new Date(y, m - 1, 1));
-                                }
-                              }}
-                              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                              title="শুরুর তারিখ পরিবর্তন করুন"
-                            />
-                            <Calendar size={13} className="text-blue-600" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* End Date Card */}
-                      <div
-                        onClick={() => {
-                          setSelectingDateType('end');
-                          setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
-                        }}
-                        className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                          selectingDateType === 'end'
-                            ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
-                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
-                        }`}
-                      >
-                        <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <span className="font-extrabold text-xs text-slate-800">
-                            {toBengaliDigits(format(endDate, 'dd/MM/yyyy'))}
-                          </span>
-                          <div className="relative">
-                            <input
-                              type="date"
-                              value={format(endDate, 'yyyy-MM-dd')}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const [y, m, d] = val.split('-').map(Number);
-                                  const newD = new Date(y, m - 1, d);
-                                  setEndDate(newD);
-                                  if (newD < startDate) setStartDate(newD);
-                                  setCurrentViewDate(new Date(y, m - 1, 1));
-                                }
-                              }}
-                              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                              title="শেষের তারিখ পরিবর্তন করুন"
-                            />
-                            <Calendar size={13} className="text-blue-600" />
-                          </div>
+                        setSelectingDateType('start');
+                        setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+                      }}
+                      className={`relative p-2 rounded-xl border text-left transition-all ${
+                        selectingDateType === 'start'
+                          ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                      <div className="flex items-center justify-between mt-0.5 gap-1">
+                        <input
+                          type="text"
+                          value={manualStartDate}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectingDateType('start');
+                            setCurrentViewDate(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+                          }}
+                          onFocus={() => {
+                            setSelectingDateType('start');
+                          }}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setManualStartDate(val);
+                            const parsed = parseManualDate(val);
+                            if (parsed) {
+                              setStartDate(parsed);
+                              if (parsed > endDate) setEndDate(parsed);
+                              setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                            }
+                          }}
+                          onBlur={() => {
+                            const parsed = parseManualDate(manualStartDate);
+                            if (parsed) {
+                              setStartDate(parsed);
+                              setManualStartDate(toBengaliDigits(format(parsed, 'dd/MM/yyyy')));
+                            } else {
+                              setManualStartDate(toBengaliDigits(format(startDate, 'dd/MM/yyyy')));
+                            }
+                          }}
+                          placeholder="০১/০১/২০২৬"
+                          className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                          title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ০১/১০/২০২৬ বা 01/10/2026)"
+                        />
+                        <div className="relative shrink-0">
+                          <input
+                            type="date"
+                            value={format(startDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const [y, m, d] = val.split('-').map(Number);
+                                const newD = new Date(y, m - 1, d);
+                                setStartDate(newD);
+                                if (newD > endDate) setEndDate(newD);
+                                setCurrentViewDate(new Date(y, m - 1, 1));
+                              }
+                            }}
+                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                            title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                          />
+                          <Calendar size={13} className="text-blue-600" />
                         </div>
                       </div>
                     </div>
 
-                    {/* Quick Presets */}
-                    <div className="flex flex-wrap gap-1 mb-3 pb-2.5 border-b border-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const now = new Date();
-                          const s = new Date(now.getFullYear(), now.getMonth(), 1);
-                          const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                          setStartDate(s);
-                          setEndDate(e);
-                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                        }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                      >
-                        চলতি মাস
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const now = new Date();
-                          const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                          const e = new Date(now.getFullYear(), now.getMonth(), 0);
-                          setStartDate(s);
-                          setEndDate(e);
-                          setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
-                        }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                      >
-                        বিগত মাস
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const now = new Date();
-                          const s = new Date(now.getFullYear(), 0, 1);
-                          const e = new Date(now.getFullYear(), 11, 31);
-                          setStartDate(s);
-                          setEndDate(e);
-                          setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                        }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
-                      >
-                        চলতি বছর
-                      </button>
+                    {/* End Date Card */}
+                    <div
+                      onClick={() => {
+                        setSelectingDateType('end');
+                        setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
+                      }}
+                      className={`relative p-2 rounded-xl border text-left transition-all ${
+                        selectingDateType === 'end'
+                          ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-200 shadow-xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                      <div className="flex items-center justify-between mt-0.5 gap-1">
+                        <input
+                          type="text"
+                          value={manualEndDate}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectingDateType('end');
+                            setCurrentViewDate(new Date(endDate.getFullYear(), endDate.getMonth(), 1));
+                          }}
+                          onFocus={() => {
+                            setSelectingDateType('end');
+                          }}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setManualEndDate(val);
+                            const parsed = parseManualDate(val);
+                            if (parsed) {
+                              setEndDate(parsed);
+                              if (parsed < startDate) setStartDate(parsed);
+                              setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                            }
+                          }}
+                          onBlur={() => {
+                            const parsed = parseManualDate(manualEndDate);
+                            if (parsed) {
+                              setEndDate(parsed);
+                              setManualEndDate(toBengaliDigits(format(parsed, 'dd/MM/yyyy')));
+                            } else {
+                              setManualEndDate(toBengaliDigits(format(endDate, 'dd/MM/yyyy')));
+                            }
+                          }}
+                          placeholder="৩১/০১/২০২৬"
+                          className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                          title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ৩১/১০/২০২৬ বা 31/10/2026)"
+                        />
+                        <div className="relative shrink-0">
+                          <input
+                            type="date"
+                            value={format(endDate, 'yyyy-MM-dd')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const [y, m, d] = val.split('-').map(Number);
+                                const newD = new Date(y, m - 1, d);
+                                setEndDate(newD);
+                                if (newD < startDate) setStartDate(newD);
+                                setCurrentViewDate(new Date(y, m - 1, 1));
+                              }
+                            }}
+                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                            title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                          />
+                          <Calendar size={13} className="text-blue-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Presets: [ < ] [বিগত মাস] [চলতি মাস] [ > ] [চলতি বছর] [গত ৩০ দিন] */}
+                  <div className="flex flex-wrap items-center gap-1 mb-3 pb-2.5 border-b border-slate-100">
+                    {/* পূর্ববর্তী মাস নেভিগেশন বোতাম */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const base = startDate || new Date();
+                        const prevM = subMonths(base, 1);
+                        const s = startOfMonth(prevM);
+                        const e = endOfMonth(prevM);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                      }}
+                      className="p-1 px-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                      title="পূর্ববর্তী মাস (পেছনে যান - যতবার চাপবেন এক মাস করে পেছনে যাবে)"
+                    >
+                      <ChevronLeft size={13} />
+                    </button>
+
+                    {/* বিগত মাস */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = startOfMonth(subMonths(now, 1));
+                        const e = endOfMonth(subMonths(now, 1));
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      title="বিগত মাস"
+                    >
+                      বিগত মাস
+                    </button>
+
+                    {/* চলতি মাস (বিগত মাসের ডান পাশে) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = startOfMonth(now);
+                        const e = endOfMonth(now);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      title="চলতি মাস"
+                    >
+                      চলতি মাস
+                    </button>
+
+                    {/* পরবর্তী মাস নেভিগেশন বোতাম */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const base = startDate || new Date();
+                        const nextM = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                        const s = startOfMonth(nextM);
+                        const e = endOfMonth(nextM);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                      }}
+                      className="p-1 px-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                      title="পরবর্তী মাস (সামনে যান)"
+                    >
+                      <ChevronRight size={13} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const s = new Date(now.getFullYear(), 0, 1);
+                        const e = new Date(now.getFullYear(), 11, 31);
+                        setStartDate(s);
+                        setEndDate(e);
+                        setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    >
+                      চলতি বছর
+                    </button>
                       <button
                         type="button"
                         onClick={() => {
