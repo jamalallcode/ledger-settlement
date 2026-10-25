@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-25] - Sidebar Reordering: 'ডিডি স্যার রিটার্ণ' Placed Directly Below 'ঢাকা'
+
+### 🛠️ Enhanced & Refined UX
+- **Repositioned 'ডিডি স্যার রিটার্ণ' (`Sidebar.tsx`)**:
+  - ব্যবহারকারীর সুনির্দিষ্ট নির্দেশনা অনুযায়ী, সাইডবারের `রিটার্ণ ও সারাংশ` > `মাসিক` > `চিঠিপত্র` সেকশনে থাকা **"ডিডি স্যার রিটার্ণ"** আইটেমটি পূর্বের অবস্থান থেকে সরিয়ে উপরের **"ঢাকা"** আইটেমের ঠিক নিচে (নিষ্পত্তির পূর্বে) স্থাপন করা হয়েছে।
+- **Complete Isolation & Zero Side Effects**:
+  - শুধুমাত্র নির্দেশিত সাইডবার আইটেমটির ক্রমিক অবস্থান পরিবর্তন করা হয়েছে। অ্যাপ্লিকেশনের অন্য কোনো ফাইল, রাউটিং, ডেটা বা ফিচার স্পর্শ করা হয়নি; বাকি সকল কিছু ১০০% ইনট্যাক্ট রয়েছে।
+
 ## [2026-10-24] - Default Select All for Letter Types & Cleaned Type Filter Dropdown
 
 ### 🛠️ Enhanced & Refined UX
