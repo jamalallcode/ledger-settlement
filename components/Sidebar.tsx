@@ -201,7 +201,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     if (activeTab === 'entry') setIsEntryExpanded(true);
     if (activeTab === 'register') setIsRegisterExpanded(true);
-    if (activeTab === 'return') setIsReturnExpanded(true);
+    if (activeTab === 'return') {
+      setIsReturnExpanded(true);
+      if (!reportType || reportType.startsWith('মাসিক রিটার্ন:')) {
+        setIsMonthlyExpanded(true);
+      }
+    }
     if (reportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
       setIsDetailedExpanded(true);
       setIsQuarterlyExpanded(true);
@@ -217,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       setIsMonthlyCorrExpanded(true);
       setIsDhakaExpanded(true);
     }
-    if (reportType?.includes('প্রাপ্ত বিএসআর') || reportType?.includes('প্রাপ্ত পত্র') || reportType?.includes('প্রাপ্ত ')) {
+    if (reportType?.includes('প্রাপ্ত বিএসআর') || reportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত পত্র' || reportType?.startsWith('চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত')) {
       setIsMonthlyExpanded(true);
       setIsMonthlyCorrExpanded(true);
     }
@@ -751,7 +756,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {/* ২. অনুচ্ছেদ */}
                               <button 
                                 onClick={() => setActiveTab('return', null, 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।')}
-                                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all cursor-pointer ${reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-blue-400'}`}
+                                className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[9px] font-black transition-all cursor-pointer ${
+                                  reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।' || 
+                                  reportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত - মাসিক প্রতিবেদন' ||
+                                  (activeTab === 'return' && !reportType)
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'text-slate-500 hover:text-blue-400'
+                                }`}
                               >
                                 <span>অনুচ্ছেদ</span>
                               </button>

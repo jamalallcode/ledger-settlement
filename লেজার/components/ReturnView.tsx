@@ -1,0 +1,2167 @@
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
+import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
+import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
+import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
+import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet, Calendar } from 'lucide-react';
+import { addMonths, subMonths, startOfMonth, endOfMonth, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
+import { parseManualDate } from '../utils/dateValidation';
+import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate, getYearlyCycleForDate } from '../utils/cycleHelper';
+import { isSFI, isNonSFI } from '../utils/branchUtils';
+import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
+import CorrespondenceDhakaReturn from './CorrespondenceDhakaReturn';
+import CorrespondenceDhakaReturn2 from './CorrespondenceDhakaReturn2';
+import OpeningBalanceSetup from './OpeningBalanceSetup';
+import ReturnSummaryTable from './ReturnSummaryTable';
+import QR_1 from './QR_1';
+import QR_2 from './QR_2';
+import QR_3 from './QR_3';
+import QR_4 from './QR_4';
+import QR_Detailed_4 from './QR_Detailed_4';
+import QR_5 from './QR_5';
+import QR_6 from './QR_6';
+import QR_Detailed_1 from './QR_Detailed_1';
+import HR_1 from './HR_1';
+import HR_2 from './HR_2';
+import HR_3 from './HR_3';
+import HR_4 from './HR_4';
+import HR_5 from './HR_5';
+import BSRMonthlySettlementDetail from './BSRMonthlySettlementDetail';
+import BilateralMonthlySettlementDetail from './BilateralMonthlySettlementDetail';
+import BSRMonthlyOnlineReceiptDetail from './BSRMonthlyOnlineReceiptDetail';
+import BilateralMonthlyOnlineReceiptDetail from './BilateralMonthlyOnlineReceiptDetail';
+import { CustomPeriodReceiptReport } from './CustomPeriodReceiptReport';
+import BsrReceivedReturn from './BsrReceivedReturn';
+import YearlyReturnView from './YearlyReturnView';
+
+const BENGALI_MONTHS = [
+  'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const BENGALI_WEEKDAYS = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র'];
+
+interface ReturnViewProps {
+  entries: SettlementEntry[];
+  correspondenceEntries?: any[];
+  cycleLabel: string;
+  onDownloadPDF?: () => void;
+  isGeneratingPDF?: boolean;
+  prevStats: CumulativeStats;
+  setPrevStats: (stats: CumulativeStats) => void;
+  onDemoLoad?: () => void;
+  onJumpToRegister?: () => void;
+  isLayoutEditable?: boolean;
+  resetKey?: number;
+  isAdmin?: boolean;
+  selectedReportType: string | null;
+  setSelectedReportType: (type: string | null) => void;
+  showFilters: boolean;
+  setShowFilters: (val: boolean) => void;
+  activeTab?: string;
+  periodOpeningBalances: any[];
+  setPeriodOpeningBalances: (balances: any[]) => void;
+  onEdit?: (entry: any) => void;
+}
+
+const ReturnView: React.FC<ReturnViewProps> = ({ 
+  entries, correspondenceEntries = [], cycleLabel, prevStats, setPrevStats, 
+  isLayoutEditable, resetKey, onDemoLoad, onJumpToRegister, isAdmin,
+  selectedReportType, setSelectedReportType,
+  showFilters, setShowFilters,
+  activeTab,
+  periodOpeningBalances, setPeriodOpeningBalances,
+  onEdit
+}) => {
+  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isEditingSetup, setIsEditingSetup] = useState(false);
+  const [tempPrevStats, setTempPrevStats] = useState<Record<string, MinistryPrevStats>>({});
+  
+  const [selectedCycleDate, setSelectedCycleDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [currentViewDate, setCurrentViewDate] = useState<Date>(new Date(selectedCycleDate));
+  const [showDetailedBsrView, setShowDetailedBsrView] = useState(true);
+  const [showDetailedBilateralView, setShowDetailedBilateralView] = useState(true);
+  const [showDetailedOnlineBsrView, setShowDetailedOnlineBsrView] = useState(true);
+  const [showDetailedOnlineBilateralView, setShowDetailedOnlineBilateralView] = useState(true);
+
+  const [isCustomRangeActive, setIsCustomRangeActive] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState<Date>(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [customEndDate, setCustomEndDate] = useState<Date>(() => new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+  const [selectingCustomDateType, setSelectingCustomDateType] = useState<'start' | 'end'>('start');
+  const [customTab, setCustomTab] = useState<'cycles' | 'custom'>('cycles');
+  const [manualCustomStartDate, setManualCustomStartDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+  const [manualCustomEndDate, setManualCustomEndDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+
+  useEffect(() => {
+    setManualCustomStartDate(toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+  }, [customStartDate]);
+
+  useEffect(() => {
+    setManualCustomEndDate(toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+  }, [customEndDate]);
+  
+  useEffect(() => {
+    setCurrentViewDate(new Date(selectedCycleDate));
+  }, [selectedCycleDate]);
+
+  useEffect(() => {
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর') {
+      setShowDetailedBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়') {
+      setShowDetailedBilateralView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর') {
+      setShowDetailedOnlineBsrView(true);
+    }
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়') {
+      setShowDetailedOnlineBilateralView(true);
+    }
+  }, [selectedReportType]);
+  
+  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
+  const [cycleDropdownAlign, setCycleDropdownAlign] = useState<'left' | 'right'>('left');
+
+  useEffect(() => {
+    if (isCycleDropdownOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceRight = window.innerWidth - rect.left;
+      // If right space is limited (less than 320px) and left space has more room, align to right
+      if (spaceRight < 320 && rect.right > spaceRight) {
+        setCycleDropdownAlign('right');
+      } else {
+        setCycleDropdownAlign('left');
+      }
+    }
+  }, [isCycleDropdownOpen]);
+
+  const [isMinistryDropdownOpen, setIsMinistryDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMinistry, setFilterMinistry] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
+  const downloadExcel = useCallback(() => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) {
+      return;
+    }
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      
+      // Remove any interactive buttons, icons, or non-print elements inside the cloned table
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+
+      // Replace div with span and add mso-data-placement to br so Excel / Word never splits cells
+      clonedTable.querySelectorAll('td div, th div').forEach(div => {
+        const span = document.createElement('span');
+        span.innerHTML = div.innerHTML;
+        if (div.getAttribute('style')) span.setAttribute('style', div.getAttribute('style') || '');
+        div.parentNode?.replaceChild(span, div);
+      });
+      clonedTable.querySelectorAll('br').forEach(br => {
+        br.setAttribute('style', 'mso-data-placement:same-cell;');
+      });
+      
+      tablesHtml += `
+        <div style="margin-bottom: 40px;">
+          ${tableIdx > 0 ? '<br><hr><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `${selectedReportType ? selectedReportType.replace(/[:|*?"<>\\/]/g, '_') : 'রিপোর্ট'}_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.xls`;
+
+    const template = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>রিপোর্ট</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', 'Calibri', sans-serif;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 12px !important;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: middle;
+          }
+          br {
+            mso-data-placement: same-cell;
+          }
+          th {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: bold !important;
+          }
+          .bg-slate-200, thead, tfoot {
+            background-color: #e2e8f0 !important;
+            font-weight: bold !important;
+          }
+          .bg-sky-100 {
+            background-color: #e0f2fe !important;
+          }
+          .bg-amber-50 {
+            background-color: #fef3c7 !important;
+          }
+          .bg-black {
+            background-color: #090d16 !important;
+            color: #ffffff !important;
+          }
+          tfoot td {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+          }
+          .text-left {
+            text-align: left !important;
+          }
+          .text-right {
+            text-align: right !important;
+          }
+          .font-black, .font-extrabold {
+            font-weight: 900 !important;
+          }
+          .font-bold {
+            font-weight: 700 !important;
+          }
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">${selectedReportType || 'রিপোর্ট'}</h2>
+        ${tablesHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [selectedReportType]);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const ministryDropdownRef = useRef<HTMLDivElement>(null);
+
+  const ministryGroups = useMemo(() => ['আর্থিক প্রতিষ্ঠান বিভাগ', 'পাট মন্ত্রণালয়', 'বস্ত্র মন্ত্রণালয়', 'শিল্প মন্ত্রণালয়', 'বিমান ও পর্যটন মন্ত্রণালয়', 'বাণিজ্য মন্ত্রণালয়'], []);
+
+  useEffect(() => {
+    if (resetKey && resetKey > 0) {
+      setSelectedReportType(null);
+      setIsSetupMode(false);
+      setSelectedCycleDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    }
+  }, [resetKey, setSelectedReportType]);
+
+  useEffect(() => {
+    if (selectedReportType?.includes('প্রারম্ভিক জের সেটআপ')) {
+      setIsSetupMode(true);
+    } else if (selectedReportType?.startsWith('সময়কাল ভিত্তিক প্রারম্ভিক জের সেটআপ')) {
+      setIsSetupMode(true);
+    } else if (selectedReportType !== null) {
+      setIsSetupMode(false);
+    }
+  }, [selectedReportType]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCycleDropdownOpen(false);
+      }
+      if (ministryDropdownRef.current && !ministryDropdownRef.current.contains(event.target as Node)) {
+        setIsMinistryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    // Lock scroll when dropdown is open without hiding scrollbars/layout flickering
+    if (isCycleDropdownOpen || isMinistryDropdownOpen) {
+      document.body.setAttribute('data-scroll-locked', 'true');
+    } else {
+      document.body.removeAttribute('data-scroll-locked');
+    }
+    return () => {
+      document.body.removeAttribute('data-scroll-locked');
+    };
+  }, [isCycleDropdownOpen, isMinistryDropdownOpen]);
+
+  const cycleOptions = useMemo(() => {
+    const options = [];
+    const seen = new Set<string>();
+    const today = new Date();
+    const currentCycle = getCurrentCycle(today);
+    const currentQuarter = getQuarterlyCycleForDate(today);
+    const currentHalfYear = getHalfYearlyCycleForDate(today);
+    
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক') || selectedReportType?.includes('বার্ষিক');
+
+    if (isQuarterly) {
+      // Loop back to find all quarters in the last 2 years.
+      for (let i = 0; i < 36; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+        
+        let quarterStartMonth = 0;
+        let quarterEndMonth = 2;
+        let quarterYear = year;
+
+        if (month >= 0 && month <= 2) {
+          quarterStartMonth = 0; // Jan
+          quarterEndMonth = 2;   // Mar
+        } else if (month >= 3 && month <= 5) {
+          quarterStartMonth = 3; // Apr
+          quarterEndMonth = 5;   // Jun
+        } else if (month >= 6 && month <= 8) {
+          quarterStartMonth = 6; // Jul
+          quarterEndMonth = 8;   // Sep
+        } else {
+          quarterStartMonth = 9; // Oct
+          quarterEndMonth = 11;  // Dec
+        }
+
+        const startMonthName = BENGALI_MONTHS[quarterStartMonth];
+        const endMonthName = BENGALI_MONTHS[quarterEndMonth];
+        
+        const startYearShort = dateFnsFormat(new Date(quarterYear, quarterStartMonth, 1), 'yy');
+        const endYearShort = dateFnsFormat(new Date(quarterYear, quarterEndMonth, 1), 'yy');
+
+        const label = `${startMonthName}/${toBengaliDigits(startYearShort)} হতে ${endMonthName}/${toBengaliDigits(endYearShort)}`;
+        
+        if (!seen.has(label)) {
+          if (quarterYear < 2025 || (quarterYear === 2025 && quarterStartMonth < 5)) {
+            continue;
+          }
+          const reprDate = new Date(quarterYear, quarterStartMonth, 16);
+          const cycle = getQuarterlyCycleForDate(reprDate);
+          if (cycle.start.getTime() > currentQuarter.start.getTime()) {
+            continue;
+          }
+          seen.add(label);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    } else if (isHalfYearly) {
+      // Half-Yearly: 6-month cycles (16 Jan - 15 Jun, 16 Jul - 15 Dec)
+      for (let i = 0; i < 36; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth();
+        const year = refDate.getFullYear();
+
+        const isH1 = month <= 5;
+        const halfStartMonth = isH1 ? 0 : 6;
+        const reprDate = new Date(year, halfStartMonth, 16);
+        const cycle = getHalfYearlyCycleForDate(reprDate);
+
+        if (!seen.has(cycle.label)) {
+          if (year < 2025) {
+            continue;
+          }
+          if (cycle.start.getTime() > currentHalfYear.start.getTime()) {
+            continue;
+          }
+          seen.add(cycle.label);
+          options.push({ date: reprDate, label: cycle.subLabel, cycleLabel: cycle.label });
+        }
+      }
+    } else if (isYearly) {
+      // Yearly: 12-month cycles (16/06/YYYY to 15/06/YYYY+1) starting from 16/06/2025 to 15/06/2026
+      const currentYearly = getYearlyCycleForDate(today);
+      const maxStartYear = Math.max(2026, currentYearly.start.getFullYear());
+      for (let yr = maxStartYear; yr >= 2025; yr--) {
+        const reprDate = new Date(yr, 5, 16);
+        const cycle = getYearlyCycleForDate(reprDate);
+        if (!seen.has(cycle.label)) {
+          seen.add(cycle.label);
+          options.push({ date: reprDate, label: cycle.subLabel, cycleLabel: cycle.label });
+        }
+      }
+    } else {
+      // Monthly!
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      for (let i = 0; i < 36; i++) {
+        const refDate = addMonths(today, -i);
+        const month = refDate.getMonth(); // 0 to 11
+        const year = refDate.getFullYear();
+
+        const monthName = BENGALI_MONTHS[month];
+        const label = `${monthName}/${toBengaliDigits(year.toString())}`;
+
+        if (!seen.has(label)) {
+          if (year < 2025 || (year === 2025 && month < 5)) {
+            continue;
+          }
+          const reprDate = new Date(year, month, 1);
+          if (reprDate.getTime() > currentMonthStart.getTime()) {
+            continue;
+          }
+          const cycle = getCycleForDate(reprDate);
+          seen.add(label);
+          options.push({ date: reprDate, label, cycleLabel: cycle.label });
+        }
+      }
+    }
+    return options;
+  }, [selectedReportType]);
+
+  const activeCycle = useMemo(() => {
+    if (isCustomRangeActive && customStartDate && customEndDate) {
+      const start = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0);
+      const end = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999);
+      const startStr = toBengaliDigits(dateFnsFormat(start, 'dd/MM/yyyy'));
+      const endStr = toBengaliDigits(dateFnsFormat(end, 'dd/MM/yyyy'));
+      const label = `${startStr} হতে ${endStr}`;
+      return {
+        start,
+        end,
+        label,
+        subLabel: `সময়কাল: ${label}`
+      };
+    }
+    const isQuarterly = selectedReportType?.includes('ত্রৈমাসিক');
+    const isHalfYearly = selectedReportType?.includes('ষাণ্মাসিক');
+    const isYearly = selectedReportType?.includes('বাৎসরিক') || selectedReportType?.includes('বার্ষিক');
+    if (isQuarterly) {
+      return getQuarterlyCycleForDate(selectedCycleDate);
+    }
+    if (isHalfYearly) {
+      return getHalfYearlyCycleForDate(selectedCycleDate);
+    }
+    if (isYearly) {
+      return getYearlyCycleForDate(selectedCycleDate);
+    }
+    return getCycleForDate(selectedCycleDate);
+  }, [selectedCycleDate, selectedReportType, isCustomRangeActive, customStartDate, customEndDate]);
+
+  const robustNormalize = (str: string = '') => {
+    if (!str) return '';
+    return str.normalize('NFC')
+      .replace(/कर्मসংস্থান/g, "কর্মসংস্থান")
+      .replace(/कर्मसंस्थान/g, "কর্মসংস্থান")
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const isEntityMatch = useCallback((entryEntity: string = '', targetEntity: string = ''): boolean => {
+    const normEntry = robustNormalize(entryEntity);
+    const normTarget = robustNormalize(targetEntity);
+    if (!normEntry || !normTarget) return false;
+    if (normEntry === normTarget) return true;
+
+    if ((normTarget.includes("কুটির") || normTarget.includes("হস্ত") || normTarget.includes("বিসিক")) && 
+        (normEntry.includes("কুটির") || normEntry.includes("হস্ত") || normEntry.includes("বিসিক"))) return true;
+
+    if ((normTarget.includes("চিনি") || normTarget.includes("খাদ্য") || normTarget.includes("বিএসএফআইসি")) && 
+        (normEntry.includes("চিনি") || normEntry.includes("খাদ্য") || normEntry.includes("বিএসএফআইসি"))) return true;
+
+    if ((normTarget.includes("রসায়ন") || normTarget.includes("রসায়ন") || normTarget.includes("বিসিআইসি")) && 
+        (normEntry.includes("রসায়ন") || normEntry.includes("রসায়ন") || normEntry.includes("বিসিআইসি"))) return true;
+
+    if (normTarget.includes("সোনালী") && normEntry.includes("সোনালী")) return true;
+    if (normTarget.includes("জনতা") && normEntry.includes("জনতা")) return true;
+    if (normTarget.includes("অগ্রণী") && normEntry.includes("অগ্রণী")) return true;
+    if (normTarget.includes("রূপালী") && normEntry.includes("রূপালী")) return true;
+    if (normTarget.includes("কৃষি") && normEntry.includes("কৃষি")) return true;
+    if (normTarget.includes("বাংলাদেশ ব্যাংক") && normEntry.includes("বাংলাদেশ ব্যাংক")) return true;
+    if (normTarget.includes("ডেভেলপমেন্ট") && normEntry.includes("ডেভেলপমেন্ট")) return true;
+    if (normTarget.includes("গৃহনির্মাণ") && normEntry.includes("গৃহনির্মাণ")) return true;
+    if (normTarget.includes("কর্মসংস্থান") && normEntry.includes("কর্মসংস্থান")) return true;
+    if (normTarget.includes("বেসিক") && normEntry.includes("বেসিক")) return true;
+    if (normTarget.includes("আনসার") && normEntry.includes("আনসার")) return true;
+    if (normTarget.includes("ইনভেস্ট") && normEntry.includes("ইনভেস্ট")) return true;
+    if (normTarget.includes("সাধারণ বীমা") && normEntry.includes("সাধারণ বীমা")) return true;
+    if (normTarget.includes("জীবন বীমা") && normEntry.includes("জীবন বীমা")) return true;
+    if (normTarget.includes("প্রবাসী কল্যাণ") && normEntry.includes("প্রবাসী কল্যাণ")) return true;
+
+    const isPatkolTarget = normTarget.includes("পাটকল") || normTarget.includes("বিজেএমসি") || normTarget.includes("জুট");
+    const isPatkolEntry = normEntry.includes("পাটকল") || normEntry.includes("বিজেএমসি") || normEntry.includes("জুট");
+    if (isPatkolTarget || isPatkolEntry) return isPatkolTarget && isPatkolEntry;
+
+    const isPatTarget = normTarget.includes("পাট") && !normTarget.includes("পাটকল") && !normTarget.includes("বিজেএমসি");
+    const isPatEntry = normEntry.includes("পাট") && !normEntry.includes("পাটকল") && !normEntry.includes("বিজেএমসি");
+    if (isPatTarget || isPatEntry) return isPatTarget && isPatEntry;
+
+    if (normTarget.includes("টিসিবি") && normEntry.includes("টিসিবি")) return true;
+    if ((normTarget.includes("আমদানি") || normTarget.includes("রপ্তানি")) && 
+        (normEntry.includes("আমদানি") || normEntry.includes("রপ্তানি"))) return true;
+    if (normTarget.includes("বিমান") && normEntry.includes("বিমান")) return true;
+    if (normTarget.includes("পর্যটন") && normEntry.includes("পর্যটন")) return true;
+
+    return normEntry.includes(normTarget) || normTarget.includes(normEntry);
+  }, []);
+
+  const calculateRecursiveOpening = useCallback((entityName: string, cycleStart: Date, paraType: 'এসএফআই' | 'নন এসএফআই' = 'এসএফআই') => {
+    const cycleStartStr = dateFnsFormat(cycleStart, 'yyyy-MM-dd');
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
+    
+    // 1. Check for EXACT period match (Start Date matches Cycle Start)
+    const exactMatch = periodOpeningBalances.find(pb => pb.startDate === cycleStartStr);
+    if (exactMatch) {
+      const stats = isSFI(paraType) ? exactMatch.stats.entitiesSFI[entityName] : exactMatch.stats.entitiesNonSFI[entityName];
+      // If an exact match for this period exists, we use it. 
+      // If this specific branch (SFI/Non-SFI) is missing, we treat it as 0, not "not found".
+      return stats || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    }
+
+    let baseMap = isSFI(paraType) ? prevStats.entitiesSFI : prevStats.entitiesNonSFI;
+    let effectiveEntryStartDate = ENTRY_START_DATE;
+
+    const base = baseMap[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+    
+    let filteredPotential = [...entries, ...correspondenceEntries];
+    if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const mType = robustNormalize(e.meetingType || e.letterType || '');
+        return mType.includes(robustNormalize('বিএসআর')) || 
+               mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+               mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+               mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+               e.isMeeting;
+      });
+    } else if (selectedReportType?.includes('বিএসআর')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const meetingType = e.meetingType || e.letterType || '';
+        return !e.isMeeting || meetingType.includes('বিএসআর');
+      });
+    } else if (selectedReportType?.includes('দ্বিপক্ষীয়')) {
+      filteredPotential = filteredPotential.filter(e => {
+        const meetingType = e.meetingType || e.letterType || '';
+        return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+      });
+    }
+
+    if (selectedReportType?.includes('অনলাইন প্রাপ্তি')) {
+      filteredPotential = filteredPotential.filter(e => e.isSentOnline === 'হ্যাঁ' || e.isOnline === 'হ্যাঁ');
+    }
+
+    const pastEntries = filteredPotential.filter(e => {
+        if (!isEntityMatch(e.entityName, entityName)) return false;
+        const normEType = robustNormalize(e.paraType || '');
+        if (normEType !== '' && normEType !== robustNormalize(paraType)) return false;
+        
+        const entryDate = e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : '');
+        if (entryDate !== '') {
+          if (entryDate >= cycleStartStr) return false;
+          return entryDate >= effectiveEntryStartDate;
+        }
+
+        const labelMatch = e.cycleLabel && toEnglishDigits(e.cycleLabel).trim() === activeLabelCanon;
+        if (labelMatch) return false;
+
+        return true;
+    });
+
+    let pastRC = 0, pastRA = 0, pastSC = 0, pastSA = 0;
+    const processedParaIds = new Set<string>();
+
+    pastEntries.forEach(entry => {
+        const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+        if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+            pastRC += parseBengaliNumber(rCountRaw);
+        }
+        if (entry.manualRaisedAmount) pastRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+
+        if (entry.paragraphs && entry.paragraphs.length > 0) {
+          entry.paragraphs.forEach(p => {
+            const cleanParaNo = String(p.paraNo || '').trim();
+            const hasDigit = /[১-৯1-9]/.test(cleanParaNo);
+            if (p.id && !processedParaIds.has(p.id) && hasDigit) {
+              processedParaIds.add(p.id);
+              const status = robustNormalize(p.status || '');
+              const settledAmt = parseBengaliNumber(String(p.recoveredAmount || '0')) + parseBengaliNumber(String(p.adjustedAmount || '0'));
+              if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                  pastSC++; 
+              }
+              pastSA += settledAmt;
+            }
+          });
+        } else {
+          const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+          const sc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+          pastSC += sc;
+          pastSA += settledAmt;
+        }
+    });
+
+    const qBase = (base.unsettledQuarterlyAmount !== undefined && base.unsettledQuarterlyAmount !== null) 
+      ? base.unsettledQuarterlyAmount 
+      : base.unsettledAmount;
+
+    const qRecAdjBase = (base.recoveryAdjustmentQuarterlyAmount !== undefined && base.recoveryAdjustmentQuarterlyAmount !== null)
+      ? base.recoveryAdjustmentQuarterlyAmount
+      : (base.settledAmount || 0);
+
+    const qRecAdjCountBase = (base.recoveryAdjustmentQuarterlyCount !== undefined && base.recoveryAdjustmentQuarterlyCount !== null)
+      ? base.recoveryAdjustmentQuarterlyCount
+      : (base.settledCount || 0);
+
+    return {
+        unsettledCount: Math.max(0, base.unsettledCount + pastRC),
+        unsettledAmount: Math.max(0, base.unsettledAmount + Math.round(pastRA)),
+        unsettledQuarterlyAmount: Math.max(0, qBase + Math.round(pastRA)),
+        recoveryAdjustmentQuarterlyCount: Math.max(0, qRecAdjCountBase + pastSC),
+        recoveryAdjustmentQuarterlyAmount: Math.max(0, qRecAdjBase + Math.round(pastSA)),
+        settledCount: base.settledCount + pastSC,
+        settledAmount: base.settledAmount + Math.round(pastSA)
+    };
+  }, [entries, correspondenceEntries, activeCycle, prevStats, selectedReportType]);
+
+  const getCombinedPrev = useCallback((entityName: string) => {
+    const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+    const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+    
+    const isUnified = prevStats?.entitiesSFI && prevStats?.entitiesNonSFI && 
+      JSON.stringify(prevStats.entitiesSFI) === JSON.stringify(prevStats.entitiesNonSFI);
+
+    if (isUnified) {
+      const base = prevStats?.entitiesSFI?.[entityName] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+      const pastRC_SFI = ePrevSFI.unsettledCount - base.unsettledCount;
+      const pastRA_SFI = ePrevSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_SFI = ePrevSFI.settledCount - base.settledCount;
+      const pastSA_SFI = ePrevSFI.settledAmount - base.settledAmount;
+
+      const pastRC_NonSFI = ePrevNonSFI.unsettledCount - base.unsettledCount;
+      const pastRA_NonSFI = ePrevNonSFI.unsettledAmount - base.unsettledAmount;
+      const pastSC_NonSFI = ePrevNonSFI.settledCount - base.settledCount;
+      const pastSA_NonSFI = ePrevNonSFI.settledAmount - base.settledAmount;
+
+      return {
+        unsettledCount: Math.max(0, base.unsettledCount + pastRC_SFI + pastRC_NonSFI),
+        unsettledAmount: Math.max(0, base.unsettledAmount + pastRA_SFI + pastRA_NonSFI),
+        settledCount: Math.max(0, base.settledCount + pastSC_SFI + pastSC_NonSFI),
+        settledAmount: Math.max(0, base.settledAmount + pastSA_SFI + pastSA_NonSFI)
+      };
+    }
+
+    return {
+      unsettledCount: ePrevSFI.unsettledCount + ePrevNonSFI.unsettledCount,
+      unsettledAmount: ePrevSFI.unsettledAmount + ePrevNonSFI.unsettledAmount,
+      settledCount: ePrevSFI.settledCount + ePrevNonSFI.settledCount,
+      settledAmount: ePrevSFI.settledAmount + ePrevNonSFI.settledAmount
+    };
+  }, [calculateRecursiveOpening, activeCycle.start, prevStats]);
+
+  useEffect(() => {
+    if (isSetupMode && !isEditingSetup) {
+      let savedLocalStats: Record<string, MinistryPrevStats> = {};
+      try {
+        const stored = localStorage.getItem('opening_balance_setup_stats_v1');
+        if (stored) savedLocalStats = JSON.parse(stored);
+      } catch {}
+
+      const rawMasterStats: Record<string, MinistryPrevStats> = {};
+      ministryGroups.forEach(m => {
+        const entities = MINISTRY_ENTITY_MAP[m] || [];
+        entities.forEach(ent => {
+          const existing = savedLocalStats[ent] || prevStats?.entitiesSFI?.[ent] || prevStats?.entitiesNonSFI?.[ent];
+          if (existing) {
+            rawMasterStats[ent] = {
+              ...existing,
+              unsettledQuarterlyAmount: existing.unsettledQuarterlyAmount !== undefined
+                ? existing.unsettledQuarterlyAmount
+                : existing.unsettledAmount,
+              recoveryAdjustmentQuarterlyCount: existing.recoveryAdjustmentQuarterlyCount !== undefined
+                ? existing.recoveryAdjustmentQuarterlyCount
+                : existing.settledCount,
+              recoveryAdjustmentQuarterlyAmount: existing.recoveryAdjustmentQuarterlyAmount !== undefined
+                ? existing.recoveryAdjustmentQuarterlyAmount
+                : existing.settledAmount
+            };
+          } else {
+            rawMasterStats[ent] = { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 };
+          }
+        });
+      });
+
+      // Half-Yearly 7 Categories
+      const halfYearlyCategoryNames = [
+        'চুরি', 'আত্মসাৎ', 'ঘাটতি', 'অপচয়', 'বিধি বহির্ভূত পরিশোধ', 'সরকারি অর্থ আদায়ে ব্যর্থতা', 'অন্যান্য অনিয়ম'
+      ];
+      const defaultHalfYearlyBaselines: Record<string, { count: number; amount: number }> = {
+        'বিধি বহির্ভূত পরিশোধ': { count: 688, amount: 793.9882 },
+        'সরকারি অর্থ আদায়ে ব্যর্থতা': { count: 844, amount: 994.4385 },
+        'অন্যান্য অনিয়ম': { count: 1027, amount: 1192.7909 }
+      };
+
+      halfYearlyCategoryNames.forEach(catName => {
+        const existing = savedLocalStats[catName] || prevStats?.entitiesSFI?.[catName] || prevStats?.entitiesNonSFI?.[catName];
+        const base = defaultHalfYearlyBaselines[catName];
+        if (existing) {
+          rawMasterStats[catName] = { 
+            ...existing,
+            halfYearlyPrevUnsettledCount: existing.halfYearlyPrevUnsettledCount !== undefined && existing.halfYearlyPrevUnsettledCount !== 0 && existing.halfYearlyPrevUnsettledCount !== '' 
+              ? existing.halfYearlyPrevUnsettledCount 
+              : (base ? base.count : 0),
+            halfYearlyPrevUnsettledAmount: existing.halfYearlyPrevUnsettledAmount !== undefined && existing.halfYearlyPrevUnsettledAmount !== 0 && existing.halfYearlyPrevUnsettledAmount !== ''
+              ? existing.halfYearlyPrevUnsettledAmount
+              : (base ? base.amount : 0)
+          };
+        } else {
+          rawMasterStats[catName] = { 
+            unsettledCount: 0, 
+            unsettledAmount: 0, 
+            settledCount: 0, 
+            settledAmount: 0,
+            halfYearlyPrevUnsettledCount: base ? base.count : 0,
+            halfYearlyPrevUnsettledAmount: base ? base.amount : 0,
+            halfYearlyRaisedCount: 0,
+            halfYearlyRaisedAmount: 0,
+            halfYearlySettledCount: 0,
+            halfYearlySettledAmount: 0
+          };
+        }
+      });
+
+      // Also copy any other previously saved entities (including বাৎসরিক জের & ষাণ্মাসিক জের keys from Supabase prevStats and localStorage)
+      let savedYearlyOverrides: Record<string, any> = {};
+      try {
+        const storedYearly = localStorage.getItem('ledger_yearly_return_overrides_v2');
+        if (storedYearly) savedYearlyOverrides = JSON.parse(storedYearly);
+      } catch {}
+
+      const extraSources: Record<string, any> = {
+        ...(prevStats?.entitiesNonSFI || {}),
+        ...(prevStats?.entitiesSFI || {}),
+        ...savedLocalStats
+      };
+
+      Object.keys(extraSources).forEach(k => {
+        if (!rawMasterStats[k]) {
+          rawMasterStats[k] = extraSources[k];
+        } else {
+          rawMasterStats[k] = {
+            ...extraSources[k],
+            ...rawMasterStats[k]
+          };
+        }
+      });
+
+      Object.keys(savedYearlyOverrides).forEach(k => {
+        const over = savedYearlyOverrides[k];
+        if (over && (over.prevCount !== undefined || over.prevAmount !== undefined)) {
+          const existing = rawMasterStats[k] || { unsettledCount: 0, unsettledAmount: 0, settledCount: 0, settledAmount: 0 };
+          rawMasterStats[k] = {
+            ...existing,
+            yearlyPrevUnsettledCount:
+              existing.yearlyPrevUnsettledCount !== undefined && existing.yearlyPrevUnsettledCount !== 0 && (existing.yearlyPrevUnsettledCount as any) !== ''
+                ? existing.yearlyPrevUnsettledCount
+                : (over.prevCount ?? 0),
+            yearlyPrevUnsettledAmount:
+              existing.yearlyPrevUnsettledAmount !== undefined && existing.yearlyPrevUnsettledAmount !== 0 && (existing.yearlyPrevUnsettledAmount as any) !== ''
+                ? existing.yearlyPrevUnsettledAmount
+                : (over.prevAmount ?? 0)
+          };
+        }
+      });
+
+      setTempPrevStats(rawMasterStats);
+    }
+  }, [isSetupMode, isEditingSetup, prevStats, ministryGroups]);
+
+  const reportData = useMemo(() => {
+    const isExcludedReport = !selectedReportType || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' || 
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।' ||
+      selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর';
+    if (isExcludedReport) return [];
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+    const activeLabelCanon = toEnglishDigits(activeCycle.label).trim();
+
+    return ministryGroups.map(ministryName => {
+      const normMinistry = robustNormalize(ministryName);
+      const mapKey = Object.keys(MINISTRY_ENTITY_MAP).find(k => robustNormalize(k) === normMinistry);
+      const entities = mapKey ? (MINISTRY_ENTITY_MAP[mapKey] || []) : [];
+      return {
+        ministry: normMinistry,
+        entityRows: entities.map(entityName => {
+          const normEntity = robustNormalize(entityName);
+          const ePrev = getCombinedPrev(entityName);
+          const allPotentialEntries = [...entries, ...correspondenceEntries];
+          const matchingEntries = allPotentialEntries.filter(e => {
+            const eMin = robustNormalize(e.ministryName || '');
+            if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
+            
+            const rawDate = selectedReportType?.includes('অনলাইন প্রাপ্তি')
+              ? (e.diaryDate || e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : ''))
+              : (e.issueDateISO || '');
+            
+            if (!rawDate) return false;
+            let entryDate = '';
+            const clean = toEnglishDigits(rawDate).trim();
+            if (clean.includes('/')) {
+              const p = clean.split('/');
+              if (p.length === 3) {
+                entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+              }
+            } else {
+              entryDate = clean.split('T')[0].split(' ')[0];
+            }
+
+            const dateMatch =
+              entryDate !== "" &&
+              entryDate >= cycleStartStr &&
+              entryDate <= cycleEndStr;
+
+            return dateMatch;
+          });
+
+          let filteredMatching = matchingEntries;
+          if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (selectedReportType.includes('বিএসআর')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return !e.isMeeting || meetingType.includes('বিএসআর');
+            });
+          } else if (selectedReportType.includes('দ্বিপক্ষীয়')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+            });
+          }
+
+          if (selectedReportType.includes('অনলাইন প্রাপ্তি')) {
+            filteredMatching = filteredMatching.filter(e => e.isSentOnline === 'হ্যাঁ' || e.isOnline === 'হ্যাঁ');
+          }
+
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiRC = 0, sfiRA = 0, nonSfiRC = 0, nonSfiRA = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
+
+          const processedParaIds = new Set<string>();
+          filteredMatching.forEach(entry => {
+            const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
+
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+              entry.paragraphs.forEach((p, pIdx) => { 
+                const cleanParaNo = String(p.paraNo || '').trim();
+                // Use a more robust unique key for tracking processed paragraphs within this entity
+                const pUniqueKey = p.id ? `${entry.id}-${p.id}` : `${entry.id}-idx-${pIdx}`;
+                
+                if (!processedParaIds.has(pUniqueKey) && (/[১-৯1-9]/.test(cleanParaNo) || p.recoveredAmount > 0 || p.adjustedAmount > 0)) {
+                  processedParaIds.add(pUniqueKey);
+                  const status = robustNormalize(p.status || '');
+                  const recovered = parseBengaliNumber(String(p.recoveredAmount || '0'));
+                  const adjusted = parseBengaliNumber(String(p.adjustedAmount || '0'));
+                  const settledAmt = recovered + adjusted;
+                  
+                  // CRITICAL: Add to total settled amount regardless of status (Full or Partial)
+                  if (settledAmt > 0) {
+                    curSA += settledAmt;
+                    if (isSFI) sfiSA += settledAmt;
+                    else nonSfiSA += settledAmt;
+                  }
+
+                  if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                    curFC++; curSC++; 
+                    if (isSFI) {
+                      curSFIC++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
+                      else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) || normLT.includes(robustNormalize('ত্রি-সভা'))) {
+                        if (normLT.includes(robustNormalize('কার্যপত্র'))) sfiTriWork++;
+                        else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) sfiTriMin++;
+                        else sfiTriWork++;
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
+                    } else {
+                      curNonSFIC++;
+                      if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
+                      else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) || normLT.includes(robustNormalize('দ্বি-সভা'))) {
+                        if (normLT.includes(robustNormalize('কার্যপত্র'))) nonSfiBiWork++;
+                        else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !!entry.meetingType) nonSfiBiMin++;
+                        else nonSfiBiWork++;
+                      } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
+                    }
+                  } else if (status === robustNormalize('আংশিক')) {
+                    curPC++;
+                  }
+                }
+              });
+            } else {
+              const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+              const fc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+              const pc = parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
+              
+              // For entries without paragraphs, we still want to count them if they have settled amounts
+              if (fc > 0 || pc > 0 || settledAmt > 0) {
+                curFC += fc; curPC += pc; curSC += fc;
+                if (settledAmt > 0) {
+                  curSA += settledAmt;
+                  if (isSFI) sfiSA += settledAmt;
+                  else nonSfiSA += settledAmt;
+                }
+              }
+            }
+            const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") {
+              const rCountVal = parseBengaliNumber(rCountRaw);
+              curRC += rCountVal;
+              if (isSFI) sfiRC += rCountVal;
+              else nonSfiRC += rCountVal;
+            }
+            if (entry.manualRaisedAmount) {
+              const rAmtVal = parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+              curRA += rAmtVal;
+              if (isSFI) sfiRA += rAmtVal;
+              else nonSfiRA += rAmtVal;
+            }
+          });
+          const ePrevSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'এসএফআই');
+          const ePrevNonSFI = calculateRecursiveOpening(entityName, activeCycle.start, 'নন এসএফআই');
+          return { 
+            entity: entityName, 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            sfiRaisedCount: sfiRC, sfiRaisedAmount: sfiRA,
+            nonSfiRaisedCount: nonSfiRC, nonSfiRaisedAmount: nonSfiRA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
+            currentFullCount: curFC, currentPartialCount: curPC,
+            currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
+            currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
+            prev: ePrev,
+            prevSFI: ePrevSFI,
+            prevNonSFI: ePrevNonSFI
+          };
+        })
+      };
+    });
+  }, [entries, correspondenceEntries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups]);
+
+  const filteredCorrespondence = useMemo(() => {
+    if (selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২' && selectedReportType !== 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') return [];
+    
+    const today = new Date();
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonthStart = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth(), 1);
+    
+    let reportingLimitDate: Date;
+    if (selectedMonthStart.getTime() > currentMonthStart.getTime()) {
+      // Next month selected: show up to today (Current Status)
+      reportingLimitDate = today;
+    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+      // Current month selected: show up to today
+      reportingLimitDate = today;
+    } else {
+      // Past month selected: show up to the end of that month
+      reportingLimitDate = new Date(activeCycle.start.getFullYear(), activeCycle.start.getMonth() + 1, 0, 23, 59, 59);
+    }
+
+    return (correspondenceEntries || []).filter(e => {
+      if (!e.diaryDate) return false;
+      const diaryDateStr = toEnglishDigits(e.diaryDate);
+      const diaryDateObj = startOfDay(new Date(diaryDateStr));
+      if (isNaN(diaryDateObj.getTime())) return false;
+      
+      // Must be received ON OR BEFORE reportingLimitDate
+      const isBeforeOrOnReportingDate = diaryDateObj.getTime() <= reportingLimitDate.getTime();
+      
+      // Exclude specific letter types as requested (Milikaran, Karjapatra, Other)
+      const lt = (e.letterType || '').trim();
+      const isExcludedType = 
+        lt === 'মিলিকরণ' || 
+        lt.includes('মিলিকরণ') || 
+        lt === 'অন্যান্য' || 
+        lt.includes('অন্যান্য') || 
+        lt.includes('কার্যপত্র');
+      if ((selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।' || selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') && isExcludedType) return false;
+
+      const rawNo = e.issueLetterNo ? String(e.issueLetterNo).trim() : '';
+      const rawDate = e.issueLetterDate ? String(e.issueLetterDate).trim() : '';
+      const hasValidNo = rawNo !== '' && rawNo !== '০' && rawNo !== '0' && !rawNo.includes('নং-');
+      const hasValidDate = rawDate !== '' && rawDate !== '0000-00-00';
+      
+      let isIssued = false;
+      if (hasValidNo && hasValidDate) {
+        isIssued = true;
+      }
+      
+      return isBeforeOrOnReportingDate && !isIssued;
+    }).sort((a, b) => new Date(toEnglishDigits(b.diaryDate)).getTime() - new Date(toEnglishDigits(a.diaryDate)).getTime());
+  }, [correspondenceEntries, selectedReportType, activeCycle]);
+
+  const grandTotals = useMemo(() => {
+    const initial = { 
+      pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
+      cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
+    };
+    if (!reportData || reportData.length === 0) return initial;
+    return reportData.reduce((acc, mGroup) => {
+      mGroup.entityRows.forEach((row: any) => {
+        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
+        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
+        acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
+        acc.cSFIC += (row.currentSFICount || 0); acc.cNonSFIC += (row.currentNonSFICount || 0);
+        acc.cSFIA += (row.currentSFIAmount || 0); acc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        acc.sfiBSR += (row.sfiBreakdown?.bsr || 0);
+        acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
+        acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
+        acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
+        
+        acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
+        acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
+        acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
+        acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
+      });
+      return acc;
+    }, initial);
+  }, [reportData]);
+
+  const statsDataTuple = useMemo(() => {
+    if (!selectedReportType) return { statsReportData: [], statsGrandTotals: null };
+    
+    let targetReportType = selectedReportType;
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর') {
+      targetReportType = 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর';
+    } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়') {
+      targetReportType = 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়';
+    }
+
+    if (targetReportType === selectedReportType) {
+      return { statsReportData: reportData, statsGrandTotals: grandTotals };
+    }
+
+    const cycleStartStr = dateFnsFormat(activeCycle.start, 'yyyy-MM-dd');
+    const cycleEndStr = dateFnsFormat(activeCycle.end, 'yyyy-MM-dd');
+
+    const calculatedStatsReportData = ministryGroups.map(ministryName => {
+      const normMinistry = robustNormalize(ministryName);
+      const mapKey = Object.keys(MINISTRY_ENTITY_MAP).find(k => robustNormalize(k) === normMinistry);
+      const entities = mapKey ? (MINISTRY_ENTITY_MAP[mapKey] || []) : [];
+      return {
+        ministry: normMinistry,
+        entityRows: entities.map(entityName => {
+          const normEntity = robustNormalize(entityName);
+          const ePrev = getCombinedPrev(entityName);
+          const allPotentialEntries = [...entries, ...correspondenceEntries];
+          const matchingEntries = allPotentialEntries.filter(e => {
+            const eMin = robustNormalize(e.ministryName || '');
+            if (eMin !== normMinistry || !isEntityMatch(e.entityName, entityName)) return false;
+            
+            const rawDate = targetReportType?.includes('অনলাইন প্রাপ্তি')
+              ? (e.diaryDate || e.issueDateISO || (e.createdAt ? e.createdAt.split('T')[0] : ''))
+              : (e.issueDateISO || '');
+            
+            if (!rawDate) return false;
+            let entryDate = '';
+            const clean = toEnglishDigits(rawDate).trim();
+            if (clean.includes('/')) {
+              const p = clean.split('/');
+              if (p.length === 3) {
+                entryDate = `${p[2].padStart(4, '20')}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+              }
+            } else {
+              entryDate = clean.split('T')[0].split(' ')[0];
+            }
+
+            const dateMatch =
+              entryDate !== "" &&
+              entryDate >= cycleStartStr &&
+              entryDate <= cycleEndStr;
+
+            return dateMatch;
+          });
+
+          let filteredMatching = matchingEntries;
+          if (targetReportType?.startsWith('ত্রৈমাসিক রিটার্ন')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const mType = robustNormalize(e.meetingType || e.letterType || '');
+              return mType.includes(robustNormalize('বিএসআর')) || 
+                     mType.includes(robustNormalize('দ্বিপক্ষীয়')) || 
+                     mType.includes(robustNormalize('দ্বিপাক্ষিক')) || 
+                     mType.includes(robustNormalize('ত্রিপক্ষীয়')) ||
+                     e.isMeeting;
+            });
+          } else if (targetReportType.includes('বিএসআর')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return !e.isMeeting || meetingType.includes('বিএসআর');
+            });
+          } else if (targetReportType.includes('দ্বিপক্ষীয়')) {
+            filteredMatching = filteredMatching.filter(e => {
+              const meetingType = e.meetingType || e.letterType || '';
+              return e.isMeeting && (meetingType.includes('দ্বিপক্ষীয়') || meetingType.includes('দ্বিপাক্ষিক'));
+            });
+          }
+
+          let curRC = 0, curRA = 0, curSC = 0, curSA = 0, curFC = 0, curPC = 0, curSFIC = 0, curNonSFIC = 0, sfiSA = 0, nonSfiSA = 0;
+          let sfiBSR = 0, sfiTriWork = 0, sfiTriMin = 0, sfiRecon = 0;
+          let nonSfiBSR = 0, nonSfiBiWork = 0, nonSfiBiMin = 0, nonSfiRecon = 0;
+
+          const processedParaIds = new Set<string>();
+          filteredMatching.forEach(entry => {
+            const isSFI = robustNormalize(entry.paraType || '') === robustNormalize('এসএফআই');
+            const rawLT = entry.meetingType || entry.letterType || '';
+            const normLT = robustNormalize(rawLT);
+
+            if (entry.paragraphs && entry.paragraphs.length > 0) {
+              entry.paragraphs.forEach((p, pIdx) => { 
+                const cleanParaNo = String(p.paraNo || '').trim();
+                const pUniqueKey = p.id ? `${entry.id}-${p.id}` : `${entry.id}-idx-${pIdx}`;
+                
+                if (!processedParaIds.has(pUniqueKey) && (/[১-৯1-9]/.test(cleanParaNo) || p.recoveredAmount > 0 || p.adjustedAmount > 0)) {
+                  processedParaIds.add(pUniqueKey);
+                  const settledAmt = p.recoveredAmount + p.adjustedAmount;
+                  if (settledAmt > 0) {
+                    curSA += settledAmt;
+                    if (isSFI) sfiSA += settledAmt;
+                    else nonSfiSA += settledAmt;
+                  }
+
+                  if (p.recoveredAmount > 0 || p.adjustedAmount > 0) {
+                    const status = robustNormalize(p.status || '');
+                    if (status === robustNormalize('পূর্ণাঙ্গ')) { 
+                      curFC++; curSC++; 
+                      if (isSFI) {
+                        curSFIC++;
+                        if (normLT.includes(robustNormalize('বিএসআর'))) sfiBSR++;
+                        else if (normLT.includes(robustNormalize('ত্রিপক্ষীয়')) || normLT.includes(robustNormalize('ত্রি-সভা'))) {
+                          if (normLT.includes(robustNormalize('কার্যপত্র'))) sfiTriWork++;
+                          else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) sfiTriMin++;
+                          else sfiTriWork++;
+                        } else if (normLT.includes(robustNormalize('মিলিকরণ'))) sfiRecon++;
+                      } else {
+                        curNonSFIC++;
+                        if (normLT.includes(robustNormalize('বিএসআর'))) nonSfiBSR++;
+                        else if (normLT.includes(robustNormalize('দ্বিপক্ষীয়')) || normLT.includes(robustNormalize('দ্বি-সভা'))) {
+                          if (normLT.includes(robustNormalize('কার্যপত্র'))) nonSfiBiWork++;
+                          else if (normLT.includes(robustNormalize('বিবরণী')) || normLT.includes(robustNormalize('(বি)')) || normLT.includes(robustNormalize('সভা')) || !entry.meetingType) nonSfiBiMin++;
+                          else nonSfiBiWork++;
+                        } else if (normLT.includes(robustNormalize('মিলিকরণ'))) nonSfiRecon++;
+                      }
+                    } else if (status === robustNormalize('আংশিক')) {
+                      curPC++;
+                    }
+                  }
+                }
+              });
+            } else {
+              const settledAmt = parseBengaliNumber(entry.totalRec || '0') + parseBengaliNumber(entry.totalAdj || '0');
+              const fc = parseBengaliNumber(entry.meetingFullSettledParaCount || '0');
+              const pc = parseBengaliNumber(entry.meetingPartialSettledParaCount || '0');
+              
+              if (fc > 0 || pc > 0 || settledAmt > 0) {
+                curFC += fc; curPC += pc; curSC += fc;
+                if (settledAmt > 0) {
+                  curSA += settledAmt;
+                  if (isSFI) sfiSA += settledAmt;
+                  else nonSfiSA += settledAmt;
+                }
+              }
+            }
+            const rCountRaw = entry.manualRaisedCount?.toString().trim() || "";
+            if (rCountRaw !== "" && rCountRaw !== "0" && rCountRaw !== "০") curRC += parseBengaliNumber(rCountRaw);
+            if (entry.manualRaisedAmount) curRA += parseBengaliNumber(String(entry.manualRaisedAmount || '0'));
+          });
+          return { 
+            entity: entityName, 
+            currentRaisedCount: curRC, currentRaisedAmount: curRA,
+            currentSettledCount: curSC, currentSettledAmount: curSA,
+            currentFullCount: curFC, currentPartialCount: curPC,
+            currentSFICount: curSFIC, currentNonSFICount: curNonSFIC,
+            currentSFIAmount: sfiSA, currentNonSFIAmount: nonSfiSA,
+            sfiBreakdown: { bsr: sfiBSR, triWork: sfiTriWork, triMin: sfiTriMin, recon: sfiRecon },
+            nonSfiBreakdown: { bsr: nonSfiBSR, biWork: nonSfiBiWork, biMin: nonSfiBiMin, recon: nonSfiRecon },
+            prev: ePrev 
+          };
+        })
+      };
+    });
+
+    const calculatedStatsGrandTotals = calculatedStatsReportData.reduce((acc, mGroup) => {
+      mGroup.entityRows.forEach((row: any) => {
+        acc.pUC += (row.prev.unsettledCount || 0); acc.pUA += (row.prev.unsettledAmount || 0); 
+        acc.cRC += (row.currentRaisedCount || 0); acc.cRA += (row.currentRaisedAmount || 0);
+        acc.pSC += (row.prev.settledCount || 0); acc.pSA += (row.prev.settledAmount || 0); 
+        acc.cSC += (row.currentSettledCount || 0); acc.cSA += (row.currentSettledAmount || 0);
+        acc.cFC += (row.currentFullCount || 0); acc.cPC += (row.currentPartialCount || 0);
+        acc.cSFIC += (row.currentSFICount || 0); acc.cNonSFIC += (row.currentNonSFICount || 0);
+        acc.cSFIA += (row.currentSFIAmount || 0); acc.cNonSFIA += (row.currentNonSFIAmount || 0);
+        
+        acc.sfiBSR += (row.sfiBreakdown?.bsr || 0);
+        acc.sfiTriWork += (row.sfiBreakdown?.triWork || 0);
+        acc.sfiTriMin += (row.sfiBreakdown?.triMin || 0);
+        acc.sfiRecon += (row.sfiBreakdown?.recon || 0);
+        
+        acc.nonSfiBSR += (row.nonSfiBreakdown?.bsr || 0);
+        acc.nonSfiBiWork += (row.nonSfiBreakdown?.biWork || 0);
+        acc.nonSfiBiMin += (row.nonSfiBreakdown?.biMin || 0);
+        acc.nonSfiRecon += (row.nonSfiBreakdown?.recon || 0);
+      });
+      return acc;
+    }, { 
+      pUC: 0, pUA: 0, cRC: 0, cRA: 0, pSC: 0, pSA: 0, cSC: 0, cSA: 0, cFC: 0, cPC: 0, 
+      cSFIC: 0, cNonSFIC: 0, cSFIA: 0, cNonSFIA: 0,
+      sfiBSR: 0, sfiTriWork: 0, sfiTriMin: 0, sfiRecon: 0,
+      nonSfiBSR: 0, nonSfiBiWork: 0, nonSfiBiMin: 0, nonSfiRecon: 0
+    });
+
+    return { statsReportData: calculatedStatsReportData, statsGrandTotals: calculatedStatsGrandTotals };
+  }, [entries, correspondenceEntries, selectedReportType, calculateRecursiveOpening, activeCycle, ministryGroups, reportData, grandTotals]);
+
+  const { statsReportData, statsGrandTotals } = statsDataTuple;
+
+  const handleSaveSetup = () => {
+    try {
+      localStorage.setItem('opening_balance_setup_stats_v1', JSON.stringify(tempPrevStats));
+    } catch (e) {
+      console.error("Failed to save opening balance setup to localStorage:", e);
+    }
+    try {
+      setPrevStats({ ...prevStats, entitiesSFI: tempPrevStats, entitiesNonSFI: tempPrevStats });
+    } catch (e) {
+      console.error("Failed to setPrevStats:", e);
+    }
+    setIsEditingSetup(false);
+  };
+
+  const handleSetupPaste = (e: React.ClipboardEvent, startEntity: string, startField: keyof MinistryPrevStats) => {
+    if (!isEditingSetup) return;
+    e.preventDefault(); const pasteData = e.clipboardData.getData('text');
+    if (!pasteData) return;
+    const rows = pasteData.split(/\r?\n/).filter(row => row.trim() !== '');
+    const allEntities: string[] = [];
+    ministryGroups.forEach(m => { (MINISTRY_ENTITY_MAP[m] || []).forEach(ent => allEntities.push(ent)); });
+    const startIdx = allEntities.indexOf(startEntity);
+    if (startIdx === -1) return;
+    
+    const fields: (keyof MinistryPrevStats)[] = ['unsettledCount', 'unsettledAmount', 'settledCount', 'settledAmount', 'unsettledQuarterlyAmount', 'recoveryAdjustmentQuarterlyCount', 'recoveryAdjustmentQuarterlyAmount'];
+      
+    const fieldStartIdx = fields.indexOf(startField);
+    const newStats = { ...tempPrevStats };
+    rows.forEach((row, rowOffset) => {
+      const entityIdx = startIdx + rowOffset; if (entityIdx >= allEntities.length) return;
+      const entityName = allEntities[entityIdx]; const cells = row.split(/\t/); 
+      cells.forEach((cell, cellOffset) => {
+        const fieldIdx = fieldStartIdx + cellOffset; if (fieldIdx >= fields.length) return;
+        const fieldName = fields[fieldIdx]; const value = parseBengaliNumber(cell.trim());
+        newStats[entityName] = { ...(newStats[entityName] || { unsettledCount: 0, unsettledAmount: 0, unsettledQuarterlyAmount: 0, recoveryAdjustmentQuarterlyCount: 0, recoveryAdjustmentQuarterlyAmount: 0, settledCount: 0, settledAmount: 0 }), [fieldName]: value };
+      });
+    });
+    setTempPrevStats(newStats);
+  };
+
+  const IDBadge = ({ id }: { id: string }) => {
+    const [copied, setCopied] = useState(false);
+    if (!isLayoutEditable) return null;
+    const handleCopy = (e: React.MouseEvent) => {
+      e.preventDefault(); e.stopPropagation();
+      navigator.clipboard.writeText(id);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+      <div onClick={handleCopy} className="absolute top-0 left-0 -translate-y-full z-[9995] pointer-events-auto no-print">
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md font-black text-[9px] bg-black text-white border border-white/30 shadow-2xl transition-all duration-300 hover:scale-150 hover:bg-blue-600 hover:z-[99999] active:scale-95 cursor-copy origin-bottom-left ${copied ? 'bg-emerald-600 border-emerald-400 ring-4 ring-emerald-500/30 !scale-125' : ''}`}>
+          {copied ? <><CheckCircle2 size={10} /> COPIED</> : `#${id}`}
+        </span>
+      </div>
+    );
+  };
+
+  const monthPickerElement = (() => {
+    const calYear = currentViewDate.getFullYear();
+    const calMonth = currentViewDate.getMonth();
+    const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
+    const firstDayOffset = (firstDayOfMonth + 1) % 7;
+    const totalDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const daysArray = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
+
+    const isSameDay = (d1: Date, d2: Date) =>
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+
+    const startOfDayTs = new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate()).getTime();
+    const endOfDayTs = new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59).getTime();
+
+    return (
+      <div className={`relative no-print ${isCycleDropdownOpen ? 'z-[5000]' : 'z-[25]'}`} ref={dropdownRef}>
+        {/* Trigger Button */}
+        <div 
+          onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)} 
+          className={`flex items-center gap-1.5 px-3 h-9 bg-sky-50 text-sky-800 border hover:border-sky-300 hover:bg-white rounded-xl cursor-pointer transition-all duration-300 shadow-xs group ${isCycleDropdownOpen ? 'border-sky-500 ring-2 ring-sky-100 bg-white' : 'border-sky-200'}`}
+          title={isCustomRangeActive 
+            ? `সময়কাল: ${toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}`
+            : `সাইকেল: ${toBengaliDigits(activeCycle.label)}`}
+        >
+           <CalendarDays size={14} className="text-sky-600 shrink-0" />
+           <span className="text-sky-600 font-bold text-[11px] sm:text-[11.5px] shrink-0">
+             {isCustomRangeActive ? 'সময়কাল:' : 'সাইকেল:'}
+           </span> 
+           <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-900 tracking-tight shrink-0 leading-none">
+             {isCustomRangeActive
+               ? `${toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}`
+               : toBengaliDigits(activeCycle.label)}
+           </span>
+           <ChevronDown size={13} className={`text-sky-500 transition-transform duration-300 shrink-0 ${isCycleDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
+        </div>
+
+        {/* Dropdown Popover */}
+        {isCycleDropdownOpen && (
+          <div 
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            className={`absolute top-[calc(100%+6px)] ${cycleDropdownAlign === 'right' ? 'right-0' : 'left-0 sm:left-auto sm:right-0 lg:left-0'} w-[330px] sm:w-[360px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-3.5 animate-in fade-in slide-in-from-top-2 duration-150 box-border select-none`}
+          >
+            {/* Popover Header */}
+            <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <CalendarDays size={14} className="text-sky-600" />
+                <span>রিপোর্ট সময়কাল নির্ধারণ</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsCycleDropdownOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                title="বন্ধ করুন"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Mode Tabs */}
+            <div className="flex p-0.5 bg-slate-100 rounded-xl mb-3 border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setCustomTab('cycles')}
+                className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer ${
+                  customTab === 'cycles'
+                    ? 'bg-white text-sky-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                মাস / সাইকেল
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomTab('custom');
+                  setIsCustomRangeActive(true);
+                }}
+                className={`flex-1 py-1 text-[11px] font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  customTab === 'custom'
+                    ? 'bg-white text-sky-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>কাংখিত সময়কাল (হতে-থেকে)</span>
+                {isCustomRangeActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+              </button>
+            </div>
+
+            {/* Tab 1: Predefined Cycles / Months */}
+            {customTab === 'cycles' && (
+              <div>
+                <div className="max-h-[260px] overflow-y-auto overscroll-contain space-y-1 p-0.5 scrollbar-thin">
+                  {cycleOptions.map((opt, idx) => {
+                    const matchesActive = !isCustomRangeActive && opt.cycleLabel === activeCycle.label;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCycleDate(opt.date);
+                          setIsCustomRangeActive(false);
+                          setIsCycleDropdownOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-150 ${
+                          matchesActive 
+                            ? "bg-sky-600 text-white font-extrabold shadow-md"
+                            : "hover:bg-sky-50 text-slate-700 hover:text-sky-700 font-bold bg-white"
+                        }`}
+                      >
+                        <div className="flex flex-col text-left min-w-0 pr-1">
+                          <span className="text-[11.5px] font-extrabold whitespace-nowrap leading-tight">{opt.cycleLabel}</span>
+                          <span className={`text-[9.5px] whitespace-nowrap leading-tight ${matchesActive ? 'text-sky-100' : 'text-slate-400'}`}>{opt.label}</span>
+                        </div>
+                        {matchesActive && <Check size={14} className="text-white stroke-[3.5] shrink-0" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Custom Date Range (হতে - থেকে) */}
+            {customTab === 'custom' && (
+              <div>
+                {/* Start & End Date Selection Cards */}
+                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                  {/* Start Date Card */}
+                  <div
+                    onClick={() => {
+                      setSelectingCustomDateType('start');
+                      setCurrentViewDate(new Date(customStartDate.getFullYear(), customStartDate.getMonth(), 1));
+                    }}
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
+                      selectingCustomDateType === 'start'
+                        ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualCustomStartDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingCustomDateType('start');
+                          setCurrentViewDate(new Date(customStartDate.getFullYear(), customStartDate.getMonth(), 1));
+                        }}
+                        onFocus={() => {
+                          setSelectingCustomDateType('start');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualCustomStartDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setCustomStartDate(parsed);
+                            if (parsed > customEndDate) setCustomEndDate(parsed);
+                            setIsCustomRangeActive(true);
+                            setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualCustomStartDate);
+                          if (parsed) {
+                            setCustomStartDate(parsed);
+                            setManualCustomStartDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualCustomStartDate(toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="০১/০১/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ০১/১০/২০২৬ বা 01/10/2026)"
+                      />
+                      <div className="relative shrink-0">
+                        <input
+                          type="date"
+                          value={dateFnsFormat(customStartDate, 'yyyy-MM-dd')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-').map(Number);
+                              const newD = new Date(y, m - 1, d);
+                              setCustomStartDate(newD);
+                              if (newD > customEndDate) setCustomEndDate(newD);
+                              setIsCustomRangeActive(true);
+                              setCurrentViewDate(new Date(y, m - 1, 1));
+                            }
+                          }}
+                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                        />
+                        <Calendar size={13} className="text-sky-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* End Date Card */}
+                  <div
+                    onClick={() => {
+                      setSelectingCustomDateType('end');
+                      setCurrentViewDate(new Date(customEndDate.getFullYear(), customEndDate.getMonth(), 1));
+                    }}
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
+                      selectingCustomDateType === 'end'
+                        ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualCustomEndDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingCustomDateType('end');
+                          setCurrentViewDate(new Date(customEndDate.getFullYear(), customEndDate.getMonth(), 1));
+                        }}
+                        onFocus={() => {
+                          setSelectingCustomDateType('end');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualCustomEndDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setCustomEndDate(parsed);
+                            if (parsed < customStartDate) setCustomStartDate(parsed);
+                            setIsCustomRangeActive(true);
+                            setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualCustomEndDate);
+                          if (parsed) {
+                            setCustomEndDate(parsed);
+                            setManualCustomEndDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualCustomEndDate(toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="৩১/০১/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ৩১/১০/২০২৬ বা 31/10/2026)"
+                      />
+                      <div className="relative shrink-0">
+                        <input
+                          type="date"
+                          value={dateFnsFormat(customEndDate, 'yyyy-MM-dd')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-').map(Number);
+                              const newD = new Date(y, m - 1, d);
+                              setCustomEndDate(newD);
+                              if (newD < customStartDate) setCustomStartDate(newD);
+                              setIsCustomRangeActive(true);
+                              setCurrentViewDate(new Date(y, m - 1, 1));
+                            }
+                          }}
+                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
+                        />
+                        <Calendar size={13} className="text-sky-600" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets: [ < ] [বিগত মাস] [চলতি মাস] [ > ] [গত ৩০ দিন] [চলতি অর্থবছর] */}
+                <div className="flex flex-wrap items-center gap-1 mb-2.5 pb-2 border-b border-slate-100">
+                  {/* পূর্ববর্তী মাস নেভিগেশন বোতাম (বাম অ্যারো - যতবার চাপবেন এক মাস করে পেছনে যাবে) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const base = customStartDate || new Date();
+                      const prevM = subMonths(base, 1);
+                      const s = startOfMonth(prevM);
+                      const e = endOfMonth(prevM);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পূর্ববর্তী মাস (পেছনে যান - যতবার চাপবেন এক মাস করে পেছনে যাবে)"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+
+                  {/* বিগত মাস */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = startOfMonth(subMonths(now, 1));
+                      const e = endOfMonth(subMonths(now, 1));
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="বিগত মাস"
+                  >
+                    বিগত মাস
+                  </button>
+
+                  {/* চলতি মাস (বিগত মাসের ডান পাশে) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = startOfMonth(now);
+                      const e = endOfMonth(now);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="চলতি মাস"
+                  >
+                    চলতি মাস
+                  </button>
+
+                  {/* পরবর্তী মাস নেভিগেশন বোতাম (ডান অ্যারো - সামনে যাওয়ার জন্য) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const base = customStartDate || new Date();
+                      const nextM = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                      const s = startOfMonth(nextM);
+                      const e = endOfMonth(nextM);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পরবর্তী মাস (সামনে যান)"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+                      setCustomStartDate(s);
+                      setCustomEndDate(now);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    গত ৩০ দিন
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const yr = now.getFullYear();
+                      const fyStartYear = now.getMonth() >= 6 ? yr : yr - 1;
+                      const s = new Date(fyStartYear, 6, 1);
+                      const e = new Date(fyStartYear + 1, 5, 30);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    চলতি অর্থবছর
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = new Date(now.getFullYear(), 0, 1);
+                      const e = new Date(now.getFullYear(), 11, 31);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                  >
+                    চলতি বছর
+                  </button>
+                </div>
+
+                {/* Calendar Navigation */}
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-sky-700 transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  
+                  <span className="font-extrabold text-[12.5px] text-slate-800">
+                    {BENGALI_MONTHS[currentViewDate.getMonth()]} {toBengaliDigits(currentViewDate.getFullYear().toString())}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-sky-700 transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                {/* Weekdays Header */}
+                <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                  {BENGALI_WEEKDAYS.map((w, idx) => (
+                    <span key={idx} className="text-[10px] font-bold text-slate-400">
+                      {w}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Calendar Days Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: firstDayOffset }).map((_, i) => (
+                    <div key={`empty-${i}`} className="h-7" />
+                  ))}
+
+                  {daysArray.map((d) => {
+                    const thisDate = new Date(calYear, calMonth, d);
+                    const thisTime = thisDate.getTime();
+                    const isStart = isSameDay(thisDate, customStartDate);
+                    const isEnd = isSameDay(thisDate, customEndDate);
+                    const inRange = thisTime >= startOfDayTs && thisTime <= endOfDayTs;
+
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectingCustomDateType === 'start') {
+                            setCustomStartDate(thisDate);
+                            if (thisDate > customEndDate) {
+                              setCustomEndDate(thisDate);
+                            }
+                            setSelectingCustomDateType('end');
+                          } else {
+                            if (thisDate < customStartDate) {
+                              setCustomStartDate(thisDate);
+                            } else {
+                              setCustomEndDate(thisDate);
+                            }
+                          }
+                          setIsCustomRangeActive(true);
+                        }}
+                        className={`h-7 w-full rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
+                          isStart || isEnd
+                            ? 'bg-sky-600 text-white font-black shadow-xs ring-2 ring-sky-200'
+                            : inRange
+                            ? 'bg-sky-50 text-sky-800 font-extrabold'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {toBengaliDigits(d.toString())}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Apply Button */}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-bold text-slate-500 truncate">
+                    {toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))} - {toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCustomRangeActive(true);
+                      setIsCycleDropdownOpen(false);
+                    }}
+                    className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-black transition-all shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+                  >
+                    <Check size={12} strokeWidth={3} />
+                    <span>প্রয়োগ করুন</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  })();
+
+  const historicalFilterElement = (
+    <div className="flex items-center gap-1.5 no-print shrink-0">
+      <div className="flex items-center gap-1.5 animate-in fade-in duration-300 shrink-0">
+        {/* COMPACT MINISTRY DROPDOWN */}
+        <div className={`relative shrink-0 select-none ${isMinistryDropdownOpen ? 'z-[5000]' : 'z-[20]'}`} ref={ministryDropdownRef}>
+          <div 
+             onClick={() => setIsMinistryDropdownOpen(!isMinistryDropdownOpen)}
+             className={`flex items-center gap-1.5 px-2.5 h-[38px] bg-sky-50 border hover:border-sky-300 hover:bg-white transition-all rounded-xl cursor-pointer shadow-md select-none ${isMinistryDropdownOpen ? 'border-sky-300 bg-white ring-2 ring-sky-50' : 'border-sky-100'}`}
+          >
+            <LayoutGrid size={14} className="text-sky-600 shrink-0" />
+            <span className="font-extrabold text-[11px] sm:text-[11.5px] text-sky-800 tracking-tight shrink-0 max-w-[130px] sm:max-w-[180px] truncate leading-none">
+              {filterMinistry || 'সকল মন্ত্রণালয়'}
+            </span>
+            <ChevronDown size={13} className={`text-sky-500 shrink-0 transition-transform duration-300 ${isMinistryDropdownOpen ? 'rotate-180 text-sky-600' : ''}`} />
+          </div>
+
+          {isMinistryDropdownOpen && (
+            <div 
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              className="absolute top-[110%] right-0 w-[220px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] p-2 overscroll-contain animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              <div className="p-1 max-h-[300px] overflow-y-auto overscroll-contain no-scrollbar">
+                <div className="px-3 py-1.5 mb-1.5 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                    <LayoutGrid size={10} /> মন্ত্রণালয় নির্বাচন
+                  </span>
+                </div>
+                <div 
+                  onClick={() => { setFilterMinistry(''); setIsMinistryDropdownOpen(false); }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 text-left ${filterMinistry === '' ? 'bg-blue-50 text-blue-700 font-extrabold' : 'hover:bg-slate-50 text-slate-600 font-bold'}`}
+                >
+                  <span className="text-[11px]">সকল মন্ত্রণালয়</span>
+                  {filterMinistry === '' && <Check size={12} className="text-blue-600 stroke-[3]" />}
+                </div>
+                {ministryGroups.map((m, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => { setFilterMinistry(m); setIsMinistryDropdownOpen(false); }}
+                    className={`flex items-center justify-between px-3 py-2 mt-0.5 rounded-xl cursor-pointer transition-all duration-200 text-left ${filterMinistry === m ? 'bg-blue-50 text-blue-700 font-extrabold' : 'hover:bg-slate-50 text-slate-600 font-bold'}`}
+                  >
+                    <span className="text-[11px] truncate">{m}</span>
+                    {filterMinistry === m && <Check size={12} className="text-blue-600 stroke-[3]" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!selectedReportType && !isSetupMode) {
+    return (
+      <div id="section-report-selector" className="min-h-[70vh] flex items-center justify-center animate-in fade-in zoom-in duration-700 relative py-4">
+        <IDBadge id="section-report-selector" />
+        
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2"></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-4xl bg-white/40 backdrop-blur-xl border border-white/60 p-8 md:p-12 rounded-[3.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] space-y-6 text-center group transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+           <div className="relative inline-block">
+             <div className="absolute inset-0 bg-blue-600 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+             <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+               <PieChart size={40} strokeWidth={1.5} />
+             </div>
+             <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-amber-400 text-slate-900 rounded-xl flex items-center justify-center shadow-lg border-4 border-white animate-bounce">
+               <Sparkles size={18} fill="currentColor" />
+             </div>
+           </div>
+
+           <div className="space-y-3">
+             <h3 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">
+               রিটার্ন মডিউলে <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">স্বাগতম</span>
+             </h3>
+             <p className="text-slate-600 font-bold text-base max-w-lg mx-auto leading-relaxed">
+               আপনার কাঙ্ক্ষিত রিটার্ন বা সারাংশের ধরনটি নির্বাচন করে কাজ শুরু করুন। আমরা আপনার তথ্যের সঠিকতা ও নিরাপত্তা নিশ্চিত করি।
+             </p>
+           </div>
+
+           <div className="pt-4">
+             <div className="inline-flex items-center gap-3 px-7 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all duration-300 cursor-default group/btn">
+               <ArrowRightCircle size={20} className="text-blue-400 group-hover/btn:translate-x-1 transition-transform" />
+               বাম পাশের সাইডবার থেকে সিলেক্ট করুন
+             </div>
+           </div>
+
+           {/* Bottom Stats or Decorative Line */}
+           <div className="flex items-center justify-center gap-6 pt-6 opacity-40">
+             <div className="h-px w-24 bg-gradient-to-r from-transparent to-slate-400"></div>
+             <div className="flex gap-2">
+               <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+               <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+               <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+             </div>
+             <div className="h-px w-24 bg-gradient-to-l from-transparent to-slate-400"></div>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  let renderedContent;
+
+  if (selectedReportType === 'চাহিদা মোতাবেক প্রাপ্তি রিপোর্ট') {
+    renderedContent = <CustomPeriodReceiptReport entries={correspondenceEntries || []} settlementEntries={entries || []} onBack={() => setSelectedReportType(null)} IDBadge={IDBadge} onEdit={onEdit} isAdmin={isAdmin} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
+    renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (
+    selectedReportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত - মাসিক প্রতিবেদন' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত পত্র' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বি-সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বি-সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রি-সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রি-সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বিপক্ষীয় সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যপত্র)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যবিবরনী)' ||
+    selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র'
+  ) {
+    let initialType = 'সকল';
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর') initialType = 'বিএসআর';
+    else if (selectedReportType.includes('দ্বি-সভা (কার্যপত্র)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বি-সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('দ্বি-সভা (কার্যবিবরনী)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'দ্বি-সভা (কার্যবিবরনী)';
+    else if (selectedReportType.includes('ত্রি-সভা (কার্যপত্র)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'ত্রি-সভা (কার্যপত্র)';
+    else if (selectedReportType.includes('ত্রি-সভা (কার্যবিবরনী)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'ত্রি-সভা (কার্যবিবরনী)';
+    else if (selectedReportType.includes('অন্যান্য পত্র')) initialType = 'অন্যান্য পত্র';
+
+    renderedContent = (
+      <BsrReceivedReturn 
+        correspondenceEntries={correspondenceEntries || []} 
+        settlementEntries={entries || []} 
+        activeCycle={activeCycle} 
+        onBack={() => setSelectedReportType(null)} 
+        isLayoutEditable={isLayoutEditable} 
+        IDBadge={IDBadge} 
+        showFilters={showFilters}
+        initialLetterType={initialType}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ।') {
+    renderedContent = <CorrespondenceDhakaReturn correspondenceEntries={correspondenceEntries} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ঢাকায় প্রেরণ-২') {
+    renderedContent = <CorrespondenceDhakaReturn2 correspondenceEntries={correspondenceEntries} settlementEntries={entries || []} activeCycle={activeCycle} setSelectedReportType={setSelectedReportType} HistoricalFilter={() => null} IDBadge={IDBadge} showFilters={showFilters} />;
+  } else if (isSetupMode) {
+    renderedContent = <OpeningBalanceSetup 
+      ministryGroups={ministryGroups} 
+      tempPrevStats={tempPrevStats} 
+      setTempPrevStats={setTempPrevStats} 
+      isEditingSetup={isEditingSetup} 
+      setIsEditingSetup={setIsEditingSetup} 
+      handleSaveSetup={handleSaveSetup} 
+      handleSetupPaste={handleSetupPaste} 
+      setIsSetupMode={setIsSetupMode} 
+      setSelectedReportType={setSelectedReportType} 
+      IDBadge={IDBadge} 
+      setupType={selectedReportType || ''} 
+      originalStats={prevStats.entitiesSFI}
+      entries={entries}
+      activeCycle={activeCycle}
+    />;
+  } else if (
+    selectedReportType === 'বাৎসরিক রিটার্ন - ১' ||
+    selectedReportType === 'বাৎসরিক রিটার্ন - ২' ||
+    selectedReportType === 'বাৎসরিক রিটার্ন - ৩' ||
+    selectedReportType === 'বার্ষিক - ১' ||
+    selectedReportType === 'বার্ষিক - ২' ||
+    selectedReportType === 'বার্ষিক - ৩' ||
+    selectedReportType === 'বাৎসরিক রিটার্ণ: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত।'
+  ) {
+    renderedContent = (
+      <YearlyReturnView
+        entries={entries}
+        correspondenceEntries={correspondenceEntries}
+        prevStats={prevStats}
+        activeCycle={activeCycle}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        selectedReportType={selectedReportType}
+        setSelectedReportType={setSelectedReportType}
+        monthPickerElement={monthPickerElement}
+      />
+    );
+  } else if (selectedReportType === 'ষাণ্মাসিক - ১' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ১') {
+    renderedContent = <HR_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ১" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ২' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ২') {
+    renderedContent = <HR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ২" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৩' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৩') {
+    renderedContent = <HR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৩" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৪' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৪') {
+    renderedContent = <HR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৪" />;
+  } else if (selectedReportType === 'ষাণ্মাসিক - ৫' || selectedReportType === 'ষাণ্মাসিক রিটার্ন - ৫') {
+    renderedContent = <HR_5 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="ষাণ্মাসিক - ৫" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ১') {
+    renderedContent = <QR_1 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ২') {
+    renderedContent = <QR_2 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ১') {
+    renderedContent = <QR_Detailed_1 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} periodOpeningBalances={periodOpeningBalances} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ২') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ২" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৩') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৩" paraType="এসএফআই ও নন-এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৪') {
+    renderedContent = <QR_Detailed_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৪" paraType="এসএফআই ও নন-এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৫" paraType="নন এসএফআই" />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - বিস্তারিত - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} customTitle="বিস্তারিত - ৬" paraType="নন এসএফআই" />;
+  } else if (selectedReportType?.startsWith('ত্রৈমাসিক রিটার্ন - বিস্তারিত -')) {
+    const num = selectedReportType.split(' - ').pop();
+    renderedContent = (
+      <div className="max-w-4xl mx-auto my-10 p-10 bg-white rounded-2xl border border-slate-100 shadow-xl text-center">
+        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500 animate-pulse">
+          <Sparkles size={40} />
+        </div>
+        <h2 className="text-3xl font-black text-slate-800 mb-3">বিস্তারিত - {num}</h2>
+        <p className="text-slate-500 font-bold mb-8 max-w-md mx-auto leading-relaxed">
+          এই টেবিল বা ছকটির কাজ আপাতত বন্ধ রয়েছে। আপনার পরবর্তী নির্দেশনার অপেক্ষায় প্রস্তুত রাখা হচ্ছে। অন্য টেবিলের কাজ করতে বললে তা এখানে যুক্ত করা হবে।
+        </p>
+        <button 
+          onClick={() => setSelectedReportType(null)}
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto cursor-pointer"
+        >
+          <ChevronLeft size={16} /> পেছনে ফিরুন
+        </button>
+      </div>
+    );
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৩') {
+    renderedContent = <QR_3 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৪') {
+    renderedContent = <QR_4 entries={entries} prevStats={prevStats} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৫') {
+    renderedContent = <QR_5 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'ত্রৈমাসিক রিটার্ন - ৬') {
+    renderedContent = <QR_6 entries={entries} activeCycle={activeCycle} IDBadge={IDBadge} onBack={() => setSelectedReportType(null)} searchTerm={searchTerm} filterMinistry={filterMinistry} monthPickerElement={monthPickerElement} />;
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - বিএসআর' && showDetailedBsrView) {
+    renderedContent = (
+      <BSRMonthlySettlementDetail
+        entries={entries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedBsrView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়' && showDetailedBilateralView) {
+    renderedContent = (
+      <BilateralMonthlySettlementDetail
+        entries={entries}
+        correspondenceEntries={correspondenceEntries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedBilateralView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর' && showDetailedOnlineBsrView) {
+    renderedContent = (
+      <BSRMonthlyOnlineReceiptDetail
+        entries={entries}
+        correspondenceEntries={correspondenceEntries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBsrView(false)}
+      />
+    );
+  } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়' && showDetailedOnlineBilateralView) {
+    renderedContent = (
+      <BilateralMonthlyOnlineReceiptDetail
+        entries={entries}
+        correspondenceEntries={correspondenceEntries}
+        selectedCycleDate={selectedCycleDate}
+        setSelectedCycleDate={setSelectedCycleDate}
+        activeCycle={activeCycle}
+        cycleOptions={cycleOptions}
+        ministryGroups={ministryGroups}
+        IDBadge={IDBadge}
+        onBack={() => setSelectedReportType(null)}
+        onToggleSummaryView={() => setShowDetailedOnlineBilateralView(false)}
+      />
+    );
+  } else {
+    renderedContent = <ReturnSummaryTable 
+      reportData={reportData} 
+      grandTotals={grandTotals} 
+      activeCycle={activeCycle} 
+      selectedReportType={selectedReportType} 
+      setSelectedReportType={setSelectedReportType} 
+      isAdmin={isAdmin || false} 
+      historicalFilterElement={historicalFilterElement} 
+      monthPickerElement={monthPickerElement}
+      IDBadge={IDBadge} 
+      showFilters={showFilters} 
+      searchTerm={searchTerm} 
+      filterMinistry={filterMinistry} 
+      statsReportData={statsReportData}
+      statsGrandTotals={statsGrandTotals}
+      isSearchExpanded={isSearchExpanded}
+      onDownloadExcel={downloadExcel}
+      correspondenceEntries={correspondenceEntries}
+      onToggleDetailedView={
+        selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: নিষ্পত্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedBilateralView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - বিএসআর'
+          ? () => setShowDetailedOnlineBsrView(true)
+          : selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: অনলাইন প্রাপ্তি - দ্বিপক্ষীয়'
+          ? () => setShowDetailedOnlineBilateralView(true)
+          : () => setShowDetailedBsrView(true)
+      }
+    />;
+  }
+
+  return (
+    <div className="relative w-full">
+      {renderedContent}
+    </div>
+  );
+};
+
+export default ReturnView;

@@ -4,7 +4,8 @@ import { SettlementEntry, CumulativeStats, MinistryPrevStats } from '../types';
 import { toBengaliDigits, parseBengaliNumber, toEnglishDigits } from '../utils/numberUtils';
 import { MINISTRY_ENTITY_MAP, ENTRY_START_DATE } from '../constants';
 import { Printer, ChevronDown, Check, CalendarDays, CalendarSearch, PieChart, ArrowRightCircle, CheckCircle2, Search, X, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, FileSpreadsheet, Calendar } from 'lucide-react';
-import { addMonths, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
+import { addMonths, subMonths, startOfMonth, endOfMonth, format as dateFnsFormat, endOfDay, startOfDay } from 'date-fns';
+import { parseManualDate } from '../utils/dateValidation';
 import { getCurrentCycle, getCycleForDate, getQuarterlyCycleForDate, getHalfYearlyCycleForDate, getYearlyCycleForDate } from '../utils/cycleHelper';
 import { isSFI, isNonSFI } from '../utils/branchUtils';
 import DDSirCorrespondenceReturn from './DDSirCorrespondenceReturn';
@@ -88,6 +89,16 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   const [customEndDate, setCustomEndDate] = useState<Date>(() => new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
   const [selectingCustomDateType, setSelectingCustomDateType] = useState<'start' | 'end'>('start');
   const [customTab, setCustomTab] = useState<'cycles' | 'custom'>('cycles');
+  const [manualCustomStartDate, setManualCustomStartDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+  const [manualCustomEndDate, setManualCustomEndDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+
+  useEffect(() => {
+    setManualCustomStartDate(toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+  }, [customStartDate]);
+
+  useEffect(() => {
+    setManualCustomEndDate(toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+  }, [customEndDate]);
   
   useEffect(() => {
     setCurrentViewDate(new Date(selectedCycleDate));
@@ -1439,18 +1450,50 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       setSelectingCustomDateType('start');
                       setCurrentViewDate(new Date(customStartDate.getFullYear(), customStartDate.getMonth(), 1));
                     }}
-                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
                       selectingCustomDateType === 'start'
                         ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
                     }`}
                   >
                     <span className="block text-[10px] font-bold text-slate-500">শুরুর তারিখ (হতে)</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-extrabold text-xs text-slate-800">
-                        {toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy'))}
-                      </span>
-                      <div className="relative">
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualCustomStartDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingCustomDateType('start');
+                          setCurrentViewDate(new Date(customStartDate.getFullYear(), customStartDate.getMonth(), 1));
+                        }}
+                        onFocus={() => {
+                          setSelectingCustomDateType('start');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualCustomStartDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setCustomStartDate(parsed);
+                            if (parsed > customEndDate) setCustomEndDate(parsed);
+                            setIsCustomRangeActive(true);
+                            setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualCustomStartDate);
+                          if (parsed) {
+                            setCustomStartDate(parsed);
+                            setManualCustomStartDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualCustomStartDate(toBengaliDigits(dateFnsFormat(customStartDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="০১/০১/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ০১/১০/২০২৬ বা 01/10/2026)"
+                      />
+                      <div className="relative shrink-0">
                         <input
                           type="date"
                           value={dateFnsFormat(customStartDate, 'yyyy-MM-dd')}
@@ -1466,7 +1509,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                             }
                           }}
                           className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                          title="শুরুর তারিখ পরিবর্তন করুন"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
                         />
                         <Calendar size={13} className="text-sky-600" />
                       </div>
@@ -1479,18 +1522,50 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                       setSelectingCustomDateType('end');
                       setCurrentViewDate(new Date(customEndDate.getFullYear(), customEndDate.getMonth(), 1));
                     }}
-                    className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`relative p-2 rounded-xl border text-left transition-all ${
                       selectingCustomDateType === 'end'
                         ? 'border-sky-600 bg-sky-50/70 ring-2 ring-sky-200 shadow-xs'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100/70'
                     }`}
                   >
                     <span className="block text-[10px] font-bold text-slate-500">শেষের তারিখ (পর্যন্ত)</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-extrabold text-xs text-slate-800">
-                        {toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy'))}
-                      </span>
-                      <div className="relative">
+                    <div className="flex items-center justify-between mt-0.5 gap-1">
+                      <input
+                        type="text"
+                        value={manualCustomEndDate}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectingCustomDateType('end');
+                          setCurrentViewDate(new Date(customEndDate.getFullYear(), customEndDate.getMonth(), 1));
+                        }}
+                        onFocus={() => {
+                          setSelectingCustomDateType('end');
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setManualCustomEndDate(val);
+                          const parsed = parseManualDate(val);
+                          if (parsed) {
+                            setCustomEndDate(parsed);
+                            if (parsed < customStartDate) setCustomStartDate(parsed);
+                            setIsCustomRangeActive(true);
+                            setCurrentViewDate(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+                          }
+                        }}
+                        onBlur={() => {
+                          const parsed = parseManualDate(manualCustomEndDate);
+                          if (parsed) {
+                            setCustomEndDate(parsed);
+                            setManualCustomEndDate(toBengaliDigits(dateFnsFormat(parsed, 'dd/MM/yyyy')));
+                          } else {
+                            setManualCustomEndDate(toBengaliDigits(dateFnsFormat(customEndDate, 'dd/MM/yyyy')));
+                          }
+                        }}
+                        placeholder="৩১/০১/২০২৬"
+                        className="w-full bg-transparent font-extrabold text-xs text-slate-800 outline-none p-0 border-none focus:ring-0 cursor-text"
+                        title="ক্যালেন্ডার বা ম্যানুয়ালি তারিখ লিখুন (যেমন: ৩১/১০/২০২৬ বা 31/10/2026)"
+                      />
+                      <div className="relative shrink-0">
                         <input
                           type="date"
                           value={dateFnsFormat(customEndDate, 'yyyy-MM-dd')}
@@ -1506,7 +1581,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                             }
                           }}
                           className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                          title="শেষের তারিখ পরিবর্তন করুন"
+                          title="ক্যালেন্ডার থেকে নির্বাচন করুন"
                         />
                         <Calendar size={13} className="text-sky-600" />
                       </div>
@@ -1514,38 +1589,82 @@ const ReturnView: React.FC<ReturnViewProps> = ({
                   </div>
                 </div>
 
-                {/* Quick Presets */}
-                <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-100">
+                {/* Quick Presets: [ < ] [বিগত মাস] [চলতি মাস] [ > ] [গত ৩০ দিন] [চলতি অর্থবছর] */}
+                <div className="flex flex-wrap items-center gap-1 mb-2.5 pb-2 border-b border-slate-100">
+                  {/* পূর্ববর্তী মাস নেভিগেশন বোতাম (বাম অ্যারো - যতবার চাপবেন এক মাস করে পেছনে যাবে) */}
                   <button
                     type="button"
                     onClick={() => {
-                      const now = new Date();
-                      const s = new Date(now.getFullYear(), now.getMonth(), 1);
-                      const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      const base = customStartDate || new Date();
+                      const prevM = subMonths(base, 1);
+                      const s = startOfMonth(prevM);
+                      const e = endOfMonth(prevM);
                       setCustomStartDate(s);
                       setCustomEndDate(e);
                       setIsCustomRangeActive(true);
-                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
                     }}
-                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পূর্ববর্তী মাস (পেছনে যান - যতবার চাপবেন এক মাস করে পেছনে যাবে)"
                   >
-                    চলতি মাস
+                    <ChevronLeft size={13} />
                   </button>
+
+                  {/* বিগত মাস */}
                   <button
                     type="button"
                     onClick={() => {
                       const now = new Date();
-                      const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                      const e = new Date(now.getFullYear(), now.getMonth(), 0);
+                      const s = startOfMonth(subMonths(now, 1));
+                      const e = endOfMonth(subMonths(now, 1));
                       setCustomStartDate(s);
                       setCustomEndDate(e);
                       setIsCustomRangeActive(true);
                       setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
                     }}
                     className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="বিগত মাস"
                   >
                     বিগত মাস
                   </button>
+
+                  {/* চলতি মাস (বিগত মাসের ডান পাশে) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const s = startOfMonth(now);
+                      const e = endOfMonth(now);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    }}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                    title="চলতি মাস"
+                  >
+                    চলতি মাস
+                  </button>
+
+                  {/* পরবর্তী মাস নেভিগেশন বোতাম (ডান অ্যারো - সামনে যাওয়ার জন্য) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const base = customStartDate || new Date();
+                      const nextM = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                      const s = startOfMonth(nextM);
+                      const e = endOfMonth(nextM);
+                      setCustomStartDate(s);
+                      setCustomEndDate(e);
+                      setIsCustomRangeActive(true);
+                      setCurrentViewDate(new Date(s.getFullYear(), s.getMonth(), 1));
+                    }}
+                    className="p-1 px-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200 rounded-lg text-slate-700 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title="পরবর্তী মাস (সামনে যান)"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -1819,6 +1938,7 @@ const ReturnView: React.FC<ReturnViewProps> = ({
   } else if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: ডিডি স্যারের জন্য।') {
     renderedContent = <DDSirCorrespondenceReturn entries={correspondenceEntries} activeCycle={activeCycle} onBack={() => setSelectedReportType(null)} isLayoutEditable={isLayoutEditable} IDBadge={IDBadge} showFilters={showFilters} />;
   } else if (
+    selectedReportType === 'মাসিক রিটার্ন: অনুচ্ছেদ নিষ্পত্তি সংক্রান্ত - মাসিক প্রতিবেদন' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত পত্র' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত দ্বি-সভা (কার্যপত্র)' ||
@@ -1831,8 +1951,9 @@ const ReturnView: React.FC<ReturnViewProps> = ({
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত ত্রিপক্ষীয় সভা (কার্যবিবরনী)' ||
     selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত অন্যান্য পত্র'
   ) {
-    let initialType = 'বিএসআর';
-    if (selectedReportType.includes('দ্বি-সভা (কার্যপত্র)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বি-সভা (কার্যপত্র)';
+    let initialType = 'সকল';
+    if (selectedReportType === 'চিঠিপত্র সংক্রান্ত মাসিক রিটার্ন: প্রাপ্ত বিএসআর') initialType = 'বিএসআর';
+    else if (selectedReportType.includes('দ্বি-সভা (কার্যপত্র)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'দ্বি-সভা (কার্যপত্র)';
     else if (selectedReportType.includes('দ্বি-সভা (কার্যবিবরনী)') || selectedReportType.includes('দ্বিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'দ্বি-সভা (কার্যবিবরনী)';
     else if (selectedReportType.includes('ত্রি-সভা (কার্যপত্র)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যপত্র)')) initialType = 'ত্রি-সভা (কার্যপত্র)';
     else if (selectedReportType.includes('ত্রি-সভা (কার্যবিবরনী)') || selectedReportType.includes('ত্রিপক্ষীয় সভা (কার্যবিবরনী)')) initialType = 'ত্রি-সভা (কার্যবিবরনী)';
