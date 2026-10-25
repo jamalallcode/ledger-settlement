@@ -5,7 +5,7 @@ import { Printer, ChevronLeft, Search, X, ChevronDown, Check, LayoutGrid, FileTe
 import { toBengaliDigits, toEnglishDigits, formatDateBN } from '../utils/numberUtils';
 import { getCleanLetterTypeDisplay, isSFI, isNonSFI } from '../utils/branchUtils';
 import { OFFICE_HEADER } from '../constants';
-import { format as dateFnsFormat } from 'date-fns';
+import { format as dateFnsFormat, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import LetterDetailsModal from './LetterDetailsModal';
 import { getReceivers } from './ReceiverManagement';
@@ -132,6 +132,41 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentViewDate, setCurrentViewDate] = useState<Date>(() => new Date(startDate.getFullYear(), startDate.getMonth(), 1));
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  const [manualStartDate, setManualStartDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy')));
+  const [manualEndDate, setManualEndDate] = useState<string>(() => toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy')));
+
+  useEffect(() => {
+    setManualStartDate(toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy')));
+  }, [startDate]);
+
+  useEffect(() => {
+    setManualEndDate(toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy')));
+  }, [endDate]);
+
+  const parseManualDate = (str: string): Date | null => {
+    if (!str) return null;
+    const clean = toEnglishDigits(str).trim();
+    const parts = clean.split(/[-/.]/);
+    if (parts.length === 3) {
+      let d = 0, m = 0, y = 0;
+      if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      } else {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+        if (y < 100) y = 2000 + y;
+      }
+      if (y >= 1970 && y <= 2100 && m >= 0 && m <= 11 && d >= 1 && d <= 31) {
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime()) && dt.getMonth() === m && dt.getDate() === d) return dt;
+      }
+    }
+    return null;
+  };
 
   const downloadExcel = () => {
     const tables = document.querySelectorAll('table');
