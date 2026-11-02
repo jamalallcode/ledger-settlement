@@ -517,9 +517,9 @@ const QR_Detailed_1: React.FC<QRProps> = ({
   };
 
   // Header styles (solid opaque ice-slate with embossed borders and sticky positioning)
-  const reportThStyle1 = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding whitespace-nowrap";
-  const reportThStyle2 = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding whitespace-normal";
-  const reportThStyle3 = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding whitespace-nowrap";
+  const reportThStyle1 = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 bg-clip-border whitespace-nowrap";
+  const reportThStyle2 = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 bg-clip-border whitespace-normal";
+  const reportThStyle3 = "sticky z-[130] p-1 font-black text-center text-slate-700 text-[9px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 bg-clip-border whitespace-nowrap";
 
   const thCls = reportThStyle1;
   const thRow2Cls = reportThStyle2;
@@ -542,26 +542,28 @@ const QR_Detailed_1: React.FC<QRProps> = ({
       [table1Ref.current, table2Ref.current].forEach((table) => {
         if (!table) return;
         const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
-        const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
-        if (tr1 && tr2) {
-          const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
-          const measuredH1 = r1Cell ? r1Cell.getBoundingClientRect().height : 34;
-          const h1 = measuredH1 > 0 && measuredH1 <= 40 ? measuredH1 : 34;
-          const r2Cell = tr2.querySelector('th') as HTMLElement | null;
-          const measuredH2 = r2Cell ? r2Cell.getBoundingClientRect().height : 62;
-          const h2 = measuredH2 > 0 ? measuredH2 : 62;
+        if (tr1) {
+          const nonRowSpanCell = (tr1.querySelector('th:not([rowspan]):not([rowSpan])') || tr1.children[3]) as HTMLElement | null;
+          const rowSpanCell = (tr1.querySelector('th[rowspan], th[rowSpan]') || tr1.children[0]) as HTMLElement | null;
 
-          table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
-          table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
+          const r2Top = nonRowSpanCell ? Math.floor(nonRowSpanCell.getBoundingClientRect().height) : 34;
+          const r3Top = rowSpanCell ? Math.floor(rowSpanCell.getBoundingClientRect().height) : (r2Top + 76);
+
+          table.style.setProperty('--th-r2-top', `${r2Top}px`);
+          table.style.setProperty('--th-r3-top', `${r3Top}px`);
         }
       });
     };
 
     updateHeaderStickyOffsets();
     const t1 = setTimeout(updateHeaderStickyOffsets, 50);
-    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+    const t2 = setTimeout(updateHeaderStickyOffsets, 150);
+    const t3 = setTimeout(updateHeaderStickyOffsets, 400);
 
     window.addEventListener('resize', updateHeaderStickyOffsets);
+    if (document.fonts) {
+      document.fonts.ready.then(updateHeaderStickyOffsets);
+    }
 
     const observers: ResizeObserver[] = [];
     if (window.ResizeObserver) {
@@ -577,6 +579,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', updateHeaderStickyOffsets);
       observers.forEach((ro) => ro.disconnect());
     };
@@ -970,7 +973,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
         <style>{`
           #qr-detailed-1-table-1, #qr-detailed-1-table-2 {
             --th-r2-top: 34px;
-            --th-r3-top: 96px;
+            --th-r3-top: 110px;
           }
           #qr-detailed-1-table-1 thead,
           #qr-detailed-1-table-2 thead {
@@ -984,7 +987,6 @@ const QR_Detailed_1: React.FC<QRProps> = ({
             background-clip: padding-box !important;
             vertical-align: middle !important;
             opacity: 1 !important;
-            box-shadow: none !important;
           }
           #qr-detailed-1-table-1 thead tr:first-child,
           #qr-detailed-1-table-1 thead tr:nth-child(1),
@@ -994,11 +996,12 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           }
           #qr-detailed-1-table-1 thead tr:nth-child(2),
           #qr-detailed-1-table-2 thead tr:nth-child(2) {
-            height: 62px !important;
+            min-height: 62px !important;
           }
           #qr-detailed-1-table-1 thead tr:nth-child(3),
           #qr-detailed-1-table-2 thead tr:nth-child(3) {
             height: 28px !important;
+            background-color: #e2e8f0 !important;
           }
           #qr-detailed-1-table-1 thead tr:first-child th,
           #qr-detailed-1-table-1 thead tr:nth-child(1) th,
@@ -1025,8 +1028,13 @@ const QR_Detailed_1: React.FC<QRProps> = ({
           }
           #qr-detailed-1-table-1 thead tr:nth-child(3) th,
           #qr-detailed-1-table-2 thead tr:nth-child(3) th {
-            top: var(--th-r3-top, 96px) !important;
+            top: var(--th-r3-top, 110px) !important;
             z-index: 130 !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
           }
           #qr-detailed-1-table-1 tfoot,
           #qr-detailed-1-table-1 tfoot tr,
@@ -1076,7 +1084,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th className={thRow2Cls}>১৯৭১-৭২ হতে {cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
             {/* Column Numbers Row */}
-            <tr className="h-[28px]">
+            <tr className="h-[28px] bg-[#e2e8f0]">
               <th className={thRow3Cls}>১</th>
               <th className={thRow3Cls}>২</th>
               <th className={thRow3Cls}>৩</th>
@@ -1232,7 +1240,7 @@ const QR_Detailed_1: React.FC<QRProps> = ({
               <th className={yellowThRow2Cls}>{formattedRange} পর্যন্ত নিষ্পত্তিকৃত আপত্তিতে জড়িত টাকা</th>
               <th className={yellowThRow2Cls}>১৯৭১-৭২ হতে {cumPeriodEnd} পর্যন্ত অনিষ্পন্ন আপত্তিতে জড়িত টাকা</th>
             </tr>
-            <tr className="h-[28px]">
+            <tr className="h-[28px] bg-[#e2e8f0]">
               <th className={yellowThRow3Cls}>১</th>
               <th className={yellowThRow3Cls}>২</th>
               <th className={yellowThRow3Cls}>৩</th>

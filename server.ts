@@ -115,6 +115,43 @@ const saveStoredActiveSessions = (sessions: Record<string, { token: string; time
   return sessions;
 };
 
+const getDocumentsFile = () => {
+  return path.join(process.cwd(), "audit_documents.json");
+};
+
+let inMemoryDocuments: any[] | null = null;
+
+const getStoredDocuments = (): any[] => {
+  if (inMemoryDocuments) {
+    return inMemoryDocuments;
+  }
+  try {
+    const file = getDocumentsFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        inMemoryDocuments = parsed;
+        return inMemoryDocuments;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading audit_documents.json:", e);
+  }
+  return [];
+};
+
+const saveStoredDocuments = (docs: any[]) => {
+  inMemoryDocuments = docs;
+  try {
+    const file = getDocumentsFile();
+    fs.writeFileSync(file, JSON.stringify(docs, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error writing audit_documents.json:", e);
+  }
+  return docs;
+};
+
 async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
@@ -186,6 +223,41 @@ async function startServer() {
     }
 
     res.json({ success: true, emails: current });
+  });
+
+  // Audit Documents API
+  app.get("/api/admin/documents", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const docs = getStoredDocuments();
+    res.json({ documents: docs });
+  });
+
+  app.post("/api/admin/documents", (req, res) => {
+    const { documents, doc, deleteId } = req.body;
+    let current = getStoredDocuments();
+
+    if (deleteId) {
+      current = saveStoredDocuments(current.filter(d => d.id !== deleteId));
+      return res.json({ success: true, documents: current });
+    }
+
+    if (doc && doc.id) {
+      const idx = current.findIndex(d => d.id === doc.id);
+      if (idx >= 0) {
+        current[idx] = doc;
+      } else {
+        current.unshift(doc);
+      }
+      current = saveStoredDocuments(current);
+      return res.json({ success: true, documents: current });
+    }
+
+    if (Array.isArray(documents)) {
+      current = saveStoredDocuments(documents);
+      return res.json({ success: true, documents: current });
+    }
+
+    res.json({ success: true, documents: current });
   });
 
   // Active User Session Lock API

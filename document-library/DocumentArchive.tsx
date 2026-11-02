@@ -21,8 +21,23 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
   uploadedBy?: string;
 }
 
+const DEMO_DOC_IDS = ['doc_101', 'doc_102', 'doc_103', 'doc_104', 'doc_105', 'doc_106'];
+
 const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }> = ({ isAdmin = false, userEmail = null }) => {
-  const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>([]);
+  const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>(() => {
+    try {
+      const saved = localStorage.getItem('audit_criteria_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const userOnly = parsed.filter((d: any) => d && !DEMO_DOC_IDS.includes(d.id));
+          localStorage.setItem('audit_criteria_documents', JSON.stringify(userOnly));
+          return userOnly;
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('সকল');
@@ -492,15 +507,40 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   const fetchDocuments = async () => {
     setIsLoading(true);
+    let localList: ExtendedArchiveDoc[] = [];
+    let serverList: ExtendedArchiveDoc[] = [];
+    let supabaseList: ExtendedArchiveDoc[] = [];
+
+    // 1. LocalStorage fallback
+    try {
+      const saved = localStorage.getItem('audit_criteria_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localList = parsed;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Server API fallback
+    try {
+      const res = await fetch('/api/admin/documents?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.documents) && data.documents.length > 0) {
+          serverList = data.documents;
+        }
+      }
+    } catch (e) {}
+
+    // 3. Supabase
     try {
       const { data, error } = await supabase
         .from('settlement_entries')
         .select('*')
         .like('id', 'doc_%');
       
-      if (!error && data) {
-        const mappedDocs: ExtendedArchiveDoc[] = [];
-        
+      if (!error && data && Array.isArray(data)) {
         data.forEach((row: any) => {
           if (!row || !row.id || row.id === 'doc_whitelisted_emails') return;
 
@@ -510,7 +550,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           }
           if (!content) return;
 
-          mappedDocs.push({
+          supabaseList.push({
             id: row.id,
             title: String(content.title || ''),
             category: (content.category as any) || 'অন্যান্য',
@@ -525,47 +565,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             createdAt: String(content.createdAt || new Date().toISOString())
           });
         });
-
-        // Default initial docs if database is empty
-        if (mappedDocs.length === 0) {
-          const defaultDocs: ExtendedArchiveDoc[] = [
-            {
-              id: 'doc_101',
-              title: 'সরকারি চাকুরিজীবীদের বাড়ি ভাড়া ভাতা পুনর্নির্ধারণ সার্কুলার',
-              category: 'সার্কুলার',
-              archiveId: 'https://archive.org/details/govt_house_rent_circular_2024',
-              docDate: '2024-01-15',
-              memoNo: '০৭.০০.০০০০.১৬১.৩৮.০০১.২৪-৪২',
-              authority: 'অর্থ বিভাগ, অর্থ মন্ত্রণালয়',
-              description: 'জাতীয় বেতন স্কেল ২০১৫ এর আওতায় সরকারি কর্মচারীদের এলাকা ভিত্তিক বাড়ি ভাড়া সংক্রান্ত নতুন গেজেট নির্দেশনা।',
-              tags: 'বাড়ি ভাড়া, বেতন স্কেল, ভাতা',
-              status: 'approved',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'doc_102',
-              title: 'অডিট আপত্তি নিষ্পত্তিকরণ গাইডলাইন ও নতুন ম্যানুয়াল',
-              category: 'গেজেট',
-              archiveId: 'https://archive.org/details/audit_objection_manual_bd',
-              docDate: '2023-11-20',
-              memoNo: '১২.০১.০০০০.৫০২.১২.০০৩.২৩-৯৯',
-              authority: 'মহাহিসাব নিরীক্ষক ও নিয়ন্ত্রকের কার্যালয় (CAG)',
-              description: 'সরকারি অফিসে অডিট আপত্তি ব্রডশীট জবাব ও কোয়ালিফাইড রিপোর্ট প্রস্তুতকরণ নির্দেশিকা।',
-              tags: 'অডিট আপত্তি, সিএজি, ব্রডশীট',
-              status: 'approved',
-              createdAt: new Date().toISOString()
-            }
-          ];
-          setDocuments(defaultDocs);
-        } else {
-          setDocuments(mappedDocs);
-        }
       }
     } catch (err) {
-      console.error("Fetch Documents Error:", err);
-    } finally {
-      setIsLoading(false);
+      console.error("Fetch Documents Supabase Error:", err);
     }
+
+    // Merge all sources without mock/dummy docs:
+    // Only genuine user/admin-uploaded documents are loaded and displayed
+    const isRealUploadedDoc = (d: ExtendedArchiveDoc) => d && d.id && !DEMO_DOC_IDS.includes(d.id);
+
+    const docMap = new Map<string, ExtendedArchiveDoc>();
+    localList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
+    serverList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
+    supabaseList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
+
+    const finalDocs = Array.from(docMap.values());
+    setDocuments(finalDocs);
+    localStorage.setItem('audit_criteria_documents', JSON.stringify(finalDocs));
+    setIsLoading(false);
   };
 
   const extractCleanId = (rawId: string) => {
@@ -618,7 +635,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     }
 
     const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
-    const payload = {
+    const payload: ExtendedArchiveDoc = {
+      id: docId,
       title: newDoc.title,
       category: newDoc.category,
       archiveId: cleanId,
@@ -632,45 +650,82 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
     };
 
+    // 1. Immediately update local state
+    setDocuments(prev => {
+      const existingIdx = prev.findIndex(d => d.id === docId);
+      let updated: ExtendedArchiveDoc[];
+      if (existingIdx >= 0) {
+        updated = [...prev];
+        updated[existingIdx] = payload;
+      } else {
+        updated = [payload, ...prev];
+      }
+      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
+      return updated;
+    });
+
+    setShowAddModal(false);
+    setEditingDoc(null);
+    setNewDoc({
+      title: '',
+      category: 'সার্কুলার',
+      archiveId: '',
+      docDate: new Date().toISOString().split('T')[0],
+      description: '',
+      memoNo: '',
+      authority: '',
+      tags: ''
+    });
+
+    // 2. Save to Server API
+    try {
+      await fetch('/api/admin/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc: payload })
+      });
+    } catch (e) {}
+
+    // 3. Save to Supabase
     try {
       await supabase.from('settlement_entries').upsert({
         id: docId,
         content: JSON.stringify(payload),
         created_at: payload.createdAt
       });
-
-      fetchDocuments();
-
-      setShowAddModal(false);
-      setEditingDoc(null);
-      setNewDoc({
-        title: '',
-        category: 'সার্কুলার',
-        archiveId: '',
-        docDate: new Date().toISOString().split('T')[0],
-        description: '',
-        memoNo: '',
-        authority: '',
-        tags: ''
-      });
-
-      alert(editingDoc ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!" : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!");
     } catch (err) {
-      console.error(err);
-      alert("সংরক্ষণে সমস্যা হয়েছে।");
+      console.error("Supabase upsert error:", err);
     }
+
+    alert(editingDoc ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!" : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!");
   };
 
   const handleDelete = async (id: string) => {
     if (!effectiveAdmin) return;
     if (!confirm("আপনি কি নিশ্চিত যে এই ডকুমেন্টটি মুছে ফেলতে চান?")) return;
 
+    // 1. Update local state & localStorage
+    setDocuments(prev => {
+      const updated = prev.filter(d => d.id !== id);
+      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
+      return updated;
+    });
+    if (selectedDoc?.id === id) setSelectedDoc(null);
+
+    // 2. Delete from Server API
+    try {
+      await fetch('/api/admin/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleteId: id })
+      });
+    } catch (e) {}
+
+    // 3. Delete from Supabase
     try {
       await supabase.from('settlement_entries').delete().eq('id', id);
-      setDocuments(prev => prev.filter(d => d.id !== id));
-      if (selectedDoc?.id === id) setSelectedDoc(null);
     } catch (err) {
-      console.error(err);
+      console.error("Supabase delete error:", err);
     }
   };
 
@@ -1243,7 +1298,25 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         <div className="py-24 bg-white rounded-2xl border-2 border-dashed border-slate-200 text-center space-y-3">
           <Search size={36} className="mx-auto text-slate-300" />
           <h3 className="text-lg font-black text-slate-800">কোনো ফাইল পাওয়া যায়নি</h3>
-          <p className="text-xs font-bold text-slate-400">আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ডকুমেন্ট লাইব্রেরিতে নেই।</p>
+          <p className="text-xs font-bold text-slate-400">
+            {documents.length === 0
+              ? 'বর্তমানে কোনো আপলোডকৃত ডকুমেন্ট নেই। আপনি যে ডকুমেন্টগুলো আপলোড করবেন শুধুমাত্র সেগুলোই এখানে প্রদর্শিত হবে।'
+              : 'আপনার অনুসন্ধানের সাথে মেলে এমন কোনো ডকুমেন্ট লাইব্রেরিতে নেই।'}
+          </p>
+          {effectiveAdmin && documents.length === 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingDoc(null);
+                  setShowAddModal(true);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                <Plus size={16} /> নতুন ডকুমেন্ট আপলোড করুন
+              </button>
+            </div>
+          )}
         </div>
       )}
 

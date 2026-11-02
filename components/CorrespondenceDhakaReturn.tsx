@@ -169,7 +169,8 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
   };
 
   const downloadExcel = () => {
-    const tables = document.querySelectorAll('table');
+    const container = document.querySelector('#correspondence-dhaka-container');
+    const tables = container ? container.querySelectorAll('table') : document.querySelectorAll('table');
     if (tables.length === 0) return;
 
     let tablesHtml = '';
@@ -178,8 +179,13 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
       const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
       interactiveElements.forEach(el => el.remove());
       
+      // Ensure all br tags have mso-data-placement: same-cell so Excel never splits cells into separate rows
+      clonedTable.querySelectorAll('br').forEach(br => {
+        br.setAttribute('style', 'mso-data-placement:same-cell;');
+      });
+
       tablesHtml += `
-        <div style="margin-bottom: 40px;">
+        <div style="margin-bottom: 30px;">
           ${tableIdx > 0 ? '<br><hr><br>' : ''}
           ${clonedTable.outerHTML}
         </div>
@@ -209,23 +215,154 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Hind Siliguri', sans-serif; }
           table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; }
+          th, td { border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; text-align: center; font-size: 11px; vertical-align: middle; mso-number-format: "\\@"; white-space: normal; }
           th { background-color: #f1f5f9 !important; color: #0f172a !important; font-weight: bold !important; }
           .bg-slate-200, thead, tfoot { background-color: #e2e8f0 !important; font-weight: bold !important; }
           .bg-sky-100 { background-color: #e0f2fe !important; }
           .bg-amber-50 { background-color: #fef3c7 !important; }
           .bg-black { background-color: #090d16 !important; color: #ffffff !important; }
           tfoot td { background-color: #0f172a !important; color: #ffffff !important; font-weight: bold !important; }
+          br { mso-data-placement: same-cell !important; }
         </style>
       </head>
       <body>
-        <h2 style="text-align: center; margin-bottom: 20px; color: #1e3a8a;">চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)</h2>
+        <h2 style="text-align: center; margin-bottom: 10px; color: #1e3a8a;">চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)</h2>
+        <p style="text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: bold; color: #475569; font-size: 12px;">
+          ${filterParaType === 'সকল' ? 'সকল' : filterParaType} শাখার ${toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।
+        </p>
         ${tablesHtml}
       </body>
       </html>
     `;
 
-    const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + template], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadWord = () => {
+    const container = document.querySelector('#correspondence-dhaka-container');
+    const tables = container ? container.querySelectorAll('table') : document.querySelectorAll('table');
+    if (tables.length === 0) return;
+
+    let tablesHtml = '';
+    tables.forEach((table, tableIdx) => {
+      const clonedTable = table.cloneNode(true) as HTMLTableElement;
+      const interactiveElements = clonedTable.querySelectorAll('.no-print, button, svg, input, select');
+      interactiveElements.forEach(el => el.remove());
+
+      // Ensure all br tags have mso-data-placement: same-cell so Word never splits cells into separate rows
+      clonedTable.querySelectorAll('br').forEach(br => {
+        br.setAttribute('style', 'mso-data-placement:same-cell;');
+      });
+
+      tablesHtml += `
+        <div style="margin-bottom: 30px;">
+          ${tableIdx > 0 ? '<br><hr style="border: 1px solid #cbd5e1;"><br>' : ''}
+          ${clonedTable.outerHTML}
+        </div>
+      `;
+    });
+
+    const filename = `চিঠিপত্র_সংক্রান্ত_রিটার্ণ_ঢাকা_${dateFnsFormat(new Date(), 'yyyy-MM-dd')}.doc`;
+
+    const wordTemplate = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page Section1 {
+            size: 841.9pt 595.3pt; /* A4 Landscape: 297mm x 210mm */
+            mso-page-orientation: landscape;
+            margin: 0.5in 0.5in 0.5in 0.5in;
+            mso-header-margin: 0.3in;
+            mso-footer-margin: 0.3in;
+          }
+          div.Section1 {
+            page: Section1;
+          }
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Hind Siliguri', 'Nikosh', 'Kalpurush', sans-serif;
+            font-size: 10pt;
+            color: #000000;
+          }
+          h2 {
+            text-align: center;
+            font-size: 14pt;
+            color: #1e3a8a;
+            margin: 0 0 6px 0;
+            font-weight: bold;
+          }
+          p.subtitle {
+            text-align: center;
+            font-size: 11pt;
+            color: #334155;
+            margin: 0 0 16px 0;
+            font-weight: bold;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            mso-table-layout-alt: fixed;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #475569 !important;
+            padding: 6px 8px !important;
+            text-align: center;
+            font-size: 9pt;
+            vertical-align: middle;
+            mso-number-format: "\\@";
+            word-wrap: break-word;
+          }
+          th {
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: bold !important;
+          }
+          .bg-slate-200 {
+            background-color: #e2e8f0 !important;
+            font-weight: bold !important;
+          }
+          tfoot td {
+            background-color: #020617 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+          }
+          br {
+            mso-data-placement: same-cell !important;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <h2>চিঠিপত্র সংক্রান্ত রিটার্ণ (ঢাকা)</h2>
+          <p class="subtitle">
+            ${filterParaType === 'সকল' ? 'সকল' : filterParaType} শাখার ${toBengaliDigits(dateFnsFormat(startDate, 'dd/MM/yyyy'))} হতে ${toBengaliDigits(dateFnsFormat(endDate, 'dd/MM/yyyy'))} খ্রি: তারিখ পর্যন্ত বকেয়া চিঠিপত্রের তালিকা।
+          </p>
+          ${tablesHtml}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + wordTemplate], { type: 'application/msword;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1357,9 +1494,19 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
               type="button"
               onClick={downloadExcel}
               className="flex items-center justify-center w-10 h-[35px] bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-100 hover:border-emerald-300 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0 no-print"
-              title="এক্সেল ফাইল ডাউনলোড করুন"
+              title="এক্সেল ফাইল ডাউনলোড করুন (.xls)"
             >
               <FileSpreadsheet size={15} className="stroke-[2.5]" />
+            </button>
+
+            {/* Word Download Button */}
+            <button
+              type="button"
+              onClick={downloadWord}
+              className="flex items-center justify-center w-10 h-[35px] bg-blue-50 text-blue-700 hover:text-blue-800 border border-blue-200 hover:border-blue-400 hover:bg-white hover:shadow-md transition-all duration-300 rounded-xl cursor-pointer shrink-0 no-print"
+              title="ওয়ার্ড ফাইল ডাউনলোড করুন (.doc)"
+            >
+              <FileText size={15} className="stroke-[2.5]" />
             </button>
 
             {/* 5. Statistics Trigger Button */}
@@ -1424,8 +1571,16 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                   <tr key={entry.id} className="no-hover-row group bg-white hover:bg-blue-100/70 transition-all duration-200 cursor-default">
                     <td className={tdS}>{toBengaliDigits(idx + 1)}</td>
                     <td className={`${tdS} text-justify px-2 transition-colors`}>{entry.description}</td>
-                    <td className={tdS}>{entry.diaryNo}<br/>{formatDateBN(entry.diaryDate)}</td>
-                    <td className={tdS}>{entry.letterNo}<br/>{formatDateBN(entry.letterDate)}</td>
+                    <td className={tdS}>
+                      {entry.diaryNo ? (entry.diaryDate ? `${entry.diaryNo},` : entry.diaryNo) : ''}
+                      <br style={{ msoDataPlacement: 'same-cell' } as any} />
+                      {formatDateBN(entry.diaryDate)}
+                    </td>
+                    <td className={tdS}>
+                      {entry.letterNo ? (entry.letterDate ? `${entry.letterNo},` : entry.letterNo) : ''}
+                      <br style={{ msoDataPlacement: 'same-cell' } as any} />
+                      {formatDateBN(entry.letterDate)}
+                    </td>
                     <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'এসএফআই' || isSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{(entry.letterType === 'বিএসআর' || (entry.letterType || '').includes('বিএসআর')) && (entry.paraType === 'নন এসএফআই' || isNonSFI(entry.paraType)) ? `(অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
                     <td className={tdS}>{isTrilateralLetter(entry) ? `${getCleanLetterTypeDisplay(entry.letterType)} (অনু: ${toBengaliDigits(entry.totalParas)}টি)` : ''}</td>
@@ -1512,11 +1667,11 @@ const CorrespondenceDhakaReturn: React.FC<CorrespondenceDhakaReturnProps> = ({
                             </span>
                           </td>
                           <td className="border border-amber-200 px-2.5 py-1.5 text-center">
-                            {toBengaliDigits(entry.diaryNo || '-')}<br />
+                            {entry.diaryNo ? `${toBengaliDigits(entry.diaryNo)},` : '-'}<br style={{ msoDataPlacement: 'same-cell' } as any} />
                             <span className="text-[10px] text-slate-500">{formatDateBN(entry.diaryDate)}</span>
                           </td>
                           <td className="border border-amber-200 px-2.5 py-1.5 text-center">
-                            {toBengaliDigits(entry.letterNo || '-')}<br />
+                            {entry.letterNo ? `${toBengaliDigits(entry.letterNo)},` : '-'}<br style={{ msoDataPlacement: 'same-cell' } as any} />
                             <span className="text-[10px] text-slate-500">{formatDateBN(entry.letterDate)}</span>
                           </td>
                           <td className="border border-amber-200 px-2.5 py-1.5 text-center font-black text-emerald-700">
