@@ -1087,13 +1087,15 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
           .no-print {
             display: none !important;
           }
-          #dhaka-return-2-print-container {
+          #dhaka-return-2-print-container,
+          #dhaka-return-2-print-container * {
             box-shadow: none !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            font-family: var(--font-bengali) !important;
           }
           table {
             page-break-inside: avoid !important;
@@ -1639,12 +1641,12 @@ export const CorrespondenceDhakaReturn2: React.FC<CorrespondenceDhakaReturn2Prop
       <div className="w-full max-w-full overflow-x-auto rounded-xl shadow-sm border border-slate-200 bg-white">
         <div 
           id="dhaka-return-2-print-container" 
-          className="bg-white text-slate-900 rounded-xl p-4 sm:p-6 md:p-8 shadow-none border-none space-y-8 font-serif select-text"
-          style={{ color: '#000000', minWidth: '980px' }}
+          className="bg-white text-slate-900 rounded-xl p-4 sm:p-6 md:p-8 shadow-none border-none space-y-8 font-sans select-text"
+          style={{ color: '#000000', minWidth: '980px', fontFamily: 'var(--font-bengali)' }}
         >
         {/* Official Header */}
         <div className="text-center space-y-1 pb-4 border-b border-slate-300">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-serif">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             {OFFICE_HEADER.main}
           </h2>
           <h3 className="text-base sm:text-lg font-semibold text-slate-800">

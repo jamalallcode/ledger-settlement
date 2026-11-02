@@ -1674,25 +1674,9 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
   const table2Ref = useRef<HTMLTableElement>(null);
 
   useLayoutEffect(() => {
-    const updateHeaderStickyOffsets = () => {
+    const updateFooterStickyOffsets = () => {
       [table1Ref.current, table2Ref.current].forEach((table) => {
         if (!table) return;
-        const tr1 = table.querySelector('thead tr:nth-child(1)') as HTMLElement | null;
-        const tr2 = table.querySelector('thead tr:nth-child(2)') as HTMLElement | null;
-        if (tr1 && tr2) {
-          const r1Cell = tr1.querySelector('th:not([rowspan]):not([rowSpan])') as HTMLElement | null;
-          const h1 = r1Cell ? r1Cell.getBoundingClientRect().height : (tr2.getBoundingClientRect().top - tr1.getBoundingClientRect().top);
-          const r2Cell = tr2.querySelector('th') as HTMLElement | null;
-          const h2 = r2Cell ? r2Cell.getBoundingClientRect().height : tr2.getBoundingClientRect().height;
-
-          if (h1 > 0) {
-            table.style.setProperty('--th-r2-top', `${Math.round(h1)}px`);
-            if (h2 > 0) {
-              table.style.setProperty('--th-r3-top', `${Math.round(h1 + h2)}px`);
-            }
-          }
-        }
-
         const bottomFooter = table.querySelector('.qr-sticky-footer-bottom') as HTMLElement | null;
         if (bottomFooter) {
           const hBottom = bottomFooter.getBoundingClientRect().height;
@@ -1703,17 +1687,21 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       });
     };
 
-    updateHeaderStickyOffsets();
-    const t1 = setTimeout(updateHeaderStickyOffsets, 50);
-    const t2 = setTimeout(updateHeaderStickyOffsets, 200);
+    updateFooterStickyOffsets();
+    const t1 = setTimeout(updateFooterStickyOffsets, 50);
+    const t2 = setTimeout(updateFooterStickyOffsets, 150);
+    const t3 = setTimeout(updateFooterStickyOffsets, 400);
 
-    window.addEventListener('resize', updateHeaderStickyOffsets);
+    window.addEventListener('resize', updateFooterStickyOffsets);
+    if (document.fonts) {
+      document.fonts.ready.then(updateFooterStickyOffsets);
+    }
 
     const observers: ResizeObserver[] = [];
     if (window.ResizeObserver) {
       [table1Ref.current, table2Ref.current].forEach((table) => {
         if (table) {
-          const ro = new ResizeObserver(updateHeaderStickyOffsets);
+          const ro = new ResizeObserver(updateFooterStickyOffsets);
           ro.observe(table);
           observers.push(ro);
         }
@@ -1723,14 +1711,15 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      window.removeEventListener('resize', updateHeaderStickyOffsets);
+      clearTimeout(t3);
+      window.removeEventListener('resize', updateFooterStickyOffsets);
       observers.forEach((ro) => ro.disconnect());
     };
-  }, [filteredTable1Data, filteredTable2Data, startDate, endDate, prevMonthDate]);
+  }, [filteredTable1Data, filteredTable2Data]);
 
-  const thCls = "sticky z-[135] p-2 font-black text-center text-slate-900 text-[10.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] bg-clip-padding relative whitespace-nowrap";
-  const thClsWithTop = "sticky top-0 z-[140] p-2 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-t border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] bg-clip-padding relative whitespace-normal";
-  const thRow3Cls = "sticky z-[130] p-1.5 font-black text-center text-slate-700 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] bg-clip-padding relative whitespace-nowrap";
+  const thCls = "sticky z-[144] p-1 font-black text-center text-slate-900 text-[10px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 bg-clip-border whitespace-nowrap";
+  const thClsWithTop = "sticky top-0 z-[145] p-1 font-black text-center text-slate-900 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-t border-slate-300 bg-clip-border whitespace-normal";
+  const thRow3Cls = "sticky z-[143] p-1 font-black text-center text-slate-700 text-[9.5px] leading-tight align-middle bg-[#e2e8f0] border-r border-b border-slate-300 bg-clip-border whitespace-nowrap";
   const tdCls = "border-r border-b border-slate-200/90 p-1.5 text-[10px] text-slate-800 align-middle bg-white";
   const numTdCls = "border-r border-b border-slate-200/90 p-1.5 text-[10px] text-slate-900 text-center align-middle font-bold bg-white";
   const footerTdCls = "border-r border-b border-slate-800 p-2.5 text-[10.5px] text-white align-middle bg-slate-950 font-black shadow-[inset_0_2px_0_rgba(255,255,255,0.15)]";
@@ -1744,9 +1733,15 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
       <div className={`table-container qr-table-container ${tableId === 'table-2' ? '' : 'mb-10'} overflow-visible shadow-sm rounded-lg bg-white border border-slate-300`}>
         <style>{`
           #qr-3-table-1, #qr-3-table-2 {
-            --th-r2-top: 58px;
-            --th-r3-top: 96px;
             --qr-footer-bottom-h: 28px;
+          }
+          #qr-3-table-1 thead,
+          #qr-3-table-2 thead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0px !important;
+            z-index: 140 !important;
+            background-color: #e2e8f0 !important;
           }
           #qr-3-table-1 thead th,
           #qr-3-table-2 thead th {
@@ -1757,20 +1752,77 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
             vertical-align: middle !important;
             opacity: 1 !important;
             box-shadow: none !important;
+            box-sizing: border-box !important;
+          }
+          #qr-3-table-1 thead tr:first-child,
+          #qr-3-table-1 thead tr:nth-child(1),
+          #qr-3-table-2 thead tr:first-child,
+          #qr-3-table-2 thead tr:nth-child(1) {
+            height: 48px !important;
+            max-height: 48px !important;
           }
           #qr-3-table-1 thead tr:first-child th,
           #qr-3-table-1 thead tr:nth-child(1) th,
           #qr-3-table-2 thead tr:first-child th,
           #qr-3-table-2 thead tr:nth-child(1) th {
             top: 0px !important;
-            z-index: 140 !important;
+            z-index: 145 !important;
+          }
+          #qr-3-table-1 thead tr:first-child th:not([rowspan]):not([rowSpan]),
+          #qr-3-table-2 thead tr:first-child th:not([rowspan]):not([rowSpan]) {
+            top: 0px !important;
+            height: 48px !important;
+            max-height: 48px !important;
+            box-sizing: border-box !important;
+            z-index: 145 !important;
+            border-bottom: 1px solid #94a3b8 !important;
           }
           #qr-3-table-1 thead tr:first-child th[rowspan],
           #qr-3-table-1 thead tr:first-child th[rowSpan],
           #qr-3-table-2 thead tr:first-child th[rowspan],
           #qr-3-table-2 thead tr:first-child th[rowSpan] {
             top: 0px !important;
-            z-index: 145 !important;
+            height: 80px !important;
+            max-height: 80px !important;
+            min-height: 80px !important;
+            box-sizing: border-box !important;
+            z-index: 146 !important;
+            border-bottom: 1px solid #94a3b8 !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(2),
+          #qr-3-table-2 thead tr:nth-child(2) {
+            height: 32px !important;
+            max-height: 32px !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(2) th,
+          #qr-3-table-2 thead tr:nth-child(2) th {
+            top: 48px !important;
+            height: 32px !important;
+            max-height: 32px !important;
+            min-height: 32px !important;
+            box-sizing: border-box !important;
+            z-index: 144 !important;
+            border-bottom: 1px solid #94a3b8 !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(3),
+          #qr-3-table-2 thead tr:nth-child(3) {
+            height: 28px !important;
+            max-height: 28px !important;
+            background-color: #e2e8f0 !important;
+          }
+          #qr-3-table-1 thead tr:nth-child(3) th,
+          #qr-3-table-2 thead tr:nth-child(3) th {
+            top: 80px !important;
+            height: 28px !important;
+            max-height: 28px !important;
+            min-height: 28px !important;
+            box-sizing: border-box !important;
+            z-index: 143 !important;
+            background-color: #e2e8f0 !important;
+            background-clip: padding-box !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            white-space: nowrap !important;
           }
           #qr-3-table-1 thead tr:first-child th:first-child,
           #qr-3-table-2 thead tr:first-child th:first-child {
@@ -1834,17 +1886,6 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           #qr-3-table-2 thead tr:nth-child(3) th:nth-child(13) {
             min-width: 90px !important;
           }
-          #qr-3-table-1 thead tr:nth-child(2) th,
-          #qr-3-table-2 thead tr:nth-child(2) th {
-            top: var(--th-r2-top, 58px) !important;
-            z-index: 135 !important;
-          }
-          #qr-3-table-1 thead tr:nth-child(3) th,
-          #qr-3-table-2 thead tr:nth-child(3) th {
-            top: var(--th-r3-top, 96px) !important;
-            z-index: 130 !important;
-            white-space: nowrap !important;
-          }
           #qr-3-table-1 tfoot,
           #qr-3-table-1 tfoot tr,
           #qr-3-table-1 tfoot td,
@@ -1877,7 +1918,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
           className="w-full border-separate border-spacing-0 min-w-[950px] !table-auto border border-slate-300"
         >
           <thead>
-            <tr className="h-[42px]">
+            <tr className="h-[48px]">
               <th rowSpan={2} className={`${thClsWithTop} w-[45px] min-w-[45px] !whitespace-nowrap`}>ক্রঃ নং</th>
               <th rowSpan={2} className={`${thClsWithTop} w-[55px] min-w-[55px] max-w-[60px]`}>মন্ত্রণালয়ের নাম</th>
               <th rowSpan={2} className={`${thClsWithTop} min-w-[110px] w-[calc(14%-2px)]`}>সংস্থার নাম</th>
@@ -1887,7 +1928,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <th colSpan={2} className={`${thClsWithTop} min-w-[145px]`}>{getMonthNameBN(startDate)}/{formatShortYearBN(startDate)} হতে {getMonthNameBN(endDate)}/{formatShortYearBN(endDate)} পর্যন্ত মীমাংসিত অডিট আপত্তি</th>
               <th colSpan={2} className={`${thClsWithTop} min-w-[145px]`}>{getMonthNameBN(endDate)}/{formatYearBN(endDate)} পর্যন্ত অমীমাংসিত অডিট আপত্তি</th>
             </tr>
-            <tr className="h-[38px]">
+            <tr className="h-[32px]">
               <th className={`${thCls} w-[55px] min-w-[55px] !whitespace-nowrap`}>সংখ্যা</th>
               <th className={`${thCls} min-w-[90px]`}>টাকা</th>
               <th className={`${thCls} w-[55px] min-w-[55px] !whitespace-nowrap`}>সংখ্যা</th>
@@ -1899,7 +1940,7 @@ const QR_3: React.FC<QRProps> = ({ entries, prevStats, activeCycle, IDBadge, sea
               <th className={`${thCls} w-[55px] min-w-[55px] !whitespace-nowrap`}>সংখ্যা</th>
               <th className={`${thCls} min-w-[90px]`}>টাকা</th>
             </tr>
-            <tr className="h-[32px]">
+            <tr className="h-[28px] bg-[#e2e8f0]">
               {[1, 2, 3, 4, 5, 6, 7, '৮ = ৪+৬', '৯ = ৫+৭', 10, 11, '১২ = ৮-১০', '১৩ = ৯-১১'].map((n, i) => {
                 const isCountCol = [3, 5, 7, 9, 11].includes(i);
                 const isAmountCol = [4, 6, 8, 10, 12].includes(i);
