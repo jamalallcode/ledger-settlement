@@ -476,7 +476,12 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
       // Reset other filters to ensure the highlighted entry is visible
       setFilterParaType("");
       setFilterType("");
+      setFilterReceiver("");
+      setFilterStatus("");
       setSelectedCycleDate(null);
+      setIsCustomDateActive(false);
+      setFilterStartDate("");
+      setFilterEndDate("");
     }
     return () => {
       if (highlightSearch) onClearHighlight?.();
@@ -651,12 +656,34 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
             const engIssue = toEnglishDigits(
               (entry.issueLetterNo || "").toLowerCase(),
             ).trim();
+            const engArchive = toEnglishDigits(
+              (entry.archiveNo || "").toLowerCase(),
+            ).trim();
+            const engDigitalFile = toEnglishDigits(
+              (entry.digitalFileNo || "").toLowerCase(),
+            ).trim();
+
+            const cleanNormalizedSearch = normalizedSearch.replace(/\s+/g, "");
+            const cleanArchive = engArchive.replace(/\s+/g, "");
+            const cleanDigitalFile = engDigitalFile.replace(/\s+/g, "");
 
             const isExactNumberMatch =
               engLetter === normalizedSearch ||
               engDiary === normalizedSearch ||
               engIssue === normalizedSearch ||
-              engIssue.replace(/[^\d]/g, '') === normalizedSearch;
+              engIssue.replace(/[^\d]/g, "") === normalizedSearch ||
+              engArchive === normalizedSearch ||
+              cleanArchive === cleanNormalizedSearch ||
+              (cleanArchive && cleanNormalizedSearch && cleanArchive.replace(/^(ka|kg)-/i, "") === cleanNormalizedSearch.replace(/^(ka|kg)-/i, "")) ||
+              engDigitalFile === normalizedSearch ||
+              cleanDigitalFile === cleanNormalizedSearch;
+
+            const isArchiveMatch =
+              engArchive.includes(normalizedSearch) ||
+              (cleanArchive && cleanNormalizedSearch && cleanArchive.includes(cleanNormalizedSearch));
+            const isDigitalFileMatch =
+              engDigitalFile.includes(normalizedSearch) ||
+              (cleanDigitalFile && cleanNormalizedSearch && cleanDigitalFile.includes(cleanNormalizedSearch));
 
             const isDescriptionMatch = toEnglishDigits(
               entry.description.toLowerCase(),
@@ -668,9 +695,16 @@ const CorrespondenceTable: React.FC<CorrespondenceTableProps> = ({
               (entry.remarks || "").toLowerCase(),
             ).includes(normalizedSearch);
 
-            if (isNumericSearch) return isExactNumberMatch;
+            if (isNumericSearch) {
+              return (
+                isExactNumberMatch ||
+                cleanArchive.replace(/^(ka|kg)-/i, "") === normalizedSearch
+              );
+            }
             return (
               isExactNumberMatch ||
+              isArchiveMatch ||
+              isDigitalFileMatch ||
               isDescriptionMatch ||
               isReceiverMatch ||
               isRemarksMatch
