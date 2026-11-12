@@ -159,18 +159,43 @@ async function tryClientSideGemini(
 
   try {
     const ai = new GoogleGenAI({ apiKey: clientKey });
-    const result = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { inlineData: { data: rawBase64, mimeType } },
-            { text: AI_PROMPT }
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite'
+    ];
+
+    let result: any = null;
+    let lastError: any = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        result = await ai.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { inlineData: { data: rawBase64, mimeType } },
+                { text: AI_PROMPT }
+              ]
+            }
           ]
+        });
+        if (result && result.text) {
+          break;
         }
-      ]
-    });
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Client model ${modelName} failed, falling back:`, err?.message || err);
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+
+    if (!result || !result.text) {
+      throw lastError || new Error("সকল জেমিনি মডেল বর্তমানে ব্যস্ত। অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
+    }
 
     const rawText = result.text || '';
     const parsedData = extractDataFromGeminiResponse(rawText, fileName);

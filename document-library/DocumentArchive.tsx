@@ -483,7 +483,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         } else if (aiResult.apiKeyMissing) {
           setAiWarningMessage('⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা ম্যানুয়ালি তথ্য পূরণ করুন।');
         } else if (aiResult.error) {
-          setAiWarningMessage(`⚠️ এআই বিশ্লেষণ সম্পন্ন হয়নি: ${aiResult.error}`);
+          const errStr = String(aiResult.error);
+          if (errStr.includes('503') || errStr.includes('high demand') || errStr.includes('UNAVAILABLE')) {
+            setAiWarningMessage('⚠️ জেমিনি সার্ভারে সাময়িক উচ্চ চাপ (High Demand) রয়েছে। অনুগ্রহ করে ৫-১০ সেকেন্ড পর আবার ফাইলটি নির্বাচন করুন, স্বয়ংক্রিয়ভাবে সমাধান হয়ে যাবে।');
+          } else if (errStr.includes('free tier is not available') || errStr.includes('403') || errStr.includes('PERMISSION_DENIED')) {
+            setAiWarningMessage('⚠️ আপনার এই Google Project-টিতে Free Tier সক্রিয় নেই। সমাধান: Google AI Studio (aistudio.google.com) থেকে আপনার ব্যক্তিগত @gmail.com অ্যাকাউন্টে "Create API key in new project" সিলেক্ট করে সম্পূর্ণ নতুন একটি ফ্রি কী তৈরি করে Vercel-এ যোগ করুন (কোনো কার্ডের প্রয়োজন নেই)।');
+          } else {
+            setAiWarningMessage(`⚠️ এআই বিশ্লেষণ সম্পন্ন হয়নি: ${aiResult.error}`);
+          }
         }
       } catch (aiErr: any) {
         console.warn('AI analysis call exception:', aiErr);
