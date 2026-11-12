@@ -10,6 +10,7 @@ import {
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
 import { PendingDocsModal } from './PendingDocsModal';
+import { AgentApprovalModal } from './AgentApprovalModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
 
@@ -80,6 +81,34 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<'whatsapp' | 'dupcheck'>('whatsapp');
   const [showPendingModal, setShowPendingModal] = useState(false);
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [pendingAgentCount, setPendingAgentCount] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/agent/pending-documents')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.pendingDocuments)) {
+          setPendingAgentCount(data.pendingDocuments.length);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAgentDocumentApproved = (approvedDoc: any) => {
+    setDocuments(prev => {
+      const existingIdx = prev.findIndex(d => d.id === approvedDoc.id);
+      let updated: ExtendedArchiveDoc[];
+      if (existingIdx >= 0) {
+        updated = [...prev];
+        updated[existingIdx] = approvedDoc;
+      } else {
+        updated = [approvedDoc, ...prev];
+      }
+      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Whitelisted Emails State (Sync with localStorage & Supabase)
   const [whitelistedEmails, setWhitelistedEmails] = useState<string[]>(() => {
@@ -906,17 +935,29 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             {effectiveAdmin ? (
               <>
                 <button
+                  onClick={() => setShowAgentModal(true)}
+                  className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 transition-all cursor-pointer border border-indigo-400/30 active:scale-95"
+                >
+                  <Sparkles size={16} className="text-amber-300 animate-pulse" />
+                  <span>🤖 এআই এজেন্ট: সার্কুলার প্রসেসর ও অনুমোদন</span>
+                  {pendingAgentCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-bounce shadow-md">
+                      {toBengaliDigits(pendingAgentCount)}
+                    </span>
+                  )}
+                </button>
+                <button
                   onClick={() => {
                     setEditingDoc(null);
                     setShowAddModal(true);
                   }}
-                  className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-blue-600/30 transition-all cursor-pointer"
+                  className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xl shadow-blue-600/30 transition-all cursor-pointer"
                 >
-                  <Plus size={20} /> নতুন সার্কুলার/ডকুমেন্ট যুক্ত করুন
+                  <Plus size={18} /> ম্যানুয়াল সার্কুলার/ডকুমেন্ট যুক্ত করুন
                 </button>
                 <button
                   onClick={() => setShowPendingModal(true)}
-                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
                 >
                   <UserCheck size={16} className="text-blue-300" /> 👥 নতুন জিমেইল যুক্তকরণ ও ১ মাসের ভিজিটর লগ ({toBengaliDigits(whitelistedEmails.length)})
                 </button>
@@ -1676,6 +1717,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         onRemoveWhitelistedEmail={handleRemoveWhitelistedEmail}
         whatsappNumber={paymentNumber}
         onUpdateWhatsappNumber={handleUpdatePaymentNumber}
+      />
+
+      {/* AI Agent Approval & Ingestion Modal (Admin) */}
+      <AgentApprovalModal
+        isOpen={showAgentModal}
+        onClose={() => setShowAgentModal(false)}
+        onDocumentApproved={handleAgentDocumentApproved}
+        pendingCount={pendingAgentCount}
+        onPendingCountChange={setPendingAgentCount}
       />
 
       {/* Active Session Lock Notice Modal */}

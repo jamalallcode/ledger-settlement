@@ -11,10 +11,13 @@
     "start": "node dist/server.cjs"
   },
   "dependencies": {
+    "@google/genai": "^3.2.0",
     "@supabase/supabase-js": "^2.39.7",
     "@tailwindcss/vite": "^4.0.0",
     "@types/nodemailer": "^8.0.0",
+    "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-react": "^4.3.4",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "autoprefixer": "^10.4.20",
     "cookie-parser": "^1.4.7",
     "date-fns": "^2.30.0",
@@ -27,7 +30,9 @@
     "lucide-react": "^0.460.0",
     "motion": "^12.38.0",
     "nodemailer": "^8.0.9",
+    "pino": "^10.4.0",
     "postcss": "^8.4.49",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
