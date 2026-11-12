@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -109,11 +109,33 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   const handleAgentDocumentApproved = (approvedDoc: any) => {
     setDocuments(prev => {
-      const existingIdx = prev.findIndex(d => d.id === approvedDoc.id);
+      const cleanApprovedArchiveId = extractCleanId(approvedDoc.archiveId || approvedDoc.archiveUrl || '');
+      const cleanApprovedMemo = (approvedDoc.memoNo || '').trim().toLowerCase();
+
+      // Find if an existing document already matches by id, Archive.org ID, or Memo No
+      const existingIdx = prev.findIndex(d => {
+        if (d.id === approvedDoc.id) return true;
+        const dCleanArchiveId = extractCleanId(d.archiveId || '');
+        if (cleanApprovedArchiveId && dCleanArchiveId && cleanApprovedArchiveId.toLowerCase() === dCleanArchiveId.toLowerCase()) {
+          return true;
+        }
+        if (cleanApprovedMemo && cleanApprovedMemo.length >= 3 && d.memoNo) {
+          if (d.memoNo.trim().toLowerCase() === cleanApprovedMemo) {
+            return true;
+          }
+        }
+        return false;
+      });
+
       let updated: ExtendedArchiveDoc[];
       if (existingIdx >= 0) {
+        // Prevent duplicate: Update existing document with new details instead of inserting a 2nd copy
         updated = [...prev];
-        updated[existingIdx] = approvedDoc;
+        updated[existingIdx] = {
+          ...prev[existingIdx],
+          ...approvedDoc,
+          id: prev[existingIdx].id // Retain existing document ID
+        };
       } else {
         updated = [approvedDoc, ...prev];
       }
@@ -662,6 +684,45 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     return clean;
   };
 
+  // Real-time Duplicate Detection in Manual Form
+  const duplicateWarning = useMemo(() => {
+    if (!showAddModal) return null;
+    const cleanId = extractCleanId(newDoc.archiveId || '');
+    const cleanMemo = (newDoc.memoNo || '').trim().toLowerCase();
+    const cleanTitle = (newDoc.title || '').trim().toLowerCase();
+
+    for (const doc of documents) {
+      if (editingDoc && doc.id === editingDoc.id) continue;
+
+      const docCleanId = extractCleanId(doc.archiveId || '');
+      if (cleanId && docCleanId && cleanId.toLowerCase() === docCleanId.toLowerCase()) {
+        return {
+          reason: 'একই Archive.org ফাইল লিঙ্ক বা আইডি',
+          matchedDoc: doc
+        };
+      }
+
+      if (cleanMemo && cleanMemo.length >= 3 && doc.memoNo) {
+        if (doc.memoNo.trim().toLowerCase() === cleanMemo) {
+          return {
+            reason: `একই স্মারক নম্বর (${doc.memoNo})`,
+            matchedDoc: doc
+          };
+        }
+      }
+
+      if (cleanTitle && cleanTitle.length >= 5 && doc.title) {
+        if (doc.title.trim().toLowerCase() === cleanTitle) {
+          return {
+            reason: `একই শিরোনাম ("${doc.title}")`,
+            matchedDoc: doc
+          };
+        }
+      }
+    }
+    return null;
+  }, [showAddModal, newDoc.archiveId, newDoc.memoNo, newDoc.title, documents, editingDoc]);
+
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!effectiveAdmin) {
@@ -672,6 +733,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     const cleanId = extractCleanId(newDoc.archiveId);
     if (!cleanId) {
       alert("অনুগ্রহ করে একটি সঠিক Archive.org লিঙ্ক বা আইডি দিন!");
+      return;
+    }
+
+    // Strict Duplicate Prevention on Save
+    if (duplicateWarning) {
+      alert(`❌ ডাবল এন্ট্রি রোধ (Duplicate Blocked)!\n\nএই সার্কুলারটি ইতিমধ্যে ভল্টে সংরক্ষিত রয়েছে।\nমিল পাওয়ার কারণ: ${duplicateWarning.reason}\nবিদ্যমান নথির নাম: "${duplicateWarning.matchedDoc.title}"\nতারিখ: ${duplicateWarning.matchedDoc.docDate || 'অনির্দিষ্ট'}\n\nএকই ডকুমেন্ট দ্বিতীয়বার যুক্ত করা যাবে না।`);
       return;
     }
 
@@ -902,6 +969,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           onDocumentApproved={handleAgentDocumentApproved}
           pendingCount={pendingAgentCount}
           onPendingCountChange={setPendingAgentCount}
+          vaultDocuments={documents}
         />
       </div>
     );
@@ -1601,6 +1669,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             </div>
 
             <form onSubmit={handleAddDocument} className="space-y-4 text-xs font-bold">
+              {/* Real-time Duplicate Warning Banner */}
+              {duplicateWarning && (
+                <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 flex items-start gap-2.5 animate-in fade-in duration-200">
+                  <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs leading-relaxed">
+                    <span className="font-black text-amber-800">⚠️ ডাবল এন্ট্রি সতর্কতা: </span>
+                    <span>{duplicateWarning.reason} ইতিমধ্যে ভল্টে বিদ্যমান রয়েছে! (পূর্বে সংরক্ষিত নথির নাম: &quot;{duplicateWarning.matchedDoc.title}&quot;)</span>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5 bg-blue-50 p-4 rounded-xl border border-blue-100">
                 <label className="text-blue-900 font-black uppercase tracking-wider flex items-center gap-1">
                   Archive.org লিঙ্ক বা আইডি

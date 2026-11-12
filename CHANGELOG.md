@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-12] - Auto-Scroll to Form and Attached Document Indicator in Circular Processor
+
+### 🚀 Added & Enhanced
+- **Auto-Scroll to Ingest Form (`AgentApprovalModal.tsx`)**:
+  - ব্যবহারকারীর সুনির্দিষ্ট নির্দেশনা অনুযায়ী, সার্কুলার প্রসেসরের "ফাইল থেকে অটো-পূরণ করুন" বাটনে ক্লিক করে ফাইল নির্বাচন করার পর পেজটি স্বয়ংক্রিয়ভাবে স্মুথ স্ক্রোল (Smooth Scroll) করে নিচে নেমে ফরমটিকে পূর্ণাঙ্গভাবে চোখের সামনে তুলে ধরে।
+  - এর ফলে সম্পূর্ণ ফরমের তথ্য (শিরোনাম, ক্যাটাগরি, স্মারক নং, জারির তারিখ ও সাবমিট বাটন) ব্যবহারকারী ও এডমিনের নিকট সাথে সাথে দৃশ্যমান হয়।
+- **Visual Attached Document Status & Icon (`AgentApprovalModal.tsx`)**:
+  - এডমিন যাতে নিশ্চিতভাবে বুঝতে পারেন যে ডকুমেন্টটি সফলভাবে যুক্ত হয়েছে, সেজন্য ফরমের শীর্ষে একটি মার্জিত সবুজ কার্ডে স্পষ্ট ডকুমেন্ট আইকন (`FileText`), 'ডকুমেন্ট যুক্ত হয়েছে' ব্যাজ (`CheckCircle2`), ফাইলের আসল নাম, ফাইলের সাইজ এবং প্রয়োজনে ডকুমেন্টটি অপসারণ বা পরিবর্তন করার ক্লোজ বাটন (`X`) যুক্ত করা হয়েছে।
+- **Complete Isolation & Zero Side Effects**:
+  - ব্যবহারকারীর কঠোর নির্দেশনা অনুযায়ী শুধুমাত্র নির্দেশিত এই কার্যকারিতাটুকু ব্যতীত অ্যাপ্লিকেশনের অন্য কোনো ফাইল, রেজিস্টার, হিসাব বা ডাটাবেজ লজিক স্পর্শ করা হয়নি। সম্পূর্ণ অ্যাপ্লিকেশন ১০০% অপরিবর্তিত ও সুরক্ষিত রয়েছে।
+
 ## [2026-10-28] - Strictly User-Uploaded Documents Only (Removed Default Documents)
 
 ### 🛠️ Strict User-Uploaded Only Display

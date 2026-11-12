@@ -3,7 +3,8 @@ import {
   X, CheckCircle2, AlertCircle, Sparkles, FileText, Upload,
   ExternalLink, Trash2, Edit2, Check, RefreshCw, Send,
   ShieldCheck, Clock, Building, Calendar, Hash, Eye, EyeOff,
-  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode, Link2, ArrowLeft
+  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode, Link2, ArrowLeft,
+  AlertTriangle
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -32,6 +33,7 @@ interface AgentApprovalModalProps {
   onDocumentApproved: (doc: any) => void;
   pendingCount: number;
   onPendingCountChange: (count: number) => void;
+  vaultDocuments?: any[];
 }
 
 const extractCleanId = (urlOrId: string): string => {
@@ -42,12 +44,105 @@ const extractCleanId = (urlOrId: string): string => {
   return trimmed.replace(/^https?:\/\/.*archive\.org\//i, '').replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 };
 
+// Strict Deduplication Helper Function
+export const checkIsDuplicate = (
+  candidate: { title?: string; archiveId?: string; archiveUrl?: string; memoNo?: string },
+  vaultDocs: any[],
+  pendingDocsList?: any[],
+  currentId?: string
+): { isDuplicate: boolean; reason?: string; matchedDoc?: any; location?: 'vault' | 'pending' } => {
+  const cleanId = extractCleanId(candidate.archiveId || candidate.archiveUrl || '');
+  const cleanMemo = (candidate.memoNo || '').trim().toLowerCase();
+  const cleanTitle = (candidate.title || '').trim().toLowerCase();
+
+  // 1. Check against Vault (Approved documents)
+  if (Array.isArray(vaultDocs)) {
+    for (const doc of vaultDocs) {
+      if (!doc || (currentId && doc.id === currentId)) continue;
+
+      const docArchiveId = extractCleanId(doc.archiveId || doc.archiveUrl || '');
+      if (cleanId && docArchiveId && cleanId.toLowerCase() === docArchiveId.toLowerCase()) {
+        return {
+          isDuplicate: true,
+          reason: 'একই Archive.org ফাইল লিঙ্ক বা আইডি',
+          matchedDoc: doc,
+          location: 'vault'
+        };
+      }
+
+      if (cleanMemo && cleanMemo.length >= 3 && doc.memoNo) {
+        if (doc.memoNo.trim().toLowerCase() === cleanMemo) {
+          return {
+            isDuplicate: true,
+            reason: `একই স্মারক নম্বর (${doc.memoNo})`,
+            matchedDoc: doc,
+            location: 'vault'
+          };
+        }
+      }
+
+      if (cleanTitle && cleanTitle.length >= 5 && doc.title) {
+        if (doc.title.trim().toLowerCase() === cleanTitle) {
+          return {
+            isDuplicate: true,
+            reason: `একই শিরোনাম ("${doc.title}")`,
+            matchedDoc: doc,
+            location: 'vault'
+          };
+        }
+      }
+    }
+  }
+
+  // 2. Check against Pending List
+  if (Array.isArray(pendingDocsList) && pendingDocsList.length > 0) {
+    for (const pending of pendingDocsList) {
+      if (!pending || (currentId && pending.id === currentId)) continue;
+
+      const pArchiveId = extractCleanId(pending.archiveId || pending.archiveUrl || '');
+      if (cleanId && pArchiveId && cleanId.toLowerCase() === pArchiveId.toLowerCase()) {
+        return {
+          isDuplicate: true,
+          reason: 'অপেক্ষমাণ তালিকায় একই Archive.org লিঙ্ক বিদ্যমান',
+          matchedDoc: pending,
+          location: 'pending'
+        };
+      }
+
+      if (cleanMemo && cleanMemo.length >= 3 && pending.memoNo) {
+        if (pending.memoNo.trim().toLowerCase() === cleanMemo) {
+          return {
+            isDuplicate: true,
+            reason: `অপেক্ষমাণ তালিকায় একই স্মারক নম্বর (${pending.memoNo}) বিদ্যমান`,
+            matchedDoc: pending,
+            location: 'pending'
+          };
+        }
+      }
+
+      if (cleanTitle && cleanTitle.length >= 5 && pending.title) {
+        if (pending.title.trim().toLowerCase() === cleanTitle) {
+          return {
+            isDuplicate: true,
+            reason: `অপেক্ষমাণ তালিকায় একই শিরোনাম ("${pending.title}") বিদ্যমান`,
+            matchedDoc: pending,
+            location: 'pending'
+          };
+        }
+      }
+    }
+  }
+
+  return { isDuplicate: false };
+};
+
 export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   isOpen,
   onClose,
   onDocumentApproved,
   pendingCount,
-  onPendingCountChange
+  onPendingCountChange,
+  vaultDocuments = []
 }) => {
   const [activeTab, setActiveTab] = useState<'pending' | 'fast_ingest' | 'archive_guide'>('pending');
   const [pendingDocs, setPendingDocs] = useState<PendingDoc[]>([]);
@@ -73,6 +168,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ingestFormRef = useRef<HTMLFormElement>(null);
+  const [selectedFileMeta, setSelectedFileMeta] = useState<{ name: string; size: string; type: string } | null>(null);
 
   // Load Pending Docs from Supabase & LocalStorage
   const loadPendingDocs = async () => {
@@ -137,10 +234,30 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   // Handle Approve
   const handleApprove = async (doc: PendingDoc) => {
     const overrides = editingDocId === doc.id ? editForm : {};
+    const candidateDoc = { ...doc, ...(overrides || {}) };
+
+    // Strict Deduplication Check against Vault
+    const vaultList = Array.isArray(vaultDocuments) && vaultDocuments.length > 0
+      ? vaultDocuments
+      : JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+
+    const dupCheck = checkIsDuplicate(candidateDoc, vaultList, [], doc.id);
+
+    let targetDocId = `doc_${Date.now()}`;
+    if (dupCheck.isDuplicate && dupCheck.matchedDoc) {
+      const confirmReplace = confirm(
+        `⚠️ ডাবল এন্ট্রি সতর্কতা (ডুপ্লিকেট নথি)!\n\nএই সার্কুলারটি ইতিমধ্যে মূল ভল্টে বিদ্যমান রয়েছে।\nমিল পাওয়ার কারণ: ${dupCheck.reason}\nবিদ্যমান নথির নাম: "${dupCheck.matchedDoc.title}"\nতারিখ: ${dupCheck.matchedDoc.docDate || 'অনির্দিষ্ট'}\n\nআপনি কি নতুন তথ্য দিয়ে পূর্ববর্তী নথিটি আপডেট/প্রতিস্থাপন করতে চান?\n[OK চাপলে পূর্বের নথিটি আপডেট হবে (ডাবল এন্ট্রি হবে না)]\n[Cancel চাপলে অনুমোদন স্থগিত থাকবে]`
+      );
+      if (!confirmReplace) return;
+
+      // Update existing document instead of creating a second copy!
+      targetDocId = dupCheck.matchedDoc.id;
+    }
+
     const finalDoc = {
       ...doc,
       ...(overrides || {}),
-      id: `doc_${Date.now()}`,
+      id: targetDocId,
       status: 'approved' as const,
       uploadedBy: 'Admin (Approved)',
       createdAt: new Date().toISOString()
@@ -206,6 +323,31 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     setIngestSuccess(null);
 
     const cleanId = extractCleanId(ingestForm.archiveIdOrLink) || `bd_circular_${Date.now()}`;
+
+    // Strict Deduplication Check before Ingesting
+    const vaultList = Array.isArray(vaultDocuments) && vaultDocuments.length > 0
+      ? vaultDocuments
+      : JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+
+    const dupCheck = checkIsDuplicate(
+      {
+        title: ingestForm.title,
+        archiveId: cleanId,
+        archiveUrl: `https://archive.org/details/${cleanId}`,
+        memoNo: ingestForm.memoNo
+      },
+      vaultList,
+      pendingDocs
+    );
+
+    if (dupCheck.isDuplicate) {
+      setIngestError(
+        `❌ ডাবল এন্ট্রি রোধ: এই সার্কুলারটি ইতিমধ্যে ${dupCheck.location === 'vault' ? 'মূল ভল্টে' : 'অপেক্ষমাণ তালিকায়'} রয়েছে (${dupCheck.reason})। পূর্বে যুক্ত নথির নাম: "${dupCheck.matchedDoc?.title}"`
+      );
+      setIsSubmittingIngest(false);
+      return;
+    }
+
     const pendingDoc: PendingDoc = {
       id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       title: ingestForm.title.trim(),
@@ -249,6 +391,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         description: '',
         source: 'WhatsApp / Messenger'
       });
+      setSelectedFileMeta(null);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -268,15 +411,29 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
     const rawTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
     const autoArchiveId = `bd_audit_${file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
+    const sizeInKb = (file.size / 1024).toFixed(1);
+
+    setSelectedFileMeta({
+      name: file.name,
+      size: `${sizeInKb} KB`,
+      type: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image')
+    });
 
     setIngestForm(prev => ({
       ...prev,
       title: rawTitle,
       archiveIdOrLink: autoArchiveId,
-      description: `ফাইল: ${file.name} (আকার: ${(file.size / 1024).toFixed(1)} KB)`
+      description: `ফাইল: ${file.name} (আকার: ${sizeInKb} KB)`
     }));
 
     if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // ফাইল সিলেক্ট করার পর স্বয়ংক্রিয়ভাবে পেজটি/ফরমটি কিছুটা নিচে নিয়ে যাবে যেন সম্পূর্ণ ফরমটির তথ্য দেখা যায়
+    setTimeout(() => {
+      if (ingestFormRef.current) {
+        ingestFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 150);
   };
 
   return (
@@ -423,10 +580,19 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     const isEditing = editingDocId === doc.id;
                     const isPreviewing = previewId === doc.id;
 
+                    const vaultList = Array.isArray(vaultDocuments) && vaultDocuments.length > 0
+                      ? vaultDocuments
+                      : JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+
+                    const cardCandidate = isEditing ? { ...doc, ...editForm } : doc;
+                    const dupCheck = checkIsDuplicate(cardCandidate, vaultList, [], doc.id);
+
                     return (
                       <div 
                         key={doc.id}
-                        className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-3 relative"
+                        className={`bg-white border-2 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-3 relative ${
+                          dupCheck.isDuplicate ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'
+                        }`}
                       >
                         {/* Top Badges & Source */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
@@ -434,9 +600,15 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                             <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-blue-100 text-blue-700 uppercase">
                               {doc.category || 'সার্কুলার'}
                             </span>
-                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
-                              <Clock size={10} /> এডমিন অনুমোদন প্রয়োজন
-                            </span>
+                            {dupCheck.isDuplicate ? (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                                <AlertTriangle size={10} className="text-amber-600" /> ডুপ্লিকেট সার্কুলার
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                <Clock size={10} /> এডমিন অনুমোদন প্রয়োজন
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
@@ -446,6 +618,17 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                             </span>
                           </div>
                         </div>
+
+                        {/* Duplicate Alert Banner */}
+                        {dupCheck.isDuplicate && (
+                          <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 font-bold animate-in fade-in duration-200">
+                            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                            <div className="leading-relaxed">
+                              <span className="font-black text-amber-800">⚠️ ডাবল এন্ট্রি শনাক্ত: </span>
+                              <span>{dupCheck.reason}! ভল্টে ইতিমধ্যে বিদ্যমান রয়েছে (পূর্বে সংরক্ষিত নথির নাম: &quot;{dupCheck.matchedDoc?.title}&quot;)।</span>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Document Info */}
                         {isEditing ? (
@@ -612,9 +795,21 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleApprove(doc)}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                                className={`px-4 py-2 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                                  dupCheck.isDuplicate
+                                    ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                                }`}
                               >
-                                <CheckCircle2 size={14} /> অনুমোদন দিন (ভল্টে প্রকাশ করুন)
+                                {dupCheck.isDuplicate ? (
+                                  <>
+                                    <RefreshCw size={14} /> পূর্বের নথি আপডেট/প্রতিস্থাপন করুন
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 size={14} /> অনুমোদন দিন (ভল্টে প্রকাশ করুন)
+                                  </>
+                                )}
                               </button>
                             </>
                           )}
@@ -664,13 +859,53 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
               </div>
 
               {/* Ingest Form */}
-              <form onSubmit={handleFastIngestSubmit} className="bg-white border-2 border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
+              <form 
+                ref={ingestFormRef} 
+                onSubmit={handleFastIngestSubmit} 
+                className="bg-white border-2 border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm scroll-mt-6"
+              >
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                   <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center">১</span>
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">
                     সার্কুলারের তথ্য প্রদান করুন
                   </h4>
                 </div>
+
+                {/* সংযুক্ত ডকুমেন্টের স্ট্যাটাস ও আইকন - যাতে এডমিন স্পষ্ট বুঝতে পারেন ডকুমেন্ট যুক্ত হয়েছে */}
+                {selectedFileMeta && (
+                  <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl flex items-center justify-between gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 shrink-0">
+                        <FileText size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                            <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+                            ডকুমেন্ট যুক্ত হয়েছে
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-800 font-bold">
+                            {selectedFileMeta.size}
+                          </span>
+                        </div>
+                        <p className="text-xs font-black text-slate-800 truncate" title={selectedFileMeta.name}>
+                          {selectedFileMeta.name}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFileMeta(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                      title="ডকুমেন্ট সরান"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-black text-slate-700 block">সার্কুলারের বিষয় / শিরোনাম *:</label>
