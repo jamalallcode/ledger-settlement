@@ -26,5 +26,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src", "components", "utils", "lib", "types.ts", "App.tsx", "main.tsx"]
+  "include": ["src", "components", "utils", "lib", "types.ts", "App.tsx", "main.tsx", "document-library", "api"]
 }

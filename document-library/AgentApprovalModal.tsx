@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { analyzeDocumentWithAI, checkGeminiStatus, testGeminiConnection } from './aiDocumentAnalyzer';
 
 export interface PendingDoc {
   id: string;
@@ -174,6 +175,30 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [rawSelectedFile, setRawSelectedFile] = useState<File | null>(null);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+  const [aiWarningMessage, setAiWarningMessage] = useState<string | null>(null);
+  const [aiConnectionStatus, setAiConnectionStatus] = useState<{ active: boolean; model: string } | null>(null);
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    checkGeminiStatus().then(res => setAiConnectionStatus(res)).catch(() => {});
+  }, []);
+
+  const handleTestAi = async () => {
+    setIsTestingAi(true);
+    setAiTestResult(null);
+    try {
+      const result = await testGeminiConnection();
+      setAiTestResult(result);
+      if (result.success) {
+        setAiConnectionStatus({ active: true, model: 'gemini-3.8-flash' });
+      }
+    } catch (e: any) {
+      setAiTestResult({ success: false, message: 'সংযোগ ব্যর্থ: ' + e.message });
+    } finally {
+      setIsTestingAi(false);
+    }
+  };
 
   // Load Pending Docs from Server, Supabase & LocalStorage
   const loadPendingDocs = async () => {
@@ -535,43 +560,42 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     });
 
     setAiSuccessMessage(null);
+    setAiWarningMessage(null);
     setIsAnalyzingAI(true);
 
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
 
       // Smart Multimodal AI Vision & OCR Extraction
       try {
-        const res = await fetch('/api/agent/analyze-document', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileBase64: rawBase64,
-            fileName: file.name,
-            mimeType: detectedMime
-          })
+        const aiResult = await analyzeDocumentWithAI({
+          fileBase64: dataUrl,
+          fileName: file.name,
+          mimeType: detectedMime
         });
 
-        if (res.ok) {
-          const aiJson = await res.json();
-          if (aiJson.success && aiJson.data) {
-            setIngestForm(prev => ({
-              ...prev,
-              title: aiJson.data.title || prev.title,
-              category: aiJson.data.category || prev.category,
-              authority: aiJson.data.authority || prev.authority,
-              memoNo: aiJson.data.memoNo || prev.memoNo,
-              docDate: aiJson.data.docDate || prev.docDate,
-              description: aiJson.data.description || `ফাইল: ${file.name} (আকার: ${sizeInKb} KB)`,
-              archiveIdOrLink: autoArchiveId
-            }));
-            setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য পূরণ করেছে');
-          }
+        if (aiResult.success && aiResult.data && aiResult.isAiAnalyzed) {
+          setIngestForm(prev => ({
+            ...prev,
+            title: aiResult.data!.title || prev.title,
+            category: aiResult.data!.category || prev.category,
+            authority: aiResult.data!.authority || prev.authority,
+            memoNo: aiResult.data!.memoNo || prev.memoNo,
+            docDate: aiResult.data!.docDate || prev.docDate,
+            description: aiResult.data!.description || `ফাইল: ${file.name} (আকার: ${sizeInKb} KB)`,
+            archiveIdOrLink: autoArchiveId
+          }));
+          setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য পূরণ করেছে');
+          setAiWarningMessage(null);
+        } else if (aiResult.apiKeyMissing) {
+          setAiWarningMessage('⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা নিচে তথ্যগুলো ম্যানুয়ালি পূরণ করুন।');
+        } else if (aiResult.error) {
+          setAiWarningMessage(`⚠️ এআই বিশ্লেষণ সম্পন্ন হয়নি: ${aiResult.error}`);
         }
-      } catch (aiErr) {
+      } catch (aiErr: any) {
         console.warn('AI agent document analysis error:', aiErr);
+        setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন।');
       } finally {
         setIsAnalyzingAI(false);
       }
@@ -1015,6 +1039,41 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   >
                     <Upload size={14} /> ফাইল থেকে অটো-পূরণ করুন
                   </label>
+
+                  {/* AI Status & 1-Click Test Button */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-3">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border transition-all ${
+                      aiConnectionStatus?.active 
+                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300' 
+                        : 'bg-amber-100 text-amber-900 border-amber-300'
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full ${aiConnectionStatus?.active ? 'bg-emerald-600 animate-pulse' : 'bg-amber-600'}`}></span>
+                      {aiConnectionStatus?.active ? 'জেমিনি এআই সংযুক্ত (AI Ready)' : 'জেমিনি এআই কী আনসেট (ম্যানুয়াল মোড)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleTestAi}
+                      disabled={isTestingAi}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-full text-[11px] font-black border border-slate-300 shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                      title="জেমিনি এপিআই সংযোগ পরীক্ষা করুন"
+                    >
+                      {isTestingAi ? <Loader2 size={12} className="animate-spin text-blue-600" /> : <Sparkles size={12} className="text-blue-600" />}
+                      <span>{isTestingAi ? 'পরীক্ষা চলছে...' : 'এআই টেস্ট করুন'}</span>
+                    </button>
+                  </div>
+
+                  {aiTestResult && (
+                    <div className={`mt-2 p-2.5 rounded-xl text-xs font-bold max-w-md mx-auto animate-in fade-in ${
+                      aiTestResult.success 
+                        ? 'bg-emerald-50 text-emerald-900 border border-emerald-300' 
+                        : 'bg-rose-50 text-rose-800 border border-rose-300'
+                    }`}>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {aiTestResult.success ? <CheckCircle2 size={14} className="text-emerald-600" /> : <AlertTriangle size={14} className="text-rose-600" />}
+                        <span>{aiTestResult.message}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1081,6 +1140,20 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2 text-xs font-black text-emerald-800 animate-in fade-in">
                     <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                     <span>{aiSuccessMessage}</span>
+                  </div>
+                )}
+
+                {aiWarningMessage && !isAnalyzingAI && (
+                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-2.5 text-xs font-bold text-amber-900 animate-in fade-in shadow-xs">
+                    <AlertTriangle size={17} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p>{aiWarningMessage}</p>
+                      {aiWarningMessage.includes('GEMINI_API_KEY') && (
+                        <p className="text-[11px] text-amber-700 font-normal leading-relaxed">
+                          📌 <strong>করণীয়:</strong> Vercel ড্যাশবোর্ডে <strong>Settings &gt; Environment Variables</strong>-এ গিয়ে <strong>GEMINI_API_KEY</strong> ভ্যারিয়েবলটি যোগ করুন, অথবা নিচে তথ্যগুলো ম্যানুয়ালি লিখে অপেক্ষমাণ তালিকায় জমা করুন।
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 

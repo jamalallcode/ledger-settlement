@@ -13,6 +13,7 @@ import { PendingDocsModal } from './PendingDocsModal';
 import { AgentApprovalModal } from './AgentApprovalModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
+import { analyzeDocumentWithAI } from './aiDocumentAnalyzer';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -424,6 +425,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+  const [aiWarningMessage, setAiWarningMessage] = useState<string | null>(null);
 
   const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -434,6 +436,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       : `${Math.round(file.size / 1024)} KB`;
 
     setAiSuccessMessage(null);
+    setAiWarningMessage(null);
     setIsAnalyzingAI(true);
 
     const reader = new FileReader();
@@ -458,35 +461,33 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
       // AI Multimodal Document Reading & Extraction
       try {
-        const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-        const res = await fetch('/api/agent/analyze-document', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileBase64: rawBase64,
-            fileName: file.name,
-            mimeType: detectedMime
-          })
+        const aiResult = await analyzeDocumentWithAI({
+          fileBase64: dataUrl,
+          fileName: file.name,
+          mimeType: detectedMime
         });
 
-        if (res.ok) {
-          const aiJson = await res.json();
-          if (aiJson.success && aiJson.data) {
-            setNewDoc(prev => ({
-              ...prev,
-              title: aiJson.data.title || prev.title,
-              category: (aiJson.data.category as any) || prev.category,
-              authority: aiJson.data.authority || prev.authority,
-              memoNo: aiJson.data.memoNo || prev.memoNo,
-              docDate: aiJson.data.docDate || prev.docDate,
-              description: aiJson.data.description || prev.description,
-              archiveId: prev.archiveId && !prev.archiveId.startsWith('bd_audit_') ? prev.archiveId : autoId
-            }));
-            setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য স্বয়ংক্রিয়ভাবে পূরণ করেছে');
-          }
+        if (aiResult.success && aiResult.data && aiResult.isAiAnalyzed) {
+          setNewDoc(prev => ({
+            ...prev,
+            title: aiResult.data!.title || prev.title,
+            category: (aiResult.data!.category as any) || prev.category,
+            authority: aiResult.data!.authority || prev.authority,
+            memoNo: aiResult.data!.memoNo || prev.memoNo,
+            docDate: aiResult.data!.docDate || prev.docDate,
+            description: aiResult.data!.description || prev.description,
+            archiveId: prev.archiveId && !prev.archiveId.startsWith('bd_audit_') ? prev.archiveId : autoId
+          }));
+          setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য স্বয়ংক্রিয়ভাবে পূরণ করেছে');
+          setAiWarningMessage(null);
+        } else if (aiResult.apiKeyMissing) {
+          setAiWarningMessage('⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা ম্যানুয়ালি তথ্য পূরণ করুন।');
+        } else if (aiResult.error) {
+          setAiWarningMessage(`⚠️ এআই বিশ্লেষণ সম্পন্ন হয়নি: ${aiResult.error}`);
         }
-      } catch (aiErr) {
+      } catch (aiErr: any) {
         console.warn('AI analysis call exception:', aiErr);
+        setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন।');
       } finally {
         setIsAnalyzingAI(false);
       }
@@ -1886,6 +1887,20 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-2 text-xs font-black text-emerald-800 animate-in fade-in">
                     <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                     <span>{aiSuccessMessage}</span>
+                  </div>
+                )}
+
+                {aiWarningMessage && !isAnalyzingAI && (
+                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-2 text-xs font-bold text-amber-900 animate-in fade-in shadow-xs">
+                    <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p>{aiWarningMessage}</p>
+                      {aiWarningMessage.includes('GEMINI_API_KEY') && (
+                        <p className="text-[11px] text-amber-700 font-normal">
+                          📌 Vercel ড্যাশবোর্ডে <strong>Settings &gt; Environment Variables</strong>-এ <strong>GEMINI_API_KEY</strong> যুক্ত করলেই এআই ফাইল প্রসেসিং কার্যকর হবে।
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 

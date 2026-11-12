@@ -515,6 +515,45 @@ async function startServer() {
     }
   };
 
+  // 6.4. Gemini AI Connection Status & Ping Check
+  app.get("/api/agent/gemini-status", (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    res.json({
+      active: !!apiKey,
+      model: "gemini-3.8-flash"
+    });
+  });
+
+  app.post("/api/agent/test-gemini", async (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return res.json({
+        success: false,
+        active: false,
+        message: "GEMINI_API_KEY কনফিগার করা নেই।"
+      });
+    }
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const ping = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: "স্বাগতম! শুধুমাত্র 'OK' শব্দটি লিখুন।"
+      });
+      return res.json({
+        success: true,
+        active: true,
+        response: (ping.text || "").trim(),
+        message: "জেমিনি এআই সফলভাবে সংযুক্ত এবং সক্রিয় রয়েছে।"
+      });
+    } catch (err: any) {
+      return res.json({
+        success: false,
+        active: false,
+        error: err.message || "জেমিনি এপিআই সংযোগে সমস্যা হয়েছে।"
+      });
+    }
+  });
+
   // 6.5. AI Multimodal Document Analysis Endpoint (Gemini 3.8 Flash OCR & Metadata Extraction)
   app.post("/api/agent/analyze-document", async (req, res) => {
     try {
@@ -534,19 +573,21 @@ async function startServer() {
         else detectedMime = "image/jpeg";
       }
 
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       if (!apiKey) {
         console.warn("GEMINI_API_KEY is not configured in process.env");
         return res.json({
-          success: true,
+          success: false,
           isAiAnalyzed: false,
+          apiKeyMissing: true,
+          error: "GEMINI_API_KEY কনফিগার করা নেই। Vercel বা এনভায়রনমেন্ট সেটিংসে GEMINI_API_KEY যুক্ত করুন।",
           data: {
-            title: cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
+            title: "",
             category: "সার্কুলার",
             authority: "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
             memoNo: "",
             docDate: new Date().toISOString().split("T")[0],
-            description: "সরকারি সার্কুলার নথি।"
+            description: ""
           }
         });
       }
@@ -666,7 +707,7 @@ async function startServer() {
       // Only perform Gemini analysis if user didn't explicitly provide title
       if (!customTitle) {
         try {
-          const apiKey = process.env.GEMINI_API_KEY;
+          const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
           if (apiKey) {
             const ai = new GoogleGenAI({ apiKey });
             const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন (কোন ব্যাকটিক্স বা অতিরিক্ত টেক্সট ছাড়া):
