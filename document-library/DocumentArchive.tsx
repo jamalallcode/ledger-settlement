@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle, Upload
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -414,6 +414,52 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     tags: ''
   });
 
+  const [newDocFile, setNewDocFile] = useState<{
+    file?: File;
+    name: string;
+    size: string;
+    data: string;
+    mimeType: string;
+  } | null>(null);
+
+  const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeStr = file.size > 1024 * 1024 
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+      : `${Math.round(file.size / 1024)} KB`;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setNewDocFile({
+        file,
+        name: file.name,
+        size: sizeStr,
+        data: dataUrl,
+        mimeType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')
+      });
+
+      if (!newDoc.title.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        setNewDoc(prev => ({ ...prev, title: cleanName }));
+      }
+
+      const cleanSlug = file.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .slice(0, 30) || "doc";
+      const autoId = `bd_audit_${cleanSlug}_${Date.now()}`;
+      setNewDoc(prev => ({
+        ...prev,
+        archiveId: autoId
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const categories = ['সকল', 'সার্কুলার', 'অফিস আদেশ', 'গেজেট', 'অন্যান্য'];
 
   const formatPremiumDate = (iso: string | undefined | null) => {
@@ -682,7 +728,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       }
     }
 
-    return clean;
+    return clean.replace(/\.pdf$/i, '').trim().replace(/\s+/g, '_');
   };
 
   // Real-time Duplicate Detection in Manual Form
@@ -744,6 +790,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     }
 
     const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
+    const fileDataToSave = newDocFile ? newDocFile.data : (editingDoc?.fileData || '');
     const payload: ExtendedArchiveDoc = {
       id: docId,
       title: newDoc.title,
@@ -756,7 +803,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       tags: newDoc.tags,
       status: 'approved',
       uploadedBy: 'Admin',
-      createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
+      createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString(),
+      fileData: fileDataToSave
     };
 
     // 1. Immediately update local state
@@ -775,6 +823,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
     setShowAddModal(false);
     setEditingDoc(null);
+    const uploadedFileMeta = newDocFile;
+    setNewDocFile(null);
     setNewDoc({
       title: '',
       category: 'সার্কুলার',
@@ -804,6 +854,30 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       });
     } catch (err) {
       console.error("Supabase upsert error:", err);
+    }
+
+    // 4. Auto-sync to Archive.org in background using S3 Keys if file was uploaded
+    if (uploadedFileMeta) {
+      try {
+        const rawBase64 = uploadedFileMeta.data.includes(',') ? uploadedFileMeta.data.split(',')[1] : uploadedFileMeta.data;
+        fetch('/api/agent/process-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: rawBase64,
+            fileName: uploadedFileMeta.name,
+            mimeType: uploadedFileMeta.mimeType,
+            title: payload.title,
+            category: payload.category,
+            authority: payload.authority,
+            memoNo: payload.memoNo,
+            docDate: payload.docDate,
+            description: payload.description,
+            source: 'Direct Admin Upload',
+            senderName: 'এডমিন'
+          })
+        }).catch(err => console.warn('Background Archive.org upload error:', err));
+      } catch (e) {}
     }
 
     alert(editingDoc ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!" : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!");
@@ -1552,6 +1626,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   >
                     <FileText size={16} /> রেফারেন্স কপি করুন
                   </button>
+                  {effectiveAdmin && (
+                    <button 
+                      onClick={() => {
+                        const target = selectedDoc;
+                        setSelectedDoc(null);
+                        setEditingDoc(target);
+                      }}
+                      className="py-3 px-4 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                    >
+                      <Edit2 size={16} /> এডিট / ফাইল আপডেট
+                    </button>
+                  )}
                   <button 
                     onClick={() => setSelectedDoc(null)}
                     className="py-3 px-6 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all cursor-pointer"
@@ -1688,6 +1774,52 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   </div>
                 </div>
               )}
+
+              {/* 1-Click Direct File Upload Section */}
+              <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-dashed border-emerald-300 rounded-2xl space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">সরাসরি ফাইল সিলেক্ট করুন (স্বয়ংক্রিয় আপলোড)</h4>
+                      <p className="text-[11px] text-slate-500 font-bold">PDF বা ছবি বাছলে স্বয়ংক্রিয়ভাবে Archive.org আইডি তৈরি হবে ও তাৎক্ষণিক প্রিভিউ লোড হবে</p>
+                    </div>
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      id="admin-doc-direct-file-input"
+                      accept=".pdf,image/*"
+                      className="hidden"
+                      onChange={handleDirectFileChange}
+                    />
+                    <label
+                      htmlFor="admin-doc-direct-file-input"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
+                    >
+                      <Upload size={14} /> ফাইল নির্বাচন করুন
+                    </label>
+                  </div>
+                </div>
+
+                {newDocFile && (
+                  <div className="p-2.5 bg-white border border-emerald-200 rounded-xl flex items-center justify-between text-xs animate-in fade-in">
+                    <span className="font-bold text-emerald-800 truncate flex items-center gap-1.5">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      {newDocFile.name} ({newDocFile.size})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setNewDocFile(null)}
+                      className="text-red-500 hover:text-red-700 font-bold text-[11px] ml-2 cursor-pointer"
+                    >
+                      মুছুন
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-1.5 bg-blue-50 p-4 rounded-xl border border-blue-100">
                 <label className="text-blue-900 font-black uppercase tracking-wider flex items-center gap-1">
