@@ -20,6 +20,7 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
   tags?: string;
   status?: 'approved' | 'pending' | 'rejected';
   uploadedBy?: string;
+  fileData?: string;
 }
 
 const DEMO_DOC_IDS = ['doc_101', 'doc_102', 'doc_103', 'doc_104', 'doc_105', 'doc_106'];
@@ -1470,17 +1471,25 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="bg-slate-950 p-4 md:p-6 text-white flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[420px]">
-                <div className="w-full h-[360px] md:h-[420px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner relative">
-                  <iframe
-                    src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
-                    className="w-full h-full border-0"
-                    title={selectedDoc.title}
-                    allowFullScreen
-                  />
+                <div className="w-full h-[360px] md:h-[420px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner relative flex items-center justify-center">
+                  {selectedDoc.fileData && selectedDoc.fileData.startsWith('data:image/') ? (
+                    <img 
+                      src={selectedDoc.fileData} 
+                      alt={selectedDoc.title} 
+                      className="max-h-full max-w-full object-contain mx-auto" 
+                    />
+                  ) : (
+                    <iframe
+                      src={selectedDoc.fileData || `https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
+                      className="w-full h-full border-0"
+                      title={selectedDoc.title}
+                      allowFullScreen
+                    />
+                  )}
                 </div>
                 <div className="w-full pt-3 flex items-center justify-center">
                   <a 
-                    href={`https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                    href={selectedDoc.fileData || `https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"

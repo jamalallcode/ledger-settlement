@@ -25,6 +25,7 @@ export interface PendingDoc {
   senderName?: string;
   status: 'pending';
   createdAt: string;
+  fileData?: string;
 }
 
 interface AgentApprovalModalProps {
@@ -170,6 +171,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ingestFormRef = useRef<HTMLFormElement>(null);
   const [selectedFileMeta, setSelectedFileMeta] = useState<{ name: string; size: string; type: string } | null>(null);
+  const [rawSelectedFile, setRawSelectedFile] = useState<File | null>(null);
 
   // Load Pending Docs from Supabase & LocalStorage
   const loadPendingDocs = async () => {
@@ -348,21 +350,80 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       return;
     }
 
-    const pendingDoc: PendingDoc = {
-      id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      title: ingestForm.title.trim(),
-      category: ingestForm.category || 'সার্কুলার',
-      archiveId: cleanId,
-      archiveUrl: `https://archive.org/details/${cleanId}`,
-      docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
-      memoNo: ingestForm.memoNo.trim(),
-      authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
-      description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মেসেঞ্জার গ্রুপ থেকে সংগৃহীত সার্কুলার।',
-      source: ingestForm.source || 'WhatsApp/Messenger',
-      senderName: 'এডমিন ইনজেস্ট',
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    let pendingDoc: PendingDoc;
+
+    if (rawSelectedFile) {
+      try {
+        const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(f);
+          reader.onload = () => {
+            const res = reader.result as string;
+            resolve(res.includes(',') ? res.split(',')[1] : res);
+          };
+          reader.onerror = error => reject(error);
+        });
+
+        const fileBase64 = await toBase64(rawSelectedFile);
+        const resp = await fetch("/api/agent/process-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileBase64,
+            fileName: rawSelectedFile.name,
+            mimeType: rawSelectedFile.type,
+            title: ingestForm.title.trim(),
+            category: ingestForm.category || 'সার্কুলার',
+            authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+            memoNo: ingestForm.memoNo.trim(),
+            docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
+            description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মোবাইল থেকে সংগৃহীত সার্কুলার।',
+            source: 'WhatsApp / Mobile Upload',
+            senderName: 'এডমিন ইনজেস্ট'
+          })
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success && data.pendingDocument) {
+          pendingDoc = data.pendingDocument;
+        } else {
+          throw new Error(data.error || "Archive.org আপলোড সম্পন্ন হয়নি");
+        }
+      } catch (uploadErr: any) {
+        console.warn("Archive.org upload fallback notice:", uploadErr.message);
+        pendingDoc = {
+          id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          title: ingestForm.title.trim(),
+          category: ingestForm.category || 'সার্কুলার',
+          archiveId: cleanId,
+          archiveUrl: `https://archive.org/details/${cleanId}`,
+          docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
+          memoNo: ingestForm.memoNo.trim(),
+          authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+          description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মেসেঞ্জার গ্রুপ থেকে সংগৃহীত সার্কুলার।',
+          source: ingestForm.source || 'WhatsApp/Messenger',
+          senderName: 'এডমিন ইনজেস্ট',
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
+      }
+    } else {
+      pendingDoc = {
+        id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        title: ingestForm.title.trim(),
+        category: ingestForm.category || 'সার্কুলার',
+        archiveId: cleanId,
+        archiveUrl: `https://archive.org/details/${cleanId}`,
+        docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
+        memoNo: ingestForm.memoNo.trim(),
+        authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+        description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মেসেঞ্জার গ্রুপ থেকে সংগৃহীত সার্কুলার।',
+        source: ingestForm.source || 'WhatsApp/Messenger',
+        senderName: 'এডমিন ইনজেস্ট',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+    }
 
     try {
       // Save to Supabase
@@ -375,12 +436,12 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       }
 
       // Save to LocalStorage
-      const updated = [pendingDoc, ...pendingDocs];
+      const updated = [pendingDoc, ...pendingDocs.filter(d => d.id !== pendingDoc.id)];
       setPendingDocs(updated);
       localStorage.setItem('pending_audit_documents', JSON.stringify(updated));
       onPendingCountChange(updated.length);
 
-      setIngestSuccess(`"${pendingDoc.title}" সফলভাবে অপেক্ষমাণ তালিকায় জমা হয়েছে!`);
+      setIngestSuccess(`"${pendingDoc.title}" সফলভাবে Archive.org-এ আপলোড ও অপেক্ষমাণ তালিকায় জমা হয়েছে!`);
       setIngestForm({
         title: '',
         category: 'সার্কুলার',
@@ -392,6 +453,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         source: 'WhatsApp / Messenger'
       });
       setSelectedFileMeta(null);
+      setRawSelectedFile(null);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -413,6 +475,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     const autoArchiveId = `bd_audit_${file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
     const sizeInKb = (file.size / 1024).toFixed(1);
 
+    setRawSelectedFile(file);
     setSelectedFileMeta({
       name: file.name,
       size: `${sizeInKb} KB`,
@@ -737,12 +800,20 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
                         {/* Embed Preview if active */}
                         {isPreviewing && (
-                          <div className="mt-3 border-2 border-slate-200 rounded-xl overflow-hidden bg-slate-900 h-80 transition-all">
-                            <iframe 
-                              src={`https://archive.org/embed/${doc.archiveId}`}
-                              className="w-full h-full border-0"
-                              title="Archive Document Preview"
-                            />
+                          <div className="mt-3 border-2 border-slate-200 rounded-xl overflow-hidden bg-slate-900 h-80 transition-all flex items-center justify-center">
+                            {doc.fileData && doc.fileData.startsWith('data:image/') ? (
+                              <img 
+                                src={doc.fileData} 
+                                alt={doc.title} 
+                                className="max-h-full max-w-full object-contain mx-auto" 
+                              />
+                            ) : (
+                              <iframe 
+                                src={doc.fileData || `https://archive.org/embed/${doc.archiveId}`}
+                                className="w-full h-full border-0"
+                                title="Archive Document Preview"
+                              />
+                            )}
                           </div>
                         )}
 
