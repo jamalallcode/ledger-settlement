@@ -422,6 +422,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     mimeType: string;
   } | null>(null);
 
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+
   const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -430,21 +433,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
       : `${Math.round(file.size / 1024)} KB`;
 
+    setAiSuccessMessage(null);
+    setIsAnalyzingAI(true);
+
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const dataUrl = reader.result as string;
+      const detectedMime = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
       setNewDocFile({
         file,
         name: file.name,
         size: sizeStr,
         data: dataUrl,
-        mimeType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')
+        mimeType: detectedMime
       });
-
-      if (!newDoc.title.trim()) {
-        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        setNewDoc(prev => ({ ...prev, title: cleanName }));
-      }
 
       const cleanSlug = file.name
         .toLowerCase()
@@ -452,10 +455,41 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         .replace(/_+/g, "_")
         .slice(0, 30) || "doc";
       const autoId = `bd_audit_${cleanSlug}_${Date.now()}`;
-      setNewDoc(prev => ({
-        ...prev,
-        archiveId: autoId
-      }));
+
+      // AI Multimodal Document Reading & Extraction
+      try {
+        const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        const res = await fetch('/api/agent/analyze-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: rawBase64,
+            fileName: file.name,
+            mimeType: detectedMime
+          })
+        });
+
+        if (res.ok) {
+          const aiJson = await res.json();
+          if (aiJson.success && aiJson.data) {
+            setNewDoc(prev => ({
+              ...prev,
+              title: aiJson.data.title || prev.title,
+              category: (aiJson.data.category as any) || prev.category,
+              authority: aiJson.data.authority || prev.authority,
+              memoNo: aiJson.data.memoNo || prev.memoNo,
+              docDate: aiJson.data.docDate || prev.docDate,
+              description: aiJson.data.description || prev.description,
+              archiveId: prev.archiveId && !prev.archiveId.startsWith('bd_audit_') ? prev.archiveId : autoId
+            }));
+            setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য স্বয়ংক্রিয়ভাবে পূরণ করেছে');
+          }
+        }
+      } catch (aiErr) {
+        console.warn('AI analysis call exception:', aiErr);
+      } finally {
+        setIsAnalyzingAI(false);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -672,7 +706,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             tags: String(content.tags || ''),
             status: (content.status as any) || 'approved',
             uploadedBy: String(content.uploadedBy || ''),
-            createdAt: String(content.createdAt || new Date().toISOString())
+            createdAt: String(content.createdAt || new Date().toISOString()),
+            fileData: content.fileData ? String(content.fileData) : undefined
           });
         });
       }
@@ -686,8 +721,22 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
     const docMap = new Map<string, ExtendedArchiveDoc>();
     localList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
-    serverList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
-    supabaseList.filter(isRealUploadedDoc).forEach(d => docMap.set(d.id, d));
+    serverList.filter(isRealUploadedDoc).forEach(d => {
+      const existing = docMap.get(d.id);
+      docMap.set(d.id, {
+        ...(existing || {}),
+        ...d,
+        fileData: d.fileData || existing?.fileData || ''
+      });
+    });
+    supabaseList.filter(isRealUploadedDoc).forEach(d => {
+      const existing = docMap.get(d.id);
+      docMap.set(d.id, {
+        ...(existing || {}),
+        ...d,
+        fileData: d.fileData || existing?.fileData || ''
+      });
+    });
 
     const finalDocs = Array.from(docMap.values());
     setDocuments(finalDocs);
@@ -821,8 +870,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       return updated;
     });
 
+    if (selectedDoc && selectedDoc.id === docId) {
+      setSelectedDoc(payload);
+    }
+
     setShowAddModal(false);
     setEditingDoc(null);
+    setIsAnalyzingAI(false);
+    setAiSuccessMessage(null);
     const uploadedFileMeta = newDocFile;
     setNewDocFile(null);
     setNewDoc({
@@ -1552,13 +1607,25 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                       alt={selectedDoc.title} 
                       className="max-h-full max-w-full object-contain mx-auto" 
                     />
-                  ) : (
+                  ) : selectedDoc.fileData ? (
                     <iframe
-                      src={selectedDoc.fileData || `https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
+                      src={selectedDoc.fileData}
                       className="w-full h-full border-0"
                       title={selectedDoc.title}
                       allowFullScreen
                     />
+                  ) : (
+                    <div className="w-full h-full relative">
+                      <iframe
+                        src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
+                        className="w-full h-full border-0"
+                        title={selectedDoc.title}
+                        allowFullScreen
+                      />
+                      <div className="absolute bottom-2 left-2 right-2 p-2 bg-slate-950/85 backdrop-blur-xs border border-slate-700/60 rounded-xl text-center text-[10px] text-amber-300 font-bold pointer-events-none">
+                        💡 ফাইলটি সরাসরি দেখতে নিচে &quot;এডিট / ফাইল আপডেট&quot; বাটনে ক্লিক করে ফাইলটি যুক্ত করুন।
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div className="w-full pt-3 flex items-center justify-center">
@@ -1756,6 +1823,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 onClick={() => {
                   setShowAddModal(false);
                   setEditingDoc(null);
+                  setNewDocFile(null);
+                  setIsAnalyzingAI(false);
+                  setAiSuccessMessage(null);
                 }}
                 className="p-2 text-slate-400 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-all"
               >
@@ -1804,6 +1874,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   </div>
                 </div>
 
+                {/* AI Analysis Loader & Status */}
+                {isAnalyzingAI && (
+                  <div className="p-3 bg-blue-50/90 border border-blue-300 rounded-xl flex items-center gap-3 text-xs font-black text-blue-800 animate-pulse">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                    <span>🤖 এআই ডকুমেন্টটি পড়ছে ও তথ্য উদ্ধার করছে...</span>
+                  </div>
+                )}
+
+                {aiSuccessMessage && !isAnalyzingAI && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-2 text-xs font-black text-emerald-800 animate-in fade-in">
+                    <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <span>{aiSuccessMessage}</span>
+                  </div>
+                )}
+
                 {newDocFile && (
                   <div className="p-2.5 bg-white border border-emerald-200 rounded-xl flex items-center justify-between text-xs animate-in fade-in">
                     <span className="font-bold text-emerald-800 truncate flex items-center gap-1.5">
@@ -1812,7 +1897,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     </span>
                     <button
                       type="button"
-                      onClick={() => setNewDocFile(null)}
+                      onClick={() => {
+                        setNewDocFile(null);
+                        setAiSuccessMessage(null);
+                      }}
                       className="text-red-500 hover:text-red-700 font-bold text-[11px] ml-2 cursor-pointer"
                     >
                       মুছুন

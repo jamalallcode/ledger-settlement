@@ -172,8 +172,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const ingestFormRef = useRef<HTMLFormElement>(null);
   const [selectedFileMeta, setSelectedFileMeta] = useState<{ name: string; size: string; type: string } | null>(null);
   const [rawSelectedFile, setRawSelectedFile] = useState<File | null>(null);
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
 
-  // Load Pending Docs from Supabase & LocalStorage
+  // Load Pending Docs from Server, Supabase & LocalStorage
   const loadPendingDocs = async () => {
     setIsLoading(true);
     let list: PendingDoc[] = [];
@@ -184,6 +186,28 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) list = parsed;
+      }
+    } catch (e) {}
+
+    // 1.5. Server Ingestion Queue
+    try {
+      const srvResp = await fetch('/api/agent/pending-documents');
+      if (srvResp.ok) {
+        const srvData = await srvResp.json();
+        if (Array.isArray(srvData.pendingDocuments)) {
+          srvData.pendingDocuments.forEach((pd: PendingDoc) => {
+            if (pd && pd.id) {
+              const existingIdx = list.findIndex(x => x.id === pd.id);
+              if (existingIdx >= 0) {
+                if (!list[existingIdx].fileData && pd.fileData) {
+                  list[existingIdx].fileData = pd.fileData;
+                }
+              } else {
+                list.unshift(pd);
+              }
+            }
+          });
+        }
       }
     } catch (e) {}
 
@@ -207,7 +231,14 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           // Merge by ID
           const map = new Map<string, PendingDoc>();
           list.forEach(d => map.set(d.id, d));
-          remoteList.forEach(d => map.set(d.id, d));
+          remoteList.forEach(d => {
+            const existing = map.get(d.id);
+            map.set(d.id, {
+              ...(existing || {}),
+              ...d,
+              fileData: d.fileData || existing?.fileData || ''
+            });
+          });
           list = Array.from(map.values()).sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
@@ -260,6 +291,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       ...doc,
       ...(overrides || {}),
       id: targetDocId,
+      fileData: doc.fileData || (overrides as any)?.fileData || '',
       status: 'approved' as const,
       uploadedBy: 'Admin (Approved)',
       createdAt: new Date().toISOString()
@@ -276,6 +308,20 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         // 2. Delete pending from Supabase
         await supabase.from('settlement_entries').delete().eq('id', doc.id);
       }
+
+      // 2.5. Save to Server Storage
+      try {
+        await fetch('/api/admin/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc: finalDoc })
+        });
+        await fetch('/api/agent/pending-documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deleteId: doc.id })
+        });
+      } catch (e) {}
 
       // 3. Update Local Storage
       const currentPending = JSON.parse(localStorage.getItem('pending_audit_documents') || '[]')
@@ -353,6 +399,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     let pendingDoc: PendingDoc;
 
     if (rawSelectedFile) {
+      let fileBase64 = '';
       try {
         const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -364,7 +411,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           reader.onerror = error => reject(error);
         });
 
-        const fileBase64 = await toBase64(rawSelectedFile);
+        fileBase64 = await toBase64(rawSelectedFile);
         const resp = await fetch("/api/agent/process-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -386,6 +433,9 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         const data = await resp.json();
         if (resp.ok && data.success && data.pendingDocument) {
           pendingDoc = data.pendingDocument;
+          if (!pendingDoc.fileData) {
+            pendingDoc.fileData = `data:${rawSelectedFile.type || (rawSelectedFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')};base64,${fileBase64}`;
+          }
         } else {
           throw new Error(data.error || "Archive.org আপলোড সম্পন্ন হয়নি");
         }
@@ -397,6 +447,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           category: ingestForm.category || 'সার্কুলার',
           archiveId: cleanId,
           archiveUrl: `https://archive.org/details/${cleanId}`,
+          fileData: `data:${rawSelectedFile.type || (rawSelectedFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')};base64,${fileBase64}`,
           docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
           memoNo: ingestForm.memoNo.trim(),
           authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
@@ -454,6 +505,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       });
       setSelectedFileMeta(null);
       setRawSelectedFile(null);
+      setAiSuccessMessage(null);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -466,28 +518,65 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     }
   };
 
-  // Fast Ingest via File Picker (Automatic naming & archive ID)
+  // Fast Ingest via File Picker (Automatic naming, AI reading & archive ID)
   const handleFastIngestFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const rawTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
     const autoArchiveId = `bd_audit_${file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
     const sizeInKb = (file.size / 1024).toFixed(1);
+    const detectedMime = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
     setRawSelectedFile(file);
     setSelectedFileMeta({
       name: file.name,
       size: `${sizeInKb} KB`,
-      type: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image')
+      type: detectedMime
     });
 
-    setIngestForm(prev => ({
-      ...prev,
-      title: rawTitle,
-      archiveIdOrLink: autoArchiveId,
-      description: `ফাইল: ${file.name} (আকার: ${sizeInKb} KB)`
-    }));
+    setAiSuccessMessage(null);
+    setIsAnalyzingAI(true);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      const rawBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+
+      // Smart Multimodal AI Vision & OCR Extraction
+      try {
+        const res = await fetch('/api/agent/analyze-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: rawBase64,
+            fileName: file.name,
+            mimeType: detectedMime
+          })
+        });
+
+        if (res.ok) {
+          const aiJson = await res.json();
+          if (aiJson.success && aiJson.data) {
+            setIngestForm(prev => ({
+              ...prev,
+              title: aiJson.data.title || prev.title,
+              category: aiJson.data.category || prev.category,
+              authority: aiJson.data.authority || prev.authority,
+              memoNo: aiJson.data.memoNo || prev.memoNo,
+              docDate: aiJson.data.docDate || prev.docDate,
+              description: aiJson.data.description || `ফাইল: ${file.name} (আকার: ${sizeInKb} KB)`,
+              archiveIdOrLink: autoArchiveId
+            }));
+            setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য পূরণ করেছে');
+          }
+        }
+      } catch (aiErr) {
+        console.warn('AI agent document analysis error:', aiErr);
+      } finally {
+        setIsAnalyzingAI(false);
+      }
+    };
+    reader.readAsDataURL(file);
 
     if (fileInputRef.current) fileInputRef.current.value = '';
 
@@ -968,6 +1057,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                       type="button"
                       onClick={() => {
                         setSelectedFileMeta(null);
+                        setRawSelectedFile(null);
+                        setAiSuccessMessage(null);
                         if (fileInputRef.current) fileInputRef.current.value = '';
                       }}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
@@ -975,6 +1066,21 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     >
                       <X size={16} />
                     </button>
+                  </div>
+                )}
+
+                {/* AI Analysis Loader & Status */}
+                {isAnalyzingAI && (
+                  <div className="p-3 bg-blue-50/90 border border-blue-300 rounded-2xl flex items-center gap-3 text-xs font-black text-blue-800 animate-pulse">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                    <span>🤖 এআই ডকুমেন্টটি পড়ছে ও তথ্য উদ্ধার করছে...</span>
+                  </div>
+                )}
+
+                {aiSuccessMessage && !isAnalyzingAI && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2 text-xs font-black text-emerald-800 animate-in fade-in">
+                    <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <span>{aiSuccessMessage}</span>
                   </div>
                 )}
 
