@@ -22,7 +22,7 @@
     "cookie-parser": "^1.4.7",
     "date-fns": "^2.30.0",
     "esbuild": "^0.28.2",
-    "express": "^4.21.2",
+    "express": "^4.22.3",
     "express-session": "^1.18.1",
     "framer-motion": "^11.11.17",
     "jspdf": "^2.5.2",
