@@ -460,15 +460,23 @@ async function startServer() {
     }
 
     try {
+      // Archive.org S3 API specification:
+      // Multi-byte or UTF-8 metadata strings in headers must be URI-encoded like uri(...)
+      const safeArchiveMeta = (text: string) => {
+        if (!text) return '';
+        return /^[\x20-\x7E]+$/.test(text) ? text : `uri(${encodeURIComponent(text)})`;
+      };
+
       const targetUrl = `https://s3.us.archive.org/${uniqueId}/${encodeURIComponent(fileName)}`;
       const headers: Record<string, string> = {
         authorization: `LOW ${cfg.accessKey}:${cfg.secretKey}`,
         "x-amz-auto-make-bucket": "1",
         "x-archive-meta-mediatype": "texts",
         "x-archive-meta-collection": cfg.collection || "opensource_media",
-        "x-archive-meta-title": Buffer.from(metadata.title || "Government Circular").toString("utf-8"),
-        "x-archive-meta-description": Buffer.from(metadata.description || "Uploaded via Audit Ledger System").toString("utf-8"),
-        "x-archive-meta-creator": Buffer.from(metadata.authority || "Govt of Bangladesh").toString("utf-8")
+        "x-archive-meta-title": safeArchiveMeta(metadata.title || "Government Circular"),
+        "x-archive-meta-description": safeArchiveMeta(metadata.description || "Uploaded via Audit Ledger System"),
+        "x-archive-meta-creator": safeArchiveMeta(metadata.authority || "Directorate of Commercial Audit, Govt of Bangladesh"),
+        "x-archive-meta-subject": safeArchiveMeta("Audit Circular; Govt of Bangladesh; Commercial Audit; Public Finance")
       };
 
       const resp = await fetch(targetUrl, {
@@ -507,7 +515,19 @@ async function startServer() {
   // 7. Core AI Agent Processing Endpoint: Accepts file/base64 -> Gemini Vision/Analysis -> Archive.org Upload -> Pending Queue
   app.post("/api/agent/process-document", async (req, res) => {
     try {
-      const { fileBase64, fileName, mimeType, source = "direct_upload", senderName } = req.body;
+      const { 
+        fileBase64, 
+        fileName, 
+        mimeType, 
+        source = "direct_upload", 
+        senderName,
+        title: customTitle,
+        category: customCategory,
+        docDate: customDocDate,
+        memoNo: customMemoNo,
+        authority: customAuthority,
+        description: customDescription
+      } = req.body;
       if (!fileBase64) {
         return res.status(400).json({ error: "File base64 content is required" });
       }
@@ -518,19 +538,21 @@ async function startServer() {
 
       // Step 1: AI Agent Analysis with Gemini 3.8 Flash
       let extractedData = {
-        title: cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
-        category: "সার্কুলার",
-        docDate: new Date().toISOString().split("T")[0],
-        memoNo: "",
-        authority: "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
-        description: "হোয়াটসঅ্যাপ/মেসেঞ্জার থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত সার্কুলার।"
+        title: customTitle || cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
+        category: customCategory || "সার্কুলার",
+        docDate: customDocDate || new Date().toISOString().split("T")[0],
+        memoNo: customMemoNo || "",
+        authority: customAuthority || "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
+        description: customDescription || "হোয়াটসঅ্যাপ/মেসেঞ্জার থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত সার্কুলার।"
       };
 
-      try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
-          const ai = new GoogleGenAI({ apiKey });
-          const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন (কোন ব্যাকটিক্স বা অতিরিক্ত টেক্সট ছাড়া):
+      // Only perform Gemini analysis if user didn't explicitly provide title
+      if (!customTitle) {
+        try {
+          const apiKey = process.env.GEMINI_API_KEY;
+          if (apiKey) {
+            const ai = new GoogleGenAI({ apiKey });
+            const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন (কোন ব্যাকটিক্স বা অতিরিক্ত টেক্সট ছাড়া):
 {
   "title": "ফাইলের যথার্থ ও সুনির্দিষ্ট শিরোনাম বা বিষয় (বাংলায়)",
   "category": "সার্কুলার" অথবা "গেজেট" অথবা "আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
@@ -540,33 +562,34 @@ async function startServer() {
   "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
 }`;
 
-          const result = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { inlineData: { data: fileBase64, mimeType: detectedMime } },
-                  { text: prompt }
-                ]
-              }
-            ]
-          });
+            const result = await ai.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { inlineData: { data: fileBase64, mimeType: detectedMime } },
+                    { text: prompt }
+                  ]
+                }
+              ]
+            });
 
-          const rawText = result.text || "";
-          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.title) extractedData.title = parsed.title;
-            if (parsed.category) extractedData.category = parsed.category;
-            if (parsed.docDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.docDate)) extractedData.docDate = parsed.docDate;
-            if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
-            if (parsed.authority) extractedData.authority = parsed.authority;
-            if (parsed.description) extractedData.description = parsed.description;
+            const rawText = result.text || "";
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.title) extractedData.title = parsed.title;
+              if (parsed.category) extractedData.category = parsed.category;
+              if (parsed.docDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.docDate)) extractedData.docDate = parsed.docDate;
+              if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
+              if (parsed.authority) extractedData.authority = parsed.authority;
+              if (parsed.description) extractedData.description = parsed.description;
+            }
           }
+        } catch (aiErr: any) {
+          console.warn("Gemini agent analysis fallback:", aiErr.message);
         }
-      } catch (aiErr: any) {
-        console.warn("Gemini agent analysis fallback:", aiErr.message);
       }
 
       // Step 2: Upload to Archive.org
@@ -583,6 +606,7 @@ async function startServer() {
         category: extractedData.category,
         archiveId: uploadRes.archiveId,
         archiveUrl: uploadRes.archiveUrl,
+        fileData: `data:${detectedMime};base64,${fileBase64}`,
         docDate: extractedData.docDate,
         memoNo: extractedData.memoNo,
         authority: extractedData.authority,
