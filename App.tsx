@@ -1782,7 +1782,7 @@ const App: React.FC = () => {
 
       <div className="flex-1 min-h-0 h-full flex flex-col min-w-0">
         {(isAdmin || moduleVisibility.navbar !== false) && (
-          <div className="no-print">
+          <div className="no-print shrink-0 sticky top-0 z-[100] w-full bg-slate-900 shadow-md">
             <Navbar 
               activeTab={activeTab} setActiveTab={handleTabChange} onDemoLoad={() => {}}
               isLockedMode={isLockedMode} setIsLockedMode={setIsLockedMode}

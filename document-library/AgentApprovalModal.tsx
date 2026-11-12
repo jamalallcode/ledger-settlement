@@ -3,11 +3,12 @@ import {
   X, CheckCircle2, AlertCircle, Sparkles, FileText, Upload,
   ExternalLink, Trash2, Edit2, Check, RefreshCw, Send,
   ShieldCheck, Clock, Building, Calendar, Hash, Eye, EyeOff,
-  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode
+  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode, Link2, ArrowLeft
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-interface PendingDoc {
+export interface PendingDoc {
   id: string;
   title: string;
   category: string;
@@ -33,6 +34,14 @@ interface AgentApprovalModalProps {
   onPendingCountChange: (count: number) => void;
 }
 
+const extractCleanId = (urlOrId: string): string => {
+  if (!urlOrId) return '';
+  const trimmed = urlOrId.trim();
+  const match = trimmed.match(/archive\.org\/(?:details|embed|download|stream)\/([^/?#]+)/i);
+  if (match && match[1]) return match[1].trim();
+  return trimmed.replace(/^https?:\/\/.*archive\.org\//i, '').replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+};
+
 export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   isOpen,
   onClose,
@@ -40,7 +49,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   pendingCount,
   onPendingCountChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'pending' | 'whatsapp_qr' | 'upload' | 'settings'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'fast_ingest' | 'archive_guide'>('pending');
   const [pendingDocs, setPendingDocs] = useState<PendingDoc[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -49,149 +58,122 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PendingDoc>>({});
 
-  // Direct Ingest / Upload State
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStep, setProcessingStep] = useState<string>('');
-  const [processSuccess, setProcessSuccess] = useState<string | null>(null);
-  const [processError, setProcessError] = useState<string | null>(null);
+  // Fast Ingest Form State
+  const [ingestForm, setIngestForm] = useState({
+    title: '',
+    category: 'সার্কুলার',
+    archiveIdOrLink: '',
+    authority: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+    memoNo: '',
+    docDate: new Date().toISOString().split('T')[0],
+    description: '',
+    source: 'WhatsApp / Messenger'
+  });
+  const [isSubmittingIngest, setIsSubmittingIngest] = useState(false);
+  const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
+  const [ingestError, setIngestError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Archive.org Settings State
-  const [archiveConfig, setArchiveConfig] = useState({
-    accessKey: '',
-    secretKey: '',
-    collection: 'opensource_media',
-    hasAccessKey: false
-  });
-  const [configSaving, setConfigSaving] = useState(false);
-  const [configSuccess, setConfigSuccess] = useState(false);
-
-  // WhatsApp Web QR Connector State
-  const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  const [waQrCode, setWaQrCode] = useState<string | null>(null);
-  const [waUser, setWaUser] = useState<string | null>(null);
-  const [waLoading, setWaLoading] = useState(false);
-
-  // Load Pending Docs
+  // Load Pending Docs from Supabase & LocalStorage
   const loadPendingDocs = async () => {
     setIsLoading(true);
+    let list: PendingDoc[] = [];
+
+    // 1. Local Storage
     try {
-      const res = await fetch('/api/agent/pending-documents');
-      const data = await res.json();
-      if (Array.isArray(data.pendingDocuments)) {
-        setPendingDocs(data.pendingDocuments);
-        onPendingCountChange(data.pendingDocuments.length);
+      const saved = localStorage.getItem('pending_audit_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) list = parsed;
       }
-    } catch (e) {
-      console.error('Error loading pending documents:', e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load Archive Config
-  const loadArchiveConfig = async () => {
-    try {
-      const res = await fetch('/api/agent/archive-config');
-      const data = await res.json();
-      setArchiveConfig(prev => ({
-        ...prev,
-        accessKey: data.accessKey || '',
-        hasAccessKey: Boolean(data.hasAccessKey),
-        collection: data.collection || 'opensource_media'
-      }));
     } catch (e) {}
-  };
 
-  // Fetch WhatsApp Status
-  const fetchWhatsAppStatus = async () => {
-    try {
-      const res = await fetch('/api/agent/whatsapp-status');
-      const data = await res.json();
-      setWaStatus(data.status || 'disconnected');
-      setWaQrCode(data.qrCodeDataUrl || null);
-      setWaUser(data.connectedUser || null);
-    } catch (e) {}
-  };
+    // 2. Supabase Cloud Sync
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('settlement_entries')
+          .select('*')
+          .like('id', 'pending_doc_%');
 
-  // Trigger WhatsApp Connect
-  const handleStartWhatsAppConnect = async () => {
-    setWaLoading(true);
-    try {
-      const res = await fetch('/api/agent/whatsapp-connect', { method: 'POST' });
-      const data = await res.json();
-      setWaStatus(data.status || 'connecting');
-      setWaQrCode(data.qrCodeDataUrl || null);
-      setWaUser(data.connectedUser || null);
-    } catch (err: any) {
-      alert('হোয়াটসঅ্যাপ কানেক্ট করতে সমস্যা হয়েছে: ' + err.message);
-    } finally {
-      setWaLoading(false);
+        if (!error && Array.isArray(data)) {
+          const remoteList: PendingDoc[] = [];
+          data.forEach((row: any) => {
+            try {
+              const parsed = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
+              if (parsed && parsed.id) remoteList.push(parsed);
+            } catch (e) {}
+          });
+
+          // Merge by ID
+          const map = new Map<string, PendingDoc>();
+          list.forEach(d => map.set(d.id, d));
+          remoteList.forEach(d => map.set(d.id, d));
+          list = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          localStorage.setItem('pending_audit_documents', JSON.stringify(list));
+        }
+      } catch (e) {
+        console.warn('Supabase pending docs error:', e);
+      }
     }
+
+    setPendingDocs(list);
+    onPendingCountChange(list.length);
+    setIsLoading(false);
   };
 
-  // Trigger WhatsApp Disconnect
-  const handleDisconnectWhatsApp = async () => {
-    if (!confirm('আপনি কি হোয়াটসঅ্যাপ সেশন ডিসকানেক্ট করতে চান?')) return;
-    setWaLoading(true);
-    try {
-      const res = await fetch('/api/agent/whatsapp-disconnect', { method: 'POST' });
-      const data = await res.json();
-      setWaStatus(data.status || 'disconnected');
-      setWaQrCode(null);
-      setWaUser(null);
-    } catch (e) {}
-    finally {
-      setWaLoading(false);
-    }
-  };
-
-  // Poll WhatsApp Status when modal is open and on whatsapp_qr tab
   useEffect(() => {
     if (isOpen) {
       loadPendingDocs();
-      loadArchiveConfig();
-      fetchWhatsAppStatus();
-      setProcessSuccess(null);
-      setProcessError(null);
+      setIngestSuccess(null);
+      setIngestError(null);
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    let timer: any = null;
-    if (isOpen) {
-      timer = setInterval(() => {
-        fetchWhatsAppStatus();
-        loadPendingDocs();
-      }, 3500);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isOpen, waStatus]);
 
   if (!isOpen) return null;
 
   // Handle Approve
   const handleApprove = async (doc: PendingDoc) => {
     const overrides = editingDocId === doc.id ? editForm : {};
+    const finalDoc = {
+      ...doc,
+      ...(overrides || {}),
+      id: `doc_${Date.now()}`,
+      status: 'approved' as const,
+      uploadedBy: 'Admin (Approved)',
+      createdAt: new Date().toISOString()
+    };
+
     try {
-      const res = await fetch('/api/agent/pending-documents/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: doc.id, overrides })
-      });
-      const data = await res.json();
-      if (data.success && data.approvedDocument) {
-        onDocumentApproved(data.approvedDocument);
-        setPendingDocs(prev => prev.filter(d => d.id !== doc.id));
-        onPendingCountChange(pendingDocs.length - 1);
-        setEditingDocId(null);
-      } else {
-        alert(data.error || 'অনুমোদনে সমস্যা হয়েছে।');
+      // 1. Save approved document to Supabase
+      if (isSupabaseConfigured) {
+        await supabase.from('settlement_entries').upsert({
+          id: finalDoc.id,
+          content: JSON.stringify(finalDoc),
+          created_at: finalDoc.createdAt
+        });
+        // 2. Delete pending from Supabase
+        await supabase.from('settlement_entries').delete().eq('id', doc.id);
       }
+
+      // 3. Update Local Storage
+      const currentPending = JSON.parse(localStorage.getItem('pending_audit_documents') || '[]')
+        .filter((d: any) => d.id !== doc.id);
+      localStorage.setItem('pending_audit_documents', JSON.stringify(currentPending));
+
+      const currentDocs = JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+      const updatedDocs = [finalDoc, ...currentDocs.filter((d: any) => d.id !== finalDoc.id)];
+      localStorage.setItem('audit_criteria_documents', JSON.stringify(updatedDocs));
+
+      // 4. Notify parent state
+      onDocumentApproved(finalDoc);
+      setPendingDocs(prev => prev.filter(d => d.id !== doc.id));
+      onPendingCountChange(pendingDocs.length - 1);
+      setEditingDocId(null);
     } catch (err: any) {
-      alert('অনুমোদন করা সম্ভব হয়নি: ' + err.message);
+      alert('অনুমোদন সংরক্ষণ করতে সমস্যা হয়েছে: ' + err.message);
     }
   };
 
@@ -199,135 +181,155 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const handleReject = async (id: string) => {
     if (!confirm('আপনি কি এই সার্কুলারটি বাতিল করতে চান?')) return;
     try {
-      const res = await fetch('/api/agent/pending-documents/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPendingDocs(prev => prev.filter(d => d.id !== id));
-        onPendingCountChange(pendingDocs.length - 1);
+      if (isSupabaseConfigured) {
+        await supabase.from('settlement_entries').delete().eq('id', id);
       }
-    } catch (e) {}
+      const updated = pendingDocs.filter(d => d.id !== id);
+      setPendingDocs(updated);
+      localStorage.setItem('pending_audit_documents', JSON.stringify(updated));
+      onPendingCountChange(updated.length);
+    } catch (e) {
+      console.error('Reject error:', e);
+    }
   };
 
-  // Handle File Process
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Fast Ingest Submission
+  const handleFastIngestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ingestForm.title.trim()) {
+      setIngestError('অনুগ্রহ করে সার্কুলারের শিরোনাম বা বিষয় লিখুন।');
+      return;
+    }
+
+    setIsSubmittingIngest(true);
+    setIngestError(null);
+    setIngestSuccess(null);
+
+    const cleanId = extractCleanId(ingestForm.archiveIdOrLink) || `bd_circular_${Date.now()}`;
+    const pendingDoc: PendingDoc = {
+      id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: ingestForm.title.trim(),
+      category: ingestForm.category || 'সার্কুলার',
+      archiveId: cleanId,
+      archiveUrl: `https://archive.org/details/${cleanId}`,
+      docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
+      memoNo: ingestForm.memoNo.trim(),
+      authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+      description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মেসেঞ্জার গ্রুপ থেকে সংগৃহীত সার্কুলার।',
+      source: ingestForm.source || 'WhatsApp/Messenger',
+      senderName: 'এডমিন ইনজেস্ট',
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      // Save to Supabase
+      if (isSupabaseConfigured) {
+        await supabase.from('settlement_entries').upsert({
+          id: pendingDoc.id,
+          content: JSON.stringify(pendingDoc),
+          created_at: pendingDoc.createdAt
+        });
+      }
+
+      // Save to LocalStorage
+      const updated = [pendingDoc, ...pendingDocs];
+      setPendingDocs(updated);
+      localStorage.setItem('pending_audit_documents', JSON.stringify(updated));
+      onPendingCountChange(updated.length);
+
+      setIngestSuccess(`"${pendingDoc.title}" সফলভাবে অপেক্ষমাণ তালিকায় জমা হয়েছে!`);
+      setIngestForm({
+        title: '',
+        category: 'সার্কুলার',
+        archiveIdOrLink: '',
+        authority: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+        memoNo: '',
+        docDate: new Date().toISOString().split('T')[0],
+        description: '',
+        source: 'WhatsApp / Messenger'
+      });
+
+      setTimeout(() => {
+        setActiveTab('pending');
+        setIngestSuccess(null);
+      }, 1000);
+    } catch (err: any) {
+      setIngestError('সংরক্ষণ করতে সমস্যা হয়েছে: ' + err.message);
+    } finally {
+      setIsSubmittingIngest(false);
+    }
+  };
+
+  // Fast Ingest via File Picker (Automatic naming & archive ID)
+  const handleFastIngestFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsProcessing(true);
-    setProcessError(null);
-    setProcessSuccess(null);
-    setProcessingStep('সার্কুলার ফাইলটি লোড করা হচ্ছে...');
+    const rawTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+    const autoArchiveId = `bd_audit_${file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
 
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64String = (reader.result as string).split(',')[1];
-        setProcessingStep('১/৩: এআই ব্রেন (Gemini) দ্বারা সার্কুলার বিশ্লেষণ ও তথ্য পাঠ...');
+    setIngestForm(prev => ({
+      ...prev,
+      title: rawTitle,
+      archiveIdOrLink: autoArchiveId,
+      description: `ফাইল: ${file.name} (আকার: ${(file.size / 1024).toFixed(1)} KB)`
+    }));
 
-        try {
-          const res = await fetch('/api/agent/process-document', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fileBase64: base64String,
-              fileName: file.name,
-              mimeType: file.type || 'application/pdf',
-              source: 'direct_upload',
-              senderName: 'এডমিন ইনপুট'
-            })
-          });
-
-          const data = await res.json();
-          if (data.success && data.pendingDocument) {
-            setProcessingStep('৩/৩: archive.org আপলোড সম্পন্ন ও অপেক্ষমাণ তালিকায় সংরক্ষিত!');
-            setProcessSuccess(`"${data.pendingDocument.title}" সফলভাবে অপেক্ষমাণ তালিকায় যোগ হয়েছে।`);
-            setPendingDocs(prev => [data.pendingDocument, ...prev]);
-            onPendingCountChange(pendingDocs.length + 1);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            setTimeout(() => {
-              setActiveTab('pending');
-              setIsProcessing(false);
-            }, 1200);
-          } else {
-            setProcessError(data.error || 'প্রসেসিংয়ে ত্রুটি হয়েছে।');
-            setIsProcessing(false);
-          }
-        } catch (apiErr: any) {
-          setProcessError('সার্ভারে যোগাযোগ করা যায়নি: ' + apiErr.message);
-          setIsProcessing(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err: any) {
-      setProcessError('ফাইল পড়তে সমস্যা হয়েছে: ' + err.message);
-      setIsProcessing(false);
-    }
-  };
-
-  // Handle Save Archive Config
-  const handleSaveArchiveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setConfigSaving(true);
-    try {
-      const res = await fetch('/api/agent/archive-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accessKey: archiveConfig.accessKey,
-          secretKey: archiveConfig.secretKey,
-          collection: archiveConfig.collection
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setArchiveConfig(prev => ({
-          ...prev,
-          hasAccessKey: data.hasAccessKey,
-          secretKey: ''
-        }));
-        setConfigSuccess(true);
-        setTimeout(() => setConfigSuccess(false), 3000);
-      }
-    } catch (e) {
-      alert('Archive.org কনফিগারেশন সংরক্ষণ করতে ব্যর্থ হয়েছে।');
-    } finally {
-      setConfigSaving(false);
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
+      {/* Top Breadcrumb & Return Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm">
+        <button
+          onClick={onClose}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-black text-xs rounded-xl transition-all cursor-pointer border border-slate-200 hover:border-blue-200 active:scale-95 shadow-sm"
+        >
+          <ArrowLeft size={16} />
+          <span>অডিট ক্রাইটেরিয়া ভল্টে ফিরে যান</span>
+        </button>
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+          <span className="text-slate-400">অডিট ক্রাইটেরিয়া ভল্ট</span>
+          <span className="text-slate-300">/</span>
+          <span className="text-blue-600 font-black flex items-center gap-1.5">
+            <Sparkles size={14} className="text-amber-500" />
+            সার্কুলার প্রসেসর ও অনুমোদন হাব
+          </span>
+        </div>
+      </div>
+
+      {/* Main Page Container - 100% Full Width */}
+      <div className="bg-white rounded-2xl shadow-xl w-full border border-slate-200 overflow-hidden flex flex-col">
         
-        {/* Modal Header */}
-        <div className="px-6 py-4.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white flex items-center justify-between shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-300/30 flex items-center justify-center text-amber-300 shadow-inner">
-              <Sparkles size={20} className="animate-pulse" />
+        {/* Page Header Banner */}
+        <div className="px-6 md:px-8 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/30 flex items-center justify-center text-amber-300 shadow-inner shrink-0">
+              <Sparkles size={22} className="animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black tracking-wide">
-                  এআই এজেন্ট: স্বয়ংক্রিয় সার্কুলার প্রসেসর ও অনুমোদন
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-black tracking-wide text-white">
+                  সার্কুলার প্রসেসর ও অনুমোদন হাব
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  উপায় ১ সক্রিয়
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  সুপাবেজ ক্লাউড সংযুক্ত
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 font-medium">
-                হোয়াটসঅ্যাপ গ্রুপের সার্কুলার স্বয়ংক্রিয়ভাবে archive.org-এ আপলোড হয়ে এখানে জমা হবে। আপনি শুধু অনুমোদন দেবেন।
+              <p className="text-xs text-slate-300 font-medium mt-0.5">
+                হোয়াটসঅ্যাপ ও মেসেঞ্জারের সার্কুলার এখানে অপেক্ষমাণ তালিকায় জমা থাকে। এডমিন অনুমোদন দিলে তা মূল ভল্টে প্রকাশিত হয়।
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center gap-2 text-xs font-bold transition-all cursor-pointer border border-white/10"
+            title="ভল্টে ফিরে যান"
           >
-            <X size={18} />
+            <ArrowLeft size={14} />
+            <span>ভল্টে ফিরুন</span>
           </button>
         </div>
 
@@ -343,7 +345,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
               }`}
             >
               <Clock size={14} />
-              অপেক্ষমাণ সার্কুলার
+              অপেক্ষমাণ সার্কুলার তালিকা
               {pendingDocs.length > 0 && (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                   activeTab === 'pending' ? 'bg-white text-blue-700' : 'bg-rose-500 text-white'
@@ -354,47 +356,32 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             </button>
 
             <button
-              onClick={() => setActiveTab('whatsapp_qr')}
+              onClick={() => setActiveTab('fast_ingest')}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-                activeTab === 'whatsapp_qr'
+                activeTab === 'fast_ingest'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                   : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
               }`}
             >
-              <QrCode size={14} />
-              হোয়াটসঅ্যাপ কানেক্ট (QR কোড)
-              {waStatus === 'connected' ? (
-                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
-              ) : null}
+              <Smartphone size={14} />
+              ১-ক্লিক সার্কুলার ইনপুট / শেয়ার
             </button>
 
             <button
-              onClick={() => setActiveTab('upload')}
+              onClick={() => setActiveTab('archive_guide')}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-                activeTab === 'upload'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                activeTab === 'archive_guide'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'bg-white text-purple-700 hover:bg-purple-50 border border-purple-200'
               }`}
             >
-              <Upload size={14} />
-              ম্যানুয়াল ফাইল টেস্ট
-            </button>
-
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-                activeTab === 'settings'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <Settings size={14} />
-              Archive.org সেটিংস
+              <Key size={14} />
+              Archive.org গাইড ও সহায়তা
             </button>
           </div>
 
           <button
-            onClick={() => { loadPendingDocs(); fetchWhatsAppStatus(); }}
+            onClick={loadPendingDocs}
             disabled={isLoading}
             className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-white transition-all cursor-pointer border border-transparent hover:border-slate-200 shrink-0 ml-2"
             title="রিফ্রেশ করুন"
@@ -403,8 +390,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Page Body */}
+        <div className="p-6 md:p-8 space-y-6 w-full">
           
           {/* TAB 1: PENDING DOCUMENTS */}
           {activeTab === 'pending' && (
@@ -416,13 +403,13 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   </div>
                   <h3 className="text-base font-black text-slate-800 mb-1">বর্তমানে কোনো অপেক্ষমাণ সার্কুলার নেই!</h3>
                   <p className="text-xs text-slate-500 font-medium max-w-md mx-auto mb-5 leading-relaxed">
-                    আপনার হোয়াটসঅ্যাপ লিঙ্ক করা থাকলে গ্রুপে কোনো সার্কুলার আসার সাথে সাথেই তা এআই দ্বারা স্বয়ংক্রিয়ভাবে পড়ে archive.org-এ আপলোড হয়ে এখানে জমা হবে। আপনি শুধু অনুমোদন দেবেন।
+                    হোয়াটসঅ্যাপ বা মেসেঞ্জারের কোনো সার্কুলার লিঙ্ক বা ফাইল ২য় ট্যাবে দিয়ে দিলে তা সাথে সাথে এখানে জমা হয়ে যাবে। আপনি শুধু দেখে অনুমোদন দেবেন।
                   </p>
                   <button
-                    onClick={() => setActiveTab('whatsapp_qr')}
+                    onClick={() => setActiveTab('fast_ingest')}
                     className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all shadow-md cursor-pointer inline-flex items-center gap-2"
                   >
-                    <QrCode size={15} /> হোয়াটসঅ্যাপ কিউআর কোড স্ক্যান করুন
+                    <Smartphone size={15} /> নতুন সার্কুলার ইনপুট করুন
                   </button>
                 </div>
               ) : (
@@ -455,7 +442,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                           <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
                             <span className="flex items-center gap-1 text-slate-500 font-bold">
                               <Smartphone size={12} className="text-emerald-600" />
-                              উৎস: {doc.senderName || 'WhatsApp'}
+                              উৎস: {doc.source || 'WhatsApp/Messenger'}
                             </span>
                           </div>
                         </div>
@@ -640,283 +627,219 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: WHATSAPP QR CODE SCANNER CONNECTOR */}
-          {activeTab === 'whatsapp_qr' && (
+          {/* TAB 2: FAST INGEST / 1-CLICK MOBILE SHARE */}
+          {activeTab === 'fast_ingest' && (
             <div className="space-y-6">
-              {waStatus === 'connected' ? (
-                <div className="bg-emerald-50 border-2 border-emerald-200 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-sm animate-in zoom-in-95">
-                  <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
-                    <CheckCircle2 size={32} />
-                  </div>
-                  <div>
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-200 text-emerald-800 uppercase tracking-wider">
-                      সংযোগ সক্রিয় আছে (Live Connected)
-                    </span>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 mt-2">
-                      হোয়াটসঅ্যাপ সফলভাবে সার্ভারে লিঙ্ক করা আছে!
-                    </h3>
-                    <p className="text-xs text-slate-600 max-w-md mx-auto mt-1 leading-relaxed">
-                      আপনার সংযুক্ত অ্যাকাউন্টের গ্রুপগুলোতে যখনই কোনো সরকারি আদেশ, সার্কুলার বা গেজেট ফাইল পোস্ট করা হবে, ব্যাকগ্রাউন্ড লিসেনার তা স্বয়ংক্রিয়ভাবে ডাউনলোড করে archive.org-এ আপলোড সম্পন্ন করে রাখবে।
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-2xl border border-emerald-200 max-w-sm mx-auto text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>সংযুক্ত আইডি:</span>
-                    <span className="text-emerald-700 font-mono font-black">{waUser || 'Admin Device'}</span>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleDisconnectWhatsApp}
-                      disabled={waLoading}
-                      className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-black transition-all border border-rose-200 cursor-pointer"
-                    >
-                      {waLoading ? 'ডিসকানেক্ট হচ্ছে...' : 'হোয়াটসঅ্যাপ সংযোগ বিচ্ছিন্ন (Logout) করুন'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
-                  <div className="text-center space-y-2">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner">
-                      <QrCode size={28} />
-                    </div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900">
-                      গ্রুপের সার্কুলার অটো-রিসিভ করতে হোয়াটসঅ্যাপ লিঙ্ক করুন
-                    </h3>
-                    <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-                      কম্পিউটারে যেমন WhatsApp Web চালান, ঠিক তেমনি নিচে তৈরি হওয়া QR কোডটি আপনার মোবাইলের WhatsApp দিয়ে একবার স্ক্যান করে নিন। এরপর থেকে গ্রুপের সব সার্কুলার নিজে নিজেই জমা হবে।
-                    </p>
-                  </div>
-
-                  {waQrCode ? (
-                    <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 max-w-sm mx-auto text-center shadow-xl space-y-4 animate-in zoom-in-95">
-                      <div className="p-2 bg-slate-50 rounded-2xl inline-block border border-slate-200">
-                        <img 
-                          src={waQrCode} 
-                          alt="WhatsApp Web QR Code" 
-                          className="w-64 h-64 mx-auto rounded-xl shadow-sm"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 text-left text-xs font-bold text-slate-700 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <p className="text-emerald-900 font-black mb-1">কীভাবে স্ক্যান করবেন:</p>
-                        <p className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] shrink-0 font-black">১</span>
-                          আপনার মোবাইলে WhatsApp অ্যাপ খুলুন।
-                        </p>
-                        <p className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] shrink-0 font-black">২</span>
-                          ওপরের তিনটি ডট (⋮) বা Settings থেকে <strong>Linked Devices</strong> সিলেক্ট করুন।
-                        </p>
-                        <p className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] shrink-0 font-black">৩</span>
-                          <strong>Link a Device</strong> চাপুন এবং এই কিউআর কোডটি স্ক্যান করুন।
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 animate-pulse">
-                        <Loader2 size={14} className="animate-spin text-emerald-600" />
-                        <span>স্ক্যান করার অপেক্ষায়...</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <button
-                        type="button"
-                        onClick={handleStartWhatsAppConnect}
-                        disabled={waLoading}
-                        className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
-                      >
-                        {waLoading ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            কিউআর কোড জেনারেট হচ্ছে...
-                          </>
-                        ) : (
-                          <>
-                            <QrCode size={18} />
-                            কিউআর কোড (QR Code) তৈরি করুন
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-relaxed font-medium">
-                    <span className="font-black text-blue-950">নিরাপত্তা ও গোপনীয়তা:</span> এই সংযোগটি শুধুমাত্র নির্দিষ্ট গ্রুপে আসা সার্কুলার এবং অফিসিয়াল পিডিএফ ফাইলগুলো পর্যবেক্ষণ ও স্বয়ংক্রিয়ভাবে archive.org-এ ব্যাকআপ নেওয়ার কাজে ব্যবহার করা হয়। অন্য কোনো ব্যক্তিগত চ্যাটে এটি কোনো প্রকার হস্তক্ষেপ করে না।
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: DIRECT TEST UPLOAD */}
-          {activeTab === 'upload' && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-6 rounded-3xl border-2 border-dashed border-blue-200 text-center space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-3xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <Upload size={28} />
+              
+              {/* Quick file drop */}
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-6 rounded-3xl border-2 border-dashed border-emerald-300 text-center space-y-3">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                  <Smartphone size={26} />
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 mb-1">
-                    সার্কুলার ফাইল ড্রপ করুন (ম্যানুয়াল টেস্ট অপশন)
+                    মোবাইল ফাইল বা সার্কুলার সিলেক্ট করুন
                   </h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    আপনার কাছে কোনো সার্কুলার ফাইল থাকলে তা সরাসরি এখানে ড্রপ করেও টেস্ট করতে পারেন। এআই সাথে সাথে পড়ে archive.org-এ আপলোড সম্পন্ন করে দেবে।
+                    হোয়াটসঅ্যাপ বা মেসেঞ্জার থেকে পাওয়া যেকোনো সার্কুলার ফাইল (PDF বা ছবি) বাছলে স্বয়ংক্রিয়ভাবে নাম ও আইডি তৈরি হয়ে যাবে।
                   </p>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <input 
                     type="file"
                     ref={fileInputRef}
                     accept=".pdf,image/*"
-                    onChange={handleFileChange}
+                    onChange={handleFastIngestFile}
                     className="hidden"
-                    id="agent-file-upload"
-                    disabled={isProcessing}
+                    id="fast-ingest-file"
                   />
                   <label
-                    htmlFor="agent-file-upload"
-                    className={`inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-600/30 transition-all cursor-pointer ${
-                      isProcessing ? 'opacity-50 pointer-events-none' : 'active:scale-95'
-                    }`}
+                    htmlFor="fast-ingest-file"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black shadow-md transition-all cursor-pointer active:scale-95"
                   >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        প্রসেস হচ্ছে...
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={16} /> সার্কুলার ফাইল সিলেক্ট করুন
-                      </>
-                    )}
+                    <Upload size={14} /> ফাইল থেকে অটো-পূরণ করুন
                   </label>
                 </div>
-
-                {isProcessing && (
-                  <div className="max-w-md mx-auto p-4 bg-white rounded-2xl border border-blue-200 shadow-sm space-y-2 animate-in fade-in">
-                    <div className="flex items-center justify-center gap-2 text-xs font-black text-blue-700">
-                      <Sparkles size={14} className="animate-spin" />
-                      <span>{processingStep}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-blue-600 h-full w-3/4 animate-pulse"></div>
-                    </div>
-                  </div>
-                )}
-
-                {processSuccess && (
-                  <div className="max-w-md mx-auto p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                    <span>{processSuccess}</span>
-                  </div>
-                )}
-
-                {processError && (
-                  <div className="max-w-md mx-auto p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center gap-2">
-                    <AlertCircle size={16} className="text-rose-600 shrink-0" />
-                    <span>{processError}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: ARCHIVE.ORG SETTINGS */}
-          {activeTab === 'settings' && (
-            <div className="space-y-5">
-              <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-4.5 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                  <Key size={18} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-purple-900 mb-1">Archive.org S3 ক্রেডেনশিয়ালস</h4>
-                  <p className="text-[11.5px] text-purple-700 font-medium leading-relaxed">
-                    সিস্টেমটি সম্পূর্ণভাবে `archive.org`-এর সাথে সংযুক্ত। আপনি যদি আপনার ব্যক্তিগত archive.org অ্যাকাউন্টে স্বয়ংক্রিয় আপলোড করতে চান, তবে আপনার সম্পূর্ণ ফ্রি S3 Access Key ও Secret Key টি নিচে সংরক্ষণ করুন।
-                  </p>
-                  <a 
-                    href="https://archive.org/account/s3.php" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-black text-purple-800 underline underline-offset-2 mt-2"
-                  >
-                    <ExternalLink size={12} /> archive.org/account/s3.php থেকে আপনার কী (Key) সংগ্রহ করুন
-                  </a>
-                </div>
               </div>
 
-              <form onSubmit={handleSaveArchiveConfig} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+              {/* Ingest Form */}
+              <form onSubmit={handleFastIngestSubmit} className="bg-white border-2 border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center">১</span>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                    সার্কুলারের তথ্য প্রদান করুন
+                  </h4>
+                </div>
+
                 <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-700 block">S3 Access Key:</label>
+                  <label className="text-xs font-black text-slate-700 block">সার্কুলারের বিষয় / শিরোনাম *:</label>
                   <input 
                     type="text"
-                    value={archiveConfig.accessKey}
-                    onChange={e => setArchiveConfig(prev => ({ ...prev, accessKey: e.target.value }))}
-                    placeholder="আপনার archive.org access key লিখুন..."
-                    className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-blue-500 bg-slate-50"
+                    required
+                    value={ingestForm.title}
+                    onChange={e => setIngestForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="যেমন: সরকারি কর্মকর্তা-কর্মচারীদের বিশেষ প্রণোদনা সংক্রান্ত সার্কুলার..."
+                    className="w-full px-4 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-700 block">ক্যাটাগরি:</label>
+                    <select
+                      value={ingestForm.category}
+                      onChange={e => setIngestForm(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
+                    >
+                      <option value="সার্কুলার">সার্কুলার</option>
+                      <option value="গেজেট">গেজেট</option>
+                      <option value="আদেশ">আদেশ</option>
+                      <option value="নীতিমালা">নীতিমালা</option>
+                      <option value="আইন">আইন</option>
+                      <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-700 block">মন্ত্রণালয় / কর্তৃপক্ষ:</label>
+                    <input 
+                      type="text"
+                      value={ingestForm.authority}
+                      onChange={e => setIngestForm(prev => ({ ...prev, authority: e.target.value }))}
+                      placeholder="যেমন: অর্থ মন্ত্রণালয়"
+                      className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-700 block">স্মারক নম্বর (ঐচ্ছিক):</label>
+                    <input 
+                      type="text"
+                      value={ingestForm.memoNo}
+                      onChange={e => setIngestForm(prev => ({ ...prev, memoNo: e.target.value }))}
+                      placeholder="যেমন: ০৭.০০.০০০০..."
+                      className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-700 block">জারির তারিখ:</label>
+                    <input 
+                      type="date"
+                      value={ingestForm.docDate}
+                      onChange={e => setIngestForm(prev => ({ ...prev, docDate: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-700 block">S3 Secret Key:</label>
-                  <input 
-                    type="password"
-                    value={archiveConfig.secretKey}
-                    onChange={e => setArchiveConfig(prev => ({ ...prev, secretKey: e.target.value }))}
-                    placeholder={archiveConfig.hasAccessKey ? "পূর্বে সংরক্ষিত কী বিদ্যমান (পরিবর্তন করতে চাইলে লিখুন)" : "আপনার secret key লিখুন..."}
-                    className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-blue-500 bg-slate-50"
-                  />
+                  <label className="text-xs font-black text-slate-700 block flex items-center justify-between">
+                    <span>Archive.org লিঙ্ক বা আইডি:</span>
+                    <span className="text-[10px] text-slate-400 font-medium">খালি রাখলে স্বয়ংক্রিয় আইডি বসবে</span>
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="text"
+                      value={ingestForm.archiveIdOrLink}
+                      onChange={e => setIngestForm(prev => ({ ...prev, archiveIdOrLink: e.target.value }))}
+                      placeholder="https://archive.org/details/your_file_id অথবা শুধু আইডি"
+                      className="w-full pl-9 pr-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                    <Link2 size={15} className="absolute left-3 top-3 text-slate-400" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-700 block">ডিফল্ট কালেকশন (Collection):</label>
-                  <input 
-                    type="text"
-                    value={archiveConfig.collection}
-                    onChange={e => setArchiveConfig(prev => ({ ...prev, collection: e.target.value }))}
-                    placeholder="opensource_media"
-                    className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-blue-500 bg-slate-50 font-mono"
+                  <label className="text-xs font-black text-slate-700 block">সংক্ষিপ্ত বিবরণ / নোট:</label>
+                  <textarea 
+                    value={ingestForm.description}
+                    onChange={e => setIngestForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="সার্কুলারের প্রয়োজনীয় বিবরণ বা গ্রুপ থেকে কপি করা টেক্সট..."
+                    className="w-full px-3.5 py-2.5 border rounded-xl font-bold text-xs outline-none focus:border-emerald-500 bg-slate-50 min-h-[70px]"
                   />
                 </div>
 
-                {configSuccess && (
+                {ingestSuccess && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                    <span>Archive.org ক্রেডেনশিয়ালস সফলভাবে সংরক্ষিত হয়েছে!</span>
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span>{ingestSuccess}</span>
+                  </div>
+                )}
+
+                {ingestError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                    <span>{ingestError}</span>
                   </div>
                 )}
 
                 <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
-                    disabled={configSaving}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-2"
+                    disabled={isSubmittingIngest}
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
                   >
-                    {configSaving ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                    সংরক্ষণ করুন
+                    {isSubmittingIngest ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    অপেক্ষমাণ তালিকায় জমা করুন (অনুমোদনের জন্য)
                   </button>
                 </div>
               </form>
+
+            </div>
+          )}
+
+          {/* TAB 3: ARCHIVE.ORG GUIDE */}
+          {activeTab === 'archive_guide' && (
+            <div className="space-y-5">
+              <div className="bg-purple-50/70 border border-purple-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <Key size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-purple-900">Archive.org (ইন্টারনেট আর্কাইভ) লাইব্রেরি গাইড</h4>
+                    <p className="text-[11px] text-purple-700 font-medium">ফাইল নিজস্ব ডাটাবেজে ভারী না রেখে archive.org-এ সংরক্ষণ করার নিয়ম:</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs text-purple-950 font-medium bg-white p-4 rounded-xl border border-purple-100 leading-relaxed">
+                  <p>১. <strong>archive.org</strong>-এ যেকোনো সরকারি সার্কুলার আপলোড করার পর যে লিংকটি পাওয়া যায় (যেমন: <code>https://archive.org/details/bd_circular_2026</code>), সেটির আইডি হলো <code>bd_circular_2026</code>।</p>
+                  <p>২. আপনি মোবাইল থেকে সেই লিংকটি কপি করে ২য় ট্যাবে বসালেই সিস্টেম সেটিকে সনাক্ত করে আপনার অপেক্ষমাণ তালিকায় এনে রাখবে।</p>
+                  <p>৩. এরপর আপনি শুধু <strong>[অনুমোদন দিন]</strong> চাপলেই এটি স্থায়ীভাবে ক্রাইটেরিয়া ভল্টে ঢুকে যাবে।</p>
+                </div>
+
+                <div className="pt-1">
+                  <a 
+                    href="https://archive.org/upload" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all shadow-md"
+                  >
+                    <ExternalLink size={13} /> archive.org/upload এ যান
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-emerald-600" />
+        {/* Page Footer */}
+        <div className="px-6 md:px-8 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-emerald-600" />
             <span>এডমিনের চূড়ান্ত অনুমোদন ছাড়া কোনো ডকুমেন্ট সরাসরি ভল্টে দৃশ্যমান হবে না।</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold text-xs transition-all cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
           >
-            বন্ধ করুন
+            <ArrowLeft size={14} />
+            <span>অডিট ক্রাইটেরিয়া ভল্টে ফিরে যান</span>
           </button>
         </div>
 
