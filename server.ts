@@ -418,7 +418,8 @@ async function startServer() {
       tags: targetDoc.tags || targetDoc.category || "",
       status: "approved",
       uploadedBy: "AI Agent (Admin Approved)",
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      fileData: targetDoc.fileData || ""
     };
 
     docs.unshift(cleanDoc);
@@ -471,8 +472,10 @@ async function startServer() {
       const headers: Record<string, string> = {
         authorization: `LOW ${cfg.accessKey}:${cfg.secretKey}`,
         "x-amz-auto-make-bucket": "1",
+        "x-archive-auto-make-bucket": "1",
         "x-archive-meta-mediatype": "texts",
-        "x-archive-meta-collection": cfg.collection || "opensource_media",
+        "x-archive-meta-collection": cfg.collection || "opensource",
+        "x-archive-meta01-collection": cfg.collection || "opensource",
         "x-archive-meta-title": safeArchiveMeta(metadata.title || "Government Circular"),
         "x-archive-meta-description": safeArchiveMeta(metadata.description || "Uploaded via Audit Ledger System"),
         "x-archive-meta-creator": safeArchiveMeta(metadata.authority || "Directorate of Commercial Audit, Govt of Bangladesh"),
