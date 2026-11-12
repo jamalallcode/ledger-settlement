@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-12] - Vercel Serverless Function & Transparent Gemini API Key Integration for Circular Auto-Fill
+
+### 🛠️ Fixed & Restored AI Vision Auto-Fill
+- **Vercel Serverless Function সংযোজন (`api/agent/analyze-document.ts`, `vercel.json`)**:
+  - ব্যবহারকারীর দ্বিতীয় স্ক্রিনশট অনুযায়ী Vercel-এ ডেপ্লয়মেন্টে `/api/agent/analyze-document` এরর প্রতিরোধে একটি ডেডিকেটেড Vercel Serverless Function তৈরি করা হয়েছে এবং `vercel.json`-এ `/api/(.*)` এক্সক্লুশন রুট নির্ধারণ করা হয়েছে যাতে Vercel-এ এপিআই রিকোয়েস্ট এইচটিএমএল-এ রিরাইট না হয়ে যথাযথভাবে সার্ভারলেস ফাংশনে যায়।
+- **স্বচ্ছ স্ট্যাটাস ও জেমিনি এপিআই কী মিসিং ওয়ার্নিং (`aiDocumentAnalyzer.ts`, `AgentApprovalModal.tsx`, `DocumentArchive.tsx`)**:
+  - `GEMINI_API_KEY` কনফিগার না থাকলে পূর্বে মিথ্যা গ্রিন ব্যাজ আসার বদলে এখন স্পষ্ট অ্যাম্বার সতর্কবার্তা প্রদর্শিত হবে: `"⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা ম্যানুয়ালি তথ্য পূরণ করুন।"`, যাতে ব্যবহারকারী পরিষ্কার বুঝতে পারেন কেন স্বয়ংক্রিয় রিডিংটি স্থগিত রয়েছে।
+  - কী সেট থাকলে এআই স্বয়ংক্রিয়ভাবে বিষয়, মন্ত্রণালয়, স্মারক নম্বর, জারির তারিখ ও সারসংক্ষেপ নির্ভুলভাবে উদ্ধার করে পূরণ করবে।
+- **ডুয়াল ফলব্যাক সাপোর্ট (`aiDocumentAnalyzer.ts`, `vite.config.ts`)**:
+  - ব্যাকএন্ড এপিআই সার্ভার এবং ক্লায়েন্ট-সাইড ব্রাউজার উভয় মাধ্যমে `GEMINI_API_KEY` এবং `VITE_GEMINI_API_KEY` সাপোর্ট নিশ্চিত করা হয়েছে।
+- **কঠোর স্কোপ সীমাবদ্ধতা ও জিরো সাইড-ইফেক্ট**:
+  - অ্যাপ্লিকেশনের কোনো রেজিস্টার, রিটার্ণ, হিসাব-নিকাশ বা অন্যান্য ফাইল স্পর্শ করা হয়নি; বাকি সকল কিছু ১০০% ইনট্যাক্ট ও সুরক্ষিত রয়েছে।
+
 ## [2026-11-12] - Smart Multimodal AI Document Vision (Auto Subject & Metadata Reading) & 100% Zero-Error Preview Persistence
 
 ### 🚀 Added & Enhanced
