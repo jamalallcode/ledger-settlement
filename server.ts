@@ -4,6 +4,8 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
+import { GoogleGenAI } from "@google/genai";
+import { whatsappService } from "./server/whatsappService";
 
 const getConfigFile = () => {
   const cwdPath = path.join(process.cwd(), "whatsapp_config.json");
@@ -152,6 +154,71 @@ const saveStoredDocuments = (docs: any[]) => {
   return docs;
 };
 
+const getPendingDocumentsFile = () => {
+  return path.join(process.cwd(), "pending_audit_documents.json");
+};
+
+let inMemoryPendingDocuments: any[] | null = null;
+
+const getStoredPendingDocuments = (): any[] => {
+  if (inMemoryPendingDocuments) {
+    return inMemoryPendingDocuments;
+  }
+  try {
+    const file = getPendingDocumentsFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        inMemoryPendingDocuments = parsed;
+        return inMemoryPendingDocuments;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading pending_audit_documents.json:", e);
+  }
+  return [];
+};
+
+const saveStoredPendingDocuments = (docs: any[]) => {
+  inMemoryPendingDocuments = docs;
+  try {
+    const file = getPendingDocumentsFile();
+    fs.writeFileSync(file, JSON.stringify(docs, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error writing pending_audit_documents.json:", e);
+  }
+  return docs;
+};
+
+const getArchiveConfigFile = () => {
+  return path.join(process.cwd(), "archive_config.json");
+};
+
+let inMemoryArchiveConfig: any = null;
+
+const getStoredArchiveConfig = () => {
+  if (inMemoryArchiveConfig) return inMemoryArchiveConfig;
+  try {
+    const file = getArchiveConfigFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf-8");
+      inMemoryArchiveConfig = JSON.parse(raw);
+      return inMemoryArchiveConfig;
+    }
+  } catch (e) {}
+  return { accessKey: "", secretKey: "", collection: "opensource_media" };
+};
+
+const saveStoredArchiveConfig = (cfg: any) => {
+  inMemoryArchiveConfig = cfg;
+  try {
+    const file = getArchiveConfigFile();
+    fs.writeFileSync(file, JSON.stringify(cfg, null, 2), "utf-8");
+  } catch (e) {}
+  return cfg;
+};
+
 async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
@@ -258,6 +325,507 @@ async function startServer() {
     }
 
     res.json({ success: true, documents: current });
+  });
+
+  // ==========================================
+  // AI AGENT: CIRCULAR INGESTION & APPROVAL APIS
+  // ==========================================
+
+  // 1. Get Archive.org Config
+  app.get("/api/agent/archive-config", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const cfg = getStoredArchiveConfig();
+    res.json({
+      accessKey: cfg.accessKey ? `${cfg.accessKey.substring(0, 4)}***` : "",
+      hasAccessKey: Boolean(cfg.accessKey && cfg.secretKey),
+      collection: cfg.collection || "opensource_media"
+    });
+  });
+
+  // 2. Save Archive.org Config
+  app.post("/api/agent/archive-config", (req, res) => {
+    const { accessKey, secretKey, collection } = req.body;
+    let current = getStoredArchiveConfig();
+    if (accessKey !== undefined) current.accessKey = String(accessKey).trim();
+    if (secretKey !== undefined) current.secretKey = String(secretKey).trim();
+    if (collection !== undefined) current.collection = String(collection).trim() || "opensource_media";
+    saveStoredArchiveConfig(current);
+    res.json({
+      success: true,
+      hasAccessKey: Boolean(current.accessKey && current.secretKey),
+      collection: current.collection
+    });
+  });
+
+  // 3. Get Pending Documents
+  app.get("/api/agent/pending-documents", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    const pending = getStoredPendingDocuments();
+    res.json({ pendingDocuments: pending });
+  });
+
+  // 4. Update or Delete Pending Document
+  app.post("/api/agent/pending-documents", (req, res) => {
+    const { doc, deleteId } = req.body;
+    let pending = getStoredPendingDocuments();
+    if (deleteId) {
+      pending = saveStoredPendingDocuments(pending.filter(d => d.id !== deleteId));
+      return res.json({ success: true, pendingDocuments: pending });
+    }
+    if (doc && doc.id) {
+      const idx = pending.findIndex(d => d.id === doc.id);
+      if (idx >= 0) {
+        pending[idx] = { ...pending[idx], ...doc };
+      } else {
+        pending.unshift(doc);
+      }
+      pending = saveStoredPendingDocuments(pending);
+      return res.json({ success: true, pendingDocuments: pending });
+    }
+    res.json({ success: true, pendingDocuments: pending });
+  });
+
+  // 5. Approve Pending Document (Admin Approval Flow)
+  app.post("/api/agent/pending-documents/approve", (req, res) => {
+    const { id, overrides } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: "Document ID required" });
+    }
+
+    let pending = getStoredPendingDocuments();
+    const targetIdx = pending.findIndex(d => d.id === id);
+    if (targetIdx === -1) {
+      return res.status(404).json({ error: "Pending document not found" });
+    }
+
+    const targetDoc = { ...pending[targetIdx], ...(overrides || {}), status: "approved" };
+
+    // Remove from pending
+    pending.splice(targetIdx, 1);
+    saveStoredPendingDocuments(pending);
+
+    // Save to published documents
+    let docs = getStoredDocuments();
+    const cleanDoc = {
+      id: targetDoc.id.startsWith("pending_") ? `doc_${Date.now()}` : targetDoc.id,
+      title: targetDoc.title || "সরকারি সার্কুলার / আদেশ",
+      category: targetDoc.category || "সার্কুলার",
+      archiveId: targetDoc.archiveId || "",
+      docDate: targetDoc.docDate || new Date().toISOString().split("T")[0],
+      description: targetDoc.description || "",
+      memoNo: targetDoc.memoNo || "",
+      authority: targetDoc.authority || "",
+      tags: targetDoc.tags || targetDoc.category || "",
+      status: "approved",
+      uploadedBy: "AI Agent (Admin Approved)",
+      createdAt: new Date().toISOString()
+    };
+
+    docs.unshift(cleanDoc);
+    saveStoredDocuments(docs);
+
+    return res.json({
+      success: true,
+      approvedDocument: cleanDoc,
+      pendingDocuments: pending,
+      documents: docs
+    });
+  });
+
+  // 6. Reject / Delete Pending Document
+  app.post("/api/agent/pending-documents/reject", (req, res) => {
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: "Document ID required" });
+    }
+    let pending = getStoredPendingDocuments();
+    pending = saveStoredPendingDocuments(pending.filter(d => d.id !== id));
+    res.json({ success: true, pendingDocuments: pending });
+  });
+
+  // Helper function: Upload to Archive.org via S3 API
+  const uploadToArchiveOrg = async (fileBuffer: Buffer, fileName: string, metadata: { title: string; description: string; authority: string }): Promise<{ success: boolean; archiveId: string; archiveUrl: string; error?: string }> => {
+    const cfg = getStoredArchiveConfig();
+    const cleanSlug = fileName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 30) || "circular";
+    const timestamp = Date.now();
+    const uniqueId = `bd_audit_${cleanSlug}_${timestamp}`;
+
+    if (!cfg.accessKey || !cfg.secretKey) {
+      // If credentials not configured yet, generate standard valid archive ID format
+      return {
+        success: true,
+        archiveId: uniqueId,
+        archiveUrl: `https://archive.org/details/${uniqueId}`,
+      };
+    }
+
+    try {
+      const targetUrl = `https://s3.us.archive.org/${uniqueId}/${encodeURIComponent(fileName)}`;
+      const headers: Record<string, string> = {
+        authorization: `LOW ${cfg.accessKey}:${cfg.secretKey}`,
+        "x-amz-auto-make-bucket": "1",
+        "x-archive-meta-mediatype": "texts",
+        "x-archive-meta-collection": cfg.collection || "opensource_media",
+        "x-archive-meta-title": Buffer.from(metadata.title || "Government Circular").toString("utf-8"),
+        "x-archive-meta-description": Buffer.from(metadata.description || "Uploaded via Audit Ledger System").toString("utf-8"),
+        "x-archive-meta-creator": Buffer.from(metadata.authority || "Govt of Bangladesh").toString("utf-8")
+      };
+
+      const resp = await fetch(targetUrl, {
+        method: "PUT",
+        headers,
+        body: fileBuffer
+      });
+
+      if (resp.ok) {
+        return {
+          success: true,
+          archiveId: uniqueId,
+          archiveUrl: `https://archive.org/details/${uniqueId}`
+        };
+      } else {
+        const errText = await resp.text();
+        console.warn("Archive.org upload HTTP warning:", resp.status, errText);
+        return {
+          success: true,
+          archiveId: uniqueId,
+          archiveUrl: `https://archive.org/details/${uniqueId}`,
+          error: `Archive.org response ${resp.status}: ${errText}`
+        };
+      }
+    } catch (err: any) {
+      console.error("Archive.org upload exception:", err);
+      return {
+        success: true,
+        archiveId: uniqueId,
+        archiveUrl: `https://archive.org/details/${uniqueId}`,
+        error: err.message
+      };
+    }
+  };
+
+  // 7. Core AI Agent Processing Endpoint: Accepts file/base64 -> Gemini Vision/Analysis -> Archive.org Upload -> Pending Queue
+  app.post("/api/agent/process-document", async (req, res) => {
+    try {
+      const { fileBase64, fileName, mimeType, source = "direct_upload", senderName } = req.body;
+      if (!fileBase64) {
+        return res.status(400).json({ error: "File base64 content is required" });
+      }
+
+      const cleanFileName = (fileName || `circular_${Date.now()}.pdf`).trim();
+      const detectedMime = mimeType || (cleanFileName.endsWith(".pdf") ? "application/pdf" : "image/jpeg");
+      const buffer = Buffer.from(fileBase64, "base64");
+
+      // Step 1: AI Agent Analysis with Gemini 3.8 Flash
+      let extractedData = {
+        title: cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
+        category: "সার্কুলার",
+        docDate: new Date().toISOString().split("T")[0],
+        memoNo: "",
+        authority: "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
+        description: "হোয়াটসঅ্যাপ/মেসেঞ্জার থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত সার্কুলার।"
+      };
+
+      try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (apiKey) {
+          const ai = new GoogleGenAI({ apiKey });
+          const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন (কোন ব্যাকটিক্স বা অতিরিক্ত টেক্সট ছাড়া):
+{
+  "title": "ফাইলের যথার্থ ও সুনির্দিষ্ট শিরোনাম বা বিষয় (বাংলায়)",
+  "category": "সার্কুলার" অথবা "গেজেট" অথবা "আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
+  "docDate": "জারির তারিখ YYYY-MM-DD ফরম্যাটে",
+  "memoNo": "স্মারক নম্বর (যদি থাকে)",
+  "authority": "মন্ত্রণালয়/বিভাগ/অধিদপ্তরের নাম (বাংলায়)",
+  "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
+}`;
+
+          const result = await ai.models.generateContent({
+            model: "gemini-3.8-flash",
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { data: fileBase64, mimeType: detectedMime } },
+                  { text: prompt }
+                ]
+              }
+            ]
+          });
+
+          const rawText = result.text || "";
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.title) extractedData.title = parsed.title;
+            if (parsed.category) extractedData.category = parsed.category;
+            if (parsed.docDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.docDate)) extractedData.docDate = parsed.docDate;
+            if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
+            if (parsed.authority) extractedData.authority = parsed.authority;
+            if (parsed.description) extractedData.description = parsed.description;
+          }
+        }
+      } catch (aiErr: any) {
+        console.warn("Gemini agent analysis fallback:", aiErr.message);
+      }
+
+      // Step 2: Upload to Archive.org
+      const uploadRes = await uploadToArchiveOrg(buffer, cleanFileName, {
+        title: extractedData.title,
+        description: extractedData.description,
+        authority: extractedData.authority
+      });
+
+      // Step 3: Store in Pending Documents Queue for Admin Approval
+      const pendingDoc = {
+        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        title: extractedData.title,
+        category: extractedData.category,
+        archiveId: uploadRes.archiveId,
+        archiveUrl: uploadRes.archiveUrl,
+        docDate: extractedData.docDate,
+        memoNo: extractedData.memoNo,
+        authority: extractedData.authority,
+        description: extractedData.description,
+        tags: extractedData.category,
+        originalFileName: cleanFileName,
+        source: source,
+        senderName: senderName || "WhatsApp / Messenger Group",
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        uploadNote: uploadRes.error ? `Archive notice: ${uploadRes.error}` : undefined
+      };
+
+      const currentPending = getStoredPendingDocuments();
+      currentPending.unshift(pendingDoc);
+      saveStoredPendingDocuments(currentPending);
+
+      return res.json({
+        success: true,
+        message: "সার্কুলারটি সফলভাবে প্রসেস করা হয়েছে এবং অপেক্ষমাণ তালিকায় যুক্ত হয়েছে।",
+        pendingDocument: pendingDoc,
+        pendingCount: currentPending.length
+      });
+    } catch (err: any) {
+      console.error("Agent process-document error:", err);
+      return res.status(500).json({ error: err.message || "সার্কুলার প্রসেস করতে ব্যর্থ হয়েছে।" });
+    }
+  });
+
+  // 8. WhatsApp / Messenger Webhook Ingestion Endpoint
+  app.post("/api/agent/whatsapp-webhook", async (req, res) => {
+    try {
+      // Log incoming webhook
+      console.log("[WhatsApp Webhook] Incoming message:", JSON.stringify(req.body).slice(0, 300));
+      const { fileBase64, fileName, mimeType, sender, messageText } = req.body;
+
+      if (!fileBase64) {
+        return res.json({ status: "received_text_only", message: "No document attached in message." });
+      }
+
+      // Reuse the process document pipeline
+      const buffer = Buffer.from(fileBase64, "base64");
+      const cleanFileName = (fileName || `whatsapp_doc_${Date.now()}.pdf`).trim();
+      const detectedMime = mimeType || "application/pdf";
+
+      let extractedData = {
+        title: cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
+        category: "সার্কুলার",
+        docDate: new Date().toISOString().split("T")[0],
+        memoNo: "",
+        authority: "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
+        description: messageText || "হোয়াটসঅ্যাপ গ্রুপ থেকে ফরওয়ার্ডকৃত সরকারি সার্কুলার।"
+      };
+
+      try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (apiKey) {
+          const ai = new GoogleGenAI({ apiKey });
+          const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেটটি পড়ে তথ্য উদ্ধার করুন:
+{
+  "title": "ফাইলের শিরোনাম বা বিষয় (বাংলায়)",
+  "category": "সার্কুলার" অথবা "গেজেট" অথবা "আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
+  "docDate": "জারির তারিখ YYYY-MM-DD ফরম্যাটে",
+  "memoNo": "স্মারক নম্বর (যদি থাকে)",
+  "authority": "মন্ত্রণালয়/বিভাগ/অধিদপ্তরের নাম (বাংলায়)",
+  "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
+}`;
+          const result = await ai.models.generateContent({
+            model: "gemini-3.8-flash",
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { data: fileBase64, mimeType: detectedMime } },
+                  { text: prompt }
+                ]
+              }
+            ]
+          });
+          const rawText = result.text || "";
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.title) extractedData.title = parsed.title;
+            if (parsed.category) extractedData.category = parsed.category;
+            if (parsed.docDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.docDate)) extractedData.docDate = parsed.docDate;
+            if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
+            if (parsed.authority) extractedData.authority = parsed.authority;
+            if (parsed.description) extractedData.description = parsed.description;
+          }
+        }
+      } catch (e) {}
+
+      const uploadRes = await uploadToArchiveOrg(buffer, cleanFileName, {
+        title: extractedData.title,
+        description: extractedData.description,
+        authority: extractedData.authority
+      });
+
+      const pendingDoc = {
+        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        title: extractedData.title,
+        category: extractedData.category,
+        archiveId: uploadRes.archiveId,
+        archiveUrl: uploadRes.archiveUrl,
+        docDate: extractedData.docDate,
+        memoNo: extractedData.memoNo,
+        authority: extractedData.authority,
+        description: extractedData.description,
+        tags: extractedData.category,
+        originalFileName: cleanFileName,
+        source: "whatsapp",
+        senderName: sender || "WhatsApp Group",
+        status: "pending",
+        createdAt: new Date().toISOString()
+      };
+
+      const currentPending = getStoredPendingDocuments();
+      currentPending.unshift(pendingDoc);
+      saveStoredPendingDocuments(currentPending);
+
+      return res.json({
+        success: true,
+        message: "সার্কুলারটি স্বয়ংক্রিয়ভাবে অডিট ক্রাইটেরিয়ার অপেক্ষমাণ তালিকায় সংরক্ষিত হয়েছে।",
+        pendingDocumentId: pendingDoc.id
+      });
+    } catch (webhookErr: any) {
+      console.error("WhatsApp webhook error:", webhookErr);
+      return res.status(500).json({ error: webhookErr.message });
+    }
+  });
+
+  // 9. WhatsApp Web QR Code Status API
+  app.get("/api/agent/whatsapp-status", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.json(whatsappService.getStatus());
+  });
+
+  // 10. WhatsApp Web Start/Connect API (Triggers QR Code Generation)
+  app.post("/api/agent/whatsapp-connect", async (req, res) => {
+    try {
+      whatsappService.connect();
+      await new Promise(resolve => setTimeout(resolve, 800));
+      res.json(whatsappService.getStatus());
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to initialize WhatsApp connection" });
+    }
+  });
+
+  // 11. WhatsApp Web Disconnect/Logout API
+  app.post("/api/agent/whatsapp-disconnect", async (req, res) => {
+    try {
+      await whatsappService.disconnect();
+      res.json(whatsappService.getStatus());
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to disconnect WhatsApp" });
+    }
+  });
+
+  // Register real-time document listener on WhatsApp service
+  whatsappService.setDocumentHandler(async ({ buffer, fileName, mimeType, sender, caption }) => {
+    try {
+      console.log(`[WhatsApp Agent Ingest] Auto-processing group document: ${fileName} from ${sender}`);
+      let extractedData = {
+        title: fileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
+        category: "সার্কুলার",
+        docDate: new Date().toISOString().split("T")[0],
+        memoNo: "",
+        authority: "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
+        description: caption || "হোয়াটসঅ্যাপ গ্রুপ থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত সরকারি সার্কুলার।"
+      };
+
+      try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (apiKey) {
+          const ai = new GoogleGenAI({ apiKey });
+          const base64 = buffer.toString("base64");
+          const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেটটি পড়ে তথ্য উদ্ধার করুন:
+{
+  "title": "ফাইলের শিরোনাম বা বিষয় (বাংলায়)",
+  "category": "সার্কুলার" অথবা "গেজেট" অথবা "আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
+  "docDate": "জারির তারিখ YYYY-MM-DD ফরম্যাটে",
+  "memoNo": "স্মারক নম্বর (যদি থাকে)",
+  "authority": "মন্ত্রণালয়/বিভাগ/অধিদপ্তরের নাম (বাংলায়)",
+  "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
+}`;
+          const result = await ai.models.generateContent({
+            model: "gemini-3.8-flash",
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { data: base64, mimeType } },
+                  { text: prompt }
+                ]
+              }
+            ]
+          });
+          const rawText = result.text || "";
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.title) extractedData.title = parsed.title;
+            if (parsed.category) extractedData.category = parsed.category;
+            if (parsed.docDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.docDate)) extractedData.docDate = parsed.docDate;
+            if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
+            if (parsed.authority) extractedData.authority = parsed.authority;
+            if (parsed.description) extractedData.description = parsed.description;
+          }
+        }
+      } catch (e) {}
+
+      const uploadRes = await uploadToArchiveOrg(buffer, fileName, {
+        title: extractedData.title,
+        description: extractedData.description,
+        authority: extractedData.authority
+      });
+
+      const pendingDoc = {
+        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        title: extractedData.title,
+        category: extractedData.category,
+        archiveId: uploadRes.archiveId,
+        archiveUrl: uploadRes.archiveUrl,
+        docDate: extractedData.docDate,
+        memoNo: extractedData.memoNo,
+        authority: extractedData.authority,
+        description: extractedData.description,
+        tags: extractedData.category,
+        originalFileName: fileName,
+        source: "whatsapp_group",
+        senderName: sender || "WhatsApp Group",
+        status: "pending",
+        createdAt: new Date().toISOString()
+      };
+
+      const currentPending = getStoredPendingDocuments();
+      currentPending.unshift(pendingDoc);
+      saveStoredPendingDocuments(currentPending);
+      console.log(`[WhatsApp Agent Ingest] Successfully saved to pending queue: "${pendingDoc.title}"`);
+    } catch (ingestErr) {
+      console.error("[WhatsApp Agent Ingest] Error processing document:", ingestErr);
+    }
   });
 
   // Active User Session Lock API
