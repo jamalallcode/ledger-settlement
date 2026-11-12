@@ -612,18 +612,43 @@ async function startServer() {
   "description": "..."
 }`;
 
-      const result = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { inlineData: { data: rawBase64, mimeType: detectedMime } },
-              { text: prompt }
+      const candidateModels = [
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.8-flash",
+        "gemini-3.1-flash-lite"
+      ];
+
+      let result: any = null;
+      let lastError: any = null;
+
+      for (const modelName of candidateModels) {
+        try {
+          result = await ai.models.generateContent({
+            model: modelName,
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inlineData: { data: rawBase64, mimeType: detectedMime } },
+                  { text: prompt }
+                ]
+              }
             ]
+          });
+          if (result && result.text) {
+            break;
           }
-        ]
-      });
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`Model ${modelName} in server failed, trying next candidate:`, err.message || err);
+          await new Promise(r => setTimeout(r, 600));
+        }
+      }
+
+      if (!result || !result.text) {
+        throw lastError || new Error("সকল জেমিনি মডেল বর্তমানে ব্যস্ত। অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
+      }
 
       const rawText = result.text || "";
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
