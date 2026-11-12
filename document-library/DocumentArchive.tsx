@@ -85,14 +85,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [pendingAgentCount, setPendingAgentCount] = useState(0);
 
   useEffect(() => {
-    fetch('/api/agent/pending-documents')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data.pendingDocuments)) {
-          setPendingAgentCount(data.pendingDocuments.length);
-        }
-      })
-      .catch(() => {});
+    try {
+      const saved = localStorage.getItem('pending_audit_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setPendingAgentCount(parsed.length);
+      }
+    } catch (e) {}
+
+    try {
+      supabase
+        .from('settlement_entries')
+        .select('id')
+        .like('id', 'pending_doc_%')
+        .then(({ data, error }) => {
+          if (!error && data && Array.isArray(data)) {
+            setPendingAgentCount(data.length);
+          }
+        })
+        .catch(() => {});
+    } catch (e) {}
   }, []);
 
   const handleAgentDocumentApproved = (approvedDoc: any) => {
@@ -879,6 +891,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       setShowUnlockModal(true);
     }
   };
+
+  // Render AI Agent Circular Processor as a full-width normal page instead of a floating popup
+  if (showAgentModal) {
+    return (
+      <div className="w-full space-y-6 pb-20 animate-in fade-in duration-200">
+        <AgentApprovalModal
+          isOpen={true}
+          onClose={() => setShowAgentModal(false)}
+          onDocumentApproved={handleAgentDocumentApproved}
+          pendingCount={pendingAgentCount}
+          onPendingCountChange={setPendingAgentCount}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pb-20">
@@ -1717,15 +1744,6 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         onRemoveWhitelistedEmail={handleRemoveWhitelistedEmail}
         whatsappNumber={paymentNumber}
         onUpdateWhatsappNumber={handleUpdatePaymentNumber}
-      />
-
-      {/* AI Agent Approval & Ingestion Modal (Admin) */}
-      <AgentApprovalModal
-        isOpen={showAgentModal}
-        onClose={() => setShowAgentModal(false)}
-        onDocumentApproved={handleAgentDocumentApproved}
-        pendingCount={pendingAgentCount}
-        onPendingCountChange={setPendingAgentCount}
       />
 
       {/* Active Session Lock Notice Modal */}
