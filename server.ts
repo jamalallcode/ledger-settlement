@@ -445,18 +445,28 @@ async function startServer() {
   });
 
   // Helper function: Upload to Archive.org via S3 API
-  const uploadToArchiveOrg = async (fileBuffer: Buffer, fileName: string, metadata: { title: string; description: string; authority: string }): Promise<{ success: boolean; archiveId: string; archiveUrl: string; error?: string }> => {
+  const uploadToArchiveOrg = async (
+    fileBuffer: Buffer,
+    fileName: string,
+    metadata: { title: string; description: string; authority: string; archiveId?: string; docDate?: string; memoNo?: string; mimeType?: string }
+  ): Promise<{ success: boolean; archiveId: string; archiveUrl: string; archiveDownloadUrl?: string; error?: string }> => {
     const cfg = getStoredArchiveConfig();
-    const cleanSlug = fileName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 30) || "circular";
+    const cleanFileName = (fileName || `circular_${Date.now()}.pdf`).trim().replace(/[^a-zA-Z0-9._-]/g, "_");
+    const cleanSlug = cleanFileName.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").slice(0, 30) || "circular";
     const timestamp = Date.now();
-    const uniqueId = `bd_audit_${cleanSlug}_${timestamp}`;
+    const rawRequested = (metadata.archiveId || "").trim().replace(/^https?:\/\/.*archive\.org\/(?:details|embed|download|stream)\//i, "").replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+    const uniqueId = rawRequested.length >= 5 ? rawRequested : `bd_audit_${cleanSlug}_${timestamp}`;
 
-    if (!cfg.accessKey || !cfg.secretKey) {
-      // If credentials not configured yet, generate standard valid archive ID format
+    const accessKey = process.env.ARCHIVE_ACCESS_KEY || cfg.accessKey;
+    const secretKey = process.env.ARCHIVE_SECRET_KEY || cfg.secretKey;
+    const collection = process.env.ARCHIVE_COLLECTION || cfg.collection || "opensource";
+
+    if (!accessKey || !secretKey) {
       return {
-        success: true,
+        success: false,
         archiveId: uniqueId,
         archiveUrl: `https://archive.org/details/${uniqueId}`,
+        error: "Archive.org S3 Access Key ও Secret Key কনফিগার করা নেই।"
       };
     }
 
@@ -465,22 +475,33 @@ async function startServer() {
       // Multi-byte or UTF-8 metadata strings in headers must be URI-encoded like uri(...)
       const safeArchiveMeta = (text: string) => {
         if (!text) return '';
-        return /^[\x20-\x7E]+$/.test(text) ? text : `uri(${encodeURIComponent(text)})`;
+        const singleLine = text.replace(/[\r\n]+/g, ' ').trim();
+        if (!singleLine) return '';
+        return /^[\x20-\x7E]+$/.test(singleLine) ? singleLine : `uri(${encodeURIComponent(singleLine)})`;
       };
 
-      const targetUrl = `https://s3.us.archive.org/${uniqueId}/${encodeURIComponent(fileName)}`;
+      const targetUrl = `https://s3.us.archive.org/${uniqueId}/${encodeURIComponent(cleanFileName)}`;
       const headers: Record<string, string> = {
-        authorization: `LOW ${cfg.accessKey}:${cfg.secretKey}`,
+        authorization: `LOW ${accessKey}:${secretKey}`,
+        "content-type": metadata.mimeType || (cleanFileName.endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
+        "content-length": String(fileBuffer.length),
         "x-amz-auto-make-bucket": "1",
         "x-archive-auto-make-bucket": "1",
         "x-archive-meta-mediatype": "texts",
-        "x-archive-meta-collection": cfg.collection || "opensource",
-        "x-archive-meta01-collection": cfg.collection || "opensource",
+        "x-archive-meta-collection": collection,
+        "x-archive-meta01-collection": collection,
         "x-archive-meta-title": safeArchiveMeta(metadata.title || "Government Circular"),
         "x-archive-meta-description": safeArchiveMeta(metadata.description || "Uploaded via Audit Ledger System"),
         "x-archive-meta-creator": safeArchiveMeta(metadata.authority || "Directorate of Commercial Audit, Govt of Bangladesh"),
         "x-archive-meta-subject": safeArchiveMeta("Audit Circular; Govt of Bangladesh; Commercial Audit; Public Finance")
       };
+
+      if (metadata.docDate && /^\d{4}-\d{2}-\d{2}$/.test(metadata.docDate)) {
+        headers["x-archive-meta-date"] = safeArchiveMeta(metadata.docDate);
+      }
+      if (metadata.memoNo && metadata.memoNo.trim()) {
+        headers["x-archive-meta-notes"] = safeArchiveMeta(`Memo No: ${metadata.memoNo.trim()}`);
+      }
 
       const resp = await fetch(targetUrl, {
         method: "PUT",
@@ -488,17 +509,19 @@ async function startServer() {
         body: fileBuffer
       });
 
+      const archiveDownloadUrl = `https://archive.org/download/${uniqueId}/${encodeURIComponent(cleanFileName)}`;
       if (resp.ok) {
         return {
           success: true,
           archiveId: uniqueId,
-          archiveUrl: `https://archive.org/details/${uniqueId}`
+          archiveUrl: `https://archive.org/details/${uniqueId}`,
+          archiveDownloadUrl
         };
       } else {
         const errText = await resp.text();
         console.warn("Archive.org upload HTTP warning:", resp.status, errText);
         return {
-          success: true,
+          success: false,
           archiveId: uniqueId,
           archiveUrl: `https://archive.org/details/${uniqueId}`,
           error: `Archive.org response ${resp.status}: ${errText}`
@@ -507,7 +530,7 @@ async function startServer() {
     } catch (err: any) {
       console.error("Archive.org upload exception:", err);
       return {
-        success: true,
+        success: false,
         archiveId: uniqueId,
         archiveUrl: `https://archive.org/details/${uniqueId}`,
         error: err.message
@@ -702,6 +725,7 @@ async function startServer() {
         fileBase64, 
         fileName, 
         mimeType, 
+        archiveId: customArchiveId,
         source = "direct_upload", 
         senderName,
         title: customTitle,
@@ -712,12 +736,13 @@ async function startServer() {
         description: customDescription
       } = req.body;
       if (!fileBase64) {
-        return res.status(400).json({ error: "File base64 content is required" });
+        return res.status(400).json({ success: false, uploadedToArchive: false, error: "File base64 content is required" });
       }
 
-      const cleanFileName = (fileName || `circular_${Date.now()}.pdf`).trim();
+      const rawBase64 = fileBase64.includes(",") ? fileBase64.split(",")[1] : fileBase64;
+      const cleanFileName = (fileName || `circular_${Date.now()}.pdf`).trim().replace(/[^a-zA-Z0-9._-]/g, "_");
       const detectedMime = mimeType || (cleanFileName.endsWith(".pdf") ? "application/pdf" : "image/jpeg");
-      const buffer = Buffer.from(fileBase64, "base64");
+      const buffer = Buffer.from(rawBase64, "base64");
 
       // Step 1: AI Agent Analysis with Gemini 3.8 Flash
       let extractedData = {
@@ -779,17 +804,30 @@ async function startServer() {
       const uploadRes = await uploadToArchiveOrg(buffer, cleanFileName, {
         title: extractedData.title,
         description: extractedData.description,
-        authority: extractedData.authority
+        authority: extractedData.authority,
+        archiveId: customArchiveId,
+        docDate: extractedData.docDate,
+        memoNo: extractedData.memoNo,
+        mimeType: detectedMime
       });
 
-      // Step 3: Store in Pending Documents Queue for Admin Approval
+      if (!uploadRes.success) {
+        return res.status(502).json({
+          success: false,
+          uploadedToArchive: false,
+          archiveId: uploadRes.archiveId,
+          error: uploadRes.error || "Archive.org আপলোড ব্যর্থ হয়েছে।"
+        });
+      }
+
+      // Step 3: Store lightweight metadata in Pending Documents Queue (NO heavy fileData!)
       const pendingDoc = {
         id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         title: extractedData.title,
         category: extractedData.category,
         archiveId: uploadRes.archiveId,
         archiveUrl: uploadRes.archiveUrl,
-        fileData: `data:${detectedMime};base64,${fileBase64}`,
+        archiveDownloadUrl: uploadRes.archiveDownloadUrl,
         docDate: extractedData.docDate,
         memoNo: extractedData.memoNo,
         authority: extractedData.authority,
@@ -799,8 +837,7 @@ async function startServer() {
         source: source,
         senderName: senderName || "WhatsApp / Messenger Group",
         status: "pending",
-        createdAt: new Date().toISOString(),
-        uploadNote: uploadRes.error ? `Archive notice: ${uploadRes.error}` : undefined
+        createdAt: new Date().toISOString()
       };
 
       const currentPending = getStoredPendingDocuments();
@@ -809,13 +846,18 @@ async function startServer() {
 
       return res.json({
         success: true,
-        message: "সার্কুলারটি সফলভাবে প্রসেস করা হয়েছে এবং অপেক্ষমাণ তালিকায় যুক্ত হয়েছে।",
+        uploadedToArchive: true,
+        archiveId: uploadRes.archiveId,
+        archiveUrl: uploadRes.archiveUrl,
+        archiveDownloadUrl: uploadRes.archiveDownloadUrl,
+        originalFileName: cleanFileName,
+        message: "সার্কুলারটি সফলভাবে Archive.org-এ আপলোড সম্পন্ন হয়েছে।",
         pendingDocument: pendingDoc,
         pendingCount: currentPending.length
       });
     } catch (err: any) {
       console.error("Agent process-document error:", err);
-      return res.status(500).json({ error: err.message || "সার্কুলার প্রসেস করতে ব্যর্থ হয়েছে।" });
+      return res.status(500).json({ success: false, uploadedToArchive: false, error: err.message || "সার্কুলার প্রসেস করতে ব্যর্থ হয়েছে।" });
     }
   });
 

@@ -19,6 +19,8 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
   authority?: string;
   tags?: string;
+  originalFileName?: string;
+  archiveDownloadUrl?: string;
   status?: 'approved' | 'pending' | 'rejected';
   uploadedBy?: string;
   fileData?: string;
@@ -26,12 +28,40 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
 
 const DEMO_DOC_IDS = ['doc_101', 'doc_102', 'doc_103', 'doc_104', 'doc_105', 'doc_106'];
 
-const DocumentCardThumbnail: React.FC<{ doc: ExtendedArchiveDoc; isDocUnlocked: boolean; cleanId: string }> = ({ doc, isDocUnlocked, cleanId }) => {
-  const [imgError, setImgError] = useState(false);
-  const isImageFile = Boolean(doc.fileData && (doc.fileData.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)/i.test(doc.fileData)));
-  const primarySrc = isImageFile ? doc.fileData : (cleanId ? `https://archive.org/services/img/${cleanId}` : '');
+const stripFileDataFromDocs = (docs: ExtendedArchiveDoc[]): ExtendedArchiveDoc[] =>
+  docs.map(({ fileData: _omit, ...rest }) => rest);
 
-  if (imgError || !primarySrc) {
+const DocumentCardThumbnail: React.FC<{
+  doc: ExtendedArchiveDoc;
+  isDocUnlocked: boolean;
+  cleanId: string;
+  sessionPreviewUrl?: string;
+}> = ({ doc, isDocUnlocked, cleanId, sessionPreviewUrl }) => {
+  const [thumbStage, setThumbStage] = useState<'primary' | 'download' | 'fallback'>('primary');
+
+  const localOrSessionImg =
+    (sessionPreviewUrl && sessionPreviewUrl.startsWith('data:image/') ? sessionPreviewUrl : '') ||
+    (doc.fileData && (doc.fileData.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)/i.test(doc.fileData)) ? doc.fileData : '');
+
+  const isOriginalImage = Boolean(doc.originalFileName && /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalFileName));
+  const downloadImgSrc =
+    cleanId && isOriginalImage && doc.originalFileName
+      ? `https://archive.org/download/${cleanId}/${encodeURIComponent(doc.originalFileName)}`
+      : '';
+
+  useEffect(() => {
+    setThumbStage('primary');
+  }, [doc.id, cleanId, localOrSessionImg, downloadImgSrc]);
+
+  const primarySrc = localOrSessionImg || (cleanId ? `https://archive.org/services/img/${cleanId}` : downloadImgSrc);
+  const activeSrc =
+    thumbStage === 'primary'
+      ? primarySrc
+      : thumbStage === 'download'
+      ? downloadImgSrc
+      : '';
+
+  if (thumbStage === 'fallback' || !activeSrc) {
     return (
       <div className={`w-full h-full bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/40 p-4 flex flex-col justify-between border-b border-slate-100 select-none relative overflow-hidden ${!isDocUnlocked ? 'blur-[1.5px]' : ''}`}>
         <div className="flex items-center justify-between z-10">
@@ -64,10 +94,16 @@ const DocumentCardThumbnail: React.FC<{ doc: ExtendedArchiveDoc; isDocUnlocked: 
 
   return (
     <img 
-      src={primarySrc} 
+      src={activeSrc} 
       alt={doc.title}
       className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isDocUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
-      onError={() => setImgError(true)}
+      onError={() => {
+        if (thumbStage === 'primary' && downloadImgSrc && activeSrc !== downloadImgSrc) {
+          setThumbStage('download');
+        } else {
+          setThumbStage('fallback');
+        }
+      }}
     />
   );
 };
@@ -126,6 +162,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ExtendedArchiveDoc | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<ExtendedArchiveDoc | null>(null);
+  const [sessionPreviewMap, setSessionPreviewMap] = useState<Record<string, string>>({});
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [archiveImgError, setArchiveImgError] = useState(false);
 
   // Sticky Filter Bar Measurement & Collapse State
   const filterBarRef = useRef<HTMLDivElement>(null);
@@ -202,31 +241,40 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [selectedDocBlobUrl, setSelectedDocBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedDoc?.fileData) {
+    setArchiveImgError(false);
+    const activeData = selectedDoc
+      ? (sessionPreviewMap[selectedDoc.id] || selectedDoc.fileData || '')
+      : '';
+    if (!activeData) {
       setSelectedDocBlobUrl(null);
       return;
     }
-    if (!selectedDoc.fileData.startsWith('data:')) {
-      setSelectedDocBlobUrl(selectedDoc.fileData);
+    if (!activeData.startsWith('data:')) {
+      setSelectedDocBlobUrl(activeData);
       return;
     }
-    const blobUrl = createBlobUrlFromDataUrl(selectedDoc.fileData);
+    const blobUrl = createBlobUrlFromDataUrl(activeData);
     setSelectedDocBlobUrl(blobUrl);
     return () => {
       if (blobUrl && blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [selectedDoc?.id, selectedDoc?.fileData]);
+  }, [selectedDoc?.id, selectedDoc?.fileData, sessionPreviewMap]);
 
   const handleAgentDocumentApproved = (approvedDoc: any) => {
+    const { _sessionPreviewData, fileData: _omitFileData, ...cleanApproved } = approvedDoc || {};
+    if (_sessionPreviewData) {
+      setSessionPreviewMap(prev => ({ ...prev, [cleanApproved.id]: _sessionPreviewData }));
+    }
+
     setDocuments(prev => {
-      const cleanApprovedArchiveId = extractCleanId(approvedDoc.archiveId || approvedDoc.archiveUrl || '');
-      const cleanApprovedMemo = (approvedDoc.memoNo || '').trim().toLowerCase();
+      const cleanApprovedArchiveId = extractCleanId(cleanApproved.archiveId || cleanApproved.archiveUrl || '');
+      const cleanApprovedMemo = (cleanApproved.memoNo || '').trim().toLowerCase();
 
       // Find if an existing document already matches by id, Archive.org ID, or Memo No
       const existingIdx = prev.findIndex(d => {
-        if (d.id === approvedDoc.id) return true;
+        if (d.id === cleanApproved.id) return true;
         const dCleanArchiveId = extractCleanId(d.archiveId || '');
         if (cleanApprovedArchiveId && dCleanArchiveId && cleanApprovedArchiveId.toLowerCase() === dCleanArchiveId.toLowerCase()) {
           return true;
@@ -241,17 +289,22 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
       let updated: ExtendedArchiveDoc[];
       if (existingIdx >= 0) {
-        // Prevent duplicate: Update existing document with new details instead of inserting a 2nd copy
+        const retainedId = prev[existingIdx].id;
+        if (_sessionPreviewData) {
+          setSessionPreviewMap(sp => ({ ...sp, [retainedId]: _sessionPreviewData }));
+        }
         updated = [...prev];
         updated[existingIdx] = {
           ...prev[existingIdx],
-          ...approvedDoc,
-          id: prev[existingIdx].id // Retain existing document ID
+          ...cleanApproved,
+          id: retainedId
         };
       } else {
-        updated = [approvedDoc, ...prev];
+        updated = [cleanApproved, ...prev];
       }
-      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
+      try {
+        localStorage.setItem('audit_criteria_documents', JSON.stringify(stripFileDataFromDocs(updated)));
+      } catch (e) {}
       return updated;
     });
   };
@@ -822,6 +875,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             memoNo: String(content.memoNo || ''),
             authority: String(content.authority || ''),
             tags: String(content.tags || ''),
+            originalFileName: content.originalFileName ? String(content.originalFileName) : undefined,
+            archiveDownloadUrl: content.archiveDownloadUrl ? String(content.archiveDownloadUrl) : undefined,
             status: (content.status as any) || 'approved',
             uploadedBy: String(content.uploadedBy || ''),
             createdAt: String(content.createdAt || new Date().toISOString()),
@@ -844,7 +899,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       docMap.set(d.id, {
         ...(existing || {}),
         ...d,
-        fileData: d.fileData || existing?.fileData || ''
+        fileData: d.fileData || existing?.fileData || undefined
       });
     });
     supabaseList.filter(isRealUploadedDoc).forEach(d => {
@@ -852,13 +907,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       docMap.set(d.id, {
         ...(existing || {}),
         ...d,
-        fileData: d.fileData || existing?.fileData || ''
+        fileData: d.fileData || existing?.fileData || undefined
       });
     });
 
     const finalDocs = Array.from(docMap.values());
     setDocuments(finalDocs);
-    localStorage.setItem('audit_criteria_documents', JSON.stringify(finalDocs));
+    try {
+      localStorage.setItem('audit_criteria_documents', JSON.stringify(stripFileDataFromDocs(finalDocs)));
+    } catch (e) {}
     setIsLoading(false);
   };
 
@@ -939,6 +996,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPublishing) return;
     if (!effectiveAdmin) {
       alert("দুঃখিত, শুধুমাত্র অ্যাডমিন নতুন সার্কুলার যুক্ত করতে পারেন।");
       return;
@@ -957,103 +1015,144 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     }
 
     const docId = editingDoc ? editingDoc.id : `doc_${Date.now()}`;
-    const fileDataToSave = newDocFile ? newDocFile.data : (editingDoc?.fileData || '');
-    const payload: ExtendedArchiveDoc = {
-      id: docId,
-      title: newDoc.title,
-      category: newDoc.category,
-      archiveId: cleanId,
-      docDate: newDoc.docDate,
-      description: newDoc.description,
-      memoNo: newDoc.memoNo,
-      authority: newDoc.authority,
-      tags: newDoc.tags,
-      status: 'approved',
-      uploadedBy: 'Admin',
-      createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString(),
-      fileData: fileDataToSave
-    };
-
-    // 1. Immediately update local state
-    setDocuments(prev => {
-      const existingIdx = prev.findIndex(d => d.id === docId);
-      let updated: ExtendedArchiveDoc[];
-      if (existingIdx >= 0) {
-        updated = [...prev];
-        updated[existingIdx] = payload;
-      } else {
-        updated = [payload, ...prev];
-      }
-      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
-      return updated;
-    });
-
-    if (selectedDoc && selectedDoc.id === docId) {
-      setSelectedDoc(payload);
-    }
-
-    setShowAddModal(false);
-    setEditingDoc(null);
-    setIsAnalyzingAI(false);
-    setAiSuccessMessage(null);
     const uploadedFileMeta = newDocFile;
-    setNewDocFile(null);
-    setNewDoc({
-      title: '',
-      category: 'সার্কুলার',
-      archiveId: '',
-      docDate: new Date().toISOString().split('T')[0],
-      description: '',
-      memoNo: '',
-      authority: '',
-      tags: ''
-    });
+    let confirmedArchiveId = cleanId;
+    let confirmedFileName = editingDoc?.originalFileName;
+    let confirmedDownloadUrl = editingDoc?.archiveDownloadUrl;
 
-    // 2. Save to Server API
+    setIsPublishing(true);
     try {
-      await fetch('/api/admin/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doc: payload })
-      });
-    } catch (e) {}
+      // 1. If a file was chosen, upload it to Archive.org FIRST and verify success (no silent fallback to Supabase!)
+      if (uploadedFileMeta) {
+        const rawBase64 = uploadedFileMeta.data.includes(',')
+          ? uploadedFileMeta.data.split(',')[1]
+          : uploadedFileMeta.data;
 
-    // 3. Save to Supabase
-    try {
-      await supabase.from('settlement_entries').upsert({
-        id: docId,
-        content: JSON.stringify(payload),
-        created_at: payload.createdAt
-      });
-    } catch (err) {
-      console.error("Supabase upsert error:", err);
-    }
-
-    // 4. Auto-sync to Archive.org in background using S3 Keys if file was uploaded
-    if (uploadedFileMeta) {
-      try {
-        const rawBase64 = uploadedFileMeta.data.includes(',') ? uploadedFileMeta.data.split(',')[1] : uploadedFileMeta.data;
-        fetch('/api/agent/process-document', {
+        const uploadResp = await fetch('/api/agent/process-document', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             fileBase64: rawBase64,
             fileName: uploadedFileMeta.name,
             mimeType: uploadedFileMeta.mimeType,
-            title: payload.title,
-            category: payload.category,
-            authority: payload.authority,
-            memoNo: payload.memoNo,
-            docDate: payload.docDate,
-            description: payload.description,
+            archiveId: cleanId,
+            title: newDoc.title,
+            category: newDoc.category,
+            authority: newDoc.authority,
+            memoNo: newDoc.memoNo,
+            docDate: newDoc.docDate,
+            description: newDoc.description,
             source: 'Direct Admin Upload',
             senderName: 'এডমিন'
           })
-        }).catch(err => console.warn('Background Archive.org upload error:', err));
-      } catch (e) {}
-    }
+        });
 
-    alert(editingDoc ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!" : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!");
+        const uploadResult = await uploadResp.json().catch(() => ({}));
+        if (!uploadResp.ok || !uploadResult.success || !uploadResult.uploadedToArchive) {
+          alert(
+            `❌ Archive.org-এ ফাইল আপলোড ব্যর্থ হয়েছে:\n${uploadResult.error || 'Archive.org সার্ভার থেকে সাড়া পাওয়া যায়নি।'}\n\nআপনার নির্দেশনা অনুযায়ী Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।`
+          );
+          return;
+        }
+
+        confirmedArchiveId = uploadResult.archiveId || cleanId;
+        confirmedFileName = uploadResult.originalFileName || uploadedFileMeta.name;
+        confirmedDownloadUrl =
+          uploadResult.archiveDownloadUrl ||
+          `https://archive.org/download/${confirmedArchiveId}/${encodeURIComponent(confirmedFileName)}`;
+
+        // Keep data URL strictly in memory for instant preview in the current session while Archive.org finishes indexing
+        setSessionPreviewMap(prev => ({ ...prev, [docId]: uploadedFileMeta.data }));
+      }
+
+      // Build lightweight metadata record with ZERO file bytes (fileData is never persisted to Supabase or localStorage)
+      const payload: ExtendedArchiveDoc = {
+        id: docId,
+        title: newDoc.title,
+        category: newDoc.category,
+        archiveId: confirmedArchiveId,
+        docDate: newDoc.docDate,
+        description: newDoc.description,
+        memoNo: newDoc.memoNo,
+        authority: newDoc.authority,
+        tags: newDoc.tags,
+        originalFileName: confirmedFileName,
+        archiveDownloadUrl: confirmedDownloadUrl,
+        status: 'approved',
+        uploadedBy: 'Admin',
+        createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
+      };
+
+      // 2. Update local state & localStorage (metadata only, zero fileData)
+      setDocuments(prev => {
+        const existingIdx = prev.findIndex(d => d.id === docId);
+        let updated: ExtendedArchiveDoc[];
+        if (existingIdx >= 0) {
+          updated = [...prev];
+          updated[existingIdx] = payload;
+        } else {
+          updated = [payload, ...prev];
+        }
+        try {
+          localStorage.setItem('audit_criteria_documents', JSON.stringify(stripFileDataFromDocs(updated)));
+        } catch (e) {}
+        return updated;
+      });
+
+      if (selectedDoc && selectedDoc.id === docId) {
+        setSelectedDoc(payload);
+      }
+
+      setShowAddModal(false);
+      setEditingDoc(null);
+      setIsAnalyzingAI(false);
+      setAiSuccessMessage(null);
+      setNewDocFile(null);
+      setNewDoc({
+        title: '',
+        category: 'সার্কুলার',
+        archiveId: '',
+        docDate: new Date().toISOString().split('T')[0],
+        description: '',
+        memoNo: '',
+        authority: '',
+        tags: ''
+      });
+
+      // 3. Save metadata pointer to Server API (no fileData)
+      try {
+        await fetch('/api/admin/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc: payload })
+        });
+      } catch (e) {}
+
+      // 4. Save lightweight catalog pointer ONLY (no file bytes) to Supabase
+      try {
+        await supabase.from('settlement_entries').upsert({
+          id: docId,
+          content: JSON.stringify(payload),
+          created_at: payload.createdAt
+        });
+      } catch (err) {
+        console.error("Supabase upsert error:", err);
+      }
+
+      alert(
+        uploadedFileMeta
+          ? (editingDoc
+              ? "✅ ফাইলটি Archive.org-এ আপলোড ও ডকুমেন্ট আপডেট হয়েছে!"
+              : "✅ ডকুমেন্টটি সফলভাবে সরাসরি Archive.org-এ জমা ও প্রকাশিত হয়েছে!")
+          : (editingDoc
+              ? "ডকুমেন্ট সফলভাবে আপডেট হয়েছে!"
+              : "নতুন ডকুমেন্ট সরাসরি প্রকাশিত হয়েছে!")
+      );
+    } catch (err: any) {
+      alert('❌ আপলোড বা সংরক্ষণে ত্রুটি হয়েছে: ' + (err?.message || 'অজানা ত্রুটি'));
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -1063,7 +1162,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     // 1. Update local state & localStorage
     setDocuments(prev => {
       const updated = prev.filter(d => d.id !== id);
-      localStorage.setItem('audit_criteria_documents', JSON.stringify(updated));
+      try {
+        localStorage.setItem('audit_criteria_documents', JSON.stringify(stripFileDataFromDocs(updated)));
+      } catch (e) {}
       return updated;
     });
     if (selectedDoc?.id === id) setSelectedDoc(null);
@@ -1490,7 +1591,12 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 >
                   <div className="p-4 flex-1 space-y-4">
                     <div className="aspect-[4/5] bg-slate-50 rounded-xl overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all">
-                      <DocumentCardThumbnail doc={doc} isDocUnlocked={isDocUnlocked} cleanId={cleanId} />
+                      <DocumentCardThumbnail
+                        doc={doc}
+                        isDocUnlocked={isDocUnlocked}
+                        cleanId={cleanId}
+                        sessionPreviewUrl={sessionPreviewMap[doc.id]}
+                      />
 
                       {!isDocUnlocked && (
                         <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
@@ -1612,8 +1718,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-200">
-                              {doc.fileData && doc.fileData.startsWith('data:image/') ? (
-                                <img src={doc.fileData} className="w-full h-full object-cover z-10" />
+                              {(sessionPreviewMap[doc.id] || doc.fileData || '').startsWith('data:image/') ? (
+                                <img src={sessionPreviewMap[doc.id] || doc.fileData} className="w-full h-full object-cover z-10" />
                               ) : cleanId ? (
                                 <img 
                                   src={`https://archive.org/services/img/${cleanId}`} 
@@ -1718,49 +1824,71 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="bg-slate-950 p-4 md:p-6 text-white flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[420px]">
-                <div className="w-full h-[360px] md:h-[420px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner relative flex items-center justify-center">
-                  {selectedDoc.fileData && selectedDoc.fileData.startsWith('data:image/') ? (
-                    <img 
-                      src={selectedDoc.fileData} 
-                      alt={selectedDoc.title} 
-                      className="max-h-full max-w-full object-contain mx-auto" 
-                    />
-                  ) : selectedDoc.fileData ? (
-                    <iframe
-                      src={selectedDocBlobUrl || selectedDoc.fileData}
-                      className="w-full h-full border-0"
-                      title={selectedDoc.title}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="w-full h-full relative">
-                      <iframe
-                        src={`https://archive.org/embed/${extractCleanId(selectedDoc.archiveId)}`}
-                        className="w-full h-full border-0"
-                        title={selectedDoc.title}
-                        allowFullScreen
-                      />
-                      <div className="absolute bottom-2 left-2 right-2 p-2 bg-slate-950/85 backdrop-blur-xs border border-slate-700/60 rounded-xl text-center text-[10px] text-amber-300 font-bold pointer-events-none">
-                        💡 ফাইলটি সরাসরি দেখতে নিচে &quot;এডিট / ফাইল আপডেট&quot; বাটনে ক্লিক করে ফাইলটি যুক্ত করুন।
+                {(() => {
+                  const activePreviewData = sessionPreviewMap[selectedDoc.id] || selectedDoc.fileData || '';
+                  const cleanSelectedId = extractCleanId(selectedDoc.archiveId);
+                  const isOriginalImg = Boolean(selectedDoc.originalFileName && /\.(jpg|jpeg|png|webp|gif)$/i.test(selectedDoc.originalFileName));
+                  const archiveDirectUrl =
+                    selectedDoc.archiveDownloadUrl ||
+                    (cleanSelectedId && selectedDoc.originalFileName
+                      ? `https://archive.org/download/${cleanSelectedId}/${encodeURIComponent(selectedDoc.originalFileName)}`
+                      : '');
+                  const viewInNewTabHref =
+                    selectedDocBlobUrl ||
+                    (activePreviewData && !activePreviewData.startsWith('data:')
+                      ? activePreviewData
+                      : archiveDirectUrl || `https://archive.org/details/${cleanSelectedId}`);
+
+                  return (
+                    <>
+                      <div className="w-full h-[360px] md:h-[420px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner relative flex items-center justify-center">
+                        {activePreviewData && activePreviewData.startsWith('data:image/') ? (
+                          <img 
+                            src={activePreviewData} 
+                            alt={selectedDoc.title} 
+                            className="max-h-full max-w-full object-contain mx-auto" 
+                          />
+                        ) : activePreviewData ? (
+                          <iframe
+                            src={selectedDocBlobUrl || activePreviewData}
+                            className="w-full h-full border-0"
+                            title={selectedDoc.title}
+                            allowFullScreen
+                          />
+                        ) : isOriginalImg && archiveDirectUrl && !archiveImgError ? (
+                          <img
+                            src={archiveDirectUrl}
+                            alt={selectedDoc.title}
+                            className="max-h-full max-w-full object-contain mx-auto"
+                            onError={() => setArchiveImgError(true)}
+                          />
+                        ) : (
+                          <div className="w-full h-full relative">
+                            <iframe
+                              src={`https://archive.org/embed/${cleanSelectedId}`}
+                              className="w-full h-full border-0"
+                              title={selectedDoc.title}
+                              allowFullScreen
+                            />
+                            <div className="absolute bottom-2 left-2 right-2 p-2 bg-slate-950/85 backdrop-blur-xs border border-slate-700/60 rounded-xl text-center text-[10px] text-amber-300 font-bold pointer-events-none">
+                              🌐 Archive.org থেকে লোড হচ্ছে (নতুন আপলোড হলে ইনডেক্স হতে ১–৩ মিনিট সময় লাগতে পারে)
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-                <div className="w-full pt-3 flex items-center justify-center">
-                  <a 
-                    href={
-                      selectedDocBlobUrl ||
-                      (selectedDoc.fileData && !selectedDoc.fileData.startsWith('data:')
-                        ? selectedDoc.fileData
-                        : `https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`)
-                    } 
-                    target="_blank"
-                    rel={selectedDocBlobUrl?.startsWith('blob:') ? 'noopener' : 'noopener noreferrer'}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
-                  </a>
-                </div>
+                      <div className="w-full pt-3 flex items-center justify-center">
+                        <a 
+                          href={viewInNewTabHref}
+                          target="_blank"
+                          rel={selectedDocBlobUrl?.startsWith('blob:') ? 'noopener' : 'noopener noreferrer'}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
+                        </a>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="p-8 space-y-6 bg-white overflow-y-auto max-h-[80vh]">
@@ -2135,16 +2263,23 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
+                  disabled={isPublishing}
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-black hover:bg-slate-200 transition-all"
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-black hover:bg-slate-200 transition-all disabled:opacity-50"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                  disabled={isPublishing}
+                  className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {editingDoc ? 'আপডেট করুন' : 'সরাসরি প্রকাশ করুন'}
+                  {isPublishing && <Loader2 size={15} className="animate-spin" />}
+                  <span>
+                    {isPublishing
+                      ? (newDocFile ? 'Archive.org-এ আপলোড হচ্ছে...' : 'সংরক্ষণ হচ্ছে...')
+                      : (editingDoc ? 'আপডেট করুন' : 'সরাসরি প্রকাশ করুন')}
+                  </span>
                 </button>
               </div>
             </form>
