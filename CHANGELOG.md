@@ -2,9 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2026-11-13] - Archive.org-Only Document Storage & Zero File Data in Supabase
+## [2026-11-13] - Archive.org-Only Document Storage, Fast AI Timeouts & 1-Click Direct Server Auto-Process
 
 ### 🚀 Enhanced & Enforced
+- **সুপার-ফাস্ট এআই রিডিং ও কঠোর টাইমআউট সুরক্ষা (`api/agent/analyze-document.ts`, `api/agent/gemini-status.ts`, `aiDocumentAnalyzer.ts`, `server.ts`)**:
+  - অযথা ঝুলে থাকা বা হ্যাং হয়ে যাওয়া বন্ধ করতে `gemini-3.1-flash-lite` (`ThinkingLevel.MINIMAL`) ও `gemini-4-hydrogen` (`ThinkingLevel.LOW`) মডেল এবং ব্যাকএন্ড/ফ্রন্টএন্ড উভয় স্তরে কঠোর টাইমআউট (`AbortController` ও `withTimeout`) যুক্ত করা হয়েছে।
+- **১-ক্লিকে সরাসরি সার্ভারে অটো-প্রসেস (`api/agent/process-document.ts`, `AgentApprovalModal.tsx`, `server.ts`)**:
+  - ফরম পূরণের অপেক্ষা না করে **“সরাসরি সার্ভারে পাঠান (অটো)”** / **“অপেক্ষা না করে সরাসরি সার্ভারে পাঠান”** বাটন যুক্ত করা হয়েছে। এতে ফাইল সার্ভারে পৌঁছানোর পরপরই সার্ভার নিজেই এআই দিয়ে তথ্য পড়ে Archive.org-এ আপলোড ও সরাসরি অপেক্ষমাণ তালিকায় (`pending_doc_*`) জমা করে রাখে—ফলে কম্পিউটার/ব্রাউজার বন্ধ করলেও কাজ থেমে থাকে না।
 - **Vercel Serverless Archive.org S3 Upload (`api/agent/process-document.ts`, `vercel.json`, `server.ts`)**:
   - লাইভ Vercel সাইটে সরাসরি Archive.org-এ ফাইল (PDF বা ছবি) আপলোডের জন্য ডেডিকেটেড সার্ভারলেস এন্ডপয়েন্ট `/api/agent/process-document` যুক্ত করা হয়েছে এবং `archive_config.json` ফাংশন বান্ডেলে অন্তর্ভুক্ত করা হয়েছে।
   - Archive.org আপলোড ব্যর্থ হলে নীরবে Supabase-এ সেভ হওয়ার পরিবর্তে স্পষ্ট এরর বার্তা দেখিয়ে আপলোড বাতিল করা হয়।

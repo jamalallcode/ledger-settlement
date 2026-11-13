@@ -270,6 +270,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [sessionPreviewMap, setSessionPreviewMap] = useState<Record<string, string>>({});
+  const [isDirectServerSending, setIsDirectServerSending] = useState(false);
+  const [directServerNotice, setDirectServerNotice] = useState<string | null>(null);
+  const aiAbortRef = useRef<AbortController | null>(null);
+  const cachedFileDataUrlRef = useRef<string>('');
 
   useEffect(() => {
     checkGeminiStatus().then(res => setAiConnectionStatus(res)).catch(() => {});
@@ -282,7 +286,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       const result = await testGeminiConnection();
       setAiTestResult(result);
       if (result.success) {
-        setAiConnectionStatus({ active: true, model: 'gemini-3.8-flash' });
+        setAiConnectionStatus({ active: true, model: 'gemini-3.1-flash-lite' });
       }
     } catch (e: any) {
       setAiTestResult({ success: false, message: 'সংযোগ ব্যর্থ: ' + e.message });
@@ -540,6 +544,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         inMemoryDataUrl = await toDataUrl(rawSelectedFile);
         const fileBase64 = inMemoryDataUrl.includes(',') ? inMemoryDataUrl.split(',')[1] : inMemoryDataUrl;
 
+        let savedToSupabaseOnServer = false;
+
         const resp = await fetch("/api/agent/process-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -555,7 +561,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
             description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মোবাইল থেকে সংগৃহীত সার্কুলার।',
             source: 'WhatsApp / Mobile Upload',
-            senderName: 'এডমিন ইনজেস্ট'
+            senderName: 'এডমিন ইনজেস্ট',
+            savePendingOnServer: true
           })
         });
 
@@ -564,6 +571,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           throw new Error(data.error || "Archive.org-এ ফাইল আপলোড সম্পন্ন হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।");
         }
 
+        savedToSupabaseOnServer = Boolean(data.savedToSupabaseOnServer);
         const { fileData: _omitFileData, ...cleanPending } = data.pendingDocument;
         pendingDoc = {
           ...cleanPending,
@@ -573,6 +581,18 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           originalFileName: data.originalFileName || cleanPending.originalFileName || rawSelectedFile.name,
           status: 'pending'
         };
+
+        if (inMemoryDataUrl) {
+          setSessionPreviewMap(prev => ({ ...prev, [pendingDoc.id]: inMemoryDataUrl }));
+        }
+
+        if (isSupabaseConfigured && !savedToSupabaseOnServer) {
+          await supabase.from('settlement_entries').upsert({
+            id: pendingDoc.id,
+            content: JSON.stringify(pendingDoc),
+            created_at: pendingDoc.createdAt
+          });
+        }
       } catch (uploadErr: any) {
         setIngestError('❌ Archive.org আপলোড ব্যর্থ: ' + (uploadErr?.message || 'ফাইলটি Archive.org-এ পাঠানো যায়নি। Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি।'));
         setIsSubmittingIngest(false);
@@ -594,14 +614,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         status: 'pending',
         createdAt: new Date().toISOString()
       };
-    }
 
-    if (inMemoryDataUrl) {
-      setSessionPreviewMap(prev => ({ ...prev, [pendingDoc.id]: inMemoryDataUrl }));
-    }
-
-    try {
-      // Save lightweight metadata pointer ONLY (zero file bytes) to Supabase
       if (isSupabaseConfigured) {
         await supabase.from('settlement_entries').upsert({
           id: pendingDoc.id,
@@ -609,7 +622,9 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           created_at: pendingDoc.createdAt
         });
       }
+    }
 
+    try {
       // Save to LocalStorage (without fileData)
       const updated = [pendingDoc, ...pendingDocs.filter(d => d.id !== pendingDoc.id)];
       setPendingDocs(updated);
@@ -629,7 +644,9 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       });
       setSelectedFileMeta(null);
       setRawSelectedFile(null);
+      cachedFileDataUrlRef.current = '';
       setAiSuccessMessage(null);
+      setDirectServerNotice(null);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -642,15 +659,143 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     }
   };
 
+  // Direct 1-Click Server Auto-Process: sends file straight to server for AI + Archive.org + Supabase Pending Queue
+  const handleDirectServerAutoIngest = async () => {
+    if (!rawSelectedFile || isDirectServerSending || isSubmittingIngest) return;
+
+    // Cancel any ongoing browser-side AI wait immediately
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+      aiAbortRef.current = null;
+    }
+    setIsAnalyzingAI(false);
+    setAiWarningMessage(null);
+    setIngestError(null);
+    setIngestSuccess(null);
+    setIsDirectServerSending(true);
+    setDirectServerNotice(
+      '🚀 ফাইলটি সরাসরি সার্ভারে পাঠানো হচ্ছে... সার্ভারে পৌঁছানোর পর ব্রাউজার বা কম্পিউটার বন্ধ করলেও সার্ভার নিজেই এআই দিয়ে তথ্য পড়ে Archive.org-এ আপলোড ও অপেক্ষমাণ তালিকায় জমা করবে।'
+    );
+
+    try {
+      let dataUrl = cachedFileDataUrlRef.current;
+      if (!dataUrl) {
+        dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(rawSelectedFile);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = err => reject(err);
+        });
+        cachedFileDataUrlRef.current = dataUrl;
+      }
+
+      const fileBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      const cleanId =
+        extractCleanId(ingestForm.archiveIdOrLink) ||
+        `bd_audit_${rawSelectedFile.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
+
+      const resp = await fetch('/api/agent/process-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileBase64,
+          fileName: rawSelectedFile.name,
+          mimeType: rawSelectedFile.type,
+          archiveId: cleanId,
+          title: ingestForm.title.trim() || undefined,
+          category: ingestForm.category || undefined,
+          authority: ingestForm.authority !== 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার' ? ingestForm.authority.trim() : undefined,
+          memoNo: ingestForm.memoNo.trim() || undefined,
+          docDate: ingestForm.docDate || undefined,
+          description: ingestForm.description.trim() || undefined,
+          source: ingestForm.source || 'Direct Server Auto-Ingest',
+          senderName: 'এডমিন (অটো-প্রসেস)',
+          autoAnalyze: true,
+          savePendingOnServer: true
+        })
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+        throw new Error(data.error || 'সার্ভারে অটো-প্রসেস সম্পন্ন হয়নি।');
+      }
+
+      const { fileData: _omitFileData, ...cleanPending } = data.pendingDocument;
+      const pendingDoc: PendingDoc = {
+        ...cleanPending,
+        archiveId: data.archiveId || cleanPending.archiveId || cleanId,
+        archiveUrl: data.archiveUrl || cleanPending.archiveUrl || `https://archive.org/details/${cleanId}`,
+        archiveDownloadUrl: data.archiveDownloadUrl || cleanPending.archiveDownloadUrl,
+        originalFileName: data.originalFileName || cleanPending.originalFileName || rawSelectedFile.name,
+        status: 'pending'
+      };
+
+      if (dataUrl) {
+        setSessionPreviewMap(prev => ({ ...prev, [pendingDoc.id]: dataUrl }));
+      }
+
+      if (isSupabaseConfigured && !data.savedToSupabaseOnServer) {
+        await supabase.from('settlement_entries').upsert({
+          id: pendingDoc.id,
+          content: JSON.stringify(pendingDoc),
+          created_at: pendingDoc.createdAt
+        });
+      }
+
+      const updated = [pendingDoc, ...pendingDocs.filter(d => d.id !== pendingDoc.id)];
+      setPendingDocs(updated);
+      localStorage.setItem('pending_audit_documents', JSON.stringify(stripFileDataFromPendingList(updated)));
+      onPendingCountChange(updated.length);
+
+      setDirectServerNotice(null);
+      setIngestSuccess(
+        `✅ "${pendingDoc.title}" সার্ভার নিজেই Archive.org-এ আপলোড ও অপেক্ষমাণ তালিকায় জমা করেছে!`
+      );
+      setIngestForm({
+        title: '',
+        category: 'সার্কুলার',
+        archiveIdOrLink: '',
+        authority: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+        memoNo: '',
+        docDate: new Date().toISOString().split('T')[0],
+        description: '',
+        source: 'WhatsApp / Messenger'
+      });
+      setSelectedFileMeta(null);
+      setRawSelectedFile(null);
+      cachedFileDataUrlRef.current = '';
+      setAiSuccessMessage(null);
+
+      setTimeout(() => {
+        setActiveTab('pending');
+        setIngestSuccess(null);
+      }, 1200);
+    } catch (err: any) {
+      setDirectServerNotice(null);
+      setIngestError('❌ সরাসরি সার্ভার প্রসেস ব্যর্থ: ' + (err?.message || 'আবার চেষ্টা করুন।'));
+    } finally {
+      setIsDirectServerSending(false);
+    }
+  };
+
   // Fast Ingest via File Picker (Automatic naming, AI reading & archive ID)
   const handleFastIngestFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
     const autoArchiveId = `bd_audit_${file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
     const sizeInKb = (file.size / 1024).toFixed(1);
     const detectedMime = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
+    cachedFileDataUrlRef.current = '';
+    setDirectServerNotice(null);
+    setIngestError(null);
     setRawSelectedFile(file);
     setSelectedFileMeta({
       name: file.name,
@@ -665,14 +810,23 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
+      cachedFileDataUrlRef.current = dataUrl;
 
-      // Smart Multimodal AI Vision & OCR Extraction
+      if (controller.signal.aborted) {
+        setIsAnalyzingAI(false);
+        return;
+      }
+
+      // Smart Multimodal AI Vision & OCR Extraction (with 16s timeout & cancellation support)
       try {
         const aiResult = await analyzeDocumentWithAI({
           fileBase64: dataUrl,
           fileName: file.name,
-          mimeType: detectedMime
+          mimeType: detectedMime,
+          signal: controller.signal
         });
+
+        if (controller.signal.aborted) return;
 
         if (aiResult.success && aiResult.data && aiResult.isAiAnalyzed) {
           setIngestForm(prev => ({
@@ -692,7 +846,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         } else if (aiResult.error) {
           const errStr = String(aiResult.error);
           if (errStr.includes('503') || errStr.includes('high demand') || errStr.includes('UNAVAILABLE')) {
-            setAiWarningMessage('⚠️ জেমিনি সার্ভারে সাময়িক উচ্চ চাপ (High Demand) রয়েছে। অনুগ্রহ করে ৫-১০ সেকেন্ড পর আবার ফাইলটি নির্বাচন করুন, স্বয়ংক্রিয়ভাবে সমাধান হয়ে যাবে।');
+            setAiWarningMessage('⚠️ জেমিনি সার্ভারে সাময়িক উচ্চ চাপ (High Demand) রয়েছে। অনুগ্রহ করে ৫-১০ সেকেন্ড পর আবার ফাইলটি নির্বাচন করুন অথবা নিচের “সরাসরি সার্ভারে পাঠান” বাটন ব্যবহার করুন।');
           } else if (errStr.includes('free tier is not available') || errStr.includes('403') || errStr.includes('PERMISSION_DENIED')) {
             setAiWarningMessage('⚠️ আপনার এই Google Project-টিতে Free Tier সক্রিয় নেই। সমাধান: Google AI Studio (aistudio.google.com) থেকে আপনার ব্যক্তিগত @gmail.com অ্যাকাউন্টে "Create API key in new project" সিলেক্ট করে সম্পূর্ণ নতুন একটি ফ্রি কী তৈরি করে Vercel-এ যোগ করুন (কোনো কার্ডের প্রয়োজন নেই)।');
           } else {
@@ -700,10 +854,14 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           }
         }
       } catch (aiErr: any) {
-        console.warn('AI agent document analysis error:', aiErr);
-        setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন।');
+        if (!controller.signal.aborted) {
+          console.warn('AI agent document analysis error:', aiErr);
+          setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন বা সরাসরি সার্ভারে পাঠান।');
+        }
       } finally {
-        setIsAnalyzingAI(false);
+        if (!controller.signal.aborted) {
+          setIsAnalyzingAI(false);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -1186,7 +1344,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
                 {/* সংযুক্ত ডকুমেন্টের স্ট্যাটাস ও আইকন - যাতে এডমিন স্পষ্ট বুঝতে পারেন ডকুমেন্ট যুক্ত হয়েছে */}
                 {selectedFileMeta && (
-                  <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl flex items-center justify-between gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 shrink-0">
                         <FileText size={20} />
@@ -1206,27 +1364,65 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedFileMeta(null);
-                        setRawSelectedFile(null);
-                        setAiSuccessMessage(null);
-                        if (fileInputRef.current) fileInputRef.current.value = '';
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
-                      title="ডকুমেন্ট সরান"
-                    >
-                      <X size={16} />
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleDirectServerAutoIngest}
+                        disabled={isDirectServerSending || isSubmittingIngest}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-[11px] font-black shadow-sm transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                        title="ফর্ম পূরণের অপেক্ষা না করে সরাসরি সার্ভারে পাঠান—সার্ভারে পৌঁছানোর পর কম্পিউটার অফ করলেও কাজ চলবে"
+                      >
+                        {isDirectServerSending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                        <span>{isDirectServerSending ? 'সার্ভারে পাঠানো হচ্ছে...' : 'সরাসরি সার্ভারে পাঠান (অটো)'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (aiAbortRef.current) {
+                            aiAbortRef.current.abort();
+                            aiAbortRef.current = null;
+                          }
+                          cachedFileDataUrlRef.current = '';
+                          setIsAnalyzingAI(false);
+                          setSelectedFileMeta(null);
+                          setRawSelectedFile(null);
+                          setAiSuccessMessage(null);
+                          setAiWarningMessage(null);
+                          setDirectServerNotice(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                        title="ডকুমেন্ট সরান"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {directServerNotice && (
+                  <div className="p-3 bg-indigo-50 border border-indigo-300 rounded-2xl flex items-start gap-2.5 text-xs font-bold text-indigo-900 animate-in fade-in">
+                    <Loader2 size={16} className="animate-spin text-indigo-600 shrink-0 mt-0.5" />
+                    <span>{directServerNotice}</span>
                   </div>
                 )}
 
                 {/* AI Analysis Loader & Status */}
                 {isAnalyzingAI && (
-                  <div className="p-3 bg-blue-50/90 border border-blue-300 rounded-2xl flex items-center gap-3 text-xs font-black text-blue-800 animate-pulse">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
-                    <span>🤖 এআই ডকুমেন্টটি পড়ছে ও তথ্য উদ্ধার করছে...</span>
+                  <div className="p-3 bg-blue-50/90 border border-blue-300 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs font-black text-blue-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                      <span>🤖 এআই ডকুমেন্টটি পড়ছে ও তথ্য উদ্ধার করছে...</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDirectServerAutoIngest}
+                      disabled={isDirectServerSending}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                    >
+                      <ArrowRight size={12} />
+                      <span>অপেক্ষা না করে সরাসরি সার্ভারে পাঠান</span>
+                    </button>
                   </div>
                 )}
 
