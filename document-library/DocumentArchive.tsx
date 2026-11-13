@@ -26,6 +26,52 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
 
 const DEMO_DOC_IDS = ['doc_101', 'doc_102', 'doc_103', 'doc_104', 'doc_105', 'doc_106'];
 
+const DocumentCardThumbnail: React.FC<{ doc: ExtendedArchiveDoc; isDocUnlocked: boolean; cleanId: string }> = ({ doc, isDocUnlocked, cleanId }) => {
+  const [imgError, setImgError] = useState(false);
+  const isImageFile = Boolean(doc.fileData && (doc.fileData.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)/i.test(doc.fileData)));
+  const primarySrc = isImageFile ? doc.fileData : (cleanId ? `https://archive.org/services/img/${cleanId}` : '');
+
+  if (imgError || !primarySrc) {
+    return (
+      <div className={`w-full h-full bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/40 p-4 flex flex-col justify-between border-b border-slate-100 select-none relative overflow-hidden ${!isDocUnlocked ? 'blur-[1.5px]' : ''}`}>
+        <div className="flex items-center justify-between z-10">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+            <FileText size={16} />
+          </div>
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider bg-white/95 px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+            {doc.category || 'সার্কুলার'}
+          </span>
+        </div>
+
+        <div className="my-auto py-2 text-center space-y-1.5 z-10 px-1">
+          <p className="text-xs font-black text-slate-800 leading-snug line-clamp-3">
+            {doc.title}
+          </p>
+          {doc.authority && (
+            <p className="text-[10px] font-bold text-slate-500 truncate">
+              {doc.authority}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-[9.5px] font-bold text-slate-400 border-t border-slate-200/80 pt-2 z-10">
+          <span className="truncate max-w-[110px]">{doc.memoNo ? `স্মারক: ${doc.memoNo}` : 'সরকারি সার্কুলার'}</span>
+          <span>{doc.docDate || ''}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={primarySrc} 
+      alt={doc.title}
+      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isDocUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
+      onError={() => setImgError(true)}
+    />
+  );
+};
+
 const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }> = ({ isAdmin = false, userEmail = null }) => {
   const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>(() => {
     try {
@@ -107,6 +153,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         })
         .catch(() => {});
     } catch (e) {}
+  }, []);
+
+  // Listen for navigation clicks from Sidebar or Navbar to reset to vault view
+  useEffect(() => {
+    const handleResetArchiveView = () => {
+      setShowAgentModal(false);
+      setSelectedDoc(null);
+      setShowUnlockModal(false);
+      setShowPendingModal(false);
+    };
+    window.addEventListener('reset-archive-view', handleResetArchiveView);
+    return () => window.removeEventListener('reset-archive-view', handleResetArchiveView);
   }, []);
 
   const handleAgentDocumentApproved = (approvedDoc: any) => {
@@ -1380,12 +1438,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 >
                   <div className="p-4 flex-1 space-y-4">
                     <div className="aspect-[4/5] bg-slate-50 rounded-xl overflow-hidden relative border border-slate-100 group-hover:border-blue-100 transition-all">
-                      <img 
-                        src={`https://archive.org/services/img/${cleanId}`} 
-                        alt={doc.title}
-                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isDocUnlocked ? 'blur-[1.5px] opacity-75' : ''}`}
-                        onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                      />
+                      <DocumentCardThumbnail doc={doc} isDocUnlocked={isDocUnlocked} cleanId={cleanId} />
 
                       {!isDocUnlocked && (
                         <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-10">
@@ -1506,12 +1559,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                       <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0 relative">
-                              <img 
-                                src={`https://archive.org/services/img/${cleanId}`} 
-                                className={`w-full h-full object-cover ${!isDocUnlocked ? 'blur-[1px]' : ''}`}
-                                onError={(e) => { e.currentTarget.src = 'https://archive.org/images/archive_logo_large.png'; }}
-                              />
+                            <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-200">
+                              {doc.fileData && doc.fileData.startsWith('data:image/') ? (
+                                <img src={doc.fileData} className="w-full h-full object-cover z-10" />
+                              ) : cleanId ? (
+                                <img 
+                                  src={`https://archive.org/services/img/${cleanId}`} 
+                                  className={`w-full h-full object-cover z-10 ${!isDocUnlocked ? 'blur-[1px]' : ''}`}
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              ) : null}
+                              <FileText size={18} className="text-slate-400 absolute" />
                             </div>
                             <div>
                               <div className="font-black text-slate-900">{doc.title}</div>

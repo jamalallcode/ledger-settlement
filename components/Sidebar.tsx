@@ -503,6 +503,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         if (onOpenChangePassword) onOpenChangePassword();
                       } else {
                         setActiveTab(item.id);
+                        if (item.id === 'archive') {
+                          window.dispatchEvent(new CustomEvent('reset-archive-view'));
+                        }
                       }
                     }} 
                     className={`w-full flex items-center justify-between px-1.5 py-1 rounded-lg font-bold transition-all relative group cursor-pointer ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'}`}

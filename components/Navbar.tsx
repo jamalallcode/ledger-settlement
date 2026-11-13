@@ -241,7 +241,10 @@ const Navbar: React.FC<NavbarProps> = ({
               {/* 2. অডিট ক্রাইটেরিয়া */}
               {(isAdmin || moduleVisibility?.archive !== false) && (
                 <button
-                  onClick={() => setActiveTab('archive')}
+                  onClick={() => {
+                    setActiveTab('archive');
+                    window.dispatchEvent(new CustomEvent('reset-archive-view'));
+                  }}
                   className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all duration-200 cursor-pointer flex items-center gap-1.5 border border-transparent
                     ${isArchiveActive
                       ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-black'
@@ -531,6 +534,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={() => {
                     setActiveTab('archive');
+                    window.dispatchEvent(new CustomEvent('reset-archive-view'));
                     setIsMobileMenuOpen(false);
                   }}
                   className={`p-2.5 rounded-xl text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 border transition-all ${
