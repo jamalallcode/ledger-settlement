@@ -72,6 +72,38 @@ const DocumentCardThumbnail: React.FC<{ doc: ExtendedArchiveDoc; isDocUnlocked: 
   );
 };
 
+const createBlobUrlFromDataUrl = (dataUrl: string): string | null => {
+  try {
+    if (!dataUrl || !dataUrl.startsWith('data:')) return null;
+    const commaIdx = dataUrl.indexOf(',');
+    if (commaIdx === -1) return null;
+    const header = dataUrl.slice(0, commaIdx);
+    const body = dataUrl.slice(commaIdx + 1);
+    const mimeMatch = header.match(/data:([^;]+)/i);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const isBase64 = /;base64/i.test(header);
+
+    let byteArray: Uint8Array<ArrayBuffer>;
+    if (isBase64) {
+      const byteChars = atob(body.replace(/\s/g, ''));
+      byteArray = new Uint8Array(new ArrayBuffer(byteChars.length));
+      for (let i = 0; i < byteChars.length; i++) {
+        byteArray[i] = byteChars.charCodeAt(i);
+      }
+    } else {
+      const decoded = decodeURIComponent(body);
+      const encoded = new TextEncoder().encode(decoded);
+      byteArray = new Uint8Array(new ArrayBuffer(encoded.length));
+      byteArray.set(encoded);
+    }
+    const blob = new Blob([byteArray], { type: mimeType });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.warn('Blob URL conversion failed:', e);
+    return null;
+  }
+};
+
 const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }> = ({ isAdmin = false, userEmail = null }) => {
   const [documents, setDocuments] = useState<ExtendedArchiveDoc[]>(() => {
     try {
@@ -166,6 +198,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     window.addEventListener('reset-archive-view', handleResetArchiveView);
     return () => window.removeEventListener('reset-archive-view', handleResetArchiveView);
   }, []);
+
+  const [selectedDocBlobUrl, setSelectedDocBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedDoc?.fileData) {
+      setSelectedDocBlobUrl(null);
+      return;
+    }
+    if (!selectedDoc.fileData.startsWith('data:')) {
+      setSelectedDocBlobUrl(selectedDoc.fileData);
+      return;
+    }
+    const blobUrl = createBlobUrlFromDataUrl(selectedDoc.fileData);
+    setSelectedDocBlobUrl(blobUrl);
+    return () => {
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [selectedDoc?.id, selectedDoc?.fileData]);
 
   const handleAgentDocumentApproved = (approvedDoc: any) => {
     setDocuments(prev => {
@@ -1675,7 +1727,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     />
                   ) : selectedDoc.fileData ? (
                     <iframe
-                      src={selectedDoc.fileData}
+                      src={selectedDocBlobUrl || selectedDoc.fileData}
                       className="w-full h-full border-0"
                       title={selectedDoc.title}
                       allowFullScreen
@@ -1696,9 +1748,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 </div>
                 <div className="w-full pt-3 flex items-center justify-center">
                   <a 
-                    href={selectedDoc.fileData || `https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`} 
+                    href={
+                      selectedDocBlobUrl ||
+                      (selectedDoc.fileData && !selectedDoc.fileData.startsWith('data:')
+                        ? selectedDoc.fileData
+                        : `https://archive.org/details/${extractCleanId(selectedDoc.archiveId)}`)
+                    } 
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel={selectedDocBlobUrl?.startsWith('blob:') ? 'noopener' : 'noopener noreferrer'}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
                   >
                     <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
