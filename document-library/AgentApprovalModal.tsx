@@ -22,6 +22,7 @@ export interface PendingDoc {
   description: string;
   tags?: string;
   originalFileName?: string;
+  archiveDownloadUrl?: string;
   source?: string;
   senderName?: string;
   status: 'pending';
@@ -44,6 +45,95 @@ const extractCleanId = (urlOrId: string): string => {
   const match = trimmed.match(/archive\.org\/(?:details|embed|download|stream)\/([^/?#]+)/i);
   if (match && match[1]) return match[1].trim();
   return trimmed.replace(/^https?:\/\/.*archive\.org\//i, '').replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+};
+
+const createBlobUrlFromDataUrl = (dataUrl: string): string | null => {
+  try {
+    if (!dataUrl || !dataUrl.startsWith('data:')) return null;
+    const commaIdx = dataUrl.indexOf(',');
+    if (commaIdx === -1) return null;
+    const header = dataUrl.slice(0, commaIdx);
+    const body = dataUrl.slice(commaIdx + 1);
+    const mimeMatch = header.match(/data:([^;]+)/i);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const isBase64 = /;base64/i.test(header);
+
+    let byteArray: Uint8Array<ArrayBuffer>;
+    if (isBase64) {
+      const byteChars = atob(body.replace(/\s/g, ''));
+      byteArray = new Uint8Array(new ArrayBuffer(byteChars.length));
+      for (let i = 0; i < byteChars.length; i++) {
+        byteArray[i] = byteChars.charCodeAt(i);
+      }
+    } else {
+      const decoded = decodeURIComponent(body);
+      const encoded = new TextEncoder().encode(decoded);
+      byteArray = new Uint8Array(new ArrayBuffer(encoded.length));
+      byteArray.set(encoded);
+    }
+    const blob = new Blob([byteArray], { type: mimeType });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    return null;
+  }
+};
+
+const stripFileDataFromPendingList = (items: PendingDoc[]): PendingDoc[] =>
+  items.map(({ fileData: _omit, ...rest }) => rest);
+
+const PendingDocPreview: React.FC<{ doc: PendingDoc; sessionDataUrl?: string }> = ({ doc, sessionDataUrl }) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const rawData = sessionDataUrl || doc.fileData || '';
+  const cleanId = extractCleanId(doc.archiveId || doc.archiveUrl || '');
+  const isImageOriginal = Boolean(doc.originalFileName && /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.originalFileName));
+
+  useEffect(() => {
+    setImgFailed(false);
+    if (!rawData || !rawData.startsWith('data:') || rawData.startsWith('data:image/')) {
+      setBlobUrl(null);
+      return;
+    }
+    const url = createBlobUrlFromDataUrl(rawData);
+    setBlobUrl(url);
+    return () => {
+      if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
+    };
+  }, [rawData, doc.id]);
+
+  if (rawData && rawData.startsWith('data:image/')) {
+    return <img src={rawData} alt={doc.title} className="max-h-full max-w-full object-contain mx-auto" />;
+  }
+
+  if (rawData) {
+    return (
+      <iframe
+        src={blobUrl || rawData}
+        className="w-full h-full border-0"
+        title={doc.title || 'Archive Document Preview'}
+      />
+    );
+  }
+
+  if (cleanId && isImageOriginal && !imgFailed && doc.originalFileName) {
+    return (
+      <img
+        src={`https://archive.org/download/${cleanId}/${encodeURIComponent(doc.originalFileName)}`}
+        alt={doc.title}
+        className="max-h-full max-w-full object-contain mx-auto"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <iframe
+      src={`https://archive.org/embed/${cleanId}`}
+      className="w-full h-full border-0"
+      title={doc.title || 'Archive Document Preview'}
+    />
+  );
 };
 
 // Strict Deduplication Helper Function
@@ -179,6 +269,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [aiConnectionStatus, setAiConnectionStatus] = useState<{ active: boolean; model: string } | null>(null);
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [sessionPreviewMap, setSessionPreviewMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     checkGeminiStatus().then(res => setAiConnectionStatus(res)).catch(() => {});
@@ -267,7 +358,9 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           list = Array.from(map.values()).sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
-          localStorage.setItem('pending_audit_documents', JSON.stringify(list));
+          try {
+            localStorage.setItem('pending_audit_documents', JSON.stringify(stripFileDataFromPendingList(list)));
+          } catch (e) {}
         }
       } catch (e) {
         console.warn('Supabase pending docs error:', e);
@@ -312,18 +405,22 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       targetDocId = dupCheck.matchedDoc.id;
     }
 
+    const { fileData: _omitFileData, ...cleanBaseDoc } = doc as any;
+    const { fileData: _omitOverrideFileData, ...cleanOverrides } = (overrides || {}) as any;
+
     const finalDoc = {
-      ...doc,
-      ...(overrides || {}),
+      ...cleanBaseDoc,
+      ...cleanOverrides,
       id: targetDocId,
-      fileData: doc.fileData || (overrides as any)?.fileData || '',
       status: 'approved' as const,
       uploadedBy: 'Admin (Approved)',
       createdAt: new Date().toISOString()
     };
 
+    const sessionPreviewData = sessionPreviewMap[doc.id] || doc.fileData || (overrides as any)?.fileData || '';
+
     try {
-      // 1. Save approved document to Supabase
+      // 1. Save approved metadata pointer ONLY (no fileData) to Supabase
       if (isSupabaseConfigured) {
         await supabase.from('settlement_entries').upsert({
           id: finalDoc.id,
@@ -334,7 +431,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         await supabase.from('settlement_entries').delete().eq('id', doc.id);
       }
 
-      // 2.5. Save to Server Storage
+      // 2.5. Save metadata to Server Storage
       try {
         await fetch('/api/admin/documents', {
           method: 'POST',
@@ -348,17 +445,24 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         });
       } catch (e) {}
 
-      // 3. Update Local Storage
-      const currentPending = JSON.parse(localStorage.getItem('pending_audit_documents') || '[]')
-        .filter((d: any) => d.id !== doc.id);
+      // 3. Update Local Storage (without fileData)
+      const currentPending = stripFileDataFromPendingList(
+        JSON.parse(localStorage.getItem('pending_audit_documents') || '[]')
+          .filter((d: any) => d.id !== doc.id)
+      );
       localStorage.setItem('pending_audit_documents', JSON.stringify(currentPending));
 
-      const currentDocs = JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+      const currentDocs = JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]')
+        .map(({ fileData: _omit, ...rest }: any) => rest);
       const updatedDocs = [finalDoc, ...currentDocs.filter((d: any) => d.id !== finalDoc.id)];
       localStorage.setItem('audit_criteria_documents', JSON.stringify(updatedDocs));
 
-      // 4. Notify parent state
-      onDocumentApproved(finalDoc);
+      // 4. Notify parent state (pass in-memory session preview only, never persisted)
+      onDocumentApproved(
+        sessionPreviewData
+          ? { ...finalDoc, _sessionPreviewData: sessionPreviewData }
+          : finalDoc
+      );
       setPendingDocs(prev => prev.filter(d => d.id !== doc.id));
       onPendingCountChange(pendingDocs.length - 1);
       setEditingDocId(null);
@@ -376,7 +480,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       }
       const updated = pendingDocs.filter(d => d.id !== id);
       setPendingDocs(updated);
-      localStorage.setItem('pending_audit_documents', JSON.stringify(updated));
+      localStorage.setItem('pending_audit_documents', JSON.stringify(stripFileDataFromPendingList(updated)));
       onPendingCountChange(updated.length);
     } catch (e) {
       console.error('Reject error:', e);
@@ -422,21 +526,20 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     }
 
     let pendingDoc: PendingDoc;
+    let inMemoryDataUrl = '';
 
     if (rawSelectedFile) {
-      let fileBase64 = '';
       try {
-        const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+        const toDataUrl = (f: File) => new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(f);
-          reader.onload = () => {
-            const res = reader.result as string;
-            resolve(res.includes(',') ? res.split(',')[1] : res);
-          };
+          reader.onload = () => resolve(reader.result as string);
           reader.onerror = error => reject(error);
         });
 
-        fileBase64 = await toBase64(rawSelectedFile);
+        inMemoryDataUrl = await toDataUrl(rawSelectedFile);
+        const fileBase64 = inMemoryDataUrl.includes(',') ? inMemoryDataUrl.split(',')[1] : inMemoryDataUrl;
+
         const resp = await fetch("/api/agent/process-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -444,6 +547,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             fileBase64,
             fileName: rawSelectedFile.name,
             mimeType: rawSelectedFile.type,
+            archiveId: cleanId,
             title: ingestForm.title.trim(),
             category: ingestForm.category || 'সার্কুলার',
             authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
@@ -455,33 +559,24 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           })
         });
 
-        const data = await resp.json();
-        if (resp.ok && data.success && data.pendingDocument) {
-          pendingDoc = data.pendingDocument;
-          if (!pendingDoc.fileData) {
-            pendingDoc.fileData = `data:${rawSelectedFile.type || (rawSelectedFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')};base64,${fileBase64}`;
-          }
-        } else {
-          throw new Error(data.error || "Archive.org আপলোড সম্পন্ন হয়নি");
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+          throw new Error(data.error || "Archive.org-এ ফাইল আপলোড সম্পন্ন হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।");
         }
-      } catch (uploadErr: any) {
-        console.warn("Archive.org upload fallback notice:", uploadErr.message);
+
+        const { fileData: _omitFileData, ...cleanPending } = data.pendingDocument;
         pendingDoc = {
-          id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          title: ingestForm.title.trim(),
-          category: ingestForm.category || 'সার্কুলার',
-          archiveId: cleanId,
-          archiveUrl: `https://archive.org/details/${cleanId}`,
-          fileData: `data:${rawSelectedFile.type || (rawSelectedFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')};base64,${fileBase64}`,
-          docDate: ingestForm.docDate || new Date().toISOString().split('T')[0],
-          memoNo: ingestForm.memoNo.trim(),
-          authority: ingestForm.authority.trim() || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
-          description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মেসেঞ্জার গ্রুপ থেকে সংগৃহীত সার্কুলার।',
-          source: ingestForm.source || 'WhatsApp/Messenger',
-          senderName: 'এডমিন ইনজেস্ট',
-          status: 'pending',
-          createdAt: new Date().toISOString()
+          ...cleanPending,
+          archiveId: data.archiveId || cleanPending.archiveId || cleanId,
+          archiveUrl: data.archiveUrl || cleanPending.archiveUrl || `https://archive.org/details/${cleanId}`,
+          archiveDownloadUrl: data.archiveDownloadUrl || cleanPending.archiveDownloadUrl,
+          originalFileName: data.originalFileName || cleanPending.originalFileName || rawSelectedFile.name,
+          status: 'pending'
         };
+      } catch (uploadErr: any) {
+        setIngestError('❌ Archive.org আপলোড ব্যর্থ: ' + (uploadErr?.message || 'ফাইলটি Archive.org-এ পাঠানো যায়নি। Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি।'));
+        setIsSubmittingIngest(false);
+        return;
       }
     } else {
       pendingDoc = {
@@ -501,8 +596,12 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       };
     }
 
+    if (inMemoryDataUrl) {
+      setSessionPreviewMap(prev => ({ ...prev, [pendingDoc.id]: inMemoryDataUrl }));
+    }
+
     try {
-      // Save to Supabase
+      // Save lightweight metadata pointer ONLY (zero file bytes) to Supabase
       if (isSupabaseConfigured) {
         await supabase.from('settlement_entries').upsert({
           id: pendingDoc.id,
@@ -511,10 +610,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         });
       }
 
-      // Save to LocalStorage
+      // Save to LocalStorage (without fileData)
       const updated = [pendingDoc, ...pendingDocs.filter(d => d.id !== pendingDoc.id)];
       setPendingDocs(updated);
-      localStorage.setItem('pending_audit_documents', JSON.stringify(updated));
+      localStorage.setItem('pending_audit_documents', JSON.stringify(stripFileDataFromPendingList(updated)));
       onPendingCountChange(updated.length);
 
       setIngestSuccess(`"${pendingDoc.title}" সফলভাবে Archive.org-এ আপলোড ও অপেক্ষমাণ তালিকায় জমা হয়েছে!`);
@@ -921,19 +1020,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                         {/* Embed Preview if active */}
                         {isPreviewing && (
                           <div className="mt-3 border-2 border-slate-200 rounded-xl overflow-hidden bg-slate-900 h-80 transition-all flex items-center justify-center">
-                            {doc.fileData && doc.fileData.startsWith('data:image/') ? (
-                              <img 
-                                src={doc.fileData} 
-                                alt={doc.title} 
-                                className="max-h-full max-w-full object-contain mx-auto" 
-                              />
-                            ) : (
-                              <iframe 
-                                src={doc.fileData || `https://archive.org/embed/${doc.archiveId}`}
-                                className="w-full h-full border-0"
-                                title="Archive Document Preview"
-                              />
-                            )}
+                            <PendingDocPreview doc={doc} sessionDataUrl={sessionPreviewMap[doc.id]} />
                           </div>
                         )}
 
@@ -1273,10 +1360,12 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   <button
                     type="submit"
                     disabled={isSubmittingIngest}
-                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
                   >
                     {isSubmittingIngest ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                    অপেক্ষমাণ তালিকায় জমা করুন (অনুমোদনের জন্য)
+                    {isSubmittingIngest
+                      ? (rawSelectedFile ? 'Archive.org-এ আপলোড হচ্ছে...' : 'জমা হচ্ছে...')
+                      : 'অপেক্ষমাণ তালিকায় জমা করুন (অনুমোদনের জন্য)'}
                   </button>
                 </div>
               </form>

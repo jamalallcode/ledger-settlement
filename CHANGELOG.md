@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-13] - Archive.org-Only Document Storage & Zero File Data in Supabase
+
+### 🚀 Enhanced & Enforced
+- **Vercel Serverless Archive.org S3 Upload (`api/agent/process-document.ts`, `vercel.json`, `server.ts`)**:
+  - লাইভ Vercel সাইটে সরাসরি Archive.org-এ ফাইল (PDF বা ছবি) আপলোডের জন্য ডেডিকেটেড সার্ভারলেস এন্ডপয়েন্ট `/api/agent/process-document` যুক্ত করা হয়েছে এবং `archive_config.json` ফাংশন বান্ডেলে অন্তর্ভুক্ত করা হয়েছে।
+  - Archive.org আপলোড ব্যর্থ হলে নীরবে Supabase-এ সেভ হওয়ার পরিবর্তে স্পষ্ট এরর বার্তা দেখিয়ে আপলোড বাতিল করা হয়।
+- **Supabase-এ ফাইল ডেটা (`fileData`) জমা হওয়া সম্পূর্ণ বন্ধ (`DocumentArchive.tsx`, `AgentApprovalModal.tsx`)**:
+  - এখন থেকে কোনো ডকুমেন্টের আসল ফাইল (ছবি/PDF বাইট বা Base64 `fileData`) Supabase বা `localStorage`-এ সংরক্ষণ করা হয় না; সম্পূর্ণ ফাইলটি স্থায়ীভাবে শুধুমাত্র Archive.org-এ জমা হয়।
+  - ডকুমেন্ট তালিকাভুক্ত করার জন্য শুধুমাত্র হালকা টেক্সট মেটাডেটা পয়েন্টার (শিরোনাম, তারিখ, স্মারক নং ও Archive.org আইডি) রাখা হয়েছে।
+  - সদ্য আপলোড করা নথি Archive.org-এ ইনডেক্স হওয়ার সময় (১–৩ মিনিট) তাৎক্ষণিক প্রিভিউয়ের জন্য ব্রাউজার মেমোরিতে অস্থায়ী `sessionPreviewMap` এবং পরবর্তীতে সরাসরি Archive.org লিংক ও এম্বেড ব্যবহার করা হয়।
+- **কঠোর স্কোপ সীমাবদ্ধতা**:
+  - অডিট রেজিস্টার, চিঠিপত্র, রিটার্ণ ও অন্যান্য মূল ডাটাবেজ মডিউল সম্পূর্ণ অপরিবর্তিত রাখা হয়েছে।
+
 ## [2026-11-12] - Vercel Serverless Function & Transparent Gemini API Key Integration for Circular Auto-Fill
 
 ### 🛠️ Fixed & Restored AI Vision Auto-Fill
