@@ -201,3 +201,207 @@ export async function testGeminiConnection(): Promise<{ success: boolean; messag
     };
   }
 }
+
+export interface ProcessDocumentRetryResult {
+  success: boolean;
+  uploadedToArchive?: boolean;
+  duplicateDetected?: boolean;
+  duplicateInfo?: DuplicateMatchInfo;
+  extractedData?: Partial<DocumentAnalysisResult>;
+  archiveId?: string;
+  archiveUrl?: string;
+  archiveDownloadUrl?: string;
+  originalFileName?: string;
+  savedToSupabaseOnServer?: boolean;
+  pendingDocument?: any;
+  error?: string;
+  attemptsUsed?: number;
+}
+
+const formatNonJsonHttpError = (status: number, rawBody: string): { message: string; isPermanent: boolean } => {
+  const cleanSnippet = rawBody.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
+  if (status === 504 || status === 408) {
+    return {
+      message: `সার্ভার সময়সীমা অতিক্রম করেছে (HTTP ${status} Timeout)${cleanSnippet ? ` — ${cleanSnippet}` : ""}`,
+      isPermanent: false
+    };
+  }
+  if (status === 502 || status === 503 || status === 429) {
+    return {
+      message: `সার্ভার বা Archive.org সাময়িকভাবে ব্যস্ত/অপ্রাপ্য (HTTP ${status})${cleanSnippet ? ` — ${cleanSnippet}` : ""}`,
+      isPermanent: false
+    };
+  }
+  if (status === 413) {
+    return {
+      message: "ফাইলের আকার সার্ভারের সীমার চেয়ে বেশি (HTTP 413 Payload Too Large) — অনুগ্রহ করে ৪ MB-এর নিচের ফাইল ব্যবহার করুন।",
+      isPermanent: true
+    };
+  }
+  if (status === 401 || status === 403) {
+    return {
+      message: `Archive.org অনুমোদন ত্রুটি (HTTP ${status}) — S3 Access/Secret Key যাচাই করুন।`,
+      isPermanent: true
+    };
+  }
+  if (status === 400 || status === 404 || status === 422) {
+    return {
+      message: `অনুরোধ বা ফাইলের তথ্যে ত্রুটি (HTTP ${status})${cleanSnippet ? ` — ${cleanSnippet}` : ""}`,
+      isPermanent: true
+    };
+  }
+  return {
+    message: `সার্ভার থেকে অপ্রত্যাশিত ত্রুটি এসেছে (HTTP ${status})${cleanSnippet ? `: ${cleanSnippet}` : ""}`,
+    isPermanent: false
+  };
+};
+
+const isPermanentArchiveErrorText = (status: number, msg: string): boolean => {
+  if ([400, 401, 403, 404, 413, 422].includes(status)) return true;
+  const lower = (msg || "").toLowerCase();
+  return (
+    lower.includes("signaturedoesnotmatch") ||
+    lower.includes("accessdenied") ||
+    lower.includes("invalidaccesskeyid") ||
+    lower.includes("requestentitytoolarge") ||
+    lower.includes("কনফিগার করা নেই") ||
+    lower.includes("প্রদান করা আবশ্যক")
+  );
+};
+
+/**
+ * Archive.org-safe upload helper:
+ * - Up to 5 smart retries ONLY on transient errors (504/502/503/network/timeout) with safe backoff (2s, 4s, 6s, 8s)
+ * - Never spams Archive.org on permanent errors (403/400/413 or duplicate match)
+ * - Switches off heavy AI inside retries after attempt 1 timeout so upload succeeds in 1-3s
+ * - Always preserves exact HTTP status & root cause if all attempts fail
+ */
+export async function uploadToArchiveWithSmartRetry(
+  payload: Record<string, any>,
+  options?: {
+    maxAttempts?: number;
+    shouldStop?: () => boolean;
+    onAttemptChange?: (attempt: number, maxAttempts: number, label: string) => void;
+  }
+): Promise<ProcessDocumentRetryResult> {
+  const maxAttempts = options?.maxAttempts ?? 5;
+  const backoffMs = [0, 2000, 4000, 6000, 8000];
+  let lastError = "Archive.org-এ আপলোড সম্পন্ন হয়নি।";
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (options?.shouldStop?.()) {
+      return { success: false, error: "ব্যবহারকারী কর্তৃক আপলোড থামানো হয়েছে।", attemptsUsed: attempt - 1 };
+    }
+
+    if (attempt > 1) {
+      const waitMs = backoffMs[Math.min(attempt - 1, backoffMs.length - 1)] || 6000;
+      options?.onAttemptChange?.(
+        attempt,
+        maxAttempts,
+        `বিরতি (${Math.round(waitMs / 1000)} সে.) শেষে চেষ্টা ${attempt}/${maxAttempts}...`
+      );
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+      if (options?.shouldStop?.()) {
+        return { success: false, error: "ব্যবহারকারী কর্তৃক আপলোড থামানো হয়েছে।", attemptsUsed: attempt - 1 };
+      }
+    }
+
+    options?.onAttemptChange?.(
+      attempt,
+      maxAttempts,
+      attempt === 1 ? "Archive.org-এ পাঠানো হচ্ছে..." : `পুনরায় চেষ্টা ${attempt}/${maxAttempts}...`
+    );
+
+    // On retry after attempt 1 failure/timeout, skip heavy AI re-run so upload finishes fast in 1-3s
+    const fallbackTitleFromName =
+      String(payload.fileName || "circular")
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[_-]/g, " ")
+        .trim() || "সরকারি সার্কুলার";
+
+    const attemptPayload =
+      attempt === 1
+        ? payload
+        : {
+            ...payload,
+            autoAnalyze: false,
+            existingDocs: undefined,
+            title:
+              payload.title && String(payload.title).trim()
+                ? payload.title
+                : fallbackTitleFromName
+          };
+
+    try {
+      const resp = await fetchWithTimeout("/api/agent/process-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(attemptPayload),
+        timeoutMs: 28000
+      });
+
+      const rawText = await resp.text().catch(() => "");
+      let data: any = null;
+      if (rawText) {
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          data = null;
+        }
+      }
+
+      if (data && data.duplicateDetected) {
+        return {
+          ...data,
+          success: false,
+          uploadedToArchive: false,
+          attemptsUsed: attempt
+        };
+      }
+
+      if (resp.ok && data && data.success && data.uploadedToArchive) {
+        return {
+          ...data,
+          attemptsUsed: attempt
+        };
+      }
+
+      if (data && data.error) {
+        lastError = String(data.error);
+        if (isPermanentArchiveErrorText(resp.status, lastError)) {
+          return {
+            success: false,
+            uploadedToArchive: false,
+            error: lastError,
+            attemptsUsed: attempt
+          };
+        }
+      } else {
+        const formatted = formatNonJsonHttpError(resp.status, rawText);
+        lastError = formatted.message;
+        if (formatted.isPermanent) {
+          return {
+            success: false,
+            uploadedToArchive: false,
+            error: lastError,
+            attemptsUsed: attempt
+          };
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        lastError = "সার্ভারের সাথে সংযোগের সময়সীমা (২৮ সেকেন্ড Timeout) শেষ হয়েছে।";
+      } else {
+        lastError = `নেটওয়ার্ক বা সার্ভার সংযোগ ত্রুটি: ${err?.message || "ইন্টারনেট সংযোগ বিচ্ছিন্ন"}`;
+      }
+    }
+  }
+
+  return {
+    success: false,
+    uploadedToArchive: false,
+    error: `${maxAttempts} বার নিরাপদ চেষ্টার পরও ব্যর্থ — মূল কারণ: ${lastError}`,
+    attemptsUsed: maxAttempts
+  };
+}
+

@@ -12,6 +12,7 @@ import {
   analyzeDocumentWithAI,
   checkGeminiStatus,
   testGeminiConnection,
+  uploadToArchiveWithSmartRetry,
   DuplicateMatchInfo,
   ExistingDocCheckItem
 } from './aiDocumentAnalyzer';
@@ -291,6 +292,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     file: File;
     sizeLabel: string;
     status: BatchItemStatus;
+    statusText?: string;
     title?: string;
     archiveId?: string;
     error?: string;
@@ -629,11 +631,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         const fileBase64 = inMemoryDataUrl.includes(',') ? inMemoryDataUrl.split(',')[1] : inMemoryDataUrl;
 
         let savedToSupabaseOnServer = false;
+        const alreadyCheckedByAi = Boolean(aiSuccessMessage);
 
-        const resp = await fetch("/api/agent/process-document", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const data = await uploadToArchiveWithSmartRetry(
+          {
             fileBase64,
             fileName: rawSelectedFile.name,
             mimeType: rawSelectedFile.type,
@@ -646,13 +647,23 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মোবাইল থেকে সংগৃহীত সার্কুলার।',
             source: 'WhatsApp / Mobile Upload',
             senderName: 'এডমিন ইনজেস্ট',
+            autoAnalyze: false,
             savePendingOnServer: true,
-            existingDocs: ignoreSingleDuplicate ? undefined : buildExistingDocsPayload(),
-            ignoreDuplicate: ignoreSingleDuplicate
-          })
-        });
+            existingDocs: ignoreSingleDuplicate || alreadyCheckedByAi ? undefined : buildExistingDocsPayload(),
+            ignoreDuplicate: ignoreSingleDuplicate || alreadyCheckedByAi
+          },
+          {
+            maxAttempts: 5,
+            onAttemptChange: (attempt, _max, label) => {
+              if (attempt > 1) {
+                setDirectServerNotice(`🔄 Archive.org আপলোড: ${label}`);
+              }
+            }
+          }
+        );
 
-        const data = await resp.json().catch(() => ({}));
+        setDirectServerNotice(null);
+
         if (data.duplicateDetected && data.duplicateInfo) {
           setAiDuplicateMatch(data.duplicateInfo);
           setIgnoreSingleDuplicate(false);
@@ -662,7 +673,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           setIsSubmittingIngest(false);
           return;
         }
-        if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+        if (!data.success || !data.uploadedToArchive || !data.pendingDocument) {
           throw new Error(data.error || "Archive.org-এ ফাইল আপলোড সম্পন্ন হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।");
         }
 
@@ -689,6 +700,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           });
         }
       } catch (uploadErr: any) {
+        setDirectServerNotice(null);
         setIngestError('❌ Archive.org আপলোড ব্যর্থ: ' + (uploadErr?.message || 'ফাইলটি Archive.org-এ পাঠানো যায়নি। Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি।'));
         setIsSubmittingIngest(false);
         return;
@@ -798,10 +810,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         extractCleanId(ingestForm.archiveIdOrLink) ||
         `bd_audit_${rawSelectedFile.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25)}_${Date.now()}`;
 
-      const resp = await fetch('/api/agent/process-document', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await uploadToArchiveWithSmartRetry(
+        {
           fileBase64,
           fileName: rawSelectedFile.name,
           mimeType: rawSelectedFile.type,
@@ -818,10 +828,15 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           savePendingOnServer: true,
           existingDocs: ignoreSingleDuplicate ? undefined : buildExistingDocsPayload(),
           ignoreDuplicate: ignoreSingleDuplicate
-        })
-      });
+        },
+        {
+          maxAttempts: 5,
+          onAttemptChange: (_attempt, _max, label) => {
+            setDirectServerNotice(`🚀 সরাসরি সার্ভার প্রসেস: ${label}`);
+          }
+        }
+      );
 
-      const data = await resp.json().catch(() => ({}));
       if (data.duplicateDetected && data.duplicateInfo) {
         setDirectServerNotice(null);
         setAiDuplicateMatch(data.duplicateInfo);
@@ -841,7 +856,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         return;
       }
 
-      if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+      if (!data.success || !data.uploadedToArchive || !data.pendingDocument) {
         throw new Error(data.error || 'সার্ভারে অটো-প্রসেস সম্পন্ন হয়নি।');
       }
 
@@ -924,6 +939,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         reader.onerror = err => reject(err);
       });
 
+    const updateItem = (localId: string, patch: Partial<BatchQueueItem>) => {
+      setBatchItems(prev => prev.map(it => (it.localId === localId ? { ...it, ...patch } : it)));
+    };
+
     for (let i = 0; i < itemsToProcess.length; i++) {
       const target = itemsToProcess[i];
       const shouldForceIgnore = Boolean(forceIgnoreIds?.has(target.localId));
@@ -931,13 +950,11 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       if (target.status === 'duplicate' && !shouldForceIgnore) continue;
       if (batchAbortRef.current) break;
 
-      setBatchItems(prev =>
-        prev.map(it =>
-          it.localId === target.localId
-            ? { ...it, status: 'uploading', error: undefined }
-            : it
-        )
-      );
+      updateItem(target.localId, {
+        status: 'uploading',
+        statusText: 'ফাইল প্রস্তুত করা হচ্ছে...',
+        error: undefined
+      });
 
       try {
         const dataUrl = await readFileAsDataUrl(target.file);
@@ -947,48 +964,130 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         const uniqueSuffix = `${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
         const cleanId = `bd_audit_${target.file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 22)}_${uniqueSuffix}`;
 
-        const resp = await fetch('/api/agent/process-document', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let extracted = target.extractedData;
+
+        // ধাপ ১: আলাদা AI ও ডুপ্লিকেট যাচাই (যাতে Vercel 504 টাইমআউট না হয়)
+        if (!shouldForceIgnore && !extracted) {
+          updateItem(target.localId, { statusText: '🤖 AI পড়ছে ও ডুপ্লিকেট যাচাই করছে...' });
+          const existingPayload = buildExistingDocsPayload();
+          const aiRes = await analyzeDocumentWithAI({
+            fileBase64: dataUrl,
+            fileName: target.file.name,
+            mimeType: detectedMime,
+            existingDocs: existingPayload
+          });
+
+          if (batchAbortRef.current) {
+            updateItem(target.localId, { status: 'queued', statusText: undefined });
+            break;
+          }
+
+          if (aiRes.data) {
+            extracted = {
+              title: aiRes.data.title,
+              category: aiRes.data.category,
+              authority: aiRes.data.authority,
+              memoNo: aiRes.data.memoNo,
+              docDate: aiRes.data.docDate,
+              description: aiRes.data.description
+            };
+          }
+
+          if (aiRes.duplicateMatch && aiRes.duplicateMatch.isDuplicate) {
+            updateItem(target.localId, {
+              status: 'duplicate',
+              statusText: undefined,
+              title: extracted?.title || target.title,
+              duplicateInfo: aiRes.duplicateMatch,
+              extractedData: extracted
+            });
+            continue;
+          }
+
+          // Rule-based backup duplicate check on extracted memo/title
+          if (extracted) {
+            let vaultList: any[] = [];
+            if (Array.isArray(vaultDocuments) && vaultDocuments.length > 0) {
+              vaultList = vaultDocuments;
+            } else {
+              try {
+                vaultList = JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+              } catch (e) {}
+            }
+            const ruleDup = checkIsDuplicate(
+              { title: extracted.title, memoNo: extracted.memoNo },
+              vaultList,
+              pendingDocsRef.current
+            );
+            if (ruleDup.isDuplicate && ruleDup.matchedDoc) {
+              updateItem(target.localId, {
+                status: 'duplicate',
+                statusText: undefined,
+                title: extracted.title || target.title,
+                duplicateInfo: {
+                  isDuplicate: true,
+                  matchedId: ruleDup.matchedDoc.id,
+                  matchedTitle: ruleDup.matchedDoc.title,
+                  matchedMemoNo: ruleDup.matchedDoc.memoNo,
+                  matchedDocDate: ruleDup.matchedDoc.docDate,
+                  location: ruleDup.location,
+                  reason: ruleDup.reason || 'শিরোনাম বা স্মারক নম্বর পূর্ববর্তী নথির সাথে মিলে গেছে।'
+                },
+                extractedData: extracted
+              });
+              continue;
+            }
+          }
+        }
+
+        if (batchAbortRef.current) {
+          updateItem(target.localId, { status: 'queued', statusText: undefined });
+          break;
+        }
+
+        const fallbackTitle = target.file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim() || 'সরকারি সার্কুলার';
+        const resolvedTitle = (extracted?.title && extracted.title.trim()) || target.title || fallbackTitle;
+
+        // ধাপ ২: দ্রুত Archive.org-এ আপলোড (সর্বোচ্চ ৫ বার নিরাপদ রিট্রাই সহ)
+        const data = await uploadToArchiveWithSmartRetry(
+          {
             fileBase64,
             fileName: target.file.name,
             mimeType: detectedMime,
             archiveId: cleanId,
-            title: shouldForceIgnore ? target.extractedData?.title : undefined,
-            category: shouldForceIgnore ? target.extractedData?.category : undefined,
-            authority: shouldForceIgnore ? target.extractedData?.authority : undefined,
-            memoNo: shouldForceIgnore ? target.extractedData?.memoNo : undefined,
-            docDate: shouldForceIgnore ? target.extractedData?.docDate : undefined,
-            description: shouldForceIgnore ? target.extractedData?.description : undefined,
+            title: resolvedTitle,
+            category: extracted?.category || 'সার্কুলার',
+            authority: extracted?.authority || 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার',
+            memoNo: extracted?.memoNo || '',
+            docDate: extracted?.docDate || new Date().toISOString().split('T')[0],
+            description: extracted?.description || 'হোয়াটসঅ্যাপ/মোবাইল থেকে সংগৃহীত সার্কুলার।',
             source: ingestForm.source || 'Batch Multi-Upload',
             senderName: 'এডমিন (ব্যাচ অটো-প্রসেস)',
-            autoAnalyze: !shouldForceIgnore,
+            autoAnalyze: false,
             savePendingOnServer: true,
-            existingDocs: shouldForceIgnore ? undefined : buildExistingDocsPayload(),
-            ignoreDuplicate: shouldForceIgnore
-          })
-        });
+            ignoreDuplicate: true
+          },
+          {
+            maxAttempts: 5,
+            shouldStop: () => batchAbortRef.current,
+            onAttemptChange: (_attempt, _max, label) => {
+              updateItem(target.localId, { statusText: label });
+            }
+          }
+        );
 
-        const data = await resp.json().catch(() => ({}));
         if (data.duplicateDetected && data.duplicateInfo) {
-          setBatchItems(prev =>
-            prev.map(it =>
-              it.localId === target.localId
-                ? {
-                    ...it,
-                    status: 'duplicate',
-                    title: data.extractedData?.title || it.title,
-                    duplicateInfo: data.duplicateInfo,
-                    extractedData: data.extractedData
-                  }
-                : it
-            )
-          );
+          updateItem(target.localId, {
+            status: 'duplicate',
+            statusText: undefined,
+            title: data.extractedData?.title || resolvedTitle,
+            duplicateInfo: data.duplicateInfo,
+            extractedData: data.extractedData || extracted
+          });
           continue;
         }
 
-        if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+        if (!data.success || !data.uploadedToArchive || !data.pendingDocument) {
           throw new Error(data.error || 'Archive.org-এ আপলোড সম্পন্ন হয়নি।');
         }
 
@@ -1022,27 +1121,25 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         } catch (e) {}
         onPendingCountChange(nextPending.length);
 
-        setBatchItems(prev =>
-          prev.map(it =>
-            it.localId === target.localId
-              ? {
-                  ...it,
-                  status: 'done',
-                  title: pendingDoc.title,
-                  archiveId: pendingDoc.archiveId,
-                  duplicateInfo: undefined
-                }
-              : it
-          )
-        );
+        updateItem(target.localId, {
+          status: 'done',
+          statusText: undefined,
+          title: pendingDoc.title,
+          archiveId: pendingDoc.archiveId,
+          duplicateInfo: undefined,
+          extractedData: extracted
+        });
+
+        // Archive.org রেট লিমিট সুরক্ষায় পরবর্তী ফাইলের আগে সংক্ষিপ্ত বিরতি
+        if (!batchAbortRef.current && i < itemsToProcess.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
       } catch (err: any) {
-        setBatchItems(prev =>
-          prev.map(it =>
-            it.localId === target.localId
-              ? { ...it, status: 'error', error: err?.message || 'আপলোড ব্যর্থ হয়েছে' }
-              : it
-          )
-        );
+        updateItem(target.localId, {
+          status: 'error',
+          statusText: undefined,
+          error: err?.message || 'আপলোড ব্যর্থ হয়েছে'
+        });
       }
     }
 
@@ -1761,7 +1858,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                           )}
                           {item.status === 'uploading' && (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-black">
-                              <Loader2 size={11} className="animate-spin" /> AI ও Archive.org...
+                              <Loader2 size={11} className="animate-spin" /> {item.statusText || 'AI ও Archive.org...'}
                             </span>
                           )}
                           {item.status === 'done' && (

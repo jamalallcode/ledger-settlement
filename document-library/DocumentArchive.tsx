@@ -13,7 +13,12 @@ import { PendingDocsModal } from './PendingDocsModal';
 import { AgentApprovalModal } from './AgentApprovalModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
-import { analyzeDocumentWithAI, DuplicateMatchInfo, ExistingDocCheckItem } from './aiDocumentAnalyzer';
+import {
+  analyzeDocumentWithAI,
+  uploadToArchiveWithSmartRetry,
+  DuplicateMatchInfo,
+  ExistingDocCheckItem
+} from './aiDocumentAnalyzer';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -1106,10 +1111,9 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           ? uploadedFileMeta.data.split(',')[1]
           : uploadedFileMeta.data;
 
-        const uploadResp = await fetch('/api/agent/process-document', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const alreadyCheckedByAi = Boolean(aiSuccessMessage);
+        const uploadResult = await uploadToArchiveWithSmartRetry(
+          {
             fileBase64: rawBase64,
             fileName: uploadedFileMeta.name,
             mimeType: uploadedFileMeta.mimeType,
@@ -1122,12 +1126,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             description: newDoc.description,
             source: 'Direct Admin Upload',
             senderName: 'এডমিন',
-            existingDocs: ignoreDuplicateOverride ? undefined : buildExistingDocsPayload(),
-            ignoreDuplicate: ignoreDuplicateOverride
-          })
-        });
+            autoAnalyze: false,
+            existingDocs: ignoreDuplicateOverride || alreadyCheckedByAi ? undefined : buildExistingDocsPayload(),
+            ignoreDuplicate: ignoreDuplicateOverride || alreadyCheckedByAi
+          },
+          { maxAttempts: 5 }
+        );
 
-        const uploadResult = await uploadResp.json().catch(() => ({}));
         if (uploadResult.duplicateDetected && uploadResult.duplicateInfo) {
           setAiDuplicateMatch(uploadResult.duplicateInfo);
           setIgnoreDuplicateOverride(false);
@@ -1136,7 +1141,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           );
           return;
         }
-        if (!uploadResp.ok || !uploadResult.success || !uploadResult.uploadedToArchive) {
+        if (!uploadResult.success || !uploadResult.uploadedToArchive) {
           alert(
             `❌ Archive.org-এ ফাইল আপলোড ব্যর্থ হয়েছে:\n${uploadResult.error || 'Archive.org সার্ভার থেকে সাড়া পাওয়া যায়নি।'}\n\nআপনার নির্দেশনা অনুযায়ী Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।`
           );
