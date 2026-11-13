@@ -3,7 +3,7 @@ import {
   X, CheckCircle2, AlertCircle, Sparkles, FileText, Upload,
   ExternalLink, Trash2, Edit2, Check, RefreshCw, Send,
   ShieldCheck, Clock, Building, Calendar, Hash, Eye, EyeOff,
-  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode, Link2, ArrowLeft,
+  Key, Settings, MessageSquare, Smartphone, ArrowRight, Loader2, QrCode, Link2, ArrowLeft, ChevronLeft,
   AlertTriangle
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
@@ -1198,31 +1198,21 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
   return (
     <div className="w-full space-y-5 animate-in fade-in duration-200">
-      {/* Top Breadcrumb & Return Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm">
-        <button
-          onClick={onClose}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-black text-xs rounded-xl transition-all cursor-pointer border border-slate-200 hover:border-blue-200 active:scale-95 shadow-sm"
-        >
-          <ArrowLeft size={16} />
-          <span>অডিট ক্রাইটেরিয়া ভল্টে ফিরে যান</span>
-        </button>
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-          <span className="text-slate-400">অডিট ক্রাইটেরিয়া ভল্ট</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-blue-600 font-black flex items-center gap-1.5">
-            <Sparkles size={14} className="text-amber-500" />
-            সার্কুলার প্রসেসর ও অনুমোদন হাব
-          </span>
-        </div>
-      </div>
-
       {/* Main Page Container - 100% Full Width */}
       <div className="bg-white rounded-2xl shadow-xl w-full border border-slate-200 overflow-hidden flex flex-col">
         
         {/* Page Header Banner */}
         <div className="px-6 md:px-8 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 shadow-sm">
           <div className="flex items-center gap-3.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
+              title="অডিট ক্রাইটেরিয়া ভল্টে ফিরে যান"
+              aria-label="ভল্টে ফিরে যান"
+            >
+              <ChevronLeft size={20} strokeWidth={2.5} />
+            </button>
             <div className="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/30 flex items-center justify-center text-amber-300 shadow-inner shrink-0">
               <Sparkles size={22} className="animate-pulse" />
             </div>
