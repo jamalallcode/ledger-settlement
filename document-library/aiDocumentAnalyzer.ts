@@ -1,3 +1,23 @@
+export interface ExistingDocCheckItem {
+  id?: string;
+  title?: string;
+  memoNo?: string;
+  docDate?: string;
+  authority?: string;
+  description?: string;
+  location?: 'vault' | 'pending';
+}
+
+export interface DuplicateMatchInfo {
+  isDuplicate: boolean;
+  matchedId?: string;
+  matchedTitle: string;
+  matchedMemoNo?: string;
+  matchedDocDate?: string;
+  location?: 'vault' | 'pending';
+  reason: string;
+}
+
 export interface DocumentAnalysisResult {
   title: string;
   category: string;
@@ -14,6 +34,7 @@ export interface AnalyzeDocumentResponse {
   timedOut?: boolean;
   error?: string;
   data?: DocumentAnalysisResult;
+  duplicateMatch?: DuplicateMatchInfo | null;
 }
 
 const fetchWithTimeout = async (
@@ -48,15 +69,16 @@ const fetchWithTimeout = async (
 };
 
 /**
- * Server-side Document Analyzer with strict timeout protection so UI never hangs indefinitely.
+ * Server-side Document Analyzer with strict timeout protection and AI semantic duplicate check.
  */
 export async function analyzeDocumentWithAI(params: {
   fileBase64: string;
   fileName: string;
   mimeType: string;
+  existingDocs?: ExistingDocCheckItem[];
   signal?: AbortSignal;
 }): Promise<AnalyzeDocumentResponse> {
-  const { fileBase64, fileName, mimeType, signal } = params;
+  const { fileBase64, fileName, mimeType, existingDocs, signal } = params;
   const rawBase64 = fileBase64.includes(",") ? fileBase64.split(",")[1] : fileBase64;
   let detectedMime = mimeType;
   if (!detectedMime) {
@@ -73,9 +95,10 @@ export async function analyzeDocumentWithAI(params: {
       body: JSON.stringify({
         fileBase64: rawBase64,
         fileName,
-        mimeType: detectedMime
+        mimeType: detectedMime,
+        existingDocs: Array.isArray(existingDocs) ? existingDocs.slice(0, 75) : undefined
       }),
-      timeoutMs: 16000,
+      timeoutMs: 17000,
       signal
     });
 
@@ -94,7 +117,8 @@ export async function analyzeDocumentWithAI(params: {
         return {
           success: true,
           isAiAnalyzed: true,
-          data: data.data
+          data: data.data,
+          duplicateMatch: data.duplicateMatch || null
         };
       }
       return {
