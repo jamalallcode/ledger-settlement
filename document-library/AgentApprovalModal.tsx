@@ -274,6 +274,27 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const [directServerNotice, setDirectServerNotice] = useState<string | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
   const cachedFileDataUrlRef = useRef<string>('');
+  const pendingDocsRef = useRef<PendingDoc[]>([]);
+
+  // Multi-file Batch Upload Queue State
+  type BatchItemStatus = 'queued' | 'uploading' | 'done' | 'error';
+  interface BatchQueueItem {
+    localId: string;
+    file: File;
+    sizeLabel: string;
+    status: BatchItemStatus;
+    title?: string;
+    archiveId?: string;
+    error?: string;
+  }
+  const [batchItems, setBatchItems] = useState<BatchQueueItem[]>([]);
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const batchAbortRef = useRef<boolean>(false);
+  const batchPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    pendingDocsRef.current = pendingDocs;
+  }, [pendingDocs]);
 
   useEffect(() => {
     checkGeminiStatus().then(res => setAiConnectionStatus(res)).catch(() => {});
@@ -778,10 +799,156 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     }
   };
 
-  // Fast Ingest via File Picker (Automatic naming, AI reading & archive ID)
+  // Sequential Batch Processor for Multi-File Selection
+  const runBatchUploadQueue = async (itemsToProcess: BatchQueueItem[]) => {
+    if (itemsToProcess.length === 0) return;
+    batchAbortRef.current = false;
+    setIsBatchRunning(true);
+    setIngestError(null);
+    setIngestSuccess(null);
+
+    const readFileAsDataUrl = (f: File) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(f);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = err => reject(err);
+      });
+
+    for (let i = 0; i < itemsToProcess.length; i++) {
+      const target = itemsToProcess[i];
+      if (target.status === 'done') continue;
+      if (batchAbortRef.current) break;
+
+      setBatchItems(prev =>
+        prev.map(it =>
+          it.localId === target.localId ? { ...it, status: 'uploading', error: undefined } : it
+        )
+      );
+
+      try {
+        const dataUrl = await readFileAsDataUrl(target.file);
+        const fileBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        const detectedMime =
+          target.file.type || (target.file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+        const uniqueSuffix = `${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
+        const cleanId = `bd_audit_${target.file.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 22)}_${uniqueSuffix}`;
+
+        const resp = await fetch('/api/agent/process-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64,
+            fileName: target.file.name,
+            mimeType: detectedMime,
+            archiveId: cleanId,
+            source: ingestForm.source || 'Batch Multi-Upload',
+            senderName: 'এডমিন (ব্যাচ অটো-প্রসেস)',
+            autoAnalyze: true,
+            savePendingOnServer: true
+          })
+        });
+
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
+          throw new Error(data.error || 'Archive.org-এ আপলোড সম্পন্ন হয়নি।');
+        }
+
+        const { fileData: _omitFileData, ...cleanPending } = data.pendingDocument;
+        const pendingDoc: PendingDoc = {
+          ...cleanPending,
+          archiveId: data.archiveId || cleanPending.archiveId || cleanId,
+          archiveUrl: data.archiveUrl || cleanPending.archiveUrl || `https://archive.org/details/${cleanId}`,
+          archiveDownloadUrl: data.archiveDownloadUrl || cleanPending.archiveDownloadUrl,
+          originalFileName: data.originalFileName || cleanPending.originalFileName || target.file.name,
+          status: 'pending'
+        };
+
+        if (dataUrl) {
+          setSessionPreviewMap(prev => ({ ...prev, [pendingDoc.id]: dataUrl }));
+        }
+
+        if (isSupabaseConfigured && !data.savedToSupabaseOnServer) {
+          await supabase.from('settlement_entries').upsert({
+            id: pendingDoc.id,
+            content: JSON.stringify(pendingDoc),
+            created_at: pendingDoc.createdAt
+          });
+        }
+
+        const nextPending = [pendingDoc, ...pendingDocsRef.current.filter(d => d.id !== pendingDoc.id)];
+        pendingDocsRef.current = nextPending;
+        setPendingDocs(nextPending);
+        try {
+          localStorage.setItem('pending_audit_documents', JSON.stringify(stripFileDataFromPendingList(nextPending)));
+        } catch (e) {}
+        onPendingCountChange(nextPending.length);
+
+        setBatchItems(prev =>
+          prev.map(it =>
+            it.localId === target.localId
+              ? { ...it, status: 'done', title: pendingDoc.title, archiveId: pendingDoc.archiveId }
+              : it
+          )
+        );
+      } catch (err: any) {
+        setBatchItems(prev =>
+          prev.map(it =>
+            it.localId === target.localId
+              ? { ...it, status: 'error', error: err?.message || 'আপলোড ব্যর্থ হয়েছে' }
+              : it
+          )
+        );
+      }
+    }
+
+    setIsBatchRunning(false);
+  };
+
+  // Fast Ingest via File Picker (Supports single OR multiple files!)
   const handleFastIngestFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files: File[] = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
+
+    // Multi-file Batch Upload Mode
+    if (files.length > 1) {
+      if (aiAbortRef.current) {
+        aiAbortRef.current.abort();
+        aiAbortRef.current = null;
+      }
+      setIsAnalyzingAI(false);
+      setAiSuccessMessage(null);
+      setAiWarningMessage(null);
+      setDirectServerNotice(null);
+      setIngestError(null);
+      setIngestSuccess(null);
+      setRawSelectedFile(null);
+      setSelectedFileMeta(null);
+      cachedFileDataUrlRef.current = '';
+
+      const newItems: BatchQueueItem[] = files.map((file, idx) => ({
+        localId: `batch_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+        file,
+        sizeLabel: `${(file.size / 1024).toFixed(1)} KB`,
+        status: 'queued'
+      }));
+
+      setBatchItems(newItems);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+      setTimeout(() => {
+        if (batchPanelRef.current) {
+          batchPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 120);
+
+      void runBatchUploadQueue(newItems);
+      return;
+    }
+
+    // Single-file Mode (Original Interactive Auto-Fill Flow)
+    const file = files[0];
+    setBatchItems([]);
 
     if (aiAbortRef.current) {
       aiAbortRef.current.abort();
@@ -1272,7 +1439,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     মোবাইল ফাইল বা সার্কুলার সিলেক্ট করুন
                   </h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    হোয়াটসঅ্যাপ বা মেসেঞ্জার থেকে পাওয়া যেকোনো সার্কুলার ফাইল (PDF বা ছবি) বাছলে স্বয়ংক্রিয়ভাবে নাম ও আইডি তৈরি হয়ে যাবে।
+                    হোয়াটসঅ্যাপ বা মেসেঞ্জার থেকে পাওয়া <strong className="text-emerald-700">এক বা একাধিক সার্কুলার ফাইল</strong> (PDF বা ছবি) একসাথে বাছতে পারবেন—প্রতিটি স্বয়ংক্রিয়ভাবে AI দিয়ে পড়া ও Archive.org-এ আপলোড হবে।
                   </p>
                 </div>
 
@@ -1281,6 +1448,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     type="file"
                     ref={fileInputRef}
                     accept=".pdf,image/*"
+                    multiple
                     onChange={handleFastIngestFile}
                     className="hidden"
                     id="fast-ingest-file"
@@ -1289,7 +1457,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     htmlFor="fast-ingest-file"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black shadow-md transition-all cursor-pointer active:scale-95"
                   >
-                    <Upload size={14} /> ফাইল থেকে অটো-পূরণ করুন
+                    <Upload size={14} /> ফাইল থেকে অটো-পূরণ করুন (এক বা একাধিক)
                   </label>
 
                   {/* AI Status & 1-Click Test Button */}
@@ -1328,6 +1496,133 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Multi-File Batch Upload Progress Queue */}
+              {batchItems.length > 0 && (
+                <div
+                  ref={batchPanelRef}
+                  className="bg-white border-2 border-indigo-200 rounded-3xl p-5 space-y-4 shadow-sm scroll-mt-6 animate-in fade-in duration-200"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                        isBatchRunning ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'
+                      }`}>
+                        {isBatchRunning ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">
+                          একাধিক ফাইল ব্যাচ আপলোড ({toBengaliDigits(batchItems.filter(i => i.status === 'done').length)}/{toBengaliDigits(batchItems.length)} সম্পন্ন)
+                        </h4>
+                        <p className="text-[11px] text-slate-500 font-bold">
+                          {isBatchRunning
+                            ? 'একটির পর একটি ফাইল AI দিয়ে পড়ে সরাসরি Archive.org ও অপেক্ষমাণ তালিকায় জমা হচ্ছে...'
+                            : 'ব্যাচ প্রসেস শেষ হয়েছে। সম্পন্ন হওয়া নথিগুলো "অপেক্ষমাণ নথি" ট্যাবে জমা হয়েছে।'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isBatchRunning && (
+                        <button
+                          type="button"
+                          onClick={() => { batchAbortRef.current = true; }}
+                          className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-[11px] font-black transition-all cursor-pointer"
+                        >
+                          বাকিগুলো থামান
+                        </button>
+                      )}
+                      {!isBatchRunning && batchItems.some(i => i.status === 'error' || i.status === 'queued') && (
+                        <button
+                          type="button"
+                          onClick={() => void runBatchUploadQueue(batchItems)}
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <RefreshCw size={12} /> বাকি/ব্যর্থ ফাইল আবার চালান
+                        </button>
+                      )}
+                      {!isBatchRunning && batchItems.some(i => i.status === 'done') && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('pending')}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <ArrowRight size={12} /> অপেক্ষমাণ তালিকায় যান
+                        </button>
+                      )}
+                      {!isBatchRunning && (
+                        <button
+                          type="button"
+                          onClick={() => setBatchItems([])}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="তালিকা পরিষ্কার করুন"
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {batchItems.map((item, idx) => (
+                      <div
+                        key={item.localId}
+                        className={`p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+                          item.status === 'done'
+                            ? 'bg-emerald-50/70 border-emerald-200'
+                            : item.status === 'uploading'
+                            ? 'bg-indigo-50/90 border-indigo-300'
+                            : item.status === 'error'
+                            ? 'bg-rose-50/80 border-rose-200'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-5 h-5 rounded-md bg-white border border-slate-200 text-[10px] font-black text-slate-600 flex items-center justify-center shrink-0">
+                            {toBengaliDigits(idx + 1)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-black text-slate-800 truncate">
+                              {item.title || item.file.name}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500">
+                              <span className="truncate max-w-[200px]">{item.file.name}</span>
+                              <span>• {item.sizeLabel}</span>
+                              {item.archiveId && <span className="text-emerald-700 font-mono">ID: {item.archiveId}</span>}
+                            </div>
+                            {item.error && (
+                              <p className="text-[11px] font-bold text-rose-700 mt-1 break-words">{item.error}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {item.status === 'queued' && (
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-black">
+                              অপেক্ষায়...
+                            </span>
+                          )}
+                          {item.status === 'uploading' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-black">
+                              <Loader2 size={11} className="animate-spin" /> AI ও Archive.org...
+                            </span>
+                          )}
+                          {item.status === 'done' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black">
+                              <CheckCircle2 size={11} /> সম্পন্ন
+                            </span>
+                          )}
+                          {item.status === 'error' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-black">
+                              <AlertCircle size={11} /> ব্যর্থ
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Ingest Form */}
               <form 
