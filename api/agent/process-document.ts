@@ -130,8 +130,8 @@ const tryExtractWithAI = async (
   }}`;
 
   const models = [
-    { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 9000 },
-    { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 11000 }
+    { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 7500 },
+    { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 7500 }
   ];
 
   for (const cfg of models) {
@@ -413,20 +413,41 @@ export default async function handler(req: any, res: any) {
       headers["x-archive-meta-notes"] = safeArchiveMeta(`Memo No: ${resolvedMemoNo}`);
     }
 
-    const s3Resp = await fetch(targetUrl, {
-      method: "PUT",
-      headers,
-      body: buffer,
-    });
+    const s3Controller = new AbortController();
+    const s3Timer = setTimeout(() => s3Controller.abort(), 13000);
+    let s3Resp: Response;
+    try {
+      s3Resp = await fetch(targetUrl, {
+        method: "PUT",
+        headers,
+        body: buffer,
+        signal: s3Controller.signal,
+      });
+    } catch (s3Err: any) {
+      clearTimeout(s3Timer);
+      if (s3Err?.name === "AbortError") {
+        return res.status(504).json({
+          success: false,
+          uploadedToArchive: false,
+          archiveId: uniqueId,
+          error: "Archive.org সার্ভার থেকে ১৩ সেকেন্ডে সাড়া পাওয়া যায়নি (HTTP 504 Timeout)।",
+        });
+      }
+      throw s3Err;
+    } finally {
+      clearTimeout(s3Timer);
+    }
 
     if (!s3Resp.ok) {
       const errText = await s3Resp.text().catch(() => "");
       console.error("Archive.org S3 PUT failed:", s3Resp.status, errText);
-      return res.status(s3Resp.status === 403 ? 403 : 502).json({
+      const statusOut =
+        s3Resp.status === 403 ? 403 : s3Resp.status === 429 || s3Resp.status === 503 ? 503 : s3Resp.status === 400 ? 400 : 502;
+      return res.status(statusOut).json({
         success: false,
         uploadedToArchive: false,
         archiveId: uniqueId,
-        error: `Archive.org আপলোড ব্যর্থ হয়েছে (HTTP ${s3Resp.status}): ${errText.slice(0, 200) || "সার্ভার প্রত্যাখ্যান করেছে"}`,
+        error: `Archive.org আপলোড ব্যর্থ হয়েছে (HTTP ${s3Resp.status}): ${errText.slice(0, 220) || "সার্ভার প্রত্যাখ্যান করেছে"}`,
       });
     }
 

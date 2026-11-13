@@ -538,11 +538,19 @@ async function startServer() {
         headers["x-archive-meta-notes"] = safeArchiveMeta(`Memo No: ${metadata.memoNo.trim()}`);
       }
 
-      const resp = await fetch(targetUrl, {
-        method: "PUT",
-        headers,
-        body: fileBuffer
-      });
+      const s3Controller = new AbortController();
+      const s3Timer = setTimeout(() => s3Controller.abort(), 13000);
+      let resp: Response;
+      try {
+        resp = await fetch(targetUrl, {
+          method: "PUT",
+          headers,
+          body: fileBuffer,
+          signal: s3Controller.signal
+        });
+      } finally {
+        clearTimeout(s3Timer);
+      }
 
       const archiveDownloadUrl = `https://archive.org/download/${uniqueId}/${encodeURIComponent(cleanFileName)}`;
       if (resp.ok) {
@@ -559,16 +567,19 @@ async function startServer() {
           success: false,
           archiveId: uniqueId,
           archiveUrl: `https://archive.org/details/${uniqueId}`,
-          error: `Archive.org response ${resp.status}: ${errText}`
+          error: `Archive.org আপলোড ব্যর্থ হয়েছে (HTTP ${resp.status}): ${errText.slice(0, 220)}`
         };
       }
     } catch (err: any) {
       console.error("Archive.org upload exception:", err);
+      const isAbort = err?.name === "AbortError";
       return {
         success: false,
         archiveId: uniqueId,
         archiveUrl: `https://archive.org/details/${uniqueId}`,
-        error: err.message
+        error: isAbort
+          ? "Archive.org সার্ভার থেকে ১৩ সেকেন্ডে সাড়া পাওয়া যায়নি (HTTP 504 Timeout)।"
+          : err.message
       };
     }
   };
