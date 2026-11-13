@@ -4,8 +4,43 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { createClient } from "@supabase/supabase-js";
 import { whatsappService } from "./server/whatsappService";
+
+const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timeout (${ms}ms)`)), ms);
+    promise.then(
+      (val) => {
+        clearTimeout(timer);
+        resolve(val);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+
+const savePendingToSupabaseServer = async (pendingDoc: any): Promise<boolean> => {
+  try {
+    const rawUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim()
+      .replace(/\/rest\/v1\/?$/, "")
+      .replace(/\/+$/, "");
+    const anonKey = (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim();
+    if (!rawUrl || !rawUrl.startsWith("http") || !anonKey) return false;
+    const client = createClient(rawUrl, anonKey);
+    const { error } = await client.from("settlement_entries").upsert({
+      id: pendingDoc.id,
+      content: JSON.stringify(pendingDoc),
+      created_at: pendingDoc.createdAt
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+};
 
 const getConfigFile = () => {
   const cwdPath = path.join(process.cwd(), "whatsapp_config.json");
@@ -543,11 +578,11 @@ async function startServer() {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     res.json({
       active: !!apiKey,
-      model: "gemini-3.8-flash"
+      model: "gemini-3.1-flash-lite"
     });
   });
 
-  app.post("/api/agent/test-gemini", async (req, res) => {
+  const handleTestGeminiPing = async (_req: any, res: any) => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       return res.json({
@@ -557,11 +592,19 @@ async function startServer() {
       });
     }
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      const ping = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: "স্বাগতম! শুধুমাত্র 'OK' শব্দটি লিখুন।"
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
+      const ping: any = await withTimeout(
+        ai.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents: "স্বাগতম! শুধুমাত্র 'OK' শব্দটি লিখুন।",
+          config: { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } }
+        }),
+        8000,
+        "gemini-ping"
+      );
       return res.json({
         success: true,
         active: true,
@@ -575,7 +618,10 @@ async function startServer() {
         error: err.message || "জেমিনি এপিআই সংযোগে সমস্যা হয়েছে।"
       });
     }
-  });
+  };
+
+  app.post("/api/agent/gemini-status", handleTestGeminiPing);
+  app.post("/api/agent/test-gemini", handleTestGeminiPing);
 
   // 6.5. AI Multimodal Document Analysis Endpoint (Gemini 3.8 Flash OCR & Metadata Extraction)
   app.post("/api/agent/analyze-document", async (req, res) => {
@@ -615,7 +661,10 @@ async function startServer() {
         });
       }
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+      });
       const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট ও প্রশাসন বিশেষজ্ঞ। এই সার্কুলার/গেজেট/আদেশ/ডকুমেন্টটি (ছবি বা PDF) খুব সতর্কতার সাথে পড়ে ও OCR বিশ্লেষণ করে নিচের ফিল্ডগুলোর তথ্য খাঁটি বাংলায় উদ্ধার করুন:
 
 ১. "title": ফাইলের ভেতরে "বিষয়:" (Subject) অংশে যা লেখা আছে হুবহু বা সুন্দর প্রমিত বাংলায় সার্কুলারের মূল বিষয়/শিরোনাম। ফাইলের নাম (যেমন: WhatsApp Image... বা CamScanner... ইত্যাদি) কোনোভাবেই শিরোনাম হবে না। ভেতরে বিষয় না থাকলে ডকুমেন্টের মূল বক্তব্যের ওপর ভিত্তি করে সংক্ষেপে মার্জিত বাংলা শিরোনাম দিন।
@@ -625,7 +674,7 @@ async function startServer() {
 ৫. "docDate": জারির তারিখ বা স্বাক্ষরের তারিখ (YYYY-MM-DD ফরম্যাটে, যেমন: 2026-03-25)।
 ৬. "description": সার্কুলারের মূল সিদ্ধান্তের সংক্ষিপ্ত ১-২ লাইনের সারসংক্ষেপ।
 
-শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আউটপুট দিন, কোনো কোড ব্লক (markdown \`\`\`json) বা অতিরিক্ত টেক্সট ছাড়া:
+শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আউটপুট দিন:
 {
   "title": "...",
   "category": "...",
@@ -635,42 +684,47 @@ async function startServer() {
   "description": "..."
 }`;
 
-      const candidateModels = [
-        "gemini-2.5-flash",
-        "gemini-flash-latest",
-        "gemini-3.8-flash",
-        "gemini-3.1-flash-lite"
+      const modelConfigs = [
+        { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 9000 },
+        { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 11000 }
       ];
 
       let result: any = null;
       let lastError: any = null;
 
-      for (const modelName of candidateModels) {
+      for (const cfg of modelConfigs) {
         try {
-          result = await ai.models.generateContent({
-            model: modelName,
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { inlineData: { data: rawBase64, mimeType: detectedMime } },
-                  { text: prompt }
-                ]
+          result = await withTimeout(
+            ai.models.generateContent({
+              model: cfg.model,
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { inlineData: { data: rawBase64, mimeType: detectedMime } },
+                    { text: prompt }
+                  ]
+                }
+              ],
+              config: {
+                responseMimeType: "application/json",
+                thinkingConfig: { thinkingLevel: cfg.thinkingLevel }
               }
-            ]
-          });
+            }),
+            cfg.timeoutMs,
+            cfg.model
+          );
           if (result && result.text) {
             break;
           }
         } catch (err: any) {
           lastError = err;
-          console.warn(`Model ${modelName} in server failed, trying next candidate:`, err.message || err);
-          await new Promise(r => setTimeout(r, 600));
+          console.warn(`Model ${cfg.model} in server failed, trying next candidate:`, err.message || err);
         }
       }
 
       if (!result || !result.text) {
-        throw lastError || new Error("সকল জেমিনি মডেল বর্তমানে ব্যস্ত। অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
+        throw lastError || new Error("সকল জেমিনি মডেল বর্তমানে ব্যস্ত বা সময়সীমা অতিক্রম করেছে। অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
       }
 
       const rawText = result.text || "";
@@ -733,7 +787,9 @@ async function startServer() {
         docDate: customDocDate,
         memoNo: customMemoNo,
         authority: customAuthority,
-        description: customDescription
+        description: customDescription,
+        autoAnalyze = false,
+        savePendingOnServer = false
       } = req.body;
       if (!fileBase64) {
         return res.status(400).json({ success: false, uploadedToArchive: false, error: "File base64 content is required" });
@@ -744,7 +800,7 @@ async function startServer() {
       const detectedMime = mimeType || (cleanFileName.endsWith(".pdf") ? "application/pdf" : "image/jpeg");
       const buffer = Buffer.from(rawBase64, "base64");
 
-      // Step 1: AI Agent Analysis with Gemini 3.8 Flash
+      // Step 1: Fast AI extraction if requested or title omitted
       let extractedData = {
         title: customTitle || cleanFileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " "),
         category: customCategory || "সার্কুলার",
@@ -753,35 +809,46 @@ async function startServer() {
         authority: customAuthority || "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার",
         description: customDescription || "হোয়াটসঅ্যাপ/মেসেঞ্জার থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত সার্কুলার।"
       };
+      let aiAnalyzed = false;
 
-      // Only perform Gemini analysis if user didn't explicitly provide title
-      if (!customTitle) {
+      if (autoAnalyze || !customTitle) {
         try {
           const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
           if (apiKey) {
-            const ai = new GoogleGenAI({ apiKey });
-            const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন (কোন ব্যাকটিক্স বা অতিরিক্ত টেক্সট ছাড়া):
+            const ai = new GoogleGenAI({
+              apiKey,
+              httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+            });
+            const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট স্পেশালিস্ট। এই সার্কুলার/গেজেট/আদেশটি ভালোভাবে পড়ে নিচের ফিল্ডগুলো উদ্ধার করে শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আকারে আউটপুট দিন:
 {
   "title": "ফাইলের যথার্থ ও সুনির্দিষ্ট শিরোনাম বা বিষয় (বাংলায়)",
-  "category": "সার্কুলার" অথবা "গেজেট" অথবা "আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
+  "category": "সার্কুলার" অথবা "গেজেট" অথবা "অফিস আদেশ" অথবা "নীতিমালা" অথবা "অন্যান্য",
   "docDate": "জারির তারিখ YYYY-MM-DD ফরম্যাটে",
   "memoNo": "স্মারক নম্বর (যদি থাকে)",
   "authority": "মন্ত্রণালয়/বিভাগ/অধিদপ্তরের নাম (বাংলায়)",
   "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
 }`;
 
-            const result = await ai.models.generateContent({
-              model: "gemini-3.8-flash",
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    { inlineData: { data: fileBase64, mimeType: detectedMime } },
-                    { text: prompt }
-                  ]
+            const result: any = await withTimeout(
+              ai.models.generateContent({
+                model: "gemini-3.1-flash-lite",
+                contents: [
+                  {
+                    role: "user",
+                    parts: [
+                      { inlineData: { data: rawBase64, mimeType: detectedMime } },
+                      { text: prompt }
+                    ]
+                  }
+                ],
+                config: {
+                  responseMimeType: "application/json",
+                  thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
                 }
-              ]
-            });
+              }),
+              8500,
+              "process-doc-ai"
+            );
 
             const rawText = result.text || "";
             const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -793,6 +860,7 @@ async function startServer() {
               if (parsed.memoNo) extractedData.memoNo = parsed.memoNo;
               if (parsed.authority) extractedData.authority = parsed.authority;
               if (parsed.description) extractedData.description = parsed.description;
+              aiAnalyzed = true;
             }
           }
         } catch (aiErr: any) {
@@ -822,7 +890,7 @@ async function startServer() {
 
       // Step 3: Store lightweight metadata in Pending Documents Queue (NO heavy fileData!)
       const pendingDoc = {
-        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         title: extractedData.title,
         category: extractedData.category,
         archiveId: uploadRes.archiveId,
@@ -844,9 +912,16 @@ async function startServer() {
       currentPending.unshift(pendingDoc);
       saveStoredPendingDocuments(currentPending);
 
+      let savedToSupabaseOnServer = false;
+      if (savePendingOnServer) {
+        savedToSupabaseOnServer = await savePendingToSupabaseServer(pendingDoc);
+      }
+
       return res.json({
         success: true,
         uploadedToArchive: true,
+        aiAnalyzed,
+        savedToSupabaseOnServer,
         archiveId: uploadRes.archiveId,
         archiveUrl: uploadRes.archiveUrl,
         archiveDownloadUrl: uploadRes.archiveDownloadUrl,
@@ -900,7 +975,7 @@ async function startServer() {
   "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
 }`;
           const result = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-3.1-flash-lite",
             contents: [
               {
                 role: "user",
@@ -909,7 +984,10 @@ async function startServer() {
                   { text: prompt }
                 ]
               }
-            ]
+            ],
+            config: {
+              thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+            }
           });
           const rawText = result.text || "";
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -932,7 +1010,7 @@ async function startServer() {
       });
 
       const pendingDoc = {
-        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         title: extractedData.title,
         category: extractedData.category,
         archiveId: uploadRes.archiveId,
@@ -1019,7 +1097,7 @@ async function startServer() {
   "description": "সার্কুলারের মূল নির্দেশনার সংক্ষিপ্ত সারসংক্ষেপ (১-২ বাক্য)"
 }`;
           const result = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-3.1-flash-lite",
             contents: [
               {
                 role: "user",
@@ -1028,7 +1106,10 @@ async function startServer() {
                   { text: prompt }
                 ]
               }
-            ]
+            ],
+            config: {
+              thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+            }
           });
           const rawText = result.text || "";
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -1051,7 +1132,7 @@ async function startServer() {
       });
 
       const pendingDoc = {
-        id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: `pending_doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         title: extractedData.title,
         category: extractedData.category,
         archiveId: uploadRes.archiveId,

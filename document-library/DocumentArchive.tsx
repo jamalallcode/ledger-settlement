@@ -589,10 +589,17 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
   const [aiWarningMessage, setAiWarningMessage] = useState<string | null>(null);
+  const aiAbortRef = useRef<AbortController | null>(null);
 
   const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
 
     const sizeStr = file.size > 1024 * 1024 
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
@@ -622,13 +629,26 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         .slice(0, 30) || "doc";
       const autoId = `bd_audit_${cleanSlug}_${Date.now()}`;
 
+      setNewDoc(prev => ({
+        ...prev,
+        archiveId: prev.archiveId && !prev.archiveId.startsWith('bd_audit_') ? prev.archiveId : autoId
+      }));
+
+      if (controller.signal.aborted) {
+        setIsAnalyzingAI(false);
+        return;
+      }
+
       // AI Multimodal Document Reading & Extraction
       try {
         const aiResult = await analyzeDocumentWithAI({
           fileBase64: dataUrl,
           fileName: file.name,
-          mimeType: detectedMime
+          mimeType: detectedMime,
+          signal: controller.signal
         });
+
+        if (controller.signal.aborted) return;
 
         if (aiResult.success && aiResult.data && aiResult.isAiAnalyzed) {
           setNewDoc(prev => ({
@@ -656,10 +676,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           }
         }
       } catch (aiErr: any) {
-        console.warn('AI analysis call exception:', aiErr);
-        setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন।');
+        if (!controller.signal.aborted) {
+          console.warn('AI analysis call exception:', aiErr);
+          setAiWarningMessage('⚠️ এআই নথিটি পড়তে পারেনি। অনুগ্রহ করে ম্যানুয়ালি তথ্য পূরণ করুন।');
+        }
       } finally {
-        setIsAnalyzingAI(false);
+        if (!controller.signal.aborted) {
+          setIsAnalyzingAI(false);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -2072,11 +2096,16 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
               </div>
               <button 
                 onClick={() => {
+                  if (aiAbortRef.current) {
+                    aiAbortRef.current.abort();
+                    aiAbortRef.current = null;
+                  }
                   setShowAddModal(false);
                   setEditingDoc(null);
                   setNewDocFile(null);
                   setIsAnalyzingAI(false);
                   setAiSuccessMessage(null);
+                  setAiWarningMessage(null);
                 }}
                 className="p-2 text-slate-400 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-all"
               >
@@ -2163,8 +2192,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                     <button
                       type="button"
                       onClick={() => {
+                        if (aiAbortRef.current) {
+                          aiAbortRef.current.abort();
+                          aiAbortRef.current = null;
+                        }
+                        setIsAnalyzingAI(false);
                         setNewDocFile(null);
                         setAiSuccessMessage(null);
+                        setAiWarningMessage(null);
                       }}
                       className="text-red-500 hover:text-red-700 font-bold text-[11px] ml-2 cursor-pointer"
                     >

@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -19,7 +19,7 @@ export default async function handler(req: any, res: any) {
   if (req.method === "GET") {
     return res.status(200).json({
       active: !!apiKey,
-      model: "gemini-3.8-flash"
+      model: "gemini-3.1-flash-lite"
     });
   }
 
@@ -33,11 +33,24 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      const ping = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: "স্বাগতম! শুধুমাত্র 'OK' শব্দটি লিখুন।"
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
+
+      const pingPromise = ai.models.generateContent({
+        model: "gemini-3.1-flash-lite",
+        contents: "স্বাগতম! শুধুমাত্র 'OK' শব্দটি লিখুন।",
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+        }
+      });
+
+      const ping: any = await Promise.race([
+        pingPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("সংযোগ পরীক্ষা সময়সীমা (8s) অতিক্রম করেছে।")), 8000))
+      ]);
+
       return res.status(200).json({
         success: true,
         active: true,
