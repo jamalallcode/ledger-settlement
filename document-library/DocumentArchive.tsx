@@ -13,7 +13,7 @@ import { PendingDocsModal } from './PendingDocsModal';
 import { AgentApprovalModal } from './AgentApprovalModal';
 import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
-import { analyzeDocumentWithAI } from './aiDocumentAnalyzer';
+import { analyzeDocumentWithAI, DuplicateMatchInfo, ExistingDocCheckItem } from './aiDocumentAnalyzer';
 
 interface ExtendedArchiveDoc extends ArchiveDoc {
   memoNo?: string;
@@ -589,7 +589,35 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
   const [aiWarningMessage, setAiWarningMessage] = useState<string | null>(null);
+  const [aiDuplicateMatch, setAiDuplicateMatch] = useState<DuplicateMatchInfo | null>(null);
+  const [ignoreDuplicateOverride, setIgnoreDuplicateOverride] = useState(false);
   const aiAbortRef = useRef<AbortController | null>(null);
+
+  const buildExistingDocsPayload = (): ExistingDocCheckItem[] => {
+    const merged: ExistingDocCheckItem[] = [];
+    const seen = new Set<string>();
+    const add = (d: any, location: 'vault' | 'pending') => {
+      if (!d || (editingDoc && d.id === editingDoc.id) || (!d.title && !d.memoNo)) return;
+      const key = String(d.id || d.archiveId || `${location}_${d.title}_${d.memoNo}`);
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push({
+        id: d.id,
+        title: d.title,
+        memoNo: d.memoNo,
+        docDate: d.docDate,
+        authority: d.authority,
+        description: d.description,
+        location
+      });
+    };
+    documents.forEach(d => add(d, 'vault'));
+    try {
+      const pendingSaved = JSON.parse(localStorage.getItem('pending_audit_documents') || '[]');
+      if (Array.isArray(pendingSaved)) pendingSaved.forEach(d => add(d, 'pending'));
+    } catch (e) {}
+    return merged.slice(0, 75);
+  };
 
   const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -607,6 +635,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
     setAiSuccessMessage(null);
     setAiWarningMessage(null);
+    setAiDuplicateMatch(null);
+    setIgnoreDuplicateOverride(false);
     setIsAnalyzingAI(true);
 
     const reader = new FileReader();
@@ -639,12 +669,13 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         return;
       }
 
-      // AI Multimodal Document Reading & Extraction
+      // AI Multimodal Document Reading & Content-based Duplicate Check
       try {
         const aiResult = await analyzeDocumentWithAI({
           fileBase64: dataUrl,
           fileName: file.name,
           mimeType: detectedMime,
+          existingDocs: buildExistingDocsPayload(),
           signal: controller.signal
         });
 
@@ -663,6 +694,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           }));
           setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য স্বয়ংক্রিয়ভাবে পূরণ করেছে');
           setAiWarningMessage(null);
+          if (aiResult.duplicateMatch && aiResult.duplicateMatch.isDuplicate) {
+            setAiDuplicateMatch(aiResult.duplicateMatch);
+            setIgnoreDuplicateOverride(false);
+          }
         } else if (aiResult.apiKeyMissing) {
           setAiWarningMessage('⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা ম্যানুয়ালি তথ্য পূরণ করুন।');
         } else if (aiResult.error) {
@@ -979,9 +1014,23 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     return clean.replace(/\.pdf$/i, '').trim().replace(/\s+/g, '_');
   };
 
-  // Real-time Duplicate Detection in Manual Form
+  // Real-time Duplicate Detection (AI Content Match + Manual Form Field Match)
   const duplicateWarning = useMemo(() => {
     if (!showAddModal) return null;
+
+    if (aiDuplicateMatch && aiDuplicateMatch.isDuplicate) {
+      return {
+        reason: aiDuplicateMatch.reason || 'এআই ডকুমেন্টের ভেতরের বিষয়বস্তু পূর্ববর্তী নথির সাথে মিল পেয়েছে',
+        location: aiDuplicateMatch.location || 'vault',
+        matchedDoc: {
+          id: aiDuplicateMatch.matchedId || '',
+          title: aiDuplicateMatch.matchedTitle,
+          memoNo: aiDuplicateMatch.matchedMemoNo,
+          docDate: aiDuplicateMatch.matchedDocDate
+        }
+      };
+    }
+
     const cleanId = extractCleanId(newDoc.archiveId || '');
     const cleanMemo = (newDoc.memoNo || '').trim().toLowerCase();
     const cleanTitle = (newDoc.title || '').trim().toLowerCase();
@@ -993,6 +1042,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       if (cleanId && docCleanId && cleanId.toLowerCase() === docCleanId.toLowerCase()) {
         return {
           reason: 'একই Archive.org ফাইল লিঙ্ক বা আইডি',
+          location: 'vault' as const,
           matchedDoc: doc
         };
       }
@@ -1001,6 +1051,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         if (doc.memoNo.trim().toLowerCase() === cleanMemo) {
           return {
             reason: `একই স্মারক নম্বর (${doc.memoNo})`,
+            location: 'vault' as const,
             matchedDoc: doc
           };
         }
@@ -1010,13 +1061,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         if (doc.title.trim().toLowerCase() === cleanTitle) {
           return {
             reason: `একই শিরোনাম ("${doc.title}")`,
+            location: 'vault' as const,
             matchedDoc: doc
           };
         }
       }
     }
     return null;
-  }, [showAddModal, newDoc.archiveId, newDoc.memoNo, newDoc.title, documents, editingDoc]);
+  }, [showAddModal, aiDuplicateMatch, newDoc.archiveId, newDoc.memoNo, newDoc.title, documents, editingDoc]);
 
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1032,9 +1084,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       return;
     }
 
-    // Strict Duplicate Prevention on Save
-    if (duplicateWarning) {
-      alert(`❌ ডাবল এন্ট্রি রোধ (Duplicate Blocked)!\n\nএই সার্কুলারটি ইতিমধ্যে ভল্টে সংরক্ষিত রয়েছে।\nমিল পাওয়ার কারণ: ${duplicateWarning.reason}\nবিদ্যমান নথির নাম: "${duplicateWarning.matchedDoc.title}"\nতারিখ: ${duplicateWarning.matchedDoc.docDate || 'অনির্দিষ্ট'}\n\nএকই ডকুমেন্ট দ্বিতীয়বার যুক্ত করা যাবে না।`);
+    // Warn on duplicate unless Admin explicitly chose Ignore & Upload
+    if (duplicateWarning && !ignoreDuplicateOverride) {
+      alert(
+        `⚠️ এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে!\n\nপূর্বের নথির শিরোনাম: "${duplicateWarning.matchedDoc.title}"\nকারণ: ${duplicateWarning.reason}\n\nযদি এটি আসলেই আলাদা কোনো নথি হয়ে থাকে, তবে ফর্মের উপরের হলুদ সতর্কবার্তায় "সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে আপলোড করুন" বাটনে ক্লিক করে তারপর আবার সেভ করুন।`
+      );
       return;
     }
 
@@ -1067,11 +1121,21 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             docDate: newDoc.docDate,
             description: newDoc.description,
             source: 'Direct Admin Upload',
-            senderName: 'এডমিন'
+            senderName: 'এডমিন',
+            existingDocs: ignoreDuplicateOverride ? undefined : buildExistingDocsPayload(),
+            ignoreDuplicate: ignoreDuplicateOverride
           })
         });
 
         const uploadResult = await uploadResp.json().catch(() => ({}));
+        if (uploadResult.duplicateDetected && uploadResult.duplicateInfo) {
+          setAiDuplicateMatch(uploadResult.duplicateInfo);
+          setIgnoreDuplicateOverride(false);
+          alert(
+            `⚠️ এআই যাচাইয়ে দেখা গেছে এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে!\n\nপূর্বের শিরোনাম: "${uploadResult.duplicateInfo.matchedTitle}"\nকারণ: ${uploadResult.duplicateInfo.reason}\n\nআলাদা নথি হিসেবে আপলোড করতে চাইলে উপরের সতর্কবার্তায় "সতর্কবার্তা উপেক্ষা করে আপলোড করুন" বাটনে ক্লিক করে পুনরায় জমা দিন।`
+          );
+          return;
+        }
         if (!uploadResp.ok || !uploadResult.success || !uploadResult.uploadedToArchive) {
           alert(
             `❌ Archive.org-এ ফাইল আপলোড ব্যর্থ হয়েছে:\n${uploadResult.error || 'Archive.org সার্ভার থেকে সাড়া পাওয়া যায়নি।'}\n\nআপনার নির্দেশনা অনুযায়ী Supabase-এ কোনো ফাইল সংরক্ষণ করা হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।`
@@ -1131,6 +1195,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       setEditingDoc(null);
       setIsAnalyzingAI(false);
       setAiSuccessMessage(null);
+      setAiDuplicateMatch(null);
+      setIgnoreDuplicateOverride(false);
       setNewDocFile(null);
       setNewDoc({
         title: '',
@@ -2114,13 +2180,55 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             </div>
 
             <form onSubmit={handleAddDocument} className="space-y-4 text-xs font-bold">
-              {/* Real-time Duplicate Warning Banner */}
+              {/* Real-time AI + Field Duplicate Warning Banner with Admin Ignore Override */}
               {duplicateWarning && (
-                <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 flex items-start gap-2.5 animate-in fade-in duration-200">
-                  <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                  <div className="text-xs leading-relaxed">
-                    <span className="font-black text-amber-800">⚠️ ডাবল এন্ট্রি সতর্কতা: </span>
-                    <span>{duplicateWarning.reason} ইতিমধ্যে ভল্টে বিদ্যমান রয়েছে! (পূর্বে সংরক্ষিত নথির নাম: &quot;{duplicateWarning.matchedDoc.title}&quot;)</span>
+                <div className={`p-4 rounded-2xl border-2 space-y-2.5 animate-in fade-in duration-200 ${
+                  ignoreDuplicateOverride
+                    ? 'bg-sky-50 border-sky-300 text-sky-950'
+                    : 'bg-amber-50 border-amber-400 text-amber-950'
+                }`}>
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle size={19} className={`${ignoreDuplicateOverride ? 'text-sky-600' : 'text-amber-600'} shrink-0 mt-0.5`} />
+                    <div className="text-xs leading-relaxed space-y-1 flex-1">
+                      <p className="font-black">
+                        {ignoreDuplicateOverride
+                          ? '✓ সতর্কবার্তা উপেক্ষা করা হয়েছে — এটিকে আলাদা নথি হিসেবে আপলোডের অনুমতি দেওয়া হয়েছে'
+                          : '⚠️ সতর্কতা: এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে!'}
+                      </p>
+                      <div className="p-2 rounded-xl bg-white/80 border border-amber-200/80 space-y-0.5">
+                        <p className="font-black text-slate-900">
+                          পূর্বের নথির শিরোনাম: &ldquo;{duplicateWarning.matchedDoc.title}&rdquo;
+                        </p>
+                        <p className="text-[11px] text-slate-600">
+                          অবস্থান: {duplicateWarning.location === 'pending' ? 'অপেক্ষমাণ তালিকা' : 'মূল ভল্ট'}
+                          {duplicateWarning.matchedDoc.memoNo ? ` • স্মারক: ${duplicateWarning.matchedDoc.memoNo}` : ''}
+                          {duplicateWarning.matchedDoc.docDate ? ` • তারিখ: ${duplicateWarning.matchedDoc.docDate}` : ''}
+                        </p>
+                        <p className="text-[11px] text-amber-900 font-medium">
+                          কারণ: {duplicateWarning.reason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    {!ignoreDuplicateOverride ? (
+                      <button
+                        type="button"
+                        onClick={() => setIgnoreDuplicateOverride(true)}
+                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-black shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      >
+                        <CheckCircle2 size={13} />
+                        <span>সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে আপলোড করুন</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIgnoreDuplicateOverride(false)}
+                        className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-[11px] font-black transition-all cursor-pointer"
+                      >
+                        পূর্বাবস্থায় ফিরুন
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

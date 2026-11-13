@@ -75,7 +75,22 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
     );
   });
 
-const tryExtractWithAI = async (rawBase64: string, mimeType: string) => {
+interface ExistingDocSummary {
+  idx: number;
+  id: string;
+  title: string;
+  memoNo: string;
+  docDate: string;
+  authority: string;
+  description: string;
+  location: "vault" | "pending";
+}
+
+const tryExtractWithAI = async (
+  rawBase64: string,
+  mimeType: string,
+  normalizedExisting: ExistingDocSummary[] = []
+) => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) return null;
 
@@ -84,20 +99,39 @@ const tryExtractWithAI = async (rawBase64: string, mimeType: string) => {
     httpOptions: { headers: { "User-Agent": "aistudio-build" } }
   });
 
+  const existingListBlock =
+    normalizedExisting.length > 0
+      ? `\n\nপূর্ববর্তী আপলোডকৃত নথির তালিকা (মিল যাচাইয়ের জন্য):\n${normalizedExisting
+          .map(
+            (d) =>
+              `[${d.idx}] শিরোনাম: "${d.title}"${d.memoNo ? ` | স্মারক: "${d.memoNo}"` : ""}${d.docDate ? ` | তারিখ: ${d.docDate}` : ""}${d.authority ? ` | কর্তৃপক্ষ: "${d.authority}"` : ""}${d.description ? ` | সারসংক্ষেপ: "${d.description}"` : ""}`
+          )
+          .join("\n")}`
+      : "";
+
   const prompt = `আপনি একজন সিনিয়র সরকারি কর্মকর্তা এবং অডিট ও জনপ্রশাসন বিশেষজ্ঞ। সংযুক্ত সার্কুলার/গেজেট/আদেশ/ডকুমেন্টটি (ছবি বা PDF) পড়ে নিচের ফিল্ডগুলোর তথ্য খাঁটি বাংলায় উদ্ধার করুন:
 1. "title": ফাইলের ভেতরের মূল বিষয়/শিরোনাম।
 2. "category": যেকোনো একটি লিখুন: "সার্কুলার", "প্রজ্ঞাপন", "অফিস আদেশ", "গেজেট", "নীতিমালা" অথবা "অন্যান্য"।
 3. "authority": জারি করা মন্ত্রণালয়/বিভাগ/দপ্তরের নাম।
 4. "memoNo": স্মারক নম্বর (যদি থাকে)।
 5. "docDate": জারির তারিখ (YYYY-MM-DD ফরম্যাটে)।
-6. "description": সংক্ষিপ্ত ১-২ লাইনের সারসংক্ষেপ।
+6. "description": সংক্ষিপ্ত ১-২ লাইনের সারসংক্ষেপ।${
+    normalizedExisting.length > 0
+      ? `
+7. "duplicateMatch": সংযুক্ত ডকুমেন্টটির ভেতরের মূল লেখা, বিষয়বস্তু, স্মারক নম্বর ও তারিখ নিচের "পূর্ববর্তী আপলোডকৃত নথির তালিকা"-র সাথে তুলনা করুন। ফাইল নাম বা শিরোনাম ভিন্ন হলেও যদি দেখেন এটি মূলত একই সার্কুলার/গেজেট/আদেশ, তবে "isDuplicate": true, তালিকার সঠিক index নম্বর "matchedIndex" ও সংক্ষিপ্ত বাংলা কারণ ("reason") দিন; নাহলে "isDuplicate": false ও "matchedIndex": null দিন।`
+      : ""
+  }${existingListBlock}
 
 শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট দিন:
-{"title":"...","category":"...","authority":"...","memoNo":"...","docDate":"...","description":"..."}`;
+{"title":"...","category":"...","authority":"...","memoNo":"...","docDate":"...","description":"..."${
+    normalizedExisting.length > 0
+      ? `,"duplicateMatch":{"isDuplicate":false,"matchedIndex":null,"reason":""}`
+      : ""
+  }}`;
 
   const models = [
-    { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 8500 },
-    { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 10000 }
+    { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 9000 },
+    { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 11000 }
   ];
 
   for (const cfg of models) {
@@ -195,6 +229,8 @@ export default async function handler(req: any, res: any) {
       description,
       autoAnalyze = false,
       savePendingOnServer = false,
+      existingDocs,
+      ignoreDuplicate = false,
     } = body;
 
     if (!fileBase64) {
@@ -231,12 +267,30 @@ export default async function handler(req: any, res: any) {
     const uniqueId = sanitizeArchiveId(requestedArchiveId || "", cleanSlug);
     const targetUrl = `https://s3.us.archive.org/${uniqueId}/${encodeURIComponent(cleanFileName)}`;
 
-    const shouldRunAi = Boolean(autoAnalyze || !title || !String(title).trim());
+    const normalizedExisting: ExistingDocSummary[] =
+      !ignoreDuplicate && Array.isArray(existingDocs)
+        ? existingDocs
+            .filter((d: any) => d && (d.title || d.memoNo))
+            .slice(0, 75)
+            .map((d: any, idx: number) => ({
+              idx,
+              id: String(d.id || ""),
+              title: String(d.title || "").slice(0, 140),
+              memoNo: String(d.memoNo || "").slice(0, 70),
+              docDate: String(d.docDate || "").slice(0, 20),
+              authority: String(d.authority || "").slice(0, 80),
+              description: String(d.description || "").slice(0, 140),
+              location: d.location === "pending" ? "pending" : "vault",
+            }))
+        : [];
 
-    // Run AI extraction (if requested/needed) in parallel with initial prep so total time stays minimal
-    const aiPromise = shouldRunAi ? tryExtractWithAI(rawBase64, detectedMime) : Promise.resolve(null);
+    const shouldRunAi = Boolean(
+      autoAnalyze || !title || !String(title).trim() || (!ignoreDuplicate && normalizedExisting.length > 0)
+    );
 
-    const aiParsed = await aiPromise;
+    const aiParsed = shouldRunAi
+      ? await tryExtractWithAI(rawBase64, detectedMime, normalizedExisting)
+      : null;
 
     let resolvedCategory = (category || aiParsed?.category || "সার্কুলার").trim();
     const validCategories = ["সার্কুলার", "অফিস আদেশ", "গেজেট", "প্রজ্ঞাপন", "নীতিমালা", "অন্যান্য"];
@@ -268,6 +322,76 @@ export default async function handler(req: any, res: any) {
       ? docDate
       : (aiParsed?.docDate && /^\d{4}-\d{2}-\d{2}$/.test(aiParsed.docDate) ? aiParsed.docDate : "");
     const resolvedDate = candidateDate || new Date().toISOString().split("T")[0];
+
+    // Pre-upload Duplicate Check (AI Content Match + Memo/Title Match) unless admin explicitly chose ignoreDuplicate
+    if (!ignoreDuplicate && normalizedExisting.length > 0) {
+      let duplicateInfo: any = null;
+      const rawDup = aiParsed?.duplicateMatch;
+      if (rawDup && rawDup.isDuplicate && typeof rawDup.matchedIndex === "number") {
+        const matched = normalizedExisting[rawDup.matchedIndex];
+        if (matched) {
+          duplicateInfo = {
+            isDuplicate: true,
+            matchedId: matched.id,
+            matchedTitle: matched.title,
+            matchedMemoNo: matched.memoNo,
+            matchedDocDate: matched.docDate,
+            location: matched.location,
+            reason: String(rawDup.reason || "এআই ডকুমেন্টের ভেতরের লেখা পড়ে পূর্ববর্তী নথির সাথে মিল পেয়েছে।").trim(),
+          };
+        }
+      }
+
+      if (!duplicateInfo) {
+        const memoCheck = (resolvedMemoNo || aiParsed?.memoNo || "").trim().toLowerCase();
+        const titleCheck = (aiParsed?.title || resolvedTitle || "").trim().toLowerCase();
+        for (const item of normalizedExisting) {
+          if (memoCheck && memoCheck.length >= 3 && item.memoNo && item.memoNo.trim().toLowerCase() === memoCheck) {
+            duplicateInfo = {
+              isDuplicate: true,
+              matchedId: item.id,
+              matchedTitle: item.title,
+              matchedMemoNo: item.memoNo,
+              matchedDocDate: item.docDate,
+              location: item.location,
+              reason: `স্মারক নম্বর (${item.memoNo}) পূর্ববর্তী নথির সাথে মিলে গেছে।`,
+            };
+            break;
+          }
+          if (titleCheck && titleCheck.length >= 8 && item.title && item.title.trim().toLowerCase() === titleCheck) {
+            duplicateInfo = {
+              isDuplicate: true,
+              matchedId: item.id,
+              matchedTitle: item.title,
+              matchedMemoNo: item.memoNo,
+              matchedDocDate: item.docDate,
+              location: item.location,
+              reason: "ডকুমেন্টের মূল শিরোনাম পূর্ববর্তী নথির সাথে মিলে গেছে।",
+            };
+            break;
+          }
+        }
+      }
+
+      if (duplicateInfo) {
+        return res.status(200).json({
+          success: false,
+          duplicateDetected: true,
+          uploadedToArchive: false,
+          aiAnalyzed: Boolean(aiParsed),
+          duplicateInfo,
+          extractedData: {
+            title: resolvedTitle,
+            category: resolvedCategory,
+            authority: resolvedAuthority,
+            memoNo: resolvedMemoNo,
+            docDate: resolvedDate,
+            description: resolvedDescription,
+          },
+          error: `এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে ("${duplicateInfo.matchedTitle}")।`,
+        });
+      }
+    }
 
     const headers: Record<string, string> = {
       authorization: `LOW ${cfg.accessKey}:${cfg.secretKey}`,

@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const { fileBase64, fileName, mimeType } = body;
+    const { fileBase64, fileName, mimeType, existingDocs } = body;
 
     if (!fileBase64) {
       return res.status(400).json({
@@ -74,6 +74,32 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    const normalizedExisting = Array.isArray(existingDocs)
+      ? existingDocs
+          .filter((d: any) => d && (d.title || d.memoNo))
+          .slice(0, 75)
+          .map((d: any, idx: number) => ({
+            idx,
+            id: String(d.id || ""),
+            title: String(d.title || "").slice(0, 140),
+            memoNo: String(d.memoNo || "").slice(0, 70),
+            docDate: String(d.docDate || "").slice(0, 20),
+            authority: String(d.authority || "").slice(0, 80),
+            description: String(d.description || "").slice(0, 140),
+            location: d.location === "pending" ? "pending" : "vault"
+          }))
+      : [];
+
+    const existingListBlock =
+      normalizedExisting.length > 0
+        ? `\n\nপূর্ববর্তী আপলোডকৃত নথির তালিকা (মিল যাচাইয়ের জন্য):\n${normalizedExisting
+            .map(
+              (d) =>
+                `[${d.idx}] শিরোনাম: "${d.title}"${d.memoNo ? ` | স্মারক: "${d.memoNo}"` : ""}${d.docDate ? ` | তারিখ: ${d.docDate}` : ""}${d.authority ? ` | কর্তৃপক্ষ: "${d.authority}"` : ""}${d.description ? ` | সারসংক্ষেপ: "${d.description}"` : ""}`
+            )
+            .join("\n")}`
+        : "";
+
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: { headers: { "User-Agent": "aistudio-build" } }
@@ -86,7 +112,12 @@ export default async function handler(req: any, res: any) {
 ৩. "authority": কোন মন্ত্রণালয়, বিভাগ, অধিদপ্তর বা কর্তৃপক্ষ এটি জারি করেছে (যেমন: "অর্থ বিভাগ, অর্থ মন্ত্রণালয়", "বাংলাদেশ ব্যাংক", "জনপ্রশাসন মন্ত্রণালয়" ইত্যাদি)।
 ৪. "memoNo": নথির স্মারক নম্বর / পত্র নম্বর (যেমন: ০৭.০০.০০০০... ইত্যাদি, যদি থাকে)।
 ৫. "docDate": জারির তারিখ বা স্বাক্ষরের তারিখ (YYYY-MM-DD ফরম্যাটে, যেমন: 2026-03-25)।
-৬. "description": সার্কুলারের মূল সিদ্ধান্তের সংক্ষিপ্ত ১-২ লাইনের সারসংক্ষেপ।
+৬. "description": সার্কুলারের মূল সিদ্ধান্তের সংক্ষিপ্ত ১-২ লাইনের সারসংক্ষেপ।${
+      normalizedExisting.length > 0
+        ? `
+৭. "duplicateMatch": সংযুক্ত ডকুমেন্টটির ভেতরের মূল লেখা, বিষয়বস্তু, স্মারক নম্বর ও তারিখ নিচের "পূর্ববর্তী আপলোডকৃত নথির তালিকা"-র সাথে গভীরভাবে তুলনা করুন। ফাইল নাম বা শিরোনাম ভিন্ন হলেও যদি দেখেন এটি মূলত একই সার্কুলার/গেজেট/আদেশ (যেমন: একই স্মারক ও তারিখ, অথবা একই বিষয়বস্তু ও সিদ্ধান্তের হুবহু বা প্রায় এক নথি), তবে "isDuplicate": true দিন, তালিকার সঠিক index নম্বর "matchedIndex"-এ দিন এবং বাংলায় সংক্ষেপে কারণ ("reason") লিখুন। আর যদি এটি আলাদা/নতুন কোনো সার্কুলার বা ভিন্ন তারিখের/ভিন্ন বিষয়ের আদেশ হয়, তবে "isDuplicate": false ও "matchedIndex": null দিন।`
+        : ""
+    }${existingListBlock}
 
 শুধুমাত্র একটি ভ্যালিড JSON অবজেক্ট আউটপুট দিন:
 {
@@ -95,12 +126,21 @@ export default async function handler(req: any, res: any) {
   "authority": "...",
   "memoNo": "...",
   "docDate": "...",
-  "description": "..."
+  "description": "..."${
+    normalizedExisting.length > 0
+      ? `,
+  "duplicateMatch": {
+    "isDuplicate": false,
+    "matchedIndex": null,
+    "reason": ""
+  }`
+      : ""
+  }
 }`;
 
     const modelConfigs = [
-      { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 9000 },
-      { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 11000 }
+      { model: "gemini-3.1-flash-lite", thinkingLevel: ThinkingLevel.MINIMAL, timeoutMs: 9500 },
+      { model: "gemini-4-hydrogen", thinkingLevel: ThinkingLevel.LOW, timeoutMs: 11500 }
     ];
 
     let result: any = null;
@@ -176,10 +216,60 @@ export default async function handler(req: any, res: any) {
       description: parsedData.description?.trim() || "সংগৃহীত সরকারি সার্কুলার।"
     };
 
+    let duplicateMatch: any = null;
+    const rawDup = parsedData.duplicateMatch;
+    if (rawDup && rawDup.isDuplicate && typeof rawDup.matchedIndex === "number") {
+      const matched = normalizedExisting[rawDup.matchedIndex];
+      if (matched) {
+        duplicateMatch = {
+          isDuplicate: true,
+          matchedId: matched.id,
+          matchedTitle: matched.title,
+          matchedMemoNo: matched.memoNo,
+          matchedDocDate: matched.docDate,
+          location: matched.location,
+          reason: String(rawDup.reason || "ডকুমেন্টের ভেতরের বিষয়বস্তু পূর্ববর্তী নথির সাথে মিলে গেছে।").trim()
+        };
+      }
+    }
+
+    // Rule-based memoNo/title fallback in case AI missed exact match
+    if (!duplicateMatch && normalizedExisting.length > 0) {
+      const extractedMemo = responseData.memoNo.trim().toLowerCase();
+      const extractedTitle = responseData.title.trim().toLowerCase();
+      for (const item of normalizedExisting) {
+        if (extractedMemo && extractedMemo.length >= 3 && item.memoNo && item.memoNo.trim().toLowerCase() === extractedMemo) {
+          duplicateMatch = {
+            isDuplicate: true,
+            matchedId: item.id,
+            matchedTitle: item.title,
+            matchedMemoNo: item.memoNo,
+            matchedDocDate: item.docDate,
+            location: item.location,
+            reason: `স্মারক নম্বর (${item.memoNo}) পূর্ববর্তী নথির সাথে হুবহু মিলে গেছে।`
+          };
+          break;
+        }
+        if (extractedTitle && extractedTitle.length >= 8 && item.title && item.title.trim().toLowerCase() === extractedTitle) {
+          duplicateMatch = {
+            isDuplicate: true,
+            matchedId: item.id,
+            matchedTitle: item.title,
+            matchedMemoNo: item.memoNo,
+            matchedDocDate: item.docDate,
+            location: item.location,
+            reason: `ডকুমেন্টের মূল বিষয়/শিরোনাম পূর্ববর্তী নথির সাথে মিলে গেছে।`
+          };
+          break;
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
       isAiAnalyzed: true,
-      data: responseData
+      data: responseData,
+      duplicateMatch
     });
   } catch (err: any) {
     console.error("Vercel analyze document error:", err);

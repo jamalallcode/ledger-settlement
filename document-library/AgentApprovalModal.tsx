@@ -8,7 +8,13 @@ import {
 } from 'lucide-react';
 import { toBengaliDigits } from '../utils/numberUtils';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { analyzeDocumentWithAI, checkGeminiStatus, testGeminiConnection } from './aiDocumentAnalyzer';
+import {
+  analyzeDocumentWithAI,
+  checkGeminiStatus,
+  testGeminiConnection,
+  DuplicateMatchInfo,
+  ExistingDocCheckItem
+} from './aiDocumentAnalyzer';
 
 export interface PendingDoc {
   id: string;
@@ -275,9 +281,11 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const aiAbortRef = useRef<AbortController | null>(null);
   const cachedFileDataUrlRef = useRef<string>('');
   const pendingDocsRef = useRef<PendingDoc[]>([]);
+  const [aiDuplicateMatch, setAiDuplicateMatch] = useState<DuplicateMatchInfo | null>(null);
+  const [ignoreSingleDuplicate, setIgnoreSingleDuplicate] = useState(false);
 
   // Multi-file Batch Upload Queue State
-  type BatchItemStatus = 'queued' | 'uploading' | 'done' | 'error';
+  type BatchItemStatus = 'queued' | 'uploading' | 'done' | 'duplicate' | 'error';
   interface BatchQueueItem {
     localId: string;
     file: File;
@@ -286,11 +294,51 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     title?: string;
     archiveId?: string;
     error?: string;
+    duplicateInfo?: DuplicateMatchInfo;
+    extractedData?: {
+      title?: string;
+      category?: string;
+      authority?: string;
+      memoNo?: string;
+      docDate?: string;
+      description?: string;
+    };
   }
   const [batchItems, setBatchItems] = useState<BatchQueueItem[]>([]);
   const [isBatchRunning, setIsBatchRunning] = useState(false);
   const batchAbortRef = useRef<boolean>(false);
   const batchPanelRef = useRef<HTMLDivElement>(null);
+
+  const buildExistingDocsPayload = (): ExistingDocCheckItem[] => {
+    let vaultList: any[] = [];
+    if (Array.isArray(vaultDocuments) && vaultDocuments.length > 0) {
+      vaultList = vaultDocuments;
+    } else {
+      try {
+        vaultList = JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
+      } catch (e) {}
+    }
+    const merged: ExistingDocCheckItem[] = [];
+    const seenIds = new Set<string>();
+    const pushItem = (d: any, location: 'vault' | 'pending') => {
+      if (!d || (!d.title && !d.memoNo)) return;
+      const key = String(d.id || d.archiveId || `${location}_${d.title}_${d.memoNo}`);
+      if (seenIds.has(key)) return;
+      seenIds.add(key);
+      merged.push({
+        id: d.id,
+        title: d.title,
+        memoNo: d.memoNo,
+        docDate: d.docDate,
+        authority: d.authority,
+        description: d.description,
+        location
+      });
+    };
+    vaultList.forEach(d => pushItem(d, 'vault'));
+    pendingDocsRef.current.forEach(d => pushItem(d, 'pending'));
+    return merged.slice(0, 75);
+  };
 
   useEffect(() => {
     pendingDocsRef.current = pendingDocs;
@@ -526,7 +574,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
     const cleanId = extractCleanId(ingestForm.archiveIdOrLink) || `bd_circular_${Date.now()}`;
 
-    // Strict Deduplication Check before Ingesting
+    // Rule-based + AI Duplicate Check unless admin explicitly chose to ignore the warning
     const vaultList = Array.isArray(vaultDocuments) && vaultDocuments.length > 0
       ? vaultDocuments
       : JSON.parse(localStorage.getItem('audit_criteria_documents') || '[]');
@@ -542,9 +590,24 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       pendingDocs
     );
 
-    if (dupCheck.isDuplicate) {
+    const activeDup: DuplicateMatchInfo | null = aiDuplicateMatch
+      ? aiDuplicateMatch
+      : dupCheck.isDuplicate && dupCheck.matchedDoc
+      ? {
+          isDuplicate: true,
+          matchedId: dupCheck.matchedDoc.id,
+          matchedTitle: dupCheck.matchedDoc.title,
+          matchedMemoNo: dupCheck.matchedDoc.memoNo,
+          matchedDocDate: dupCheck.matchedDoc.docDate,
+          location: dupCheck.location,
+          reason: dupCheck.reason || 'শিরোনাম বা স্মারক নম্বর পূর্ববর্তী নথির সাথে মিলে গেছে।'
+        }
+      : null;
+
+    if (activeDup && !ignoreSingleDuplicate) {
+      if (!aiDuplicateMatch) setAiDuplicateMatch(activeDup);
       setIngestError(
-        `❌ ডাবল এন্ট্রি রোধ: এই সার্কুলারটি ইতিমধ্যে ${dupCheck.location === 'vault' ? 'মূল ভল্টে' : 'অপেক্ষমাণ তালিকায়'} রয়েছে (${dupCheck.reason})। পূর্বে যুক্ত নথির নাম: "${dupCheck.matchedDoc?.title}"`
+        `⚠️ এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে (পূর্বের শিরোনাম: "${activeDup.matchedTitle}")। যদি এটি ভিন্ন নথি হয় তবে উপরের সতর্কবার্তায় "সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে আপলোড করুন" বাটনে ক্লিক করে পুনরায় জমা দিন।`
       );
       setIsSubmittingIngest(false);
       return;
@@ -583,11 +646,22 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             description: ingestForm.description.trim() || 'হোয়াটসঅ্যাপ/মোবাইল থেকে সংগৃহীত সার্কুলার।',
             source: 'WhatsApp / Mobile Upload',
             senderName: 'এডমিন ইনজেস্ট',
-            savePendingOnServer: true
+            savePendingOnServer: true,
+            existingDocs: ignoreSingleDuplicate ? undefined : buildExistingDocsPayload(),
+            ignoreDuplicate: ignoreSingleDuplicate
           })
         });
 
         const data = await resp.json().catch(() => ({}));
+        if (data.duplicateDetected && data.duplicateInfo) {
+          setAiDuplicateMatch(data.duplicateInfo);
+          setIgnoreSingleDuplicate(false);
+          setIngestError(
+            `⚠️ এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে (পূর্বের শিরোনাম: "${data.duplicateInfo.matchedTitle}")। ভিন্ন নথি হলে উপরের "উপেক্ষা করে আলাদা নথি হিসেবে আপলোড করুন" বাটনে ক্লিক করুন।`
+          );
+          setIsSubmittingIngest(false);
+          return;
+        }
         if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
           throw new Error(data.error || "Archive.org-এ ফাইল আপলোড সম্পন্ন হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।");
         }
@@ -668,6 +742,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       cachedFileDataUrlRef.current = '';
       setAiSuccessMessage(null);
       setDirectServerNotice(null);
+      setAiDuplicateMatch(null);
+      setIgnoreSingleDuplicate(false);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -684,6 +760,13 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   const handleDirectServerAutoIngest = async () => {
     if (!rawSelectedFile || isDirectServerSending || isSubmittingIngest) return;
 
+    if (aiDuplicateMatch && !ignoreSingleDuplicate) {
+      setIngestError(
+        `⚠️ এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে (পূর্বের শিরোনাম: "${aiDuplicateMatch.matchedTitle}")। ভিন্ন নথি হলে নিচের সতর্কবার্তায় "সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে আপলোড করুন" বাটনে ক্লিক করে তারপর আবার পাঠান।`
+      );
+      return;
+    }
+
     // Cancel any ongoing browser-side AI wait immediately
     if (aiAbortRef.current) {
       aiAbortRef.current.abort();
@@ -695,7 +778,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     setIngestSuccess(null);
     setIsDirectServerSending(true);
     setDirectServerNotice(
-      '🚀 ফাইলটি সরাসরি সার্ভারে পাঠানো হচ্ছে... সার্ভারে পৌঁছানোর পর ব্রাউজার বা কম্পিউটার বন্ধ করলেও সার্ভার নিজেই এআই দিয়ে তথ্য পড়ে Archive.org-এ আপলোড ও অপেক্ষমাণ তালিকায় জমা করবে।'
+      '🚀 ফাইলটি সরাসরি সার্ভারে পাঠানো হচ্ছে... ডুপ্লিকেট যাচাই ও Archive.org-এ আপলোড চলছে।'
     );
 
     try {
@@ -732,11 +815,32 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           source: ingestForm.source || 'Direct Server Auto-Ingest',
           senderName: 'এডমিন (অটো-প্রসেস)',
           autoAnalyze: true,
-          savePendingOnServer: true
+          savePendingOnServer: true,
+          existingDocs: ignoreSingleDuplicate ? undefined : buildExistingDocsPayload(),
+          ignoreDuplicate: ignoreSingleDuplicate
         })
       });
 
       const data = await resp.json().catch(() => ({}));
+      if (data.duplicateDetected && data.duplicateInfo) {
+        setDirectServerNotice(null);
+        setAiDuplicateMatch(data.duplicateInfo);
+        setIgnoreSingleDuplicate(false);
+        if (data.extractedData) {
+          setIngestForm(prev => ({
+            ...prev,
+            title: prev.title || data.extractedData.title || prev.title,
+            category: data.extractedData.category || prev.category,
+            authority: data.extractedData.authority || prev.authority,
+            memoNo: prev.memoNo || data.extractedData.memoNo || prev.memoNo,
+            docDate: data.extractedData.docDate || prev.docDate,
+            description: prev.description || data.extractedData.description || prev.description,
+            archiveIdOrLink: prev.archiveIdOrLink || cleanId
+          }));
+        }
+        return;
+      }
+
       if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
         throw new Error(data.error || 'সার্ভারে অটো-প্রসেস সম্পন্ন হয়নি।');
       }
@@ -786,6 +890,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       setRawSelectedFile(null);
       cachedFileDataUrlRef.current = '';
       setAiSuccessMessage(null);
+      setAiDuplicateMatch(null);
+      setIgnoreSingleDuplicate(false);
 
       setTimeout(() => {
         setActiveTab('pending');
@@ -800,7 +906,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
   };
 
   // Sequential Batch Processor for Multi-File Selection
-  const runBatchUploadQueue = async (itemsToProcess: BatchQueueItem[]) => {
+  const runBatchUploadQueue = async (
+    itemsToProcess: BatchQueueItem[],
+    forceIgnoreIds?: Set<string>
+  ) => {
     if (itemsToProcess.length === 0) return;
     batchAbortRef.current = false;
     setIsBatchRunning(true);
@@ -817,12 +926,16 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
 
     for (let i = 0; i < itemsToProcess.length; i++) {
       const target = itemsToProcess[i];
+      const shouldForceIgnore = Boolean(forceIgnoreIds?.has(target.localId));
       if (target.status === 'done') continue;
+      if (target.status === 'duplicate' && !shouldForceIgnore) continue;
       if (batchAbortRef.current) break;
 
       setBatchItems(prev =>
         prev.map(it =>
-          it.localId === target.localId ? { ...it, status: 'uploading', error: undefined } : it
+          it.localId === target.localId
+            ? { ...it, status: 'uploading', error: undefined }
+            : it
         )
       );
 
@@ -842,14 +955,39 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
             fileName: target.file.name,
             mimeType: detectedMime,
             archiveId: cleanId,
+            title: shouldForceIgnore ? target.extractedData?.title : undefined,
+            category: shouldForceIgnore ? target.extractedData?.category : undefined,
+            authority: shouldForceIgnore ? target.extractedData?.authority : undefined,
+            memoNo: shouldForceIgnore ? target.extractedData?.memoNo : undefined,
+            docDate: shouldForceIgnore ? target.extractedData?.docDate : undefined,
+            description: shouldForceIgnore ? target.extractedData?.description : undefined,
             source: ingestForm.source || 'Batch Multi-Upload',
             senderName: 'এডমিন (ব্যাচ অটো-প্রসেস)',
-            autoAnalyze: true,
-            savePendingOnServer: true
+            autoAnalyze: !shouldForceIgnore,
+            savePendingOnServer: true,
+            existingDocs: shouldForceIgnore ? undefined : buildExistingDocsPayload(),
+            ignoreDuplicate: shouldForceIgnore
           })
         });
 
         const data = await resp.json().catch(() => ({}));
+        if (data.duplicateDetected && data.duplicateInfo) {
+          setBatchItems(prev =>
+            prev.map(it =>
+              it.localId === target.localId
+                ? {
+                    ...it,
+                    status: 'duplicate',
+                    title: data.extractedData?.title || it.title,
+                    duplicateInfo: data.duplicateInfo,
+                    extractedData: data.extractedData
+                  }
+                : it
+            )
+          );
+          continue;
+        }
+
         if (!resp.ok || !data.success || !data.uploadedToArchive || !data.pendingDocument) {
           throw new Error(data.error || 'Archive.org-এ আপলোড সম্পন্ন হয়নি।');
         }
@@ -887,7 +1025,13 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         setBatchItems(prev =>
           prev.map(it =>
             it.localId === target.localId
-              ? { ...it, status: 'done', title: pendingDoc.title, archiveId: pendingDoc.archiveId }
+              ? {
+                  ...it,
+                  status: 'done',
+                  title: pendingDoc.title,
+                  archiveId: pendingDoc.archiveId,
+                  duplicateInfo: undefined
+                }
               : it
           )
         );
@@ -919,6 +1063,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
       setIsAnalyzingAI(false);
       setAiSuccessMessage(null);
       setAiWarningMessage(null);
+      setAiDuplicateMatch(null);
+      setIgnoreSingleDuplicate(false);
       setDirectServerNotice(null);
       setIngestError(null);
       setIngestSuccess(null);
@@ -949,6 +1095,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
     // Single-file Mode (Original Interactive Auto-Fill Flow)
     const file = files[0];
     setBatchItems([]);
+    setAiDuplicateMatch(null);
+    setIgnoreSingleDuplicate(false);
 
     if (aiAbortRef.current) {
       aiAbortRef.current.abort();
@@ -984,12 +1132,13 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
         return;
       }
 
-      // Smart Multimodal AI Vision & OCR Extraction (with 16s timeout & cancellation support)
+      // Smart Multimodal AI Vision & OCR Extraction + Content-based Duplicate Check
       try {
         const aiResult = await analyzeDocumentWithAI({
           fileBase64: dataUrl,
           fileName: file.name,
           mimeType: detectedMime,
+          existingDocs: buildExistingDocsPayload(),
           signal: controller.signal
         });
 
@@ -1008,6 +1157,10 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
           }));
           setAiSuccessMessage('✨ এআই সফলভাবে ডকুমেন্টের আসল বিষয় ও তথ্য পূরণ করেছে');
           setAiWarningMessage(null);
+          if (aiResult.duplicateMatch && aiResult.duplicateMatch.isDuplicate) {
+            setAiDuplicateMatch(aiResult.duplicateMatch);
+            setIgnoreSingleDuplicate(false);
+          }
         } else if (aiResult.apiKeyMissing) {
           setAiWarningMessage('⚠️ জেমিনি এপিআই কী (GEMINI_API_KEY) সেট করা নেই! Vercel Settings > Environment Variables-এ GEMINI_API_KEY যুক্ত করুন, অথবা নিচে তথ্যগুলো ম্যানুয়ালি পূরণ করুন।');
         } else if (aiResult.error) {
@@ -1563,22 +1716,24 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {batchItems.map((item, idx) => (
                       <div
                         key={item.localId}
-                        className={`p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+                        className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
                           item.status === 'done'
                             ? 'bg-emerald-50/70 border-emerald-200'
                             : item.status === 'uploading'
                             ? 'bg-indigo-50/90 border-indigo-300'
+                            : item.status === 'duplicate'
+                            ? 'bg-amber-50/90 border-amber-300'
                             : item.status === 'error'
                             ? 'bg-rose-50/80 border-rose-200'
                             : 'bg-slate-50 border-slate-200'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-5 h-5 rounded-md bg-white border border-slate-200 text-[10px] font-black text-slate-600 flex items-center justify-center shrink-0">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <span className="w-5 h-5 rounded-md bg-white border border-slate-200 text-[10px] font-black text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
                             {toBengaliDigits(idx + 1)}
                           </span>
                           <div className="min-w-0">
@@ -1590,13 +1745,25 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                               <span>• {item.sizeLabel}</span>
                               {item.archiveId && <span className="text-emerald-700 font-mono">ID: {item.archiveId}</span>}
                             </div>
+                            {item.status === 'duplicate' && item.duplicateInfo && (
+                              <div className="mt-1.5 p-2 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 space-y-0.5">
+                                <p className="text-[11px] font-black">
+                                  ⚠️ এটি পূর্বেই আপলোড করা হয়েছে ({item.duplicateInfo.location === 'pending' ? 'অপেক্ষমাণ তালিকায়' : 'মূল ভল্টে'})
+                                </p>
+                                <p className="text-[11px] font-bold">
+                                  পূর্বের শিরোনাম: &ldquo;{item.duplicateInfo.matchedTitle}&rdquo;
+                                  {item.duplicateInfo.matchedDocDate ? ` • তারিখ: ${item.duplicateInfo.matchedDocDate}` : ''}
+                                </p>
+                                <p className="text-[10px] text-amber-800">{item.duplicateInfo.reason}</p>
+                              </div>
+                            )}
                             {item.error && (
                               <p className="text-[11px] font-bold text-rose-700 mt-1 break-words">{item.error}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex items-center gap-2 self-end sm:self-center">
                           {item.status === 'queued' && (
                             <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 text-[10px] font-black">
                               অপেক্ষায়...
@@ -1611,6 +1778,17 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black">
                               <CheckCircle2 size={11} /> সম্পন্ন
                             </span>
+                          )}
+                          {item.status === 'duplicate' && (
+                            <button
+                              type="button"
+                              disabled={isBatchRunning}
+                              onClick={() => void runBatchUploadQueue([item], new Set([item.localId]))}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[10px] font-black shadow-xs transition-all cursor-pointer active:scale-95"
+                              title="সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে Archive.org-এ আপলোড করুন"
+                            >
+                              <Upload size={11} /> উপেক্ষা করে আপলোড করুন
+                            </button>
                           )}
                           {item.status === 'error' && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-black">
@@ -1683,6 +1861,8 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                           setRawSelectedFile(null);
                           setAiSuccessMessage(null);
                           setAiWarningMessage(null);
+                          setAiDuplicateMatch(null);
+                          setIgnoreSingleDuplicate(false);
                           setDirectServerNotice(null);
                           if (fileInputRef.current) fileInputRef.current.value = '';
                         }}
@@ -1707,7 +1887,7 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   <div className="p-3 bg-blue-50/90 border border-blue-300 rounded-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs font-black text-blue-800">
                     <div className="flex items-center gap-3">
                       <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
-                      <span>🤖 এআই ডকুমেন্টটি পড়ছে ও তথ্য উদ্ধার করছে...</span>
+                      <span>🤖 এআই ডকুমেন্টটি পড়ছে ও পূর্ববর্তী নথির সাথে মিল যাচাই করছে...</span>
                     </div>
                     <button
                       type="button"
@@ -1725,6 +1905,63 @@ export const AgentApprovalModal: React.FC<AgentApprovalModalProps> = ({
                   <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2 text-xs font-black text-emerald-800 animate-in fade-in">
                     <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                     <span>{aiSuccessMessage}</span>
+                  </div>
+                )}
+
+                {/* Smart AI Duplicate Warning Card with Previous Title & Admin Ignore Override */}
+                {aiDuplicateMatch && !isAnalyzingAI && (
+                  <div className={`p-4 rounded-2xl border-2 space-y-2.5 animate-in fade-in shadow-sm ${
+                    ignoreSingleDuplicate
+                      ? 'bg-sky-50 border-sky-300 text-sky-950'
+                      : 'bg-amber-50 border-amber-400 text-amber-950'
+                  }`}>
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle size={20} className={`${ignoreSingleDuplicate ? 'text-sky-600' : 'text-amber-600'} shrink-0 mt-0.5`} />
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="text-xs font-black">
+                          {ignoreSingleDuplicate
+                            ? '✓ সতর্কবার্তা উপেক্ষা করা হয়েছে — এডমিন এটিকে আলাদা নথি হিসেবে আপলোডের অনুমতি দিয়েছেন'
+                            : '⚠️ সতর্কতা: এই ডকুমেন্টটি পূর্বেই আপলোড করা হয়েছে!'}
+                        </p>
+                        <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200/80 text-xs space-y-0.5">
+                          <p className="font-black text-slate-900">
+                            পূর্বের আপলোডকৃত নথির শিরোনাম: &ldquo;{aiDuplicateMatch.matchedTitle}&rdquo;
+                          </p>
+                          <p className="text-[11px] font-bold text-slate-600">
+                            অবস্থান: {aiDuplicateMatch.location === 'pending' ? 'অপেক্ষমাণ তালিকা' : 'মূল ক্রাইটেরিয়া ভল্ট'}
+                            {aiDuplicateMatch.matchedMemoNo ? ` • স্মারক: ${aiDuplicateMatch.matchedMemoNo}` : ''}
+                            {aiDuplicateMatch.matchedDocDate ? ` • তারিখ: ${aiDuplicateMatch.matchedDocDate}` : ''}
+                          </p>
+                          <p className="text-[11px] font-medium text-amber-900">
+                            এআই যাচাইয়ের কারণ: {aiDuplicateMatch.reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                      {!ignoreSingleDuplicate ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIgnoreSingleDuplicate(true);
+                            setIngestError(null);
+                          }}
+                          className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-black shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>সতর্কবার্তা উপেক্ষা করে এটি আলাদা নথি হিসেবে আপলোড করুন</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIgnoreSingleDuplicate(false)}
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-[11px] font-black transition-all cursor-pointer"
+                        >
+                          পূর্বাবস্থায় ফিরুন
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
