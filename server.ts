@@ -7,6 +7,7 @@ import fs from "fs";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import { whatsappService } from "./server/whatsappService";
+import downloadDocumentHandler from "./api/agent/download-document";
 
 const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -1137,6 +1138,8 @@ async function startServer() {
       return res.status(500).json({ success: false, uploadedToArchive: false, error: err.message || "সার্কুলার প্রসেস করতে ব্যর্থ হয়েছে।" });
     }
   });
+
+  app.get("/api/agent/download-document", (req, res) => downloadDocumentHandler(req, res));
 
   // 8. WhatsApp / Messenger Webhook Ingestion Endpoint
   app.post("/api/agent/whatsapp-webhook", async (req, res) => {

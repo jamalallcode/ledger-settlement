@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle, Upload
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle, Upload, Download
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -170,6 +170,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [sessionPreviewMap, setSessionPreviewMap] = useState<Record<string, string>>({});
   const [isPublishing, setIsPublishing] = useState(false);
   const [archiveImgError, setArchiveImgError] = useState(false);
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
 
   // Sticky Filter Bar Measurement & Collapse State
   const filterBarRef = useRef<HTMLDivElement>(null);
@@ -1403,6 +1404,119 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     }
   };
 
+  const triggerBlobDownload = (blobUrl: string, fileName: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
+
+  const handleDownloadDocument = async (doc: ExtendedArchiveDoc, isDocUnlocked: boolean = true) => {
+    if (!isDocUnlocked) {
+      setShowUnlockModal(true);
+      return;
+    }
+    if (downloadingDocId === doc.id) return;
+
+    const cleanTitle = (doc.title || 'document')
+      .replace(/[\\/:*?"<>|\r\n]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 90);
+
+    const buildNameWithExt = (extHint: string) => {
+      const cleanExt = extHint && extHint.startsWith('.') ? extHint : extHint ? `.${extHint}` : '.pdf';
+      const base = cleanTitle || 'document';
+      return base.toLowerCase().endsWith(cleanExt.toLowerCase()) ? base : `${base}${cleanExt}`;
+    };
+
+    const localDataUrl = sessionPreviewMap[doc.id] || doc.fileData || '';
+    if (localDataUrl && localDataUrl.startsWith('data:')) {
+      const blobUrl = createBlobUrlFromDataUrl(localDataUrl);
+      if (blobUrl) {
+        const mimeMatch = localDataUrl.match(/^data:([^;]+)/i);
+        const mime = (mimeMatch ? mimeMatch[1] : '').toLowerCase();
+        const origExtMatch = (doc.originalFileName || '').match(/\.[a-z0-9]{2,5}$/i);
+        const ext =
+          origExtMatch?.[0] ||
+          (mime.includes('pdf')
+            ? '.pdf'
+            : mime.includes('png')
+            ? '.png'
+            : mime.includes('webp')
+            ? '.webp'
+            : mime.includes('jpeg') || mime.includes('jpg')
+            ? '.jpg'
+            : '.pdf');
+        triggerBlobDownload(blobUrl, buildNameWithExt(ext));
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2500);
+        return;
+      }
+    }
+
+    const cleanId = extractCleanId(doc.archiveId || doc.archiveDownloadUrl || '');
+    if (!cleanId && !doc.archiveDownloadUrl) {
+      alert('এই ডকুমেন্টটির সাথে কোনো ডাউনলোডযোগ্য Archive.org ফাইল সংযুক্ত নেই।');
+      return;
+    }
+
+    setDownloadingDocId(doc.id);
+    try {
+      const params = new URLSearchParams();
+      if (cleanId) params.set('archiveId', cleanId);
+      if (doc.originalFileName) params.set('fileName', doc.originalFileName);
+      if (doc.archiveDownloadUrl) params.set('downloadUrl', doc.archiveDownloadUrl);
+      if (cleanTitle) params.set('title', cleanTitle);
+
+      const resp = await fetch(`/api/agent/download-document?${params.toString()}`);
+      if (!resp.ok) {
+        const errJson = await resp.json().catch(() => null);
+        throw new Error(errJson?.error || `ডাউনলোড ব্যর্থ হয়েছে (HTTP ${resp.status})`);
+      }
+
+      const blob = await resp.blob();
+      if (!blob || blob.size === 0) {
+        throw new Error('ফাইলটি খালি পাওয়া গেছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।');
+      }
+
+      const disposition = resp.headers.get('content-disposition') || '';
+      let finalFileName = '';
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match && utf8Match[1]) {
+        try {
+          finalFileName = decodeURIComponent(utf8Match[1].trim());
+        } catch (e) {}
+      }
+      if (!finalFileName) {
+        const origExtMatch = (doc.originalFileName || '').match(/\.[a-z0-9]{2,5}$/i);
+        const blobMime = (blob.type || '').toLowerCase();
+        const ext =
+          origExtMatch?.[0] ||
+          (blobMime.includes('pdf')
+            ? '.pdf'
+            : blobMime.includes('png')
+            ? '.png'
+            : blobMime.includes('webp')
+            ? '.webp'
+            : blobMime.includes('jpeg') || blobMime.includes('jpg')
+            ? '.jpg'
+            : '.pdf');
+        finalFileName = buildNameWithExt(ext);
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      triggerBlobDownload(blobUrl, finalFileName);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+    } catch (err: any) {
+      alert(`❌ ডকুমেন্ট ডাউনলোড করা যায়নি:\n${err?.message || 'Archive.org থেকে ফাইল আনা সম্ভব হয়নি।'}`);
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
+
   // Render AI Agent Circular Processor as a full-width normal page instead of a floating popup
   if (showAgentModal) {
     return (
@@ -1736,22 +1850,34 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   </div>
 
                   <div className="p-3 bg-slate-50/70 rounded-b-2xl border-t border-slate-100 flex items-center justify-between">
-                    <button 
-                      onClick={() => handleDocClick(doc, isDocUnlocked)} 
-                      className="text-xs font-black text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadDocument(doc, isDocUnlocked)}
+                      disabled={downloadingDocId === doc.id}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 ${
+                        isDocUnlocked
+                          ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 shadow-2xs'
+                          : 'bg-amber-50 hover:bg-amber-500 text-amber-800 hover:text-white border border-amber-200/80 shadow-2xs'
+                      }`}
+                      title={isDocUnlocked ? 'ডকুমেন্ট ডাউনলোড করুন' : 'ডাউনলোড করতে আনলক করুন'}
                     >
-                      {isDocUnlocked ? 'বিস্তারিত দেখুন' : 'আনলক করুন'} <ChevronRight size={14} />
+                      {downloadingDocId === doc.id ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : isDocUnlocked ? (
+                        <Download size={15} />
+                      ) : (
+                        <Lock size={14} />
+                      )}
+                      <span>
+                        {downloadingDocId === doc.id
+                          ? 'ডাউনলোড হচ্ছে...'
+                          : isDocUnlocked
+                          ? 'ডাউনলোড'
+                          : 'আনলক করুন'}
+                      </span>
                     </button>
 
                     <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => setFeedbackDoc(doc)} 
-                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold"
-                        title="এই সার্কুলার সম্পর্কে মতামত পাঠান"
-                      >
-                        <MessageSquarePlus size={16} />
-                        <span className="hidden sm:inline">মতামত</span>
-                      </button>
                       <button 
                         onClick={() => copyCitation(doc)} 
                         className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all cursor-pointer" 
