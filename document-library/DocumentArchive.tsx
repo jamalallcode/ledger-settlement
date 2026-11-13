@@ -1856,8 +1856,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                       disabled={downloadingDocId === doc.id}
                       className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 ${
                         isDocUnlocked
-                          ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 shadow-2xs'
-                          : 'bg-amber-50 hover:bg-amber-500 text-amber-800 hover:text-white border border-amber-200/80 shadow-2xs'
+                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-900 border border-blue-200 hover:border-blue-300 shadow-2xs'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-950 border border-amber-200 hover:border-amber-300 shadow-2xs'
                       }`}
                       title={isDocUnlocked ? 'ডকুমেন্ট ডাউনলোড করুন' : 'ডাউনলোড করতে আনলক করুন'}
                     >
