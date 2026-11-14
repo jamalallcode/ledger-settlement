@@ -5,7 +5,7 @@ import {
   Library, Search, Filter, Plus, FileText, Calendar, 
   ExternalLink, Trash2, LayoutGrid, List, X, Edit2,
   ChevronRight, BookOpen, Clock, Eye, EyeOff, Loader2, Sparkles, AlertCircle,
-  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle, Upload, Download
+  Lock, Unlock, ShieldCheck, CheckCircle2, XCircle, CreditCard, Gift, Zap, MessageSquare, Mail, UserCheck, FileSearch, MessageSquarePlus, Send, KeyRound, Smartphone, AlertTriangle, Upload, Download, RefreshCw
 } from 'lucide-react';
 import { toBengaliDigits, formatDateBN } from '../utils/numberUtils';
 import { UnlockStatusModal } from './UnlockStatusModal';
@@ -15,7 +15,9 @@ import { recordVisitorLog, isValidIdentifier } from './visitorTracker';
 import { checkCurrentDeviceUnlock, verifyAndActivatePin, deactivateCurrentDevicePin } from '../utils/pinManager';
 import {
   analyzeDocumentWithAI,
+  summarizeDocumentWithAI,
   uploadToArchiveWithSmartRetry,
+  DocumentKeyTakeaway,
   DuplicateMatchInfo,
   ExistingDocCheckItem
 } from './aiDocumentAnalyzer';
@@ -29,6 +31,7 @@ interface ExtendedArchiveDoc extends ArchiveDoc {
   status?: 'approved' | 'pending' | 'rejected';
   uploadedBy?: string;
   fileData?: string;
+  keyTakeaway?: DocumentKeyTakeaway;
 }
 
 const DEMO_DOC_IDS = ['doc_101', 'doc_102', 'doc_103', 'doc_104', 'doc_105', 'doc_106'];
@@ -171,11 +174,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
   const [isPublishing, setIsPublishing] = useState(false);
   const [archiveImgError, setArchiveImgError] = useState(false);
   const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
+  const [showKeyTakeaway, setShowKeyTakeaway] = useState(false);
+  const [isSummarizingDocId, setIsSummarizingDocId] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const keyTakeawayRef = useRef<HTMLDivElement>(null);
 
   // Sticky Filter Bar Measurement & Collapse State
   const filterBarRef = useRef<HTMLDivElement>(null);
   const [filterBarHeight, setFilterBarHeight] = useState<number>(140);
-  const [isFilterHidden, setIsFilterHidden] = useState<boolean>(false);
+  const [isFilterHidden, setIsFilterHidden] = useState<boolean>(true);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -248,6 +255,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   useEffect(() => {
     setArchiveImgError(false);
+    setShowKeyTakeaway(false);
+    setSummaryError(null);
     const activeData = selectedDoc
       ? (sessionPreviewMap[selectedDoc.id] || selectedDoc.fileData || '')
       : '';
@@ -945,7 +954,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             status: (content.status as any) || 'approved',
             uploadedBy: String(content.uploadedBy || ''),
             createdAt: String(content.createdAt || new Date().toISOString()),
-            fileData: content.fileData ? String(content.fileData) : undefined
+            fileData: content.fileData ? String(content.fileData) : undefined,
+            keyTakeaway: content.keyTakeaway && typeof content.keyTakeaway === 'object' ? content.keyTakeaway : undefined
           });
         });
       }
@@ -964,7 +974,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       docMap.set(d.id, {
         ...(existing || {}),
         ...d,
-        fileData: d.fileData || existing?.fileData || undefined
+        fileData: d.fileData || existing?.fileData || undefined,
+        keyTakeaway: d.keyTakeaway || existing?.keyTakeaway
       });
     });
     supabaseList.filter(isRealUploadedDoc).forEach(d => {
@@ -972,7 +983,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       docMap.set(d.id, {
         ...(existing || {}),
         ...d,
-        fileData: d.fileData || existing?.fileData || undefined
+        fileData: d.fileData || existing?.fileData || undefined,
+        keyTakeaway: d.keyTakeaway || existing?.keyTakeaway
       });
     });
 
@@ -1174,7 +1186,8 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
         archiveDownloadUrl: confirmedDownloadUrl,
         status: 'approved',
         uploadedBy: 'Admin',
-        createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString()
+        createdAt: editingDoc ? editingDoc.createdAt : new Date().toISOString(),
+        keyTakeaway: uploadedFileMeta ? undefined : editingDoc?.keyTakeaway
       };
 
       // 2. Update local state & localStorage (metadata only, zero fileData)
@@ -1248,6 +1261,87 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
       alert('❌ আপলোড বা সংরক্ষণে ত্রুটি হয়েছে: ' + (err?.message || 'অজানা ত্রুটি'));
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleToggleKeyTakeaway = async (doc: ExtendedArchiveDoc, forceRegenerate = false) => {
+    setShowKeyTakeaway(true);
+    setSummaryError(null);
+
+    setTimeout(() => {
+      keyTakeawayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+
+    if (!forceRegenerate && doc.keyTakeaway?.summary) {
+      return;
+    }
+
+    if (isSummarizingDocId === doc.id) return;
+
+    setIsSummarizingDocId(doc.id);
+    try {
+      const cleanSelectedId = extractCleanId(doc.archiveId);
+      const localDataUrl = sessionPreviewMap[doc.id] || doc.fileData || '';
+      const canSendInlineBase64 =
+        typeof localDataUrl === 'string' &&
+        localDataUrl.startsWith('data:') &&
+        localDataUrl.length < 3.5 * 1024 * 1024;
+
+      const res = await summarizeDocumentWithAI({
+        fileBase64: canSendInlineBase64 ? localDataUrl : undefined,
+        archiveId: cleanSelectedId,
+        fileName: doc.originalFileName,
+        downloadUrl: doc.archiveDownloadUrl,
+        title: doc.title,
+        memoNo: doc.memoNo,
+        authority: doc.authority
+      });
+
+      if (!res.success || !res.data) {
+        setSummaryError(res.error || 'ডকুমেন্টটির মূল কথা তৈরি করা যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
+        return;
+      }
+
+      const savedTakeaway: DocumentKeyTakeaway = res.data;
+      const { fileData: _omitFileData, ...docWithoutFileData } = doc;
+      const lightweightUpdatedDoc: ExtendedArchiveDoc = {
+        ...docWithoutFileData,
+        keyTakeaway: savedTakeaway
+      };
+
+      setDocuments(prev => {
+        const updatedList = prev.map(d =>
+          d.id === doc.id ? { ...d, keyTakeaway: savedTakeaway } : d
+        );
+        try {
+          localStorage.setItem('audit_criteria_documents', JSON.stringify(stripFileDataFromDocs(updatedList)));
+        } catch (e) {}
+        return updatedList;
+      });
+
+      setSelectedDoc(prev =>
+        prev && prev.id === doc.id ? { ...prev, keyTakeaway: savedTakeaway } : prev
+      );
+
+      try {
+        await fetch('/api/admin/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc: lightweightUpdatedDoc })
+        });
+      } catch (e) {}
+
+      try {
+        await supabase.from('settlement_entries').upsert({
+          id: lightweightUpdatedDoc.id,
+          content: JSON.stringify(lightweightUpdatedDoc),
+          created_at: lightweightUpdatedDoc.createdAt || new Date().toISOString()
+        });
+      } catch (e) {}
+    } catch (err: any) {
+      setSummaryError(err?.message || 'মূল কথা তৈরি করতে অপ্রত্যাশিত ত্রুটি হয়েছে।');
+    } finally {
+      setIsSummarizingDocId(prev => (prev === doc.id ? null : prev));
     }
   };
 
@@ -1629,156 +1723,193 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
       {/* Filter and Search Bar (Sticky Top) */}
       <div ref={filterBarRef} className="sticky top-0 z-30 -mx-2 md:-mx-4 px-2 md:px-4 pt-2 md:pt-3 pb-3 bg-[#eef2f6] shadow-sm transition-all">
-        {isFilterHidden ? (
-          <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>সার্চ ও ফিল্টার প্যানেল লুকানো রয়েছে</span>
-              {searchTerm && (
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold">
-                  সার্চ: "{searchTerm}"
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => setIsFilterHidden(false)}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
-            >
-              <Eye size={15} />
-              <span>ফিল্টার অপশন দেখান</span>
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              
-              {/* Category Tabs */}
-              <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeCategory === cat ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+        <div
+          className={`grid transition-all duration-300 ease-out ${
+            isFilterHidden
+              ? 'grid-rows-[1fr] opacity-100'
+              : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+          }`}
+          aria-hidden={!isFilterHidden}
+        >
+          <div className="overflow-hidden">
+            <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-700 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                <span>সার্চ ও ফিল্টার প্যানেল লুকানো রয়েছে</span>
               </div>
 
-              {/* Search & Layout Toggles */}
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1 sm:w-80">
-                  <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
-                  />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
-                      <X size={16} />
+              <div className="relative flex-1 sm:max-w-md">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title="সার্চ মুছুন"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setIsFilterHidden(false)}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 shrink-0"
+              >
+                <Eye size={15} />
+                <span>ফিল্টার অপশন দেখান</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`grid transition-all duration-500 ease-out ${
+            isFilterHidden
+              ? 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
+              : 'grid-rows-[1fr] opacity-100 translate-y-0'
+          }`}
+          aria-hidden={isFilterHidden}
+        >
+          <div className="overflow-hidden">
+            <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xl space-y-4">
+              <div
+                className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all duration-500 ease-out ${
+                  isFilterHidden ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'
+                }`}
+              >
+                
+                {/* Category Tabs */}
+                <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 lg:pb-0">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${activeCategory === cat ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {cat}
                     </button>
-                  )}
+                  ))}
                 </div>
 
-                {/* Duplicate Checker Button */}
-                <button
-                  onClick={() => {
-                    setModalInitialTab('dupcheck');
-                    setShowUnlockModal(true);
-                  }}
-                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
-                  title="নতুন ফাইল পাঠানোর আগে ডুপ্লিকেট চেক করুন"
-                >
-                  <FileSearch size={16} className="text-blue-600" />
-                  <span className="hidden sm:inline">🔍 ডুপ্লিকেট চেকার</span>
-                </button>
-
-                <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    title="গ্রিড ভিউ"
-                  >
-                    <LayoutGrid size={18} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    title="লিস্ট ভিউ"
-                  >
-                    <List size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Approved Gmail ID Section */}
-            <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                    <Mail size={15} className="text-emerald-600" />
-                    <span>আপনার অনুমোদিত জিমেইল আইডি:</span>
-                  </span>
-
-                  <input 
-                    type="email"
-                    value={currentUserEmail}
-                    onChange={e => setCurrentUserEmail(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-200 bg-slate-50 text-emerald-800 rounded-xl text-xs font-mono font-bold outline-none focus:bg-white focus:border-emerald-500 w-60 shadow-inner transition-all"
-                    placeholder="যেমন: user@gmail.com"
-                  />
-
-                  {isWhitelisted ? (
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs">
-                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                      <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
-                    </span>
-                  ) : currentUserEmail ? (
-                    <span className="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold rounded-lg text-[11px] border border-rose-200 flex items-center gap-1">
-                      <AlertCircle size={13} className="text-rose-600 shrink-0" />
-                      <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 bg-amber-100 text-amber-800 font-black rounded-lg text-[10px] border border-amber-200">
-                      সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
-                    </span>
-                  )}
-                </div>
-
-                {/* User Marked Hide Button & Unlock Instructions Link */}
+                {/* Search & Layout Toggles */}
                 <div className="flex items-center gap-3">
+                  <div className="relative flex-1 sm:w-80">
+                    <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="শিরোনাম, স্মারক নং বা কিওয়ার্ড খুঁজুন..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    />
+                    {searchTerm && (
+                      <button onClick={() => setSearchTerm('')} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Duplicate Checker Button */}
                   <button
-                    onClick={() => setIsFilterHidden(true)}
-                    className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
-                    title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
+                    onClick={() => {
+                      setModalInitialTab('dupcheck');
+                      setShowUnlockModal(true);
+                    }}
+                    className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 shadow-2xs"
+                    title="নতুন ফাইল পাঠানোর আগে ডুপ্লিকেট চেক করুন"
                   >
-                    <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
-                    <span>হাইড করুন</span>
+                    <FileSearch size={16} className="text-blue-600" />
+                    <span className="hidden sm:inline">🔍 ডুপ্লিকেট চেকার</span>
                   </button>
 
-                  <button
-                    onClick={() => setShowUnlockModal(true)}
-                    className="text-emerald-700 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
-                  </button>
+                  <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      title="গ্রিড ভিউ"
+                    >
+                      <LayoutGrid size={18} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      title="লিস্ট ভিউ"
+                    >
+                      <List size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Info hint note */}
-              <div className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
-                <Sparkles size={13} className="text-emerald-600 shrink-0" />
-                <span>
-                  <strong>নির্দেশনা:</strong> এডমিন যে জিমেইল আইডিতে অনুমোদন দেবেন, এখানে সেই জিমেইল আইডিটি ইনপুট দিলেই অডিট ক্রাইটেরিয়ার সকল সংরক্ষিত ফাইল উন্মুক্ত হয়ে যাবে।
-                </span>
+              {/* Quick Approved Gmail ID Section */}
+              <div
+                className={`pt-2 border-t border-slate-100 space-y-2 text-xs transition-all duration-500 delay-75 ease-out ${
+                  isFilterHidden ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                      <Mail size={15} className="text-emerald-600" />
+                      <span>আপনার অনুমোদিত জিমেইল আইডি:</span>
+                    </span>
+
+                    <input 
+                      type="email"
+                      value={currentUserEmail}
+                      onChange={e => setCurrentUserEmail(e.target.value)}
+                      className="px-3 py-1.5 border border-slate-200 bg-slate-50 text-emerald-800 rounded-xl text-xs font-mono font-bold outline-none focus:bg-white focus:border-emerald-500 w-60 shadow-inner transition-all"
+                      placeholder="যেমন: user@gmail.com"
+                    />
+
+                    {isWhitelisted ? (
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-200 shadow-2xs">
+                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                        <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
+                      </span>
+                    ) : currentUserEmail ? (
+                      <span className="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold rounded-lg text-[11px] border border-rose-200 flex items-center gap-1">
+                        <AlertCircle size={13} className="text-rose-600 shrink-0" />
+                        <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-amber-100 text-amber-800 font-black rounded-lg text-[10px] border border-amber-200">
+                        সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* User Marked Hide Button & Unlock Instructions Link */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsFilterHidden(true)}
+                      className="px-3 py-1 bg-slate-100 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs active:scale-95"
+                      title="ফিল্টার ও সার্চ অপশনগুলো হাইড করুন"
+                    >
+                      <EyeOff size={14} className="text-slate-500 hover:text-red-600" />
+                      <span>হাইড করুন</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowUnlockModal(true)}
+                      className="text-emerald-700 font-black text-xs hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      এক্সেস বিস্তারিত ও আনলক নির্দেশিকা <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Document Grid / List Content */}
@@ -2097,7 +2228,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                           </div>
                         )}
                       </div>
-                      <div className="w-full pt-3 flex items-center justify-center">
+                      <div className="w-full pt-3 flex flex-wrap items-center justify-center gap-2.5">
                         <a 
                           href={viewInNewTabHref}
                           target="_blank"
@@ -2106,6 +2237,23 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                         >
                           <Eye size={14} /> নতুন ট্যাবে ভিউ করুন
                         </a>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleKeyTakeaway(selectedDoc, false)}
+                          disabled={isSummarizingDocId === selectedDoc.id}
+                          className={`px-4 py-2 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 cursor-pointer ${
+                            showKeyTakeaway
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-300/60'
+                              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          } disabled:opacity-70`}
+                        >
+                          {isSummarizingDocId === selectedDoc.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Sparkles size={14} />
+                          )}
+                          মূল কথা
+                        </button>
                       </div>
                     </>
                   );
@@ -2148,6 +2296,99 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                   </div>
                 )}
 
+                {showKeyTakeaway && (
+                  <div
+                    ref={keyTakeawayRef}
+                    className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-slate-50 p-4 shadow-sm space-y-3 animate-in fade-in duration-200"
+                  >
+                    <div className="flex items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                          <Sparkles size={14} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">ডকুমেন্টের মূল কথা</h4>
+                          {selectedDoc.keyTakeaway?.generatedAt && isSummarizingDocId !== selectedDoc.id && (
+                            <p className="text-[10px] font-bold text-slate-400">সংরক্ষিত সারাংশ</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleKeyTakeaway(selectedDoc, true)}
+                          disabled={isSummarizingDocId === selectedDoc.id}
+                          className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-black text-[11px] flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                          title="এআই দিয়ে ডকুমেন্টটি পুনরায় বিশ্লেষণ করুন"
+                        >
+                          <RefreshCw size={12} className={isSummarizingDocId === selectedDoc.id ? 'animate-spin' : ''} />
+                          পুনরায় বিশ্লেষণ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowKeyTakeaway(false)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                          title="বন্ধ করুন"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isSummarizingDocId === selectedDoc.id ? (
+                      <div className="py-5 flex flex-col items-center justify-center text-center gap-2">
+                        <Loader2 size={22} className="text-indigo-600 animate-spin" />
+                        <p className="text-xs font-bold text-slate-700">এআই ডকুমেন্টটি পড়ে সহজ ভাষায় মূল কথা তৈরি করছে...</p>
+                        <p className="text-[11px] text-slate-400 font-medium">অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন</p>
+                      </div>
+                    ) : summaryError ? (
+                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 space-y-2">
+                        <div className="flex items-start gap-2 text-xs font-bold">
+                          <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                          <span>{summaryError}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleKeyTakeaway(selectedDoc, true)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-black cursor-pointer transition-all"
+                        >
+                          আবার চেষ্টা করুন
+                        </button>
+                      </div>
+                    ) : selectedDoc.keyTakeaway ? (
+                      <div className="space-y-3">
+                        {selectedDoc.keyTakeaway.isUnclear && (
+                          <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-2 text-xs font-bold">
+                            <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-600" />
+                            <span>
+                              {selectedDoc.keyTakeaway.unclearNote || 'ডকুমেন্টটির লেখা অস্পষ্ট হওয়ায় অনুমান ছাড়া নিশ্চিতভাবে পড়া সম্ভব হচ্ছে না।'}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs">
+                          {selectedDoc.keyTakeaway.summary}
+                        </div>
+
+                        {selectedDoc.keyTakeaway.example && selectedDoc.keyTakeaway.example.trim() !== '' && (
+                          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+                            <span className="text-[11px] font-black text-emerald-800 block">সহজ উদাহরণ:</span>
+                            <p className="text-xs text-emerald-900 font-medium leading-relaxed whitespace-pre-line">
+                              {selectedDoc.keyTakeaway.example}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    <div className="pt-2 border-t border-indigo-100/80 flex items-start gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-50/70 px-2.5 py-2 rounded-lg border border-amber-200/70">
+                      <AlertTriangle size={13} className="shrink-0 mt-0.5 text-amber-600" />
+                      <span>সতর্কতা: এআই ভুল করতে পারে। গুরুত্বপূর্ণ দাপ্তরিক বা অডিট সিদ্ধান্তের আগে অনুগ্রহ করে মূল ডকুমেন্টটি যাচাই করে নিন।</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-4 flex flex-wrap gap-3">
                   <button 
                     onClick={() => {
@@ -2155,15 +2396,15 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                       setSelectedDoc(null);
                       setFeedbackDoc(target);
                     }}
-                    className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    className="flex-1 min-w-fit py-3 px-4 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer shadow-md"
                   >
-                    <MessageSquarePlus size={16} /> এডমিনকে মতামত জানান
+                    <MessageSquarePlus size={16} className="shrink-0" /> এডমিনকে মতামত জানান
                   </button>
                   <button 
                     onClick={() => copyCitation(selectedDoc)}
-                    className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 min-w-fit py-3 px-4 bg-amber-500 text-white rounded-xl font-black text-xs hover:bg-amber-600 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
                   >
-                    <FileText size={16} /> রেফারেন্স কপি করুন
+                    <FileText size={16} className="shrink-0" /> রেফারেন্স কপি করুন
                   </button>
                   {effectiveAdmin && (
                     <button 
@@ -2172,14 +2413,14 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                         setSelectedDoc(null);
                         setEditingDoc(target);
                       }}
-                      className="py-3 px-4 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                      className="py-3 px-5 bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer shadow-md"
                     >
-                      <Edit2 size={16} /> এডিট / ফাইল আপডেট
+                      <Edit2 size={16} className="shrink-0" /> এডিট
                     </button>
                   )}
                   <button 
                     onClick={() => setSelectedDoc(null)}
-                    className="py-3 px-6 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all cursor-pointer"
+                    className="py-3 px-6 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all whitespace-nowrap cursor-pointer"
                   >
                     বন্ধ করুন
                   </button>

@@ -8,6 +8,7 @@ import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import { whatsappService } from "./server/whatsappService";
 import downloadDocumentHandler from "./api/agent/download-document";
+import summarizeDocumentHandler from "./api/agent/summarize-document";
 
 const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -1140,6 +1141,7 @@ async function startServer() {
   });
 
   app.get("/api/agent/download-document", (req, res) => downloadDocumentHandler(req, res));
+  app.post("/api/agent/summarize-document", (req, res) => summarizeDocumentHandler(req, res));
 
   // 8. WhatsApp / Messenger Webhook Ingestion Endpoint
   app.post("/api/agent/whatsapp-webhook", async (req, res) => {
