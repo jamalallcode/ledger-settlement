@@ -97,7 +97,7 @@ const getStoredWhitelistedEmails = (): string[] => {
     if (fs.existsSync(file)) {
       const raw = fs.readFileSync(file, "utf-8");
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         inMemoryWhitelistedEmails = Array.from(new Set(parsed.map(e => String(e).trim().toLowerCase()).filter(Boolean)));
         return inMemoryWhitelistedEmails;
       }
@@ -321,7 +321,7 @@ async function startServer() {
       }
     } else if (Array.isArray(emails)) {
       const incoming = emails.map(e => String(e).trim().toLowerCase()).filter(Boolean);
-      current = saveStoredWhitelistedEmails([...current, ...incoming]);
+      current = saveStoredWhitelistedEmails(incoming);
     } else {
       current = saveStoredWhitelistedEmails(current);
     }

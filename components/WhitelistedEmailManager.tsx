@@ -21,40 +21,56 @@ export const WhitelistedEmailManager: React.FC = () => {
   const loadWhitelistedEmails = async () => {
     setLoading(true);
 
-    // 1. Try fetching from server API
+    // 1. Primary source of truth: Supabase settlement_entries ('doc_whitelisted_emails')
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('settlement_entries')
+          .select('*')
+          .eq('id', 'doc_whitelisted_emails')
+          .maybeSingle();
+
+        if (!error && data && data.content !== undefined && data.content !== null) {
+          let parsedList = data.content;
+          if (typeof parsedList === 'string') {
+            try { parsedList = JSON.parse(parsedList); } catch (e) { parsedList = null; }
+          }
+          if (Array.isArray(parsedList)) {
+            const cleanList = Array.from(
+              new Set(
+                parsedList
+                  .map((e: unknown) => String(e).trim().toLowerCase())
+                  .filter(e => Boolean(e) && e !== 'approved.auditor@gmail.com')
+              )
+            );
+            setEmails(cleanList);
+            localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(cleanList));
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch doc_whitelisted_emails from Supabase:', err);
+      }
+    }
+
+    // 2. Fallback: server API
     try {
       const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.emails)) {
-          setEmails(data.emails);
-          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(data.emails));
+          const cleanList = Array.from(
+            new Set(data.emails.map((e: unknown) => String(e).trim().toLowerCase()).filter(Boolean))
+          );
+          setEmails(cleanList);
+          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(cleanList));
           setLoading(false);
           return;
         }
       }
     } catch (e) {
       console.warn('Failed to load whitelisted emails from API:', e);
-    }
-
-    // 2. Try Supabase
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('app_settings')
-          .select('value')
-          .eq('key', 'whitelisted_emails_list')
-          .maybeSingle();
-
-        if (!error && data && Array.isArray(data.value)) {
-          setEmails(data.value);
-          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(data.value));
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn('Could not fetch whitelisted_emails_list from Supabase:', err);
-      }
     }
 
     // 3. Fallback to LocalStorage
@@ -70,8 +86,38 @@ export const WhitelistedEmailManager: React.FC = () => {
       }
     } catch (e) {}
 
-    setEmails(['websitetogather@gmail.com']);
+    setEmails([]);
     setLoading(false);
+  };
+
+  const syncWhitelistedList = async (updated: string[]) => {
+    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
+
+    try {
+      await fetch('/api/admin/whitelisted-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails: updated })
+      });
+    } catch (e) {}
+
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase
+          .from('settlement_entries')
+          .upsert({
+            id: 'doc_whitelisted_emails',
+            content: JSON.stringify(updated),
+            created_at: new Date().toISOString()
+          });
+        if (error) {
+          await supabase
+            .from('settlement_entries')
+            .update({ content: JSON.stringify(updated) })
+            .eq('id', 'doc_whitelisted_emails');
+        }
+      } catch (err) {}
+    }
   };
 
   const handleAddEmail = async (e: React.FormEvent) => {
@@ -93,30 +139,10 @@ export const WhitelistedEmailManager: React.FC = () => {
       return;
     }
 
-    const updated = [cleanEmail, ...emails];
+    const updated = Array.from(new Set([cleanEmail, ...emails.map(em => em.trim().toLowerCase()).filter(Boolean)]));
     setEmails(updated);
     setNewEmailInput('');
-
-    // Save to server API
-    try {
-      await fetch('/api/admin/whitelisted-emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ addEmail: cleanEmail })
-      });
-    } catch (e) {}
-
-    // Save to LocalStorage
-    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
-
-    // Save to Supabase
-    if (isSupabaseConfigured) {
-      try {
-        await supabase
-          .from('app_settings')
-          .upsert({ key: 'whitelisted_emails_list', value: updated }, { onConflict: 'key' });
-      } catch (err) {}
-    }
+    await syncWhitelistedList(updated);
 
     setStatusMessage({ type: 'success', text: `সাফল্যের সাথে জিমেইল আইডি "${cleanEmail}" অনুমোদন করা হয়েছে!` });
     setTimeout(() => setStatusMessage(null), 4000);
@@ -129,27 +155,7 @@ export const WhitelistedEmailManager: React.FC = () => {
 
     const updated = emails.filter(e => e.toLowerCase() !== emailToRemove.toLowerCase());
     setEmails(updated);
-
-    // Save to server API
-    try {
-      await fetch('/api/admin/whitelisted-emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ removeEmail: emailToRemove })
-      });
-    } catch (e) {}
-
-    // Save to LocalStorage
-    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
-
-    // Save to Supabase
-    if (isSupabaseConfigured) {
-      try {
-        await supabase
-          .from('app_settings')
-          .upsert({ key: 'whitelisted_emails_list', value: updated }, { onConflict: 'key' });
-      } catch (err) {}
-    }
+    await syncWhitelistedList(updated);
 
     setStatusMessage({ type: 'success', text: `"${emailToRemove}" আইডিটির অনুমোদন বাতিল করা হয়েছে।` });
     setTimeout(() => setStatusMessage(null), 3000);
