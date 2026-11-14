@@ -152,6 +152,16 @@ const App: React.FC = () => {
   const [isLockedMode, setIsLockedMode] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthVerifying, setIsAuthVerifying] = useState<boolean>(() => {
+    try {
+      return (
+        window.location.hash.includes('access_token=') ||
+        window.location.search.includes('code=') ||
+        Boolean(localStorage.getItem('audit_oauth_return_tab'))
+      );
+    } catch (e) {}
+    return false;
+  });
   const [showRegisterFilters, setShowRegisterFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -672,7 +682,7 @@ const App: React.FC = () => {
       console.log("handleAdminSync called with email:", email);
       if (email) {
         localStorage.setItem('audit_doc_logged_in_user_email', email.trim().toLowerCase());
-        if (email === 'websitetogather@gmail.com' || email === 'jamaluddinkh3424@gmail.com') {
+        if (email === 'jamaluddinkh3424@gmail.com') {
           console.log("User is admin based on email");
           setUserEmail(email);
           setIsAdmin(true);
@@ -732,13 +742,19 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       handleAdminSync(session?.user?.email);
+      setIsAuthVerifying(false);
       fetchSettings(); // Re-fetch settings on auth change
       console.log("Auth State Changed:", _event, session?.user?.email);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleAdminSync(session?.user?.email);
+      setIsAuthVerifying(false);
+    }).catch(() => {
+      setIsAuthVerifying(false);
     });
+
+    const authFallbackTimer = setTimeout(() => setIsAuthVerifying(false), 4000);
 
     // Sync Global Settings (Visibility & Contact Link)
     const fetchSettings = async () => {
@@ -874,6 +890,7 @@ const App: React.FC = () => {
     }
 
     return () => {
+      clearTimeout(authFallbackTimer);
       subscription.unsubscribe();
       if (settingsSubscription) {
         settingsSubscription.unsubscribe();
@@ -895,7 +912,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      if (!isDataLoaded) {
+        setIsLoading(true);
+      }
       try {
         console.log("fetchData started");
         const savedPrev = localStorage.getItem(PREV_STATS_KEY);
@@ -1789,7 +1808,7 @@ const App: React.FC = () => {
     `;
   }, [currentTheme]);
 
-  if (isLoading) {
+  if (isLoading && activeTab !== 'archive') {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <style>{dynamicThemeCSS}</style>
@@ -2088,7 +2107,7 @@ const App: React.FC = () => {
                 />
               )}
               
-              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} userEmail={userEmail} />}
+              {activeTab === 'archive' && <DocumentArchive isAdmin={isAdmin} userEmail={userEmail} isAuthChecking={isAuthVerifying} />}
 
               {activeTab === 'voting' && <VotingSystem isAdmin={isAdmin} />}
 
