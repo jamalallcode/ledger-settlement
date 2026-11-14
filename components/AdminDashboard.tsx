@@ -132,28 +132,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const newValue = !isCurrentlyVisible;
     const newVisibility = { ...moduleVisibility, [moduleKey]: newValue };
     setModuleVisibility(newVisibility);
-    
-    if (!isSupabaseConfigured) {
-      // Save local state as fallback
-      localStorage.setItem(`show_${moduleKey}`, newValue.toString());
-      return;
-    }
 
     try {
-      const { error } = await supabase
-        .from('app_settings')
-        .upsert({ key: `show_${moduleKey}`, value: newValue }, { onConflict: 'key' });
-      
-      if (error) {
-        console.error(`Error updating ${moduleKey} visibility:`, error);
-        alert('সেটিংস আপডেট করতে সমস্যা হয়েছে।');
-        // Revert local state on error
-        setModuleVisibility(moduleVisibility);
+      localStorage.setItem(`show_${moduleKey}`, String(newValue));
+      localStorage.setItem('ledger_module_visibility_v1', JSON.stringify(newVisibility));
+    } catch (e) {}
+
+    if (isSupabaseConfigured && supabase && typeof supabase.from === 'function') {
+      try {
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert({ key: `show_${moduleKey}`, value: newValue }, { onConflict: 'key' });
+
+        if (error) {
+          console.warn(`Supabase update skipped for ${moduleKey} visibility (using local config):`, error.message || error);
+        }
+      } catch (err) {
+        console.warn(`Failed to sync ${moduleKey} visibility to Supabase (using local config):`, err);
       }
-    } catch (err) {
-      console.error(`Failed to update ${moduleKey} visibility:`, err);
-      alert('সেটিংস আপডেট করতে সমস্যা হয়েছে।');
-      setModuleVisibility(moduleVisibility);
     }
   };
 

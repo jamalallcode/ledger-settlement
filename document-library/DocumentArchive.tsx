@@ -1445,6 +1445,18 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     return isW;
   };
 
+  const handleArchiveGoogleSignIn = async () => {
+    try {
+      localStorage.setItem('audit_oauth_return_tab', 'archive');
+    } catch (e) {}
+    const res = await signInWithGoogle();
+    if (res?.error) {
+      try {
+        localStorage.removeItem('audit_oauth_return_tab');
+      } catch (e) {}
+    }
+  };
+
   const handleGoogleSignOut = async () => {
     localStorage.removeItem('audit_doc_logged_in_user_email');
     localStorage.removeItem('audit_doc_current_user_email');
@@ -1732,7 +1744,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 <>
                   <button
                     type="button"
-                    onClick={() => signInWithGoogle()}
+                    onClick={handleArchiveGoogleSignIn}
                     className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm cursor-pointer transition-all active:scale-95"
                   >
                     <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">

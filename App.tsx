@@ -129,7 +129,24 @@ const App: React.FC = () => {
   const [entries, setEntries] = useState<SettlementEntry[]>([]);
   const [correspondenceEntries, setCorrespondenceEntries] = useState<CorrespondenceEntry[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState('landing'); 
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const returnTab = localStorage.getItem('audit_oauth_return_tab');
+      if (returnTab) return returnTab;
+    } catch (e) {}
+    return 'landing';
+  });
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('audit_oauth_return_tab')) {
+        const t = setTimeout(() => {
+          localStorage.removeItem('audit_oauth_return_tab');
+        }, 1000);
+        return () => clearTimeout(t);
+      }
+    } catch (e) {}
+  }, []);
   const [resetKey, setResetKey] = useState(0); 
   const [editingEntry, setEditingEntry] = useState<any | null>(null);
   const [isLockedMode, setIsLockedMode] = useState(true);
@@ -140,20 +157,37 @@ const App: React.FC = () => {
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [moduleVisibility, setModuleVisibility] = useState<ModuleVisibility>({
-    entry: true,
-    register: true,
-    return: true,
-    archive: true,
-    voting: true,
-    setup_receivers: true,
-    initial_balance: true,
-    change_pass: true,
-    admin_analytics: true,
-    audit_details: true,
-    navbar: true,
-    links: true,
-    cycle_wheel: true,
+  const [moduleVisibility, setModuleVisibility] = useState<ModuleVisibility>(() => {
+    const defaults: ModuleVisibility = {
+      entry: true,
+      register: true,
+      return: true,
+      archive: true,
+      voting: true,
+      setup_receivers: true,
+      initial_balance: true,
+      change_pass: true,
+      admin_analytics: true,
+      audit_details: true,
+      navbar: true,
+      links: true,
+      cycle_wheel: true,
+    };
+    try {
+      const savedAll = localStorage.getItem('ledger_module_visibility_v1');
+      if (savedAll) {
+        const parsed = JSON.parse(savedAll);
+        if (parsed && typeof parsed === 'object') {
+          Object.assign(defaults, parsed);
+        }
+      }
+      (Object.keys(defaults) as (keyof ModuleVisibility)[]).forEach((k) => {
+        const v = localStorage.getItem(`show_${k}`);
+        if (v === 'true') defaults[k] = true;
+        else if (v === 'false') defaults[k] = false;
+      });
+    } catch (e) {}
+    return defaults;
   });
   
   const [wheelSettings, setWheelSettings] = useState<Record<string, boolean>>(() => getWheelSettings());
@@ -747,14 +781,28 @@ const App: React.FC = () => {
               const wheelItemId = setting.key.replace('show_wheel_', '');
               const boolVal = setting.value === true || setting.value === 'true';
               setWheelSettings(prev => ({ ...prev, [wheelItemId]: boolVal }));
-            } else {
+            } else if (setting.key === 'module_visibility_settings' && setting.value) {
+              try {
+                const visObj = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+                if (visObj && typeof visObj === 'object') {
+                  Object.keys(visObj).forEach((k) => {
+                    if (k in newVisibility) {
+                      (newVisibility as any)[k] = visObj[k] !== false && visObj[k] !== 'false';
+                    }
+                  });
+                }
+              } catch (e) {}
+            } else if (setting.key && setting.key.startsWith('show_')) {
               const key = setting.key.replace('show_', '');
               if (key in newVisibility) {
-                (newVisibility as any)[key] = setting.value;
+                (newVisibility as any)[key] = setting.value !== false && setting.value !== 'false';
               }
             }
           });
           setModuleVisibility(newVisibility);
+          try {
+            localStorage.setItem('ledger_module_visibility_v1', JSON.stringify(newVisibility));
+          } catch (e) {}
         } else if (error) {
           console.warn("Supabase app_settings fetch skipped (using local config):", error.message || error);
         }
@@ -797,11 +845,25 @@ const App: React.FC = () => {
               const wheelItemId = payload.new.key.replace('show_wheel_', '');
               const boolVal = payload.new.value === true || payload.new.value === 'true';
               setWheelSettings(prev => ({ ...prev, [wheelItemId]: boolVal }));
-            } else {
+            } else if (payload.new.key === 'module_visibility_settings' && payload.new.value) {
+              try {
+                const visObj = typeof payload.new.value === 'string' ? JSON.parse(payload.new.value) : payload.new.value;
+                if (visObj && typeof visObj === 'object') {
+                  setModuleVisibility(prev => {
+                    const updated = { ...prev, ...visObj };
+                    try { localStorage.setItem('ledger_module_visibility_v1', JSON.stringify(updated)); } catch (e) {}
+                    return updated;
+                  });
+                }
+              } catch (e) {}
+            } else if (payload.new.key && payload.new.key.startsWith('show_')) {
               const key = payload.new.key.replace('show_', '');
+              const boolVal = payload.new.value !== false && payload.new.value !== 'false';
               setModuleVisibility(prev => {
                 if (key in prev) {
-                  return { ...prev, [key]: payload.new.value };
+                  const updated = { ...prev, [key]: boolVal };
+                  try { localStorage.setItem('ledger_module_visibility_v1', JSON.stringify(updated)); } catch (e) {}
+                  return updated;
                 }
                 return prev;
               });

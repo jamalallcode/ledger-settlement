@@ -165,9 +165,21 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     } catch (e) {}
   };
 
+  const handleModalGoogleSignIn = async () => {
+    try {
+      localStorage.setItem('audit_oauth_return_tab', 'archive');
+    } catch (e) {}
+    const res = await signInWithGoogle();
+    if (res?.error) {
+      try {
+        localStorage.removeItem('audit_oauth_return_tab');
+      } catch (e) {}
+    }
+  };
+
   const handleModalSwitchGoogleAccount = async () => {
     await handleModalGoogleSignOut();
-    await signInWithGoogle();
+    await handleModalGoogleSignIn();
   };
 
   const cleanNum = (activeWaNum || '').replace(/[^0-9]/g, '');
@@ -351,7 +363,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                   <div className="space-y-3">
                     <button
                       type="button"
-                      onClick={() => signInWithGoogle()}
+                      onClick={handleModalGoogleSignIn}
                       className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl font-black text-xs md:text-sm flex items-center justify-center gap-2.5 shadow-sm cursor-pointer transition-all active:scale-95"
                     >
                       <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -602,7 +614,7 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
                     </p>
                     <button
                       type="button"
-                      onClick={() => signInWithGoogle()}
+                      onClick={handleModalGoogleSignIn}
                       className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer transition-all"
                     >
                       <span>Google দিয়ে যাচাই করুন</span>
