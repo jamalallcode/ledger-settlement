@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, signInWithGoogle } from '../lib/supabase';
 import { 
   Lock, Unlock, ShieldCheck, Sparkles, Plus, CheckCircle2, 
   Clock, AlertCircle, CreditCard, ChevronRight, X, User, Gift, Zap, MessageSquare, Mail, Search, Edit2, Check, FileSearch, HelpCircle, FileText, KeyRound, Smartphone 
@@ -105,9 +105,6 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
     setPinStatus({ type: 'none', isUnlocked: false });
   };
 
-  // Email check state
-  const [checkEmail, setCheckEmail] = useState(currentUserEmail);
-  const [checkStatus, setCheckStatus] = useState<'none' | 'success' | 'failed'>('none');
 
   // Duplicate Checker State
   const [dupQuery, setDupQuery] = useState('');
@@ -153,23 +150,24 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
   if (!isOpen) return null;
 
   const sessEmail = (sessionUserEmail || '').trim().toLowerCase();
-  const currEmail = (currentUserEmail || '').trim().toLowerCase();
+  const currEmail = sessEmail;
   const isWhitelisted = Boolean(
-    currEmail &&
-    (sessEmail ? currEmail === sessEmail : false) &&
-    whitelistedEmails.some(e => e.toLowerCase() === currEmail)
+    sessEmail &&
+    whitelistedEmails.some(e => e.toLowerCase() === sessEmail)
   );
   const isFullyUnlocked = isAdmin || isSubscribed || isWhitelisted || Boolean(pinStatus.isUnlocked);
 
-  const handleVerifySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkEmail.trim()) return;
-    const isMatched = await onVerifyGmail(checkEmail.trim());
-    if (isMatched) {
-      setCheckStatus('success');
-    } else {
-      setCheckStatus('failed');
-    }
+  const handleModalGoogleSignOut = async () => {
+    localStorage.removeItem('audit_doc_logged_in_user_email');
+    localStorage.removeItem('audit_doc_current_user_email');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+  };
+
+  const handleModalSwitchGoogleAccount = async () => {
+    await handleModalGoogleSignOut();
+    await signInWithGoogle();
   };
 
   const cleanNum = (activeWaNum || '').replace(/[^0-9]/g, '');
@@ -290,55 +288,84 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
               <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-900 font-black text-sm">
                   <Mail size={18} className="text-emerald-600 shrink-0" />
-                  জিমেইল আইডি দিয়ে অ্যাক্সেস আনলক
+                  Google অ্যাকাউন্ট যাচাইয়ের মাধ্যমে অ্যাক্সেস আনলক
                 </div>
                 <p className="text-slate-700 text-xs md:text-sm font-medium leading-relaxed">
-                  এডমিন তার ড্যাশবোর্ড থেকে যেসব জিমেইল আইডি অনুমোদন দিয়েছেন, সেই অনুমোদিত জিমেইল আইডি নিচে লিখলেই অডিট ক্রাইটেরিয়ার সকল তথ্য উন্মুক্ত হয়ে যাবে। কোনো জটিল পাসওয়ার্ড বা সাইন ইন করার প্রয়োজন নেই।
+                  নিরাপত্তার স্বার্থে এখন আর অন্যের জিমেইল টাইপ করে প্রবেশ করা যাবে না। এডমিন আপনার যে জিমেইল আইডিটি অনুমোদন দিয়েছেন, নিচের বাটনে ক্লিক করে সেই আসল Google অ্যাকাউন্ট দিয়ে সাইন-ইন করলেই অডিট ক্রাইটেরিয়ার সকল তথ্য উন্মুক্ত হয়ে যাবে।
                 </p>
               </div>
 
-              {/* Email Form / Status */}
+              {/* Verified Google Account Box */}
               <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
                 <label className="text-xs font-black text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Mail size={15} className="text-emerald-600" /> আপনার জিমেইল আইডি (Gmail ID):
+                  <Mail size={15} className="text-emerald-600" /> আপনার যাচাইকৃত জিমেইল আইডি:
                 </label>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input 
-                    type="email" 
-                    placeholder="যেমন: name@gmail.com"
-                    value={checkEmail}
-                    onChange={e => {
-                      setCheckEmail(e.target.value);
-                    }}
-                    className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-xs md:text-sm text-slate-800 outline-none focus:border-emerald-500 shadow-inner"
-                  />
-                </div>
+                {sessEmail ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-white border border-slate-300 rounded-xl shadow-inner">
+                      <span className="font-mono font-bold text-xs md:text-sm text-slate-800">
+                        {sessEmail}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleModalSwitchGoogleAccount}
+                          className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200 cursor-pointer transition-all"
+                        >
+                          অন্য জিমেইল দিয়ে যাচাই
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleModalGoogleSignOut}
+                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold border border-rose-200 cursor-pointer transition-all"
+                        >
+                          সাইন আউট
+                        </button>
+                      </div>
+                    </div>
 
-                {isWhitelisted ? (
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-900 font-black text-xs md:text-sm">
-                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                      <span>আপনার জিমেইল আইডিটি এডমিন কর্তৃক অনুমোদিত!</span>
-                    </div>
-                    <p className="text-xs text-emerald-800 font-medium">
-                      আপনার জন্য অডিট ক্রাইটেরিয়ার সকল সার্কুলার ও নথিপত্র সফলভাবে আনলক করা হয়েছে।
-                    </p>
-                  </div>
-                ) : checkEmail ? (
-                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-rose-900 font-black text-xs md:text-sm">
-                      <AlertCircle size={18} className="text-rose-600 shrink-0" />
-                      <span>এই জিমেইল আইডিটি ({checkEmail}) অনুমোদনপ্রাপ্ত নয়!</span>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium">
-                      এডমিনের অনুমোদন পেতে হোয়াটসঅ্যাপে আপনার জিমেইল আইডিটি পাঠিয়ে অনুরোধ করুন।
-                    </p>
+                    {isWhitelisted ? (
+                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+                        <div className="flex items-center gap-2 text-emerald-900 font-black text-xs md:text-sm">
+                          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                          <span>আপনার যাচাইকৃত জিমেইল আইডিটি এডমিন কর্তৃক অনুমোদিত!</span>
+                        </div>
+                        <p className="text-xs text-emerald-800 font-medium">
+                          আপনার জন্য অডিট ক্রাইটেরিয়ার সকল সার্কুলার ও নথিপত্র সফলভাবে আনলক করা হয়েছে।
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
+                        <div className="flex items-center gap-2 text-rose-900 font-black text-xs md:text-sm">
+                          <AlertCircle size={18} className="text-rose-600 shrink-0" />
+                          <span>এই জিমেইল আইডিটি ({sessEmail}) অনুমোদনপ্রাপ্ত নয়!</span>
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium">
+                          এডমিনের অনুমোদন পেতে হোয়াটসঅ্যাপে আপনার এই জিমেইল আইডিটি পাঠিয়ে অনুরোধ করুন।
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 font-medium">
-                    উপরে আপনার অনুমোদিত জিমেইল আইডিটি লিখুন।
-                  </p>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => signInWithGoogle()}
+                      className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl font-black text-xs md:text-sm flex items-center justify-center gap-2.5 shadow-sm cursor-pointer transition-all active:scale-95"
+                    >
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      <span>Google দিয়ে জিমেইল যাচাই করুন</span>
+                    </button>
+                    <p className="text-xs text-slate-500 font-medium">
+                      আপনার নিজের Google অ্যাকাউন্ট দিয়ে সাইন-ইন করলে সিস্টেম স্বয়ংক্রিয়ভাবে অনুমোদন যাচাই করবে।
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -537,45 +564,52 @@ export const UnlockStatusModal: React.FC<UnlockStatusModalProps> = ({
 
               <div className="h-px bg-slate-100 w-full my-2"></div>
 
-              {/* Verify Gmail Form */}
-              <form onSubmit={handleVerifySubmit} className="space-y-3 bg-slate-50 p-5 rounded-xl border border-slate-200">
+              {/* Verified Google Session Check */}
+              <div className="space-y-3 bg-slate-50 p-5 rounded-xl border border-slate-200">
                 <label className="text-xs font-black text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Mail size={14} className="text-blue-600" /> আপনার নিবন্ধিত জিমেইল আইডি (Gmail) দিয়ে এক্সেস যাচাই করুন:
+                  <Mail size={14} className="text-blue-600" /> আপনার নিবন্ধিত জিমেইল আইডি (Gmail) যাচাই করুন:
                 </label>
-                <div className="flex gap-2">
-                  <input 
-                    type="email" 
-                    required
-                    placeholder="আপনার জিমেইল লিখুন (যেমন: user@gmail.com)"
-                    value={checkEmail}
-                    onChange={e => {
-                      setCheckEmail(e.target.value);
-                      setCheckStatus('none');
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-xs outline-none focus:border-blue-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all shrink-0 cursor-pointer"
-                  >
-                    যাচাই করুন
-                  </button>
-                </div>
 
-                {checkStatus === 'success' && (
-                  <div className="p-3 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black flex items-center gap-2 border border-emerald-200 animate-in fade-in">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                    আপনার জিমেইল আইডি সফলভাবে অনুমোদিত হয়েছে! সব ডকুমেন্ট আনলক করা হয়েছে।
+                {sessEmail ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 bg-white border border-slate-300 rounded-xl">
+                      <span className="font-mono font-bold text-xs text-slate-800">{sessEmail}</span>
+                      <button
+                        type="button"
+                        onClick={() => onVerifyGmail(sessEmail)}
+                        className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-black transition-all shrink-0 cursor-pointer"
+                      >
+                        স্ট্যাটাস রিফ্রেশ করুন
+                      </button>
+                    </div>
+
+                    {isWhitelisted ? (
+                      <div className="p-3 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black flex items-center gap-2 border border-emerald-200 animate-in fade-in">
+                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                        আপনার যাচাইকৃত জিমেইল আইডি সফলভাবে অনুমোদিত হয়েছে! সব ডকুমেন্ট আনলক করা হয়েছে।
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-2 border border-amber-200 animate-in fade-in">
+                        <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                        এই জিমেইল আইডিটি ({sessEmail}) এখনো তালিকাভুক্ত হয়নি। অনুগ্রহ করে WhatsApp এ আপনার ডকুমেন্ট ও এই Gmail আইডি পাঠান।
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p className="text-xs text-slate-600 font-medium">
+                      এক্সেস যাচাই করতে আপনার নিজের Google অ্যাকাউন্ট দিয়ে সাইন-ইন করুন।
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => signInWithGoogle()}
+                      className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer transition-all"
+                    >
+                      <span>Google দিয়ে যাচাই করুন</span>
+                    </button>
                   </div>
                 )}
-
-                {checkStatus === 'failed' && (
-                  <div className="p-3 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-2 border border-amber-200 animate-in fade-in">
-                    <AlertCircle size={16} className="text-amber-600 shrink-0" />
-                    এই জিমেইল আইডিটি এখনো তালিকাভুক্ত হয়নি। অনুগ্রহ করে WhatsApp এ আপনার ডকুমেন্ট ও Gmail আইডি পাঠান।
-                  </div>
-                )}
-              </form>
+              </div>
 
             </div>
           )}

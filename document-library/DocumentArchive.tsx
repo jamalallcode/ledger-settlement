@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, signInWithGoogle } from '../lib/supabase';
 import { ArchiveDoc } from '../types';
 import { 
   Library, Search, Filter, Plus, FileText, Calendar, 
@@ -337,39 +337,35 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     return [];
   });
 
-  // Active Current User Gmail State
-  const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
-    const saved = localStorage.getItem('audit_doc_current_user_email');
-    if (saved && saved !== 'user@gmail.com' && saved !== 'newuser@gmail.com') return saved;
-    return userEmail || localStorage.getItem('audit_doc_logged_in_user_email') || '';
-  });
-
-  // Session logged-in email
+  // Verified Session logged-in email (strictly from Supabase Google Auth)
   const sessionUserEmail = useMemo(() => {
-    const fromProps = userEmail ? userEmail.trim().toLowerCase() : '';
-    const fromStorage = (localStorage.getItem('audit_doc_logged_in_user_email') || '').trim().toLowerCase();
-    return fromProps || fromStorage;
+    return userEmail ? userEmail.trim().toLowerCase() : '';
   }, [userEmail]);
+
+  // Active Current User Gmail State (strictly bound to verified session email)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
+    return userEmail ? userEmail.trim().toLowerCase() : '';
+  });
 
   useEffect(() => {
     if (userEmail) {
       const clean = userEmail.trim().toLowerCase();
       localStorage.setItem('audit_doc_logged_in_user_email', clean);
-      if (!currentUserEmail || currentUserEmail === 'user@gmail.com' || currentUserEmail === 'newuser@gmail.com') {
-        setCurrentUserEmail(clean);
-      }
+      setCurrentUserEmail(clean);
+    } else {
+      localStorage.removeItem('audit_doc_logged_in_user_email');
+      localStorage.removeItem('audit_doc_current_user_email');
+      setCurrentUserEmail('');
     }
   }, [userEmail]);
 
   useEffect(() => {
-    localStorage.setItem('audit_doc_current_user_email', currentUserEmail);
-    if (currentUserEmail && isValidIdentifier(currentUserEmail)) {
-      const typed = currentUserEmail.trim().toLowerCase();
-      const session = sessionUserEmail ? sessionUserEmail.trim().toLowerCase() : '';
-      const isW = (session ? typed === session : false) && whitelistedEmails.some(e => e.toLowerCase() === typed);
-      recordVisitorLog(currentUserEmail, isW);
+    if (sessionUserEmail && isValidIdentifier(sessionUserEmail)) {
+      localStorage.setItem('audit_doc_current_user_email', sessionUserEmail);
+      const isW = whitelistedEmails.some(e => e.toLowerCase() === sessionUserEmail);
+      recordVisitorLog(sessionUserEmail, isW);
     }
-  }, [currentUserEmail, sessionUserEmail, whitelistedEmails]);
+  }, [sessionUserEmail, whitelistedEmails]);
 
   // Demo / Subscription / Admin State
   const [isSubscribed, setIsSubscribed] = useState<boolean>(() => {
@@ -571,12 +567,11 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
     setTimeout(() => setPinMessage(null), 3000);
   };
 
-  // Access check based on entered identifier/email or activated PIN
+  // Access check strictly based on verified Google session email or activated PIN
   const isWhitelisted = useMemo(() => {
-    const typed = currentUserEmail ? currentUserEmail.trim().toLowerCase() : '';
-    if (!typed) return false;
-    return whitelistedEmails.some(e => e.toLowerCase() === typed);
-  }, [currentUserEmail, whitelistedEmails]);
+    if (!sessionUserEmail) return false;
+    return whitelistedEmails.some(e => e.toLowerCase() === sessionUserEmail);
+  }, [sessionUserEmail, whitelistedEmails]);
 
   const isFullyUnlocked = effectiveAdmin || isSubscribed || isWhitelisted || pinState.isUnlocked;
 
@@ -1426,11 +1421,10 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
 
   const handleVerifyGmail = async (email: string): Promise<boolean> => {
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed) return false;
-    setCurrentUserEmail(trimmed);
-    registerActiveSession(trimmed);
+    if (!trimmed || !sessionUserEmail || trimmed !== sessionUserEmail) return false;
+    registerActiveSession(sessionUserEmail);
 
-    let isW = whitelistedEmails.some(e => e.toLowerCase() === trimmed);
+    let isW = whitelistedEmails.some(e => e.toLowerCase() === sessionUserEmail);
 
     try {
       const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
@@ -1440,15 +1434,24 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
           const latestList = data.emails.map((e: string) => e.trim().toLowerCase());
           setWhitelistedEmails(latestList);
           localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(latestList));
-          if (latestList.includes(trimmed)) {
+          if (latestList.includes(sessionUserEmail)) {
             isW = true;
           }
         }
       }
     } catch (e) {}
 
-    recordVisitorLog(trimmed, isW);
+    recordVisitorLog(sessionUserEmail, isW);
     return isW;
+  };
+
+  const handleGoogleSignOut = async () => {
+    localStorage.removeItem('audit_doc_logged_in_user_email');
+    localStorage.removeItem('audit_doc_current_user_email');
+    setCurrentUserEmail('');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
   };
 
   const copyCitation = (doc: ExtendedArchiveDoc) => {
@@ -1691,7 +1694,7 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
             </div>
           </div>
 
-          {/* Quick Approved Gmail ID & Unlock Guide Strip inside Hero Block */}
+          {/* Quick Verified Gmail ID & Unlock Guide Strip inside Hero Block */}
           <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="font-bold text-slate-200 flex items-center gap-1.5">
@@ -1699,28 +1702,52 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null }
                 <span>আপনার অনুমোদিত জিমেইল আইডি:</span>
               </span>
 
-              <input 
-                type="email"
-                value={currentUserEmail}
-                onChange={e => setCurrentUserEmail(e.target.value)}
-                className="px-3 py-1.5 border border-slate-700 bg-slate-950/75 text-emerald-300 placeholder:text-slate-500 rounded-xl text-xs font-mono font-bold outline-none focus:bg-slate-950 focus:border-emerald-400 w-60 transition-all"
-                placeholder="যেমন: user@gmail.com"
-              />
+              {sessionUserEmail ? (
+                <>
+                  <div className="px-3 py-1.5 border border-slate-700 bg-slate-950/75 text-emerald-300 rounded-xl text-xs font-mono font-bold flex items-center gap-2">
+                    <span>{sessionUserEmail}</span>
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignOut}
+                      className="text-[10px] font-sans font-bold text-slate-400 hover:text-rose-300 underline cursor-pointer transition-colors"
+                      title="লগআউট করে অন্য জিমেইল দিয়ে যাচাই করুন"
+                    >
+                      সাইন আউট
+                    </button>
+                  </div>
 
-              {isWhitelisted ? (
-                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-500/30">
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                  <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
-                </span>
-              ) : currentUserEmail ? (
-                <span className="px-2.5 py-1 bg-rose-500/20 text-rose-300 font-bold rounded-lg text-[11px] border border-rose-500/30 flex items-center gap-1">
-                  <AlertCircle size={13} className="text-rose-400 shrink-0" />
-                  <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
-                </span>
+                  {isWhitelisted ? (
+                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black rounded-lg text-xs flex items-center gap-1.5 border border-emerald-500/30">
+                      <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                      <span>অনুমোদিত জিমেইল আইডি (সকল নথি উন্মুক্ত)</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 bg-rose-500/20 text-rose-300 font-bold rounded-lg text-[11px] border border-rose-500/30 flex items-center gap-1">
+                      <AlertCircle size={13} className="text-rose-400 shrink-0" />
+                      <span>এই জিমেইল আইডিটি অনুমোদনপ্রাপ্ত নয়! এডমিনের অনুমোদন প্রয়োজন।</span>
+                    </span>
+                  )}
+                </>
               ) : (
-                <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 font-black rounded-lg text-[11px] border border-amber-500/30">
-                  সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
-                </span>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => signInWithGoogle()}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm cursor-pointer transition-all active:scale-95"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Google দিয়ে জিমেইল যাচাই করুন</span>
+                  </button>
+
+                  <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 font-black rounded-lg text-[11px] border border-amber-500/30">
+                    সাধারণ এক্সেস (প্রথম ৫টি ফ্রি, অন্যান্য লকড)
+                  </span>
+                </>
               )}
             </div>
 
