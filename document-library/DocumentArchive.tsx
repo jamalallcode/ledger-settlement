@@ -801,91 +801,99 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null; 
     }
   }, [editingDoc]);
 
+  const normalizeWhitelistArray = (raw: unknown): string[] => {
+    if (!Array.isArray(raw)) return [];
+    return Array.from(
+      new Set(
+        raw
+          .map(e => String(e).trim().toLowerCase())
+          .filter(e => Boolean(e) && e !== 'approved.auditor@gmail.com')
+      )
+    );
+  };
+
   const fetchWhitelistedEmails = async () => {
-    let serverList: string[] = [];
-    let supabaseList: string[] = [];
-    let localList: string[] = [];
-
-    try {
-      const saved = localStorage.getItem('audit_doc_whitelisted_emails');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) localList = parsed;
-      }
-    } catch (e) {}
-
-    try {
-      const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.emails)) {
-          serverList = data.emails;
-        }
-      }
-    } catch (e) {}
-
+    // 1. Primary source of truth: Supabase settlement_entries ('doc_whitelisted_emails')
     try {
       const { data, error } = await supabase
         .from('settlement_entries')
         .select('*')
         .eq('id', 'doc_whitelisted_emails')
-        .single();
-      if (!error && data && data.content) {
-        let list = data.content;
-        if (typeof list === 'string') {
-          try { list = JSON.parse(list); } catch (e) {}
+        .maybeSingle();
+
+      if (!error && data && data.content !== undefined && data.content !== null) {
+        let parsedList = data.content;
+        if (typeof parsedList === 'string') {
+          try { parsedList = JSON.parse(parsedList); } catch (e) { parsedList = null; }
         }
-        if (Array.isArray(list)) {
-          supabaseList = list;
+        if (Array.isArray(parsedList)) {
+          const cleanSupabaseList = normalizeWhitelistArray(parsedList);
+          setWhitelistedEmails(cleanSupabaseList);
+          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(cleanSupabaseList));
+          try {
+            await fetch('/api/admin/whitelisted-emails', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ emails: cleanSupabaseList })
+            });
+          } catch (e) {}
+          return;
         }
       }
     } catch (e) {}
 
-    const merged = Array.from(
-      new Set(
-        [...serverList, ...supabaseList, ...localList]
-          .map(e => String(e).trim().toLowerCase())
-          .filter(e => Boolean(e) && e !== 'approved.auditor@gmail.com')
-      )
-    );
+    // 2. Fallback: Express server API (when Supabase record does not exist or is unreachable)
+    try {
+      const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.emails)) {
+          const cleanServerList = normalizeWhitelistArray(data.emails);
+          setWhitelistedEmails(cleanServerList);
+          localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(cleanServerList));
+          return;
+        }
+      }
+    } catch (e) {}
 
-    setWhitelistedEmails(merged);
-    localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(merged));
-
-    if (merged.length > 0) {
-      try {
-        await fetch('/api/admin/whitelisted-emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emails: merged })
-        });
-      } catch (e) {}
-
-      try {
-        await supabase.from('settlement_entries').upsert({
-          id: 'doc_whitelisted_emails',
-          content: JSON.stringify(merged),
-          created_at: new Date().toISOString()
-        });
-      } catch (e) {}
-    }
+    // 3. Last-resort fallback: localStorage
+    try {
+      const saved = localStorage.getItem('audit_doc_whitelisted_emails');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setWhitelistedEmails(normalizeWhitelistArray(parsed));
+        }
+      }
+    } catch (e) {}
   };
 
   const saveWhitelistedEmailsToDb = async (list: string[]) => {
+    const cleanList = normalizeWhitelistArray(list);
     try {
       await fetch('/api/admin/whitelisted-emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails: list })
+        body: JSON.stringify({ emails: cleanList })
       });
     } catch (e) {}
 
     try {
-      await supabase.from('settlement_entries').upsert({
+      const payload = {
         id: 'doc_whitelisted_emails',
-        content: JSON.stringify(list),
+        content: JSON.stringify(cleanList),
         created_at: new Date().toISOString()
-      });
+      };
+      const { error } = await supabase.from('settlement_entries').upsert(payload);
+      if (error) {
+        const { error: updateError } = await supabase
+          .from('settlement_entries')
+          .update({ content: JSON.stringify(cleanList) })
+          .eq('id', 'doc_whitelisted_emails');
+        if (updateError) {
+          console.error('Supabase whitelist sync error:', updateError);
+        }
+      }
     } catch (e) {}
   };
 
@@ -1375,49 +1383,19 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null; 
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
     if (!whitelistedEmails.some(e => e.toLowerCase() === trimmed)) {
-      const updated = Array.from(new Set([...whitelistedEmails, trimmed]));
+      const updated = normalizeWhitelistArray([...whitelistedEmails, trimmed]);
       setWhitelistedEmails(updated);
       localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
-
-      try {
-        await fetch('/api/admin/whitelisted-emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ addEmail: trimmed })
-        });
-      } catch (e) {}
-
-      try {
-        await supabase.from('settlement_entries').upsert({
-          id: 'doc_whitelisted_emails',
-          content: JSON.stringify(updated),
-          created_at: new Date().toISOString()
-        });
-      } catch (e) {}
+      await saveWhitelistedEmailsToDb(updated);
     }
   };
 
   const handleRemoveWhitelistedEmail = async (email: string) => {
     const trimmed = email.trim().toLowerCase();
-    const updated = whitelistedEmails.filter(e => e.toLowerCase() !== trimmed);
+    const updated = normalizeWhitelistArray(whitelistedEmails.filter(e => e.toLowerCase() !== trimmed));
     setWhitelistedEmails(updated);
     localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(updated));
-
-    try {
-      await fetch('/api/admin/whitelisted-emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ removeEmail: trimmed })
-      });
-    } catch (e) {}
-
-    try {
-      await supabase.from('settlement_entries').upsert({
-        id: 'doc_whitelisted_emails',
-        content: JSON.stringify(updated),
-        created_at: new Date().toISOString()
-      });
-    } catch (e) {}
+    await saveWhitelistedEmailsToDb(updated);
   };
 
   const handleVerifyGmail = async (email: string): Promise<boolean> => {
@@ -1427,20 +1405,42 @@ const DocumentArchive: React.FC<{ isAdmin?: boolean; userEmail?: string | null; 
 
     let isW = whitelistedEmails.some(e => e.toLowerCase() === sessionUserEmail);
 
+    let resolvedFromSupabase = false;
     try {
-      const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.emails)) {
-          const latestList = data.emails.map((e: string) => e.trim().toLowerCase());
+      const { data, error } = await supabase
+        .from('settlement_entries')
+        .select('*')
+        .eq('id', 'doc_whitelisted_emails')
+        .maybeSingle();
+      if (!error && data && data.content !== undefined && data.content !== null) {
+        let parsedList = data.content;
+        if (typeof parsedList === 'string') {
+          try { parsedList = JSON.parse(parsedList); } catch (e) { parsedList = null; }
+        }
+        if (Array.isArray(parsedList)) {
+          const latestList = normalizeWhitelistArray(parsedList);
           setWhitelistedEmails(latestList);
           localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(latestList));
-          if (latestList.includes(sessionUserEmail)) {
-            isW = true;
-          }
+          isW = latestList.includes(sessionUserEmail);
+          resolvedFromSupabase = true;
         }
       }
     } catch (e) {}
+
+    if (!resolvedFromSupabase) {
+      try {
+        const res = await fetch('/api/admin/whitelisted-emails?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.emails)) {
+            const latestList = normalizeWhitelistArray(data.emails);
+            setWhitelistedEmails(latestList);
+            localStorage.setItem('audit_doc_whitelisted_emails', JSON.stringify(latestList));
+            isW = latestList.includes(sessionUserEmail);
+          }
+        }
+      } catch (e) {}
+    }
 
     recordVisitorLog(sessionUserEmail, isW);
     return isW;
