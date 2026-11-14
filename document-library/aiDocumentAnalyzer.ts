@@ -37,6 +37,22 @@ export interface AnalyzeDocumentResponse {
   duplicateMatch?: DuplicateMatchInfo | null;
 }
 
+export interface DocumentKeyTakeaway {
+  summary: string;
+  example?: string;
+  isUnclear: boolean;
+  unclearNote?: string;
+  generatedAt: string;
+}
+
+export interface SummarizeDocumentResponse {
+  success: boolean;
+  apiKeyMissing?: boolean;
+  timedOut?: boolean;
+  error?: string;
+  data?: DocumentKeyTakeaway;
+}
+
 const fetchWithTimeout = async (
   url: string,
   options: RequestInit & { timeoutMs?: number } = {}
@@ -404,4 +420,92 @@ export async function uploadToArchiveWithSmartRetry(
     attemptsUsed: maxAttempts
   };
 }
+
+/**
+ * Generates a concise, plain-Bengali "মূল কথা" (Key Takeaway) summary of a document
+ * with strict zero-guessing behavior for unclear/blurry scans.
+ */
+export async function summarizeDocumentWithAI(params: {
+  fileBase64?: string;
+  mimeType?: string;
+  archiveId?: string;
+  fileName?: string;
+  downloadUrl?: string;
+  title?: string;
+  memoNo?: string;
+  authority?: string;
+  signal?: AbortSignal;
+}): Promise<SummarizeDocumentResponse> {
+  const {
+    fileBase64,
+    mimeType,
+    archiveId,
+    fileName,
+    downloadUrl,
+    title,
+    memoNo,
+    authority,
+    signal
+  } = params;
+
+  try {
+    const res = await fetchWithTimeout("/api/agent/summarize-document", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileBase64: fileBase64 || undefined,
+        mimeType: mimeType || undefined,
+        archiveId: archiveId || undefined,
+        fileName: fileName || undefined,
+        downloadUrl: downloadUrl || undefined,
+        title: title || undefined,
+        memoNo: memoNo || undefined,
+        authority: authority || undefined
+      }),
+      timeoutMs: 29000,
+      signal
+    });
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await res.json();
+      if (data.apiKeyMissing) {
+        return {
+          success: false,
+          apiKeyMissing: true,
+          error: data.error || "GEMINI_API_KEY কনফিগার করা নেই।"
+        };
+      }
+      if (res.ok && data.success && data.data) {
+        return {
+          success: true,
+          data: data.data
+        };
+      }
+      return {
+        success: false,
+        apiKeyMissing: !!data.apiKeyMissing,
+        error: data.error || "ডকুমেন্টটির মূল কথা তৈরি করা যায়নি।"
+      };
+    }
+
+    return {
+      success: false,
+      error: `সার্ভার থেকে অপ্রত্যাশিত উত্তর পাওয়া গেছে (HTTP ${res.status})।`
+    };
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      return {
+        success: false,
+        timedOut: true,
+        error: "ডকুমেন্টটি পড়ে মূল কথা তৈরি করতে সময় বেশি লাগছে (Timeout)। অনুগ্রহ করে পুনরায় চেষ্টা করুন।"
+      };
+    }
+    return {
+      success: false,
+      error: err?.message || "এআই সার্ভারের সাথে সংযোগ ব্যর্থ হয়েছে।"
+    };
+  }
+}
+
 
